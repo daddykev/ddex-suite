@@ -250,6 +250,336 @@ interface BuildRequest {
 }
 ```
 
+## Use Cases
+
+### Major Record Labels
+
+#### Universal Music Group - Catalog Migration
+**Scenario**: UMG needs to migrate their entire back catalog (3M+ recordings) from a legacy system to a new distribution platform requiring DDEX ERN 4.3.
+
+```typescript
+import { DDEXBuilder } from '@ddex-suite/builder';
+import { DatabaseConnection } from './legacy-db';
+
+const builder = new DDEXBuilder();
+const db = new DatabaseConnection();
+
+// Apply deterministic configuration for reproducible migration
+builder.applyPreset('deterministic_migration');
+
+// Stream from legacy database to DDEX XML files
+const catalogStream = db.streamCatalog({ batchSize: 1000 });
+
+for await (const batch of catalogStream) {
+  const releases = batch.map(legacyRelease => ({
+    releaseId: legacyRelease.upc,
+    identifiers: {
+      upc: legacyRelease.upc,
+      catalogNumber: legacyRelease.catalog_no,
+      grid: legacyRelease.grid_id
+    },
+    title: [{ text: legacyRelease.title, languageCode: 'en' }],
+    displayArtist: legacyRelease.artist_name,
+    releaseDate: new Date(legacyRelease.release_date),
+    tracks: legacyRelease.tracks.map(track => ({
+      position: track.sequence,
+      isrc: track.isrc,
+      title: track.title,
+      duration: track.duration_seconds,
+      displayArtist: track.artist || legacyRelease.artist_name
+    }))
+  }));
+
+  // Generate DDEX message with stable IDs for cross-batch consistency
+  const { xml, warnings, canonicalHash } = await builder.build({
+    header: {
+      messageSender: { partyName: [{ text: 'Universal Music Group' }] },
+      messageRecipient: { partyName: [{ text: 'Spotify' }] }
+    },
+    version: '4.3',
+    profile: 'AudioAlbum',
+    releases
+  }, {
+    idStrategy: 'stable-hash',
+    stableHashConfig: {
+      recipe: 'v1',
+      cache: 'sqlite'  // External KV cache for ID persistence
+    }
+  });
+
+  // Store hash for verification
+  await db.storeMigrationHash(batch[0].id, canonicalHash);
+  await saveToDistributionQueue(xml);
+}
+```
+
+#### Sony Music - Weekly New Release Feed
+**Scenario**: Sony needs to generate weekly DDEX feeds for all new releases across their labels for 50+ DSP partners.
+
+```python
+from ddex_builder import DDEXBuilder
+from datetime import datetime, timedelta
+import pandas as pd
+
+builder = DDEXBuilder()
+
+# Load this week's releases from data warehouse
+releases_df = pd.read_sql("""
+    SELECT * FROM releases 
+    WHERE release_date BETWEEN %s AND %s
+    AND status = 'APPROVED'
+    ORDER BY priority DESC, release_date
+""", params=[datetime.now(), datetime.now() + timedelta(days=7)])
+
+# Group by DSP requirements
+for dsp, dsp_config in DSP_CONFIGS.items():
+    # Filter releases for this DSP based on territory rights
+    dsp_releases = filter_by_territory_rights(releases_df, dsp_config['territories'])
+    
+    # Apply DSP-specific preset
+    builder.apply_preset(dsp_config['preset_name'])
+    
+    # Build DDEX message with DSP-specific formatting
+    result = builder.build({
+        'header': {
+            'message_sender': {'party_name': [{'text': 'Sony Music Entertainment'}]},
+            'message_recipient': {'party_name': [{'text': dsp_config['name']}]}
+        },
+        'version': dsp_config['ern_version'],  # DSP-specific version
+        'profile': 'AudioAlbum',
+        'releases': dsp_releases.to_dict('records'),
+        'deals': generate_deals_for_dsp(dsp_releases, dsp_config)
+    })
+    
+    # Upload to DSP's FTP/API
+    upload_to_dsp(dsp, result.xml)
+```
+
+### Digital Distributors
+
+#### DistroKid - Independent Artist Onboarding
+**Scenario**: DistroKid processes 10,000+ new releases daily from independent artists and needs to generate DDEX feeds for multiple platforms.
+
+```typescript
+import { DDEXBuilder } from '@ddex-suite/builder';
+import { Queue } from 'bull';
+
+const builder = new DDEXBuilder();
+const releaseQueue = new Queue('releases');
+
+releaseQueue.process(async (job) => {
+  const { artistSubmission } = job.data;
+  
+  // Transform artist's simple form data into DDEX
+  const release = {
+    identifiers: {
+      upc: await generateUPC(artistSubmission),
+      proprietary: [{ 
+        namespace: 'distrokid', 
+        value: artistSubmission.releaseId 
+      }]
+    },
+    title: [{ text: artistSubmission.albumTitle }],
+    displayArtist: artistSubmission.artistName,
+    releaseType: artistSubmission.releaseType,
+    genre: mapToAVSGenre(artistSubmission.genre),
+    releaseDate: new Date(artistSubmission.releaseDate),
+    tracks: artistSubmission.tracks.map((track, idx) => ({
+      position: idx + 1,
+      isrc: track.isrc || await generateISRC(track),
+      title: track.title,
+      duration: track.durationSeconds,
+      displayArtist: track.featuring ? 
+        `${artistSubmission.artistName} feat. ${track.featuring}` : 
+        artistSubmission.artistName,
+      isExplicit: track.hasExplicitLyrics
+    })),
+    images: [{
+      type: 'FrontCoverImage',
+      resourceReference: `IMG_${artistSubmission.releaseId}`,
+      uri: artistSubmission.artworkUrl
+    }]
+  };
+
+  // Generate DDEX for each target platform
+  const platforms = ['spotify', 'apple', 'amazon', 'youtube'];
+  
+  for (const platform of platforms) {
+    const { xml } = await builder.build({
+      header: createHeaderForPlatform(platform),
+      version: PLATFORM_CONFIGS[platform].ernVersion,
+      releases: [release],
+      deals: [createStandardIndieDeals(release, platform)]
+    });
+    
+    await queueForDelivery(platform, xml);
+  }
+});
+```
+
+### Streaming Platforms
+
+#### Spotify - Ingestion Pipeline
+**Scenario**: Spotify receives 100,000+ DDEX messages daily and needs to normalize them for internal processing.
+
+```python
+from ddex_parser import DDEXParser
+from ddex_builder import DDEXBuilder
+import asyncio
+
+parser = DDEXParser()
+builder = DDEXBuilder()
+
+async def normalize_incoming_ddex(raw_xml: bytes) -> dict:
+    """Normalize any DDEX version to internal format"""
+    
+    # Parse incoming DDEX (any version)
+    parsed = await parser.parse_async(raw_xml)
+    
+    # Normalize to internal canonical format
+    normalized_releases = []
+    for release in parsed.flat.releases:
+        # Apply Spotify-specific business rules
+        normalized = {
+            **release,
+            'spotify_id': generate_spotify_id(release),
+            'availability': calculate_availability(release),
+            'content_rating': derive_content_rating(release),
+            'algorithmic_tags': generate_ml_tags(release)
+        }
+        normalized_releases.append(normalized)
+    
+    # Rebuild as standardized ERN 4.3 for internal systems
+    result = await builder.build_async({
+        'header': create_internal_header(),
+        'version': '4.3',  # Standardize on latest version
+        'releases': normalized_releases,
+        'deals': parsed.flat.deals,
+        'preflight_level': 'strict'  # Ensure compliance
+    }, {
+        'determinism': {
+            'canonMode': 'db-c14n',
+            'sortStrategy': 'canonical'
+        }
+    })
+    
+    return {
+        'normalized_xml': result.xml,
+        'canonical_hash': result.canonical_hash,
+        'metadata': extract_searchable_metadata(normalized_releases),
+        'ingestion_timestamp': datetime.now()
+    }
+```
+
+### Enterprise Catalog Management
+
+#### Warner Music Group - Multi-Format Delivery
+**Scenario**: WMG needs to deliver the same release in different formats (physical, digital, streaming) with format-specific metadata.
+
+```python
+from ddex_builder import DDEXBuilder
+from enum import Enum
+
+class ReleaseFormat(Enum):
+    STREAMING = "streaming"
+    DOWNLOAD = "download"
+    PHYSICAL_CD = "physical_cd"
+    VINYL = "vinyl"
+
+class MultiFormatBuilder:
+    def __init__(self):
+        self.builder = DDEXBuilder()
+    
+    def build_format_specific_release(self, master_release, format_type):
+        """Generate format-specific DDEX from master release"""
+        
+        # Base release data
+        release = {**master_release}
+        
+        if format_type == ReleaseFormat.STREAMING:
+            # Streaming-specific adaptations
+            release['tracks'] = self.add_streaming_metadata(release['tracks'])
+            release['technical_details'] = {
+                'file_format': 'AAC',
+                'bitrate': 256,
+                'sample_rate': 44100
+            }
+            
+        elif format_type == ReleaseFormat.VINYL:
+            # Vinyl-specific adaptations
+            release['tracks'] = self.organize_for_vinyl_sides(release['tracks'])
+            release['physical_details'] = {
+                'format': 'Vinyl',
+                'configuration': '2xLP',
+                'speed': '33RPM',
+                'color': 'Black'
+            }
+            
+        return self.builder.build({
+            'version': '4.3',
+            'profile': self.get_profile_for_format(format_type),
+            'releases': [release],
+            'deals': self.generate_format_specific_deals(release, format_type)
+        })
+```
+
+### The "Parse → Modify → Build" Workflow
+
+This is the primary use case, demonstrating the power of the full suite:
+
+```typescript
+import { DDEXParser } from '@ddex-suite/parser';
+import { DDEXBuilder } from '@ddex-suite/builder';
+import * as fs from 'fs/promises';
+
+const parser = new DDEXParser();
+const builder = new DDEXBuilder();
+
+// Apply partner-specific configuration with lock
+builder.applyPreset('spotify_audio_43', { lock: true });
+
+// 1. PARSE an existing message
+const originalXml = await fs.readFile('path/to/original.xml');
+const parsedMessage = await parser.parse(originalXml);
+
+// 2. MODIFY the data in a simple, programmatic way
+const firstRelease = parsedMessage.flat.releases[0];
+firstRelease.releaseDate = new Date('2026-03-01T00:00:00Z'); 
+firstRelease.tracks.push({
+  position: firstRelease.tracks.length + 1,
+  title: 'New Bonus Track',
+  isrc: 'USXYZ2600001',
+  duration: 180,
+  displayArtist: firstRelease.displayArtist
+});
+
+// 3. BUILD a new, deterministic XML message from the modified object
+const { xml, warnings, canonicalHash, reproducibilityBanner } = await builder.build({
+  header: parsedMessage.graph.messageHeader,
+  version: parsedMessage.flat.version,
+  releases: parsedMessage.flat.releases,
+  deals: parsedMessage.flat.deals,
+}, {
+  determinism: {
+    canonMode: 'db-c14n',
+    emitReproducibilityBanner: true,
+    verifyDeterminism: 3  // Build 3 times to verify determinism
+  },
+  idStrategy: 'stable-hash'
+});
+
+if (warnings.length > 0) {
+  console.warn('Build warnings:', warnings);
+}
+
+// Verify deterministic output
+console.log(`Canonical hash: ${canonicalHash}`);
+console.log(`Reproducibility: ${reproducibilityBanner}`); 
+
+// The new XML is ready to be sent or validated by DDEX Workbench
+await fs.writeFile('path/to/updated.xml', xml);
+```
+
 ## Performance Specifications
 
 ### Parser Performance Targets (±20% variance)
@@ -265,22 +595,29 @@ interface BuildRequest {
 
 ### Builder Performance Targets (By Mode)
 
-| Mode | # Releases | # Tracks | Generation Time | Memory Usage |
-|------|------------|----------|-----------------|--------------|
-| **DB-C14N + Stable Hash** | | | | |
-| | 1 | 12 | <15ms ±3ms | <3MB |
-| | 100 | 1,200 | <150ms ±30ms | <20MB |
-| | 1,000 | 12,000 | <1.5s ±300ms | <120MB |
-| **DB-C14N + UUID** | | | | |
-| | 1 | 12 | <10ms ±2ms | <2MB |
-| | 100 | 1,200 | <100ms ±20ms | <15MB |
-| | 1,000 | 12,000 | <1s ±200ms | <100MB |
+| Mode | # Releases | # Tracks | Generation Time | Memory Usage | Notes |
+|------|------------|----------|-----------------|--------------|-------|
+| **DB-C14N + Stable Hash** | | | | | |
+| | 1 | 12 | <15ms ±3ms | <3MB | Heavy normalization |
+| | 100 | 1,200 | <150ms ±30ms | <20MB | With hashing |
+| | 1,000 | 12,000 | <1.5s ±300ms | <120MB | With sorting |
+| | 10,000 | 120,000 | <15s ±3s | <50MB | Stream mode |
+| **DB-C14N + UUID** | | | | | |
+| | 1 | 12 | <10ms ±2ms | <2MB | Faster IDs |
+| | 100 | 1,200 | <100ms ±20ms | <15MB | No cache needed |
+| | 1,000 | 12,000 | <1s ±200ms | <100MB | Standard |
+| | 10,000 | 120,000 | <10s ±2s | <50MB | Stream mode |
+| **Pretty/Non-canonical** | | | | | |
+| | 1 | 12 | <8ms ±2ms | <2MB | No sorting |
+| | 100 | 1,200 | <80ms ±15ms | <12MB | Fastest |
+| | 1,000 | 12,000 | <800ms ±150ms | <80MB | Minimal overhead |
 
 ### Benchmark Specifications
 
 - **Hardware Baseline**: AWS m7g.large (2 vCPU, 8GB RAM)
 - **Software**: Node 20 LTS, Python 3.11, Rust 1.75
 - **Metrics**: P50, P95, P99 latency + peak RSS memory
+- **WASM Target**: <500KB for lite builds with aggressive optimization
 
 ## Security Architecture
 
@@ -307,6 +644,9 @@ pub struct SecurityConfig {
     // Network protection
     pub allow_network: bool,                  // Default: false
     pub allowed_schemas: Vec<String>,         // Default: ["file"]
+    
+    // Character policy
+    pub xml_character_policy: String,         // Default: "escape"
 }
 ```
 
@@ -319,6 +659,9 @@ pub struct SecurityConfig {
 - Schema poisoning
 - DTD-based attacks
 - Invalid UTF-8 sequences
+- Character policy enforcement
+- DataFrame DSL security (no eval)
+- Preset lock mechanism
 
 ## API Specifications
 
@@ -375,6 +718,8 @@ class DDEXBuilder {
   canonicalize(xml: string | Buffer): Promise<string>;
   diff(originalXml: string, newRequest: BuildRequest): Promise<DiffResult>;
   applyPreset(preset: string, options?: PresetOptions): void;
+  dryRunId(type: string, materials: any, recipe?: string): IdDebugInfo;
+  presetDiff(preset: string, fromVersion?: string, toVersion?: string): PresetDiffResult;
 }
 
 interface BuildOptions {
@@ -404,6 +749,7 @@ interface BuildResult {
   errors: BuildError[];
   statistics: BuildStatistics;
   canonicalHash?: string;
+  reproducibilityBanner?: string;
 }
 
 // Python
@@ -413,7 +759,498 @@ class DDEXBuilder:
     def preflight(self, request: BuildRequest) -> PreflightResult: ...
     def canonicalize(self, xml: Union[str, bytes]) -> str: ...
     def apply_preset(self, preset: str, lock: bool = False) -> None: ...
+    def from_dataframe(self, df: pd.DataFrame, mapping: Dict[str, str]) -> BuildRequest: ...
 ```
+
+### Streaming Semantics
+
+#### JavaScript/Node.js
+```typescript
+// Async iterator with backpressure support
+const parser = new DDEXParser();
+const stream = parser.stream(fileStream, {
+  chunkSize: 100,
+  onProgress: ({ bytes, releases }) => console.log(`Processed ${releases} releases`)
+});
+
+for await (const release of stream) {
+  await processRelease(release);
+}
+```
+
+#### Python
+```python
+# Iterator with optional async support
+parser = DDEXParser()
+
+# Synchronous iteration
+for release in parser.stream(file):
+    process_release(release)
+
+# Asynchronous iteration
+async for release in parser.stream_async(file):
+    await process_release(release)
+```
+
+#### Browser/WASM
+```typescript
+// Web Streams API with Worker support
+const parser = new DDEXParser();
+const stream = parser.stream(response.body, {
+  useWorker: true,  // Parse in Web Worker
+  chunkSize: 100
+});
+
+for await (const release of stream) {
+  updateUI(release);
+}
+```
+
+### DataFrame to DDEX Mapping DSL
+
+Declarative mapping DSL without eval for security:
+
+```python
+# Declarative mapping DSL - no eval, purely declarative
+mapping = {
+    'releases': {
+        'title': {'column': 'album_title'},
+        'releaseDate': {'column': 'release_date', 'transform': 'to_date'},
+        'tracks[]': {
+            'title': {'column': 'track_title'},
+            'position': {'transform': 'row_number'},
+            'isrc': {'column': 'isrc'}
+        },
+        'titles[]': {
+            'text': {'columns': ['title_en', 'title_es'], 'transform': 'zip'},
+            'languageCode': {'values': ['en', 'es']}
+        },
+        'territories[]': {'column': 'territories', 'transform': 'split', 'delimiter': ','}
+    }
+}
+
+# Usage
+builder = DDEXBuilder()
+df = pd.read_csv('catalog.csv')
+request = builder.from_dataframe(df, mapping)
+result = builder.build(request)
+```
+
+## Determinism & Canonicalization
+
+### DB-C14N/1.0 - DDEX Builder Canonicalization
+
+The builder implements **DB-C14N/1.0** (DDEX Builder Canonicalization v1.0), our custom canonicalization specification designed specifically for DDEX message determinism.
+
+#### DB-C14N/1.0 Specification Summary
+
+1. **XML Declaration & Encoding** - Fixed `<?xml version="1.0" encoding="UTF-8"?>`
+2. **Whitespace, Indentation, Line Endings** - LF normalized, 2-space indent
+3. **Attribute Ordering Policy** - Alphabetical by local name
+4. **Namespace Prefix Lock Tables** - Per ERN version, immutable
+5. **Text Normalization** - Unicode NFC, character policy by field
+6. **Date/Time** - UTC, ISO8601Z, zero-pad rules
+7. **Element Ordering** - Generated from XSD + checksum
+8. **Canonical Hash Definition** - SHA-256 of specific byte ranges
+
+### Determinism Configuration
+
+```typescript
+interface DeterminismConfig {
+  // Canonicalization mode
+  canonMode: 'db-c14n' | 'pretty' | 'compact';
+  
+  // Element ordering
+  sortStrategy: 'canonical' | 'input-order' | 'custom';
+  customSortOrder?: Record<string, string[]>;
+  
+  // Namespace handling
+  namespaceStrategy: 'locked' | 'inherit';
+  lockedPrefixes?: Record<string, string>;
+  
+  // Formatting
+  outputMode: 'db-c14n' | 'pretty' | 'compact';
+  lineEnding: 'LF' | 'CRLF';
+  indentChar: 'space' | 'tab';
+  indentWidth: number;
+  
+  // String normalization
+  unicodeNormalization: 'NFC' | 'NFD' | 'NFKC' | 'NFKD';
+  xmlCharacterPolicy: 'escape' | 'cdata' | 'reject';
+  quoteStyle: 'double' | 'single';
+  
+  // Date/Time
+  timeZonePolicy: 'UTC' | 'preserve' | 'local';
+  dateTimeFormat: 'ISO8601Z' | 'ISO8601' | 'custom';
+  
+  // Reproducibility
+  emitReproducibilityBanner?: boolean;
+  verifyDeterminism?: number;
+}
+```
+
+### Determinism CI Lint Configuration
+
+```toml
+# clippy.toml
+deny = [
+  "clippy::disallowed_types",
+  "clippy::unwrap_used",
+]
+# Disallow unordered maps in output paths
+disallowed-types = [
+  "std::collections::HashMap",
+  "std::collections::HashSet",
+]
+```
+
+### Stable Hash ID Generation with Recipe Contracts
+
+Content-based IDs with versioned, explicit recipe contracts:
+
+```toml
+# recipes/release_v1.toml
+[Release.v1]
+fields = ["UPC", "ReleaseType", "TrackISRCs[]", "TerritorySet", "Version"]
+normalize = { unicode = "NFC", trim = true, case = "as-is" }
+numeric = { duration_round = "millisecond" }
+text = { whitespace = "normalize", locale = "none" }
+salt = "REL@1"
+
+[Resource.v1]
+fields = ["ISRC", "Duration", "Hash"]
+normalize = { unicode = "NFC", trim = true }
+numeric = { duration_round = "second" }
+salt = "RES@1"
+
+[Party.v1]
+fields = ["Name", "Role", "Identifiers"]
+normalize = { unicode = "NFC", trim = true, case = "lower" }
+text = { case_folding = "locale-free" }
+salt = "PTY@1"
+```
+
+### JSON Schema Annotations
+
+Generated schemas include machine-readable canonicalization hints:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "releases": {
+      "type": "array",
+      "x-canonical-order": "ReleaseId,ReleaseReference,ReleaseDetailsByTerritory",
+      "x-ddex-ern-version": "4.3"
+    }
+  }
+}
+```
+
+## Partner Presets System
+
+Configuration templates with provenance tracking, versioning, and safety features:
+
+```typescript
+interface PartnerPreset {
+  name: string;
+  description: string;
+  source: 'public_docs' | 'customer_feedback';
+  provenanceUrl?: string;
+  version: string;
+  locked?: boolean;
+  disclaimer: string;
+  determinism: Partial<DeterminismConfig>;
+  defaults: {
+    messageControlType?: 'LiveMessage' | 'TestMessage';
+    territoryCode?: string[];
+    distributionChannel?: string[];
+  };
+  requiredFields: string[];
+  formatOverrides: Record<string, any>;
+}
+
+// Example preset from public documentation
+const SPOTIFY_AUDIO_43: PartnerPreset = {
+  name: 'spotify_audio_43',
+  description: 'Spotify Audio Album ERN 4.3 requirements (config template)',
+  source: 'public_docs',
+  provenanceUrl: 'https://support.spotify.com/artists/article/ddex-delivery-spec',
+  version: '1.0.0',
+  disclaimer: 'Presets are community-maintained config templates derived from public documentation and implementer feedback. They are not official specs and do not replace ingestion testing.',
+  determinism: {
+    canonMode: 'db-c14n',
+    sortStrategy: 'canonical',
+    outputMode: 'db-c14n',
+    timeZonePolicy: 'UTC',
+    dateTimeFormat: 'ISO8601Z'
+  },
+  defaults: {
+    messageControlType: 'LiveMessage',
+    distributionChannel: ['01'] // Download
+  },
+  requiredFields: ['ISRC', 'UPC', 'ReleaseDate', 'Genre'],
+  formatOverrides: {
+    'Duration': 'PT{minutes}M{seconds}S'
+  }
+};
+```
+
+## CLI Reference
+
+### Parser CLI Commands
+
+```bash
+# Parse and extract
+ddex-parser parse input.xml --schema flat|graph --output parsed.json
+ddex-parser extract input.xml --format json|csv --fields title,isrc,duration
+ddex-parser stream large.xml --jsonl --chunk-size 100
+
+# Analysis and inspection
+ddex-parser detect-version input.xml
+ddex-parser sanity-check input.xml
+ddex-parser stats input.xml
+
+# Batch processing
+ddex-parser batch *.xml --parallel 4 --output-dir parsed/
+```
+
+### Builder CLI Commands
+
+```bash
+# Build from JSON
+ddex-builder build --from-json request.json --ern 4.3 --preset spotify_audio_43 --preset-lock --db-c14n --id stable-hash:v1 --out out.xml
+
+# Canonicalize existing XML
+ddex-builder canon in.xml > out.xml
+
+# Generate diff and update skeleton
+ddex-builder diff --old old.xml --from-json request.json --emit-update-skeleton update.json
+
+# Debug stable hash IDs with explanation
+ddex-builder ids --explain Release ./materials.json
+
+# Verify determinism
+ddex-builder build --from-json request.json --verify-determinism 5
+
+# Show preset diff after upgrade
+ddex-builder preset-diff spotify_audio_43 --from-version 1.0.0 --to-version 1.1.0
+
+# Export JSON Schema for a profile
+ddex-builder build --from-json request.json --schema-out schema.json
+
+# Fail on warnings for CI/CD pipelines
+ddex-builder build --from-json request.json --fail-on-warn
+
+# Version banner with build info
+ddex-builder --version
+# DDEX Builder v1.0.0 • DB-C14N/1.0 • models: ERN 4.3 • presets: 8 • build: reproducible
+```
+
+## Error Handling
+
+### Structured Error Reporting (RFC 7807 Style)
+
+```typescript
+interface BuildError {
+  type: string;                              // URI reference (RFC 7807)
+  title: string;                             // Short, human-readable summary
+  detail: string;                            // Human-readable explanation
+  instance: string;                          // Path to error location
+  code: 'MISSING_REQUIRED' | 'INVALID_FORMAT' | 'UNKNOWN_FIELD' | 
+        'BAD_REF' | 'CYCLE_DETECTED' | 'NAMESPACE_LOCK_VIOLATION';
+  severity: 'error' | 'warning';
+  hint?: string;                             // Suggested fix
+  documentationUrl?: string;                 // Link to specific error documentation
+  validValue?: any;                          // Example of a valid value
+}
+
+interface PreflightResult {
+  isValid: boolean;
+  errors: BuildError[];
+  warnings: BuildWarning[];
+  statistics: {
+    totalFields: number;
+    validatedFields: number;
+    missingRequiredFields: string[];
+    invalidReferences: string[];
+    unknownFields: string[];
+  };
+  coverageMatrix: ProfileCoverage;
+}
+```
+
+### Error Codes and Resolution
+
+| Code | Description | Resolution |
+|------|-------------|------------|
+| `MISSING_REQUIRED` | Required field not provided | Add the missing field |
+| `INVALID_FORMAT` | Field format invalid (e.g., ISRC) | Correct the format |
+| `UNKNOWN_FIELD` | Field not in schema | Check for typos |
+| `BAD_REF` | Reference to non-existent resource | Verify reference exists |
+| `CYCLE_DETECTED` | Circular reference detected | Break the cycle |
+| `NAMESPACE_LOCK_VIOLATION` | Namespace prefix changed | Use locked prefix |
+
+## Distribution Strategy
+
+### Node.js Distribution
+
+Using `napi-rs` with `prebuildify` for maximum compatibility:
+
+```json
+{
+  "name": "@ddex-suite/parser",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "prebuildify": "prebuildify --platform win32,darwin,linux --arch x64,arm64 --strip",
+    "test:import": "node -e \"import('@ddex-suite/parser').then(m => console.log(m.version))\""
+  }
+}
+```
+
+### Python Distribution
+
+Using `cibuildwheel` for comprehensive platform coverage:
+
+```toml
+# pyproject.toml
+[tool.cibuildwheel]
+build = ["cp38-*", "cp39-*", "cp310-*", "cp311-*", "cp312-*"]
+skip = ["*-musllinux_i686", "*-win32", "pp*"]
+
+[tool.cibuildwheel.linux]
+manylinux-x86_64-image = "manylinux2014"
+manylinux-aarch64-image = "manylinux2014"
+musllinux-x86_64-image = "musllinux_1_1"
+musllinux-aarch64-image = "musllinux_1_1"
+
+[tool.cibuildwheel.macos]
+archs = ["universal2"]
+
+[tool.cibuildwheel.windows]
+archs = ["AMD64", "ARM64"]
+
+[tool.cibuildwheel.test]
+test-command = "python -c 'import ddex_parser; print(ddex_parser.__version__)'"
+```
+
+### WASM Distribution
+
+Optimized for browser usage with size constraints:
+
+```toml
+# WASM optimization settings
+[profile.release]
+panic = "abort"
+lto = "fat"
+opt-level = "z"
+codegen-units = 1
+strip = true
+```
+
+## Testing Strategy
+
+### Comprehensive Test Coverage
+
+```
+test-suite/
+├── unit/                         # Unit tests per module
+├── integration/                  # End-to-end tests
+├── round-trip/                   # Parse→Build→Parse tests
+├── performance/                  # Benchmark suite
+├── security/                     # Security tests
+├── determinism/                  # Cross-platform determinism
+├── compatibility/                # Version compatibility
+├── vendor-quirks/                # Real-world edge cases
+├── nasty/                        # Attack vectors
+├── golden/                       # Expected outputs
+├── fuzzing/                      # Fuzz test corpus
+├── property/                     # Property-based tests
+└── dsp-corpus/                   # DSP acceptance tests
+```
+
+### Test Requirements
+
+- **Unit Tests**: 95%+ code coverage
+- **Integration Tests**: All major workflows
+- **Round-Trip Tests**: 100% data preservation
+- **Determinism Tests**: 100% pass rate across OS/arch
+- **Fuzz Testing**: 24-hour run without crashes + 5-minute CI smoke
+- **Performance Tests**: No regression >5%
+- **Security Tests**: All OWASP XML vulnerabilities
+- **Property Tests**: 1M+ iterations maintaining invariants
+- **DSP Corpus**: >95% acceptance rate
+- **Golden Tests**: Byte-perfect XML generation
+
+## CI/CD & Supply Chain Security
+
+### GitHub Actions Matrix
+
+```yaml
+name: Suite CI/CD
+on: [push, pull_request]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: cargo deny check
+      - run: cargo audit
+      - run: npm audit
+      - run: pip-audit
+      
+  determinism-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - run: cargo clippy -- -D warnings
+      - run: grep -r "HashMap\|HashSet" src/ && exit 1 || exit 0
+      
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        rust: [stable, beta]
+        node: [18, 20, 22]
+        python: [3.8, 3.9, 3.10, 3.11, 3.12]
+    
+  prebuild:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - run: npm run prebuildify
+      
+  wheels:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: pypa/cibuildwheel@v2
+        with:
+          package-dir: packages/ddex-parser/python
+          
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: sigstore/cosign-installer@v3
+      - run: cosign sign-blob
+```
+
+### Supply Chain Security
+
+- **cargo-deny**: Audit Rust dependencies ✅
+- **dependabot**: Automated updates
+- **SLSA**: Supply chain provenance
+- **Sigstore**: Artifact signing
+- **SBOM**: Software bill of materials
+- **License scanning**: Ensure compatibility
+- **Frozen deps**: Critical transitive deps in Cargo.lock
 
 ## Project Structure
 
@@ -428,178 +1265,43 @@ ddex-suite/
 │   │   ├── node.yml                  # Node bindings CI
 │   │   ├── python.yml                # Python bindings CI
 │   │   ├── security.yml              # Security scanning
-│   │   └── determinism.yml           # Cross-platform determinism tests
+│   │   ├── determinism.yml           # Cross-platform determinism tests
+│   │   └── determinism-audit.yml     # Scan for HashMap/HashSet
 │   └── dependabot.yml                # Dependency updates
 │
 ├── packages/
 │   ├── core/                         # Shared Rust crate
 │   │   ├── src/
-│   │   │   ├── models/               # DDEX data models (FROM parser)
+│   │   │   ├── models/               # DDEX data models
 │   │   │   │   ├── common/           # Shared types
-│   │   │   │   │   ├── identifier.rs ✅
-│   │   │   │   │   ├── localized.rs  ✅
-│   │   │   │   │   ├── territory.rs  ✅
-│   │   │   │   │   └── mod.rs        ✅
 │   │   │   │   ├── flat/             # Flattened model
-│   │   │   │   │   ├── deal.rs       ✅
-│   │   │   │   │   ├── message.rs    ✅
-│   │   │   │   │   ├── release.rs    ✅
-│   │   │   │   │   ├── track.rs      ✅
-│   │   │   │   │   └── mod.rs        ✅
 │   │   │   │   ├── graph/            # Graph model
-│   │   │   │   │   ├── deal.rs       ✅
-│   │   │   │   │   ├── header.rs     ✅
-│   │   │   │   │   ├── message.rs    ✅
-│   │   │   │   │   ├── party.rs      ✅
-│   │   │   │   │   ├── resource.rs   ✅
-│   │   │   │   │   ├── release.rs    ✅
-│   │   │   │   │   └── mod.rs        ✅
 │   │   │   │   ├── versions/         # Version variations
-│   │   │   │   │   ├── common.rs     ✅
-│   │   │   │   │   ├── ern_382.rs    ✅
-│   │   │   │   │   ├── ern_42.rs     ✅
-│   │   │   │   │   ├── ern_43.rs     ✅
-│   │   │   │   │   └── mod.rs        ✅
-│   │   │   │   ├── extensions.rs     # Extension support (NEW)
-│   │   │   │   └── mod.rs            ✅
-│   │   │   ├── error.rs              # Common error types (FROM parser)
-│   │   │   ├── ffi.rs                # FFI-friendly types (FROM parser)
+│   │   │   │   └── extensions.rs     # Extension support
+│   │   │   ├── error.rs              # Common error types
+│   │   │   ├── ffi.rs                # FFI-friendly types
 │   │   │   └── lib.rs                # Library entry
-│   │   ├── tests/
-│   │   │   ├── model_consistency.rs  # Round-trip tests
-│   │   │   └── ffi_contract.rs       # FFI boundary tests
 │   │   └── Cargo.toml
 │   │
 │   ├── ddex-parser/                  # The DDEX Parser tool
 │   │   ├── node/                     # Node.js package
-│   │   │   ├── __tests__/
-│   │   │   │   ├── basic.test.ts     ✅
-│   │   │   │   ├── parser.test.ts    ✅
-│   │   │   │   ├── streaming.test.ts
-│   │   │   │   └── roundtrip.test.ts
-│   │   │   ├── dist/                 ✅
-│   │   │   ├── src/
-│   │   │   │   ├── index.ts          ✅
-│   │   │   │   ├── parser.ts         ✅
-│   │   │   │   └── types.ts          ✅
-│   │   │   ├── binding.gyp           ✅
-│   │   │   ├── build.rs              ✅
-│   │   │   ├── package.json          ✅ (rename to @ddex-suite/parser)
-│   │   │   └── tsconfig.json         ✅
 │   │   ├── python/                   # Python package
-│   │   │   ├── ddex_parser/
-│   │   │   ├── src/
-│   │   │   │   ├── lib.rs            ✅
-│   │   │   │   └── types.rs
-│   │   │   ├── tests/
-│   │   │   ├── Cargo.toml            ✅
-│   │   │   └── pyproject.toml        ✅
 │   │   ├── wasm/                     # WASM for browsers
-│   │   │   ├── src/
-│   │   │   │   └── lib.rs            ✅
-│   │   │   ├── Cargo.toml            ✅
-│   │   │   └── build.sh
 │   │   ├── src/                      # Rust parser implementation
-│   │   │   ├── parser/
-│   │   │   │   ├── detector.rs       ✅
-│   │   │   │   ├── dom.rs            ✅
-│   │   │   │   ├── security.rs       ✅
-│   │   │   │   ├── stream.rs         ✅
-│   │   │   │   ├── version_aware.rs  ✅
-│   │   │   │   └── mod.rs            ✅
-│   │   │   ├── transform/
-│   │   │   │   ├── extract.rs
-│   │   │   │   ├── flatten.rs        ✅
-│   │   │   │   ├── graph.rs          ✅
-│   │   │   │   ├── resolve.rs        ✅
-│   │   │   │   ├── extensions.rs     # Extension handling (NEW)
-│   │   │   │   └── mod.rs            ✅
-│   │   │   ├── bin/
-│   │   │   │   └── main.rs           ✅
-│   │   │   └── lib.rs                ✅ (update imports)
-│   │   ├── tests/                    # Integration tests
-│   │   │   ├── integration_test.rs   ✅
-│   │   │   ├── vendor_quirks.rs      ✅
-│   │   │   ├── version_detection.rs  ✅
-│   │   │   ├── roundtrip_test.rs     # Round-trip tests (NEW)
-│   │   │   └── extension_test.rs     # Extension preservation (NEW)
-│   │   ├── benches/
-│   │   │   ├── memory.rs             ✅
-│   │   │   ├── parsing.rs            ✅
-│   │   │   └── streaming.rs          ✅
-│   │   ├── Cargo.toml                # Update dependencies
 │   │   └── README.md
 │   │
 │   └── ddex-builder/                 # The DDEX Builder tool
 │       ├── node/                     # Node.js package
-│       │   ├── __tests__/
-│       │   │   ├── builder.test.ts
-│       │   │   ├── determinism.test.ts
-│       │   │   └── preset.test.ts
-│       │   ├── src/
-│       │   │   ├── index.ts
-│       │   │   ├── builder.ts
-│       │   │   ├── presets.ts
-│       │   │   └── types.ts
-│       │   ├── package.json          # @ddex-suite/builder
-│       │   └── tsconfig.json
 │       ├── python/                   # Python package
-│       │   ├── ddex_builder/
-│       │   ├── src/
-│       │   │   ├── lib.rs
-│       │   │   ├── types.rs
-│       │   │   └── dataframe.rs
-│       │   ├── tests/
-│       │   └── pyproject.toml
 │       ├── wasm/                     # WASM for browsers
-│       │   ├── src/
-│       │   │   └── lib.rs
-│       │   └── Cargo.toml
 │       ├── src/                      # Rust builder implementation
 │       │   ├── builder/
-│       │   │   ├── ast.rs
-│       │   │   ├── context.rs
-│       │   │   ├── transform.rs
-│       │   │   └── mod.rs
-│       │   ├── canonical/
-│       │   │   ├── spec.rs           # DB-C14N/1.0
-│       │   │   ├── ordering.rs
-│       │   │   ├── normalization.rs
-│       │   │   └── hash.rs
+│       │   ├── canonical/            # DB-C14N/1.0
 │       │   ├── determinism/
-│       │   │   ├── config.rs
-│       │   │   ├── stable_hash.rs
-│       │   │   ├── recipes.rs
-│       │   │   └── mod.rs
 │       │   ├── generator/
-│       │   │   ├── element.rs
-│       │   │   ├── namespace.rs
-│       │   │   ├── writer.rs
-│       │   │   └── mod.rs
 │       │   ├── linker/
-│       │   │   ├── id_generator.rs
-│       │   │   ├── reference.rs
-│       │   │   └── mod.rs
 │       │   ├── presets/
-│       │   │   ├── spotify.rs
-│       │   │   ├── apple.rs
-│       │   │   └── mod.rs
-│       │   ├── preflight/
-│       │   │   ├── avs.rs
-│       │   │   ├── format.rs
-│       │   │   ├── min_requirements.rs
-│       │   │   └── mod.rs
-│       │   ├── bin/
-│       │   │   └── main.rs          # CLI entry
-│       │   └── lib.rs
-│       ├── tests/
-│       │   ├── builder_test.rs
-│       │   ├── determinism_test.rs
-│       │   └── golden/               # Golden file tests
-│       ├── benches/
-│       │   ├── generation.rs
-│       │   └── determinism.rs
-│       ├── Cargo.toml
+│       │   └── preflight/
 │       └── README.md
 │
 ├── docs/                             # Suite-wide documentation
@@ -618,68 +1320,48 @@ ddex-suite/
 │
 ├── examples/                         # Example usage
 │   ├── parse-modify-build/          # Round-trip examples
-│   │   ├── javascript/
-│   │   │   ├── basic.ts
-│   │   │   ├── catalog-migration.ts
-│   │   │   └── streaming.ts
-│   │   ├── python/
-│   │   │   ├── basic.py
-│   │   │   ├── dataframe.py
-│   │   │   └── batch.py
-│   │   └── rust/
-│   │       └── main.rs
 │   ├── parser-only/
 │   └── builder-only/
 │
 ├── test-suite/                       # Shared test fixtures
 │   ├── round-trip/                   # Round-trip test cases
 │   ├── valid/                        # Valid DDEX files
-│   │   ├── ern-4.3/                 ✅
-│   │   ├── ern-42/                  ✅
-│   │   └── ern-382/                 ✅
 │   ├── nasty/                        # Attack vectors
-│   │   ├── billion-laughs.xml       ✅
-│   │   ├── deep-nesting.xml         ✅
-│   │   └── xxe-attempts/
-│   ├── vendor-quirks/               # Real-world edge cases
-│   ├── golden/                      # Expected outputs
-│   └── README.md                    ✅
+│   ├── vendor-quirks/                # Real-world edge cases
+│   ├── golden/                       # Expected outputs
+│   └── README.md
 │
-├── scripts/                         # Build and release scripts
-│   ├── setup-monorepo.sh           # Initialize workspace
-│   ├── migrate-parser.sh           # Migrate existing code
-│   ├── extract-core.sh             # Extract shared models
-│   ├── build-all.sh                ✅
+├── scripts/                          # Build and release scripts
+│   ├── setup-monorepo.sh            # Initialize workspace
+│   ├── migrate-parser.sh            # Migrate existing code
+│   ├── extract-core.sh              # Extract shared models
+│   ├── build-all.sh
 │   ├── test-all.sh
 │   ├── release-parser.sh
 │   ├── release-builder.sh
 │   └── publish-all.sh
 │
-├── recipes/                         # Stable hash ID recipes
+├── recipes/                          # Stable hash ID recipes
 │   ├── release_v1.toml
 │   ├── resource_v1.toml
 │   └── party_v1.toml
 │
-├── supply-chain/                    # Supply chain security
-│   ├── cargo-deny.toml             ✅
+├── supply-chain/                     # Supply chain security
+│   ├── cargo-deny.toml
 │   ├── SBOM.json
 │   └── sigstore/
 │
-├── Cargo.toml                       # Root workspace config
-├── package.json                     # Root npm workspace config
-├── tsconfig.json                    # Shared TypeScript config
-├── LICENSE                          # MIT License
-└── README.md                        # Suite documentation
+├── clippy.toml                       # Determinism lint config
+├── Cargo.toml                        # Root workspace config
+├── package.json                      # Root npm workspace config
+├── tsconfig.json                     # Shared TypeScript config
+├── LICENSE                           # MIT License
+└── README.md                         # Suite documentation
 ```
-
-**Legend:**
-- ✅ = File exists in current parser repo
-- (NEW) = New file/feature for monorepo
-- (FROM parser) = Migrated from parser to core
 
 ## Implementation Roadmap
 
-### Phase 1: Foundation Refactor
+### Phase 1: Foundation Refactor (Weeks 1-2)
 
 #### 1.1 Monorepo Setup
 - [ ] Create `ddex-suite` repository
@@ -698,10 +1380,9 @@ ddex-suite/
 - [ ] Update all import paths in `packages/ddex-parser`
 - [ ] Add extension support to models
 - [ ] Implement `toBuildRequest()` method
-- [ ] Verify all 8 version tests pass
-- [ ] Verify all 20 Node.js tests pass
+- [ ] Verify all tests pass
 
-### Phase 2: Complete DDEX Parser v1.0
+### Phase 2: Complete DDEX Parser v1.0 (Weeks 3-4)
 
 #### 2.1 Enhanced Parser Features
 - [ ] Add `includeRawExtensions` option
@@ -739,7 +1420,7 @@ ddex-suite/
 - [ ] Performance optimization
 - [ ] Tag parser v1.0.0
 
-### Phase 3: DDEX Builder Development
+### Phase 3: DDEX Builder Development (Weeks 5-8)
 
 #### 3.1 Builder Foundation
 - [ ] Initialize `packages/ddex-builder`
@@ -781,7 +1462,7 @@ ddex-suite/
 - [ ] Complete documentation
 - [ ] Tag builder v1.0.0
 
-### Phase 4: Suite Integration & Launch
+### Phase 4: Suite Integration & Launch (Weeks 9-10)
 
 #### 4.1 Integration Testing
 - [ ] End-to-end round-trip tests
@@ -798,76 +1479,25 @@ ddex-suite/
 - [ ] Setup community channels
 - [ ] Official v1.0.0 release
 
-## Testing Strategy
-
-### Comprehensive Test Coverage
-
-```
-test-suite/
-├── unit/                         # Unit tests per module
-├── integration/                  # End-to-end tests
-├── round-trip/                   # Parse→Build→Parse tests
-├── performance/                  # Benchmark suite
-├── security/                     # Security tests
-├── determinism/                  # Cross-platform determinism
-├── compatibility/                # Version compatibility
-├── vendor-quirks/                # Real-world edge cases
-├── nasty/                        # Attack vectors
-├── golden/                       # Expected outputs
-└── fuzzing/                      # Fuzz test corpus
-```
-
-### Test Requirements
-
-- **Unit Tests**: 95%+ code coverage
-- **Integration Tests**: All major workflows
-- **Round-Trip Tests**: 100% data preservation
-- **Determinism Tests**: 100% pass rate across OS/arch
-- **Fuzz Testing**: 24-hour run without crashes
-- **Performance Tests**: No regression >5%
-- **Security Tests**: All OWASP XML vulnerabilities
-
-## CI/CD & Supply Chain Security
-
-### GitHub Actions Matrix
-
-```yaml
-name: Suite CI/CD
-on: [push, pull_request]
-
-jobs:
-  test:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        rust: [stable, beta]
-        node: [18, 20, 22]
-        python: [3.8, 3.9, 3.10, 3.11, 3.12]
-```
-
-### Supply Chain Security
-
-- **cargo-deny**: Audit Rust dependencies ✅
-- **dependabot**: Automated updates
-- **SLSA**: Supply chain provenance
-- **Sigstore**: Artifact signing
-- **SBOM**: Software bill of materials
-
 ## Success Metrics
 
 ### Technical KPIs
 - ✅ Parse 95% of real-world DDEX files
 - ✅ Perfect round-trip fidelity
-- ✅ Deterministic XML generation
+- ✅ Deterministic XML generation (DB-C14N/1.0 compliance)
 - ✅ <50ms parsing for typical releases
 - ✅ <15ms generation for typical releases
 - ✅ Memory bounded streaming
 - ✅ Zero security vulnerabilities
+- ✅ WASM bundle <500KB
+- ✅ 100% determinism across CI matrix
 
 ### Adoption KPIs
 - ✅ 1,000+ npm downloads/month
 - ✅ 500+ PyPI downloads/month
 - ✅ 10+ companies using in production
+- ✅ 5+ major labels or distributors
+- ✅ 10+ DSPs using for normalization
 - ✅ 500+ GitHub stars
 - ✅ Integration with DDEX Workbench
 
@@ -913,10 +1543,11 @@ jobs:
 
 ---
 
-**Version**: 1.0.0  
+**Version**: 2.0.0  
 **Last Updated**: September 7, 2025  
 **Status**: Ready to Execute - Phase 1 Starting  
 **Repository**: github.com/daddykev/ddex-suite (to be created)  
-**Parser Target**: v1.0.0 in 10 weeks  
-**Builder Target**: v1.0.0 in 20 weeks  
-**Suite Target**: v1.0.0 in 24 weeks
+**Parser Target**: v1.0.0 in 4 weeks  
+**Builder Target**: v1.0.0 in 8 weeks  
+**Suite Target**: v1.0.0 in 10 weeks  
+**License**: MIT
