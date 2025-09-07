@@ -8,7 +8,7 @@
 
 > High-performance DDEX XML builder and parser with native bindings for TypeScript/JavaScript and Python. Built on a single Rust core for consistent behavior across all platforms.
 
-DDEX Suite brings together powerful tools for music industry data exchange, combining the robust **DDEX Parser** for reading and transforming DDEX messages with the **DDEX Builder** for deterministic XML generation, creating a complete round-trip solution for DDEX processing.
+DDEX Suite brings together powerful tools for music industry data exchange, combining the robust `ddex-parser` library for reading and transforming DDEX messages with the `ddex-builder` library for deterministic XML generation, creating a complete round-trip solution for DDEX processing.
 
 ## 🎯 Why DDEX Suite?
 
