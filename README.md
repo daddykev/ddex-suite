@@ -12,7 +12,7 @@ DDEX Suite brings together powerful tools for music industry data exchange, comb
 
 ## 🎯 Why DDEX Suite?
 
-Working with DDEX XML shouldn't feel like archaeology. This parser transforms complex DDEX messages into clean, strongly-typed data structures that are as easy to work with as JSON.
+Working with DDEX XML shouldn't feel like archaeology. The parser transforms complex DDEX messages into clean, strongly-typed data structures that are as easy to work with as JSON.
 
 ### Core Value Proposition
 - **Single Rust Core**: One implementation to rule them all - consistent behavior across JavaScript, Python, and Rust
@@ -22,9 +22,9 @@ Working with DDEX XML shouldn't feel like archaeology. This parser transforms co
 
 ## 👨🏻‍💻 Developer Statement
 
-I'm building **DDEX Suite** as a rigorous, end-to-end learning project to deepen my Rust skills while unifying my JavaScript and Python experience into a single, production-grade library. The intent is to ship a **single Rust core** that parses complex DDEX XML into clean, strongly-typed models, then expose it through **napi-rs** for Node/TypeScript and **PyO3** for Python—demonstrating cross-language API design, FFI ergonomics, and disciplined performance engineering. The project is deliberately "industry-shaped": it targets real music-metadata workloads, implements a dual **graph + flattened** data model for developer UX, and bakes in XML security (XXE/billion-laughs protections), reference resolution, streaming for large files, and reproducible benchmarks across platforms.
+I'm building **DDEX Suite** as a rigorous, end-to-end learning project to deepen my Rust skills while unifying my JavaScript and Python experience into a production-grade toolkit for music metadata. The intent is to ship a **single Rust core** that serves both a high-performance, security-hardened parser and a byte-perfect, deterministic builder. This core is then exposed through **napi-rs** for Node/TypeScript and **PyO3** for Python, showcasing cross-language API design and performance engineering. The project is deliberately "industry-shaped," tackling the complementary challenges of transforming complex DDEX XML into clean models (parsing) and generating canonical, reproducible XML from those models (building), all while implementing features like streaming, a dual graph/flattened data model for developer UX, and disciplined architecture (IndexMap everywhere, DB-C14N).
 
-Beyond parsing, this is a showcase of **software craftsmanship and platform thinking**: consistent APIs across ecosystems, prebuilt binaries and wheels for painless install, a hardened CI/CD pipeline, supply-chain safety (SBOM, cargo-deny, signing), and a comprehensive test suite spanning fuzzing, performance, and compatibility. Paired with my validator work (DDEX Workbench), DDEX Parser rounds out a credible processing pipeline—**validator for correctness, parser for structure and transformation**—illustrating how I design interoperable components that are fast, safe, and easy to adopt in real systems.
+Beyond the core implementation, this is a showcase of **software craftsmanship and platform thinking**. The suite is designed to provide consistent APIs, painless installation via prebuilt binaries, a hardened CI/CD pipeline, and robust supply-chain safety (SBOM, cargo-deny). Every feature—from the parser's XXE protection to the builder's versioned presets—reflects production wisdom. Paired with my validator work (DDEX Workbench), DDEX Suite delivers a credible, end-to-end processing pipeline: **validator for correctness, parser for understanding, and builder for creating**. It illustrates how complementary tools with a shared foundation can deliver more value than monolithic solutions, crafting tools that respect both machines and humans.
 
 ## 🚧 Development Status
 
