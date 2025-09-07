@@ -415,10 +415,10 @@ class DDEXBuilder:
     def apply_preset(self, preset: str, lock: bool = False) -> None: ...
 ```
 
-## Complete Project Structure
+## Project Structure
 
 ```
-ddex-suite/ (MONOREPO ROOT)
+ddex-suite/
 ├── .github/
 │   ├── workflows/
 │   │   ├── ci.yml                    # Unified CI for monorepo
@@ -679,9 +679,9 @@ ddex-suite/ (MONOREPO ROOT)
 
 ## Implementation Roadmap
 
-### Phase 1: Foundation Refactor (Weeks 1-2) - IMMEDIATE
+### Phase 1: Foundation Refactor
 
-#### Week 1: Monorepo Setup
+#### 1.1 Monorepo Setup
 - [ ] Create `ddex-suite` repository
 - [ ] Setup root `Cargo.toml` workspace
 - [ ] Setup root `package.json` for npm workspaces
@@ -690,7 +690,7 @@ ddex-suite/ (MONOREPO ROOT)
 - [ ] Setup cross-package testing infrastructure
 - [ ] Create migration scripts
 
-#### Week 2: Migration & Core Extraction
+#### 1.2 Migration & Core Extraction
 - [ ] Run migration script to move all ✅ files
 - [ ] Extract models to `packages/core/src/models/`
 - [ ] Extract errors to `packages/core/src/error.rs`
@@ -701,9 +701,9 @@ ddex-suite/ (MONOREPO ROOT)
 - [ ] Verify all 8 version tests pass
 - [ ] Verify all 20 Node.js tests pass
 
-### Phase 2: Complete DDEX Parser v1.0 (Weeks 3-10)
+### Phase 2: Complete DDEX Parser v1.0
 
-#### Weeks 3-4: Enhanced Parser Features
+#### 2.1 Enhanced Parser Features
 - [ ] Add `includeRawExtensions` option
 - [ ] Add `includeComments` option
 - [ ] Implement extension preservation
@@ -712,7 +712,7 @@ ddex-suite/ (MONOREPO ROOT)
 - [ ] Test round-trip fidelity
 - [ ] Add 10+ round-trip tests
 
-#### Weeks 5-6: JavaScript/TypeScript Bindings
+#### 2.2 JavaScript/TypeScript Bindings
 - [ ] Complete WASM browser build (<500KB)
 - [ ] Optimize with wasm-opt
 - [ ] Unify npm package (native + WASM)
@@ -721,7 +721,7 @@ ddex-suite/ (MONOREPO ROOT)
 - [ ] Test in all major browsers
 - [ ] Publish to npm
 
-#### Weeks 7-8: Python Bindings
+#### 2.3 Python Bindings
 - [ ] Complete PyO3/maturin setup
 - [ ] Configure cibuildwheel for all platforms
 - [ ] Implement Python API
@@ -730,7 +730,7 @@ ddex-suite/ (MONOREPO ROOT)
 - [ ] Test on Linux/macOS/Windows
 - [ ] Publish to PyPI as `ddex-parser`
 
-#### Weeks 9-10: CLI & Polish
+#### 2.4 CLI & Polish
 - [ ] Build comprehensive CLI with clap
 - [ ] Add parse/extract/stream commands
 - [ ] Create shell completions
@@ -739,9 +739,9 @@ ddex-suite/ (MONOREPO ROOT)
 - [ ] Performance optimization
 - [ ] Tag parser v1.0.0
 
-### Phase 3: DDEX Builder Development (Weeks 11-20)
+### Phase 3: DDEX Builder Development
 
-#### Weeks 11-12: Builder Foundation
+#### 3.1 Builder Foundation
 - [ ] Initialize `packages/ddex-builder`
 - [ ] Import `packages/core` as dependency
 - [ ] Implement DB-C14N/1.0 spec
@@ -749,7 +749,7 @@ ddex-suite/ (MONOREPO ROOT)
 - [ ] Implement determinism engine with IndexMap
 - [ ] Add determinism lint (deny HashMap/HashSet)
 
-#### Weeks 13-14: Core Builder Features
+#### 3.2 Core Builder Features
 - [ ] Implement Flat→AST→XML pipeline
 - [ ] Build reference linker
 - [ ] Add stable-hash ID generation
@@ -757,7 +757,7 @@ ddex-suite/ (MONOREPO ROOT)
 - [ ] Support ERN 4.3 AudioAlbum profile
 - [ ] Create golden file tests
 
-#### Weeks 15-16: Builder Bindings
+#### 3.3 Builder Bindings
 - [ ] Setup napi-rs for Node.js
 - [ ] Setup PyO3 for Python
 - [ ] Setup wasm-bindgen for browser
@@ -765,7 +765,7 @@ ddex-suite/ (MONOREPO ROOT)
 - [ ] Implement DataFrame→DDEX for Python
 - [ ] Test all bindings
 
-#### Weeks 17-18: Advanced Builder Features
+#### 3.4 Advanced Builder Features
 - [ ] Add partner presets (Spotify, Apple, etc.)
 - [ ] Implement streaming writer
 - [ ] Add semantic diff engine
@@ -773,7 +773,7 @@ ddex-suite/ (MONOREPO ROOT)
 - [ ] Add JSON Schema generation
 - [ ] Multi-version support (3.8.2, 4.2, 4.3)
 
-#### Weeks 19-20: Builder Polish
+#### 3.5 Builder Polish
 - [ ] Complete CLI with all commands
 - [ ] Add `--verify-determinism` flag
 - [ ] Performance optimization
@@ -781,16 +781,16 @@ ddex-suite/ (MONOREPO ROOT)
 - [ ] Complete documentation
 - [ ] Tag builder v1.0.0
 
-### Phase 4: Suite Integration & Launch (Weeks 21-24)
+### Phase 4: Suite Integration & Launch
 
-#### Weeks 21-22: Integration Testing
+#### 4.1 Integration Testing
 - [ ] End-to-end round-trip tests
 - [ ] Cross-package integration tests
 - [ ] Performance benchmarks
 - [ ] Memory leak testing
 - [ ] Fuzz testing (24-hour run)
 
-#### Weeks 23-24: Documentation & Launch
+#### 4.2 Documentation & Launch
 - [ ] Create unified documentation site
 - [ ] Build interactive tutorials
 - [ ] Record demo videos
