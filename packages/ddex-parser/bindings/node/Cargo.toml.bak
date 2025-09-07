@@ -1,0 +1,28 @@
+# bindings/node/Cargo.toml
+[package]
+name = "ddex-parser-node"
+version = "0.1.0"
+edition = "2021"
+authors = ["DDEX Parser Contributors"]
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# ddex-parser-core = { path = "../../core" }  # Comment out for now
+napi = { version = "2.16", default-features = false, features = ["napi8", "async", "serde-json"] }
+napi-derive = "2.16"
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { version = "1.35", features = ["rt", "rt-multi-thread", "sync"] }
+chrono = { workspace = true }
+
+[build-dependencies]
+napi-build = "2.1"
+
+[profile.release]
+lto = true
+opt-level = 3
+strip = true

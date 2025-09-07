@@ -1,0 +1,44 @@
+[package]
+name = "ddex-parser-node"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# Will add napi-rs dependencies when implementing
+EOF
+
+# Create Python bindings Cargo.toml
+mkdir -p bindings/python/src
+cat > bindings/python/Cargo.toml << 'EOF'
+[package]
+name = "ddex-parser-python"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "ddex_parser"
+crate-type = ["cdylib"]
+
+[dependencies]
+# Will add pyo3 dependencies when implementing
+EOF
+
+# Create WASM bindings Cargo.toml
+mkdir -p bindings/wasm/src
+cat > bindings/wasm/Cargo.toml << 'EOF'
+[package]
+name = "ddex-parser-wasm"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# Will add wasm-bindgen dependencies when implementing

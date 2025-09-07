@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/42"
+                       MessageSchemaVersionId="ern/42">
+  <MessageHeader>
+    <MessageThreadId>Thread_42_001</MessageThreadId>
+    <MessageId>MSG_42_001</MessageId>
+    <MessageSender>
+      <PartyName>
+        <FullName>Test Label 4.2</FullName>
+      </PartyName>
+    </MessageSender>
+    <MessageRecipient>
+      <PartyName>
+        <FullName>Test DSP</FullName>
+      </PartyName>
+    </MessageRecipient>
+    <MessageCreatedDateTime>2025-01-01T12:00:00Z</MessageCreatedDateTime>
+  </MessageHeader>
+  <ReleaseList>
+    <Release>
+      <ReleaseReference>R1</ReleaseReference>
+      <ReleaseId>
+        <GRid>A1-B2C3D-4E5F6G-H</GRid>
+      </ReleaseId>
+      <ReferenceTitle>
+        <TitleText>Test Album 4.2</TitleText>
+      </ReferenceTitle>
+    </Release>
+  </ReleaseList>
+</ern:NewReleaseMessage>

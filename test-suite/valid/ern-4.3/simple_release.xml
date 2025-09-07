@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43" MessageSchemaVersionId="ern/43" LanguageAndScriptCode="en">
+  <MessageHeader>
+    <MessageThreadId>TEST_MSG_001</MessageThreadId>
+    <MessageId>MSG_TV7HAUF8KQ</MessageId>
+    <MessageSender>
+      <PartyId>PADPIDA2014120301</PartyId>
+      <PartyName>Test Sender</PartyName>
+    </MessageSender>
+    <MessageRecipient>
+      <PartyId>PADPIDA2014120302</PartyId>
+      <PartyName>Test Recipient</PartyName>
+    </MessageRecipient>
+    <MessageCreatedDateTime>2025-09-06T12:14:19.862720</MessageCreatedDateTime>
+  </MessageHeader>
+  <ReleaseList>
+    <Release>
+      <ReleaseReference>R1</ReleaseReference>
+      <ReleaseId>
+        <GRid>A1-TEST-GRID-0001</GRid>
+      </ReleaseId>
+      <ReferenceTitle>
+        <TitleText>Test Release Title</TitleText>
+      </ReferenceTitle>
+    </Release>
+  </ReleaseList>
+  <ResourceList>
+    <SoundRecording>
+      <ResourceReference>A1</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USTEST0000001</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Test Track Title</TitleText>
+      </ReferenceTitle>
+    </SoundRecording>
+  </ResourceList>
+  <DealList>
+    <ReleaseDeal>
+      <DealReleaseReference>R1</DealReleaseReference>
+      <Deal>
+        <TerritoryCode>Worldwide</TerritoryCode>
+        <StartDate>2025-09-06</StartDate>
+      </Deal>
+    </ReleaseDeal>
+  </DealList>
+</ern:NewReleaseMessage>

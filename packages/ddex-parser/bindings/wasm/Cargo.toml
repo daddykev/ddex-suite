@@ -1,0 +1,13 @@
+[package]
+name = "ddex-parser-wasm"
+version = "0.1.0"
+edition = "2021"
+authors = ["DDEX Parser Contributors"]
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# WASM dependencies will be added in Phase 3

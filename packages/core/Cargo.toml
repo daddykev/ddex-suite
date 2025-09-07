@@ -1,0 +1,22 @@
+[package]
+name = "ddex-core"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["Kevin Marques Moo"]
+repository = "https://github.com/daddykev/ddex-suite"
+description = "Shared DDEX data models and utilities"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+thiserror = "1.0"
+ts-rs = { version = "7.1", optional = true }
+
+[features]
+default = []
+extensions = []
+builder-support = []
+ts-rs = ["dep:ts-rs"]
+typescript = ["ts-rs"]

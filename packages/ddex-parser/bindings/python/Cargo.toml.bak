@@ -1,0 +1,14 @@
+[package]
+name = "ddex-parser-python"
+version = "0.1.0"
+edition = "2021"
+authors = ["DDEX Parser Contributors"]
+license = "MIT"
+publish = false
+
+[lib]
+name = "ddex_parser"
+crate-type = ["cdylib"]
+
+[dependencies]
+# Python bindings dependencies will be added in Phase 4

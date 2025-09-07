@@ -1,0 +1,16 @@
+name: Python CI
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Placeholder
+      run: echo "Python bindings not yet implemented - Phase 4"

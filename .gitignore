@@ -1,0 +1,271 @@
+# =========================
+# Rust / Cargo
+# =========================
+# Compiled files and build artifacts
+target/
+**/*.rs.bk
+*.pdb
+Cargo.lock
+
+# Debug artifacts
+*.dSYM/
+*.so
+*.dylib
+*.dll
+*.a
+*.lib
+*.exe
+*.exp
+
+# Profiling and performance
+perf.data
+perf.data.old
+flamegraph.svg
+*.profdata
+*.profraw
+
+# =========================
+# Node.js / JavaScript
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.npm
+.yarn-integrity
+*.tsbuildinfo
+.eslintcache
+
+# Node.js native addons build
+build/
+prebuilds/
+bindings/node/build/
+bindings/node/prebuilds/
+*.node
+
+# TypeScript
+*.js.map
+dist/
+bindings/node/js/dist/
+bindings/node/js/*.js
+bindings/node/js/*.d.ts
+!bindings/node/js/index.ts
+!bindings/node/js/parser.ts
+!bindings/node/js/types.ts
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Python virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# Python tools
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+# Python C extensions
+*.pyd
+*.pyo
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints
+
+# =========================
+# WASM
+# =========================
+bindings/wasm/pkg/
+bindings/wasm/target/
+*.wasm
+*.wasm.map
+wasm-pack.log
+
+# =========================
+# Testing & Benchmarks
+# =========================
+# Test outputs
+test-results/
+test-output/
+*.log
+*.tmp
+coverage/
+lcov.info
+*.lcov
+
+# Benchmark results (keep only committed ones)
+benchmarks/results/*.json
+benchmarks/results/*.html
+!benchmarks/results/baseline.json
+
+# Large test files
+test-suite/edge-cases/large/*.xml
+!test-suite/edge-cases/large/.gitkeep
+
+# Generated test files
+test-suite/generated/
+*.generated.xml
+
+# =========================
+# IDE & Editors
+# =========================
+# Visual Studio Code
+.vscode/
+*.code-workspace
+.history/
+
+# IntelliJ IDEA / JetBrains
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+.*.swp
+.*.swo
+Session.vim
+.netrwhist
+tags
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# =========================
+# Operating System
+# =========================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# =========================
+# Security & Supply Chain
+# =========================
+# Private keys and certificates
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+.env
+.env.local
+.env.*.local
+secrets/
+
+# Signing artifacts
+*.sig
+*.asc
+sigstore/
+
+# SBOM (regenerated each build)
+supply-chain/SBOM.json
+!supply-chain/SBOM.json.example
+
+# =========================
+# Documentation
+# =========================
+# Generated documentation
+docs/_build/
+docs/api/generated/
+site/
+
+# =========================
+# Miscellaneous
+# =========================
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Temporary files
+tmp/
+temp/
+*.tm

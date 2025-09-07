@@ -1,0 +1,97 @@
+# packages/ddex-parser/Cargo.toml (using workspace deps)
+[package]
+name = "ddex-parser"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "High-performance DDEX XML parser"
+keywords = ["ddex", "xml", "parser", "music", "metadata"]
+categories = ["parser-implementations", "multimedia::audio"]
+
+[dependencies]
+# Core dependency
+ddex-core = { path = "../core" }
+
+# Use workspace dependencies
+quick-xml = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
+tracing = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+
+# Parser-specific dependencies not in workspace
+memchr = "2.7"
+ahash = "0.8"
+parking_lot = "0.12"
+bytes = "1.5"
+
+# Optional workspace dependencies
+tokio = { workspace = true, optional = true }
+futures = { workspace = true, optional = true }
+ts-rs = { workspace = true, optional = true }
+
+[dev-dependencies]
+criterion = { workspace = true, features = ["html_reports"] }
+tempfile = { workspace = true }
+pretty_assertions = { workspace = true }
+proptest = { workspace = true }
+test-case = { workspace = true }
+insta = { workspace = true }
+
+[features]
+default = ["async"]
+async = ["tokio", "futures"]
+typescript = ["ts-rs", "ddex-core/ts-rs"]  # Also enable it in core
+simd = []
+bench = []
+
+# Binaries
+[[bin]]
+name = "ddex-parser"
+path = "src/main.rs"
+
+[[bin]]
+name = "generate-bench-report"
+path = "src/bin/bench_report.rs"
+required-features = ["async"]
+
+# Benchmarks
+[[bench]]
+name = "parsing"
+harness = false
+
+[[bench]]
+name = "streaming"
+harness = false
+
+[[bench]]
+name = "memory"
+harness = false
+
+# Profile configurations for optimized builds
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
+
+[profile.bench]
+inherits = "release"
+
+# Development profile with some optimizations for faster tests
+[profile.dev-opt]
+inherits = "dev"
+opt-level = 1
+
+# Size-optimized profile for WASM
+[profile.wasm]
+inherits = "release"
+opt-level = "z"
+lto = "fat"
+strip = true
+panic = "abort"
