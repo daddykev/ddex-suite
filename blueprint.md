@@ -1,8 +1,8 @@
-# DDEX Suite - Comprehensive Blueprint (Monorepo Edition)
+# DDEX Suite - Blueprint
 
 ## Project Overview
 
-DDEX Suite is an open-source, high-performance toolkit for DDEX metadata processing, consisting of two complementary tools built on a **shared Rust core** with native bindings for TypeScript/JavaScript and Python. The suite provides a complete "Parse → Modify → Build" workflow for programmatic DDEX manipulation.
+DDEX Suite is an open-source, high-performance toolkit for DDEX metadata processing, consisting of two complementary tools (`ddex-builder` and `ddex-parser`) built on a **shared Rust core** with native bindings for TypeScript/JavaScript and Python. The suite provides a complete "Parse → Modify → Build" workflow for programmatic DDEX manipulation.
 
 ### Suite Components
 
@@ -35,61 +35,61 @@ Deliver a unified suite of DDEX tools through a monorepo architecture, providing
 ┌─────────────────────────────────────────────────────────┐
 │                 DDEX Suite Monorepo                     │
 ├─────────────────────────────────────────────────────────┤
-│                     Applications                         │
-├──────────────┬──────────────┬──────────────────────────┤
-│  JavaScript  │    Python    │           Rust           │
-│   (npm)      │   (PyPI)     │       (crates.io)        │
-├──────────────┴──────────────┴──────────────────────────┤
+│                     Applications                        │
+├──────────────┬──────────────┬───────────────────────────┤
+│  JavaScript  │    Python    │            Rust           │
+│   (npm)      │   (PyPI)     │        (crates.io)        │
+├──────────────┴──────────────┴───────────────────────────┤
 │                   Language Bindings                     │
 │  ┌────────────────────────────────────────────────────┐ │
 │  │              packages/ddex-parser                  │ │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐       │ │
-│  │  │ napi-rs  │  │   PyO3   │  │   WASM   │       │ │
-│  │  │  (Node)  │  │ (Python) │  │ (Browser)│       │ │
-│  │  └──────────┘  └──────────┘  └──────────┘       │ │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐          │ │
+│  │  │ napi-rs  │  │   PyO3   │  │   WASM   │          │ │
+│  │  │  (Node)  │  │ (Python) │  │ (Browser)│          │ │
+│  │  └──────────┘  └──────────┘  └──────────┘          │ │
 │  └────────────────────────────────────────────────────┘ │
 │  ┌────────────────────────────────────────────────────┐ │
 │  │              packages/ddex-builder                 │ │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐       │ │
-│  │  │ napi-rs  │  │   PyO3   │  │   WASM   │       │ │
-│  │  │  (Node)  │  │ (Python) │  │ (Browser)│       │ │
-│  │  └──────────┘  └──────────┘  └──────────┘       │ │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐          │ │
+│  │  │ napi-rs  │  │   PyO3   │  │   WASM   │          │ │
+│  │  │  (Node)  │  │ (Python) │  │ (Browser)│          │ │
+│  │  └──────────┘  └──────────┘  └──────────┘          │ │
 │  └────────────────────────────────────────────────────┘ │
 ├─────────────────────────────────────────────────────────┤
-│              Rust Implementation Layer                   │
+│              Rust Implementation Layer                  │
 │  ┌────────────────────────────────────────────────────┐ │
 │  │            packages/ddex-parser (crate)            │ │
-│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐  │ │
-│  │  │   Parser   │  │ Transform  │  │  Security  │  │ │
-│  │  │  (XML→AST) │  │(AST→Model) │  │   (XXE)    │  │ │
-│  │  └────────────┘  └────────────┘  └────────────┘  │ │
-│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐  │ │
-│  │  │ References │  │  Streaming │  │ Extensions │  │ │
-│  │  │ (Resolver) │  │   (Large)  │  │(Passthrough)│  │ │
-│  │  └────────────┘  └────────────┘  └────────────┘  │ │
+│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐    │ │
+│  │  │   Parser   │  │ Transform  │  │  Security  │    │ │
+│  │  │  (XML→AST) │  │(AST→Model) │  │   (XXE)    │    │ │
+│  │  └────────────┘  └────────────┘  └────────────┘    │ │
+│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐    │ │
+│  │  │ References │  │  Streaming │  │ Extensions │    │ │
+│  │  │ (Resolver) │  │   (Large)  │  │(Passthrough)│   │ │
+│  │  └────────────┘  └────────────┘  └────────────┘    │ │
 │  └────────────────────────────────────────────────────┘ │
 │  ┌────────────────────────────────────────────────────┐ │
 │  │           packages/ddex-builder (crate)            │ │
-│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐  │ │
-│  │  │  Builder   │  │   Linker   │  │ Generator  │  │ │
-│  │  │ (Flat→AST) │  │ (Refs/IDs) │  │ (AST→XML)  │  │ │
-│  │  └────────────┘  └────────────┘  └────────────┘  │ │
-│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐  │ │
-│  │  │ Preflight  │  │Determinism │  │  DB-C14N   │  │ │
-│  │  │(Guardrails)│  │  Engine    │  │   v1.0     │  │ │
-│  │  └────────────┘  └────────────┘  └────────────┘  │ │
+│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐    │ │
+│  │  │  Builder   │  │   Linker   │  │ Generator  │    │ │
+│  │  │ (Flat→AST) │  │ (Refs/IDs) │  │ (AST→XML)  │    │ │
+│  │  └────────────┘  └────────────┘  └────────────┘    │ │
+│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐    │ │
+│  │  │ Preflight  │  │Determinism │  │  DB-C14N   │    │ │
+│  │  │(Guardrails)│  │  Engine    │  │   v1.0     │    │ │
+│  │  └────────────┘  └────────────┘  └────────────┘    │ │
 │  └────────────────────────────────────────────────────┘ │
 │  ┌────────────────────────────────────────────────────┐ │
 │  │              packages/core (crate)                 │ │
 │  │           Shared Foundation Library                │ │
-│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐  │ │
-│  │  │   Models   │  │   Errors   │  │    FFI     │  │ │
-│  │  │   (Types)  │  │  (Common)  │  │   Types    │  │ │
-│  │  └────────────┘  └────────────┘  └────────────┘  │ │
-│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐  │ │
-│  │  │Graph Model │  │Flat Model  │  │ Extensions │  │ │
-│  │  │ (Faithful) │  │    (DX)    │  │  Support   │  │ │
-│  │  └────────────┘  └────────────┘  └────────────┘  │ │
+│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐    │ │
+│  │  │   Models   │  │   Errors   │  │    FFI     │    │ │
+│  │  │   (Types)  │  │  (Common)  │  │   Types    │    │ │
+│  │  └────────────┘  └────────────┘  └────────────┘    │ │
+│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐    │ │
+│  │  │Graph Model │  │Flat Model  │  │ Extensions │    │ │
+│  │  │ (Faithful) │  │    (DX)    │  │  Support   │    │ │
+│  │  └────────────┘  └────────────┘  └────────────┘    │ │
 │  └────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────┘
 ```
