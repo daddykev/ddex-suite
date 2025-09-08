@@ -1395,9 +1395,9 @@ ddex-suite/
 
 #### 2.2 JavaScript/TypeScript Bindings
 - [x] Complete WASM browser build (<500KB)
-- [x] Optimize with wasm-opt
+- [x] Optimize with wasm-opt  
 - [x] Unify npm package (native + WASM)
-- [ ] Publish to npm
+- [x] Publish to npm ✅ (v0.1.0 published!)
 
 #### 2.3 Python Bindings
 - [ ] Complete PyO3/maturin setup
@@ -1415,7 +1415,6 @@ ddex-suite/
 - [ ] Complete documentation
 - [ ] Security audit
 - [ ] Performance optimization
-- [ ] Tag parser v1.0.0
 
 ### Phase 3: DDEX Builder Development
 

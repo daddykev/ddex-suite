@@ -5,7 +5,7 @@ members = [
     "packages/ddex-parser",
     "packages/ddex-parser/bindings/node",
     "packages/ddex-parser/bindings/python",
-    "packages/ddex-parser/bindings/wasm",
+    # "packages/ddex-parser/bindings/wasm",  # Comment this out for now
 ]
 resolver = "2"
 

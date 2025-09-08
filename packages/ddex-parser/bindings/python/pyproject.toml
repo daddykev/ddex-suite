@@ -1,3 +1,4 @@
+# packages/ddex-parser/bindings/python/pyproject.toml
 [build-system]
 requires = ["maturin>=1.4,<2.0"]
 build-backend = "maturin"
@@ -5,12 +6,12 @@ build-backend = "maturin"
 [project]
 name = "ddex-parser"
 version = "0.1.0"
-description = "High-performance DDEX XML parser"
+description = "High-performance DDEX XML parser for Python"
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
-    {name = "DDEX Parser Contributors"},
+    {name = "Kevin Marques Moo", email = "daddykev@gmail.com"},
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -26,6 +27,10 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Multimedia :: Sound/Audio",
 ]
+keywords = ["ddex", "xml", "parser", "music", "metadata", "ern"]
+homepage = "https://github.com/daddykev/ddex-suite"
+repository = "https://github.com/daddykev/ddex-suite"
+documentation = "https://github.com/daddykev/ddex-suite/tree/main/packages/ddex-parser"
 
 [project.optional-dependencies]
 dev = [
@@ -46,9 +51,30 @@ features = ["pyo3/extension-module"]
 python-source = "python"
 module-name = "ddex_parser._internal"
 
+# cibuildwheel configuration
+[tool.cibuildwheel]
+build = ["cp38-*", "cp39-*", "cp310-*", "cp311-*", "cp312-*"]
+skip = ["*-musllinux_i686", "*-win32", "pp*"]
+test-requires = ["pytest>=7.0", "pytest-asyncio>=0.21"]
+test-command = "pytest {project}/tests -v"
+
+[tool.cibuildwheel.linux]
+manylinux-x86_64-image = "manylinux2014"
+manylinux-aarch64-image = "manylinux2014"
+musllinux-x86_64-image = "musllinux_1_1"
+musllinux-aarch64-image = "musllinux_1_1"
+before-build = "pip install -U pip setuptools wheel"
+
+[tool.cibuildwheel.macos]
+archs = ["x86_64", "arm64", "universal2"]
+
+[tool.cibuildwheel.windows]
+archs = ["AMD64", "ARM64"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+asyncio_mode = "auto"
 
 [tool.black]
 line-length = 100
@@ -58,3 +84,8 @@ target-version = ["py38", "py39", "py310", "py311", "py312"]
 line-length = 100
 target-version = "py38"
 select = ["E", "F", "I", "N", "W"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
