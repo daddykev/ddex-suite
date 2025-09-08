@@ -1,3 +1,4 @@
+# packages/ddex-parser/bindings/wasm/Cargo.toml
 [package]
 name = "ddex-parser-wasm"
 version = "0.1.0"
@@ -10,4 +11,19 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-# WASM dependencies will be added in Phase 3
+ddex-parser-core = { path = "../../", features = ["wasm"] }
+ddex-core = { path = "../../../core", features = ["typescript"] }
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = [
+    "ReadableStream",
+    "WritableStream", 
+    "TransformStream",
+    "console"
+]}
+serde-wasm-bindgen = "0.6"
+console_error_panic_hook = "0.1"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"

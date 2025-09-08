@@ -1,0 +1,50 @@
+# .github/workflows/test-browsers.yml
+name: Browser Tests
+
+on:
+  push:
+    paths:
+      - 'packages/ddex-parser/**'
+  pull_request:
+
+jobs:
+  test-browsers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+          
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+        
+      - name: Install wasm-opt
+        run: npm install -g wasm-opt
+        
+      - name: Build WASM
+        run: |
+          cd packages/ddex-parser/bindings/wasm
+          ./build.sh
+          
+      - name: Run browser tests
+        run: |
+          cd packages/ddex-parser/bindings/node
+          npm install
+          npm run test:browser
+          
+      - name: Check WASM size
+        run: |
+          SIZE=$(stat -c%s packages/ddex-parser/bindings/wasm/pkg/*_bg.wasm)
+          echo "WASM size: $((SIZE / 1024))KB"
+          if [ $SIZE -gt 512000 ]; then
+            echo "WASM exceeds 500KB limit!"
+            exit 1
+          fi

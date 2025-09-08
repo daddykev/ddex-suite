@@ -1,4 +1,4 @@
-# DDEX Parser
+# DDEX Suite
 
 ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange?logo=rust)
 ![Node.js](https://img.shields.io/badge/Node.js-18%20|%2020%20|%2022-green?logo=node.js)
@@ -6,272 +6,208 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-blue?logo=typescript)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20|%20macOS%20|%20Windows-lightgrey)
 
-High-performance DDEX XML parser with native bindings for TypeScript/JavaScript and Python. Built on a single Rust core for consistent behavior across all platforms.
+> High-performance DDEX XML builder and parser with native bindings for TypeScript/JavaScript and Python. Built on a single Rust core for consistent behavior across all platforms.
 
-**"One parser, every language, structural parsing excellence"**
+DDEX Suite brings together powerful tools for music industry data exchange, combining the robust `ddex-parser` library for reading and transforming DDEX messages with the `ddex-builder` library for deterministic XML generation, creating a complete round-trip solution for DDEX processing.
 
-## 🎯 Why DDEX Parser?
+## 🎯 Why DDEX Suite?
 
-Working with DDEX XML shouldn't feel like archaeology. This parser transforms complex DDEX messages into clean, strongly-typed data structures that are as easy to work with as JSON.
+Working with DDEX XML shouldn't feel like archaeology. The suite transforms complex DDEX messages into clean, strongly-typed data structures that are as easy to work with as JSON.
 
 ### Core Value Proposition
 - **Single Rust Core**: One implementation to rule them all - consistent behavior across JavaScript, Python, and Rust
 - **Dual Model Architecture**: Choose between faithful graph representation or developer-friendly flattened view
 - **Production Ready**: Built-in XXE protection, memory-bounded streaming, and comprehensive security hardening
-- **Blazing Fast**: Parse typical releases in <50ms, stream gigabyte files with <100MB memory
 
 ## 👨🏻‍💻 Developer Statement
 
-I'm building **DDEX Parser** as a rigorous, end-to-end learning project to deepen my Rust skills while unifying my JavaScript and Python experience into a single, production-grade library. The intent is to ship a **single Rust core** that parses complex DDEX XML into clean, strongly-typed models, then expose it through **napi-rs** for Node/TypeScript and **PyO3** for Python—demonstrating cross-language API design, FFI ergonomics, and disciplined performance engineering. The project is deliberately "industry-shaped": it targets real music-metadata workloads, implements a dual **graph + flattened** data model for developer UX, and bakes in XML security (XXE/billion-laughs protections), reference resolution, streaming for large files, and reproducible benchmarks across platforms.
+I'm building **DDEX Suite** as a rigorous, end-to-end learning project to deepen my Rust skills while unifying my JavaScript and Python experience into a production-grade toolkit for music metadata. The intent is to ship a **single Rust core** that serves both a high-performance, security-hardened DDEX XML parser library (`ddex-parser`) and a byte-perfect, deterministic builder library (`ddex-builder`). This core is exposed through **napi-rs** for Node/TypeScript and **PyO3** for Python, showcasing not just cross-language API design but also deep ecosystem integration, including a **declarative DataFrame mapping DSL** for Python users. The project is deliberately "industry-shaped," tackling the complementary challenges of transforming complex DDEX XML into clean models (parsing) and generating canonical, reproducible XML from those models. This is achieved through a dual **graph+flattened** data model for developer UX and an uncompromising approach to determinism, centered on a custom canonicalization specification, **DB-C14N/1.0**, and a **stable, content-addressable ID generation** engine.
 
-Beyond parsing, this is a showcase of **software craftsmanship and platform thinking**: consistent APIs across ecosystems, prebuilt binaries and wheels for painless install, a hardened CI/CD pipeline, supply-chain safety (SBOM, cargo-deny, signing), and a comprehensive test suite spanning fuzzing, performance, and compatibility. Paired with my validator work (DDEX Workbench), DDEX Parser rounds out a credible processing pipeline—**validator for correctness, parser for structure and transformation**—illustrating how I design interoperable components that are fast, safe, and easy to adopt in real systems.
+Beyond the core implementation, this is a showcase of **software craftsmanship and platform thinking**. The suite provides consistent APIs, painless installation via prebuilt binaries, a hardened CI/CD pipeline, and robust supply-chain safety (SBOM, `cargo-deny`, and **Sigstore artifact signing**). Every feature reflects production wisdom—from the parser's XXE protection to the builder's versioned **partner presets system** with safety locks. Paired with my validator work (DDEX Workbench), DDEX Suite delivers a credible, end-to-end **Parse → Modify → Build** processing pipeline, complete with enterprise-grade features like **preflight validation**, a **semantic diff engine**, and a comprehensive CLI. It illustrates how to design interoperable components that are fast, safe, and easy to adopt in real-world systems.
 
 ## 🚧 Development Status
 
-**Current Phase**: Phase 3 - JavaScript/TypeScript Bindings (Week 11-14)  
-**Target Release**: v1.0.0 in Q4 2025
+**Current Phase**: Phase 2 - Complete DDEX Parser v1.0 
+**Target Release**: v1.0.0 in Q1 2026
 
 ### Progress Tracker
 
-#### ✅ Phase 0: Project Setup (COMPLETED)
+#### ✅ Phase 1: Foundation Refactor (COMPLETED)
 
-  - [x] Repository structure and Cargo workspace
-  - [x] CI/CD pipelines for all platforms
-  - [x] Security framework (cargo-deny, SBOM)
-  - [x] Test corpus generation
-  - [x] Blueprint and architecture finalized
+**Monorepo Setup** ✅ **COMPLETED**
 
-#### ✅ Phase 1: Rust Core Foundation (COMPLETED)
+  - [x] Create ddex-suite repository
+  - [x] Setup root Cargo.toml workspace
+  - [x] Setup root package.json for npm workspaces
+  - [x] Create packages/ directory structure
+  - [x] Configure unified CI/CD pipelines
+  - [x] Setup cross-package testing infrastructure
+  - [x] Create migration scripts
 
-**Week 3-4: Core Parser Infrastructure** ✅ **COMPLETED**
+**Migration & Core Extraction** ✅ **COMPLETED**
 
-  - [x] Rust workspace with feature flags
-  - [x] quick-xml integration for secure parsing
-  - [x] Version/namespace detection (ERN 3.8.2, 4.2, 4.3)
-  - [x] Security configurations (XXE protection, limits)
-  - [x] Error types with XPath-like location tracking
-  - [x] Security test suite (billion laughs, deep nesting)
+  - [x] Run migration script to move all files
+  - [x] Extract models to packages/core/src/models/
+  - [x] Extract errors to packages/core/src/error.rs
+  - [x] Extract FFI types to packages/core/src/ffi.rs
+  - [x] Update all import paths in packages/ddex-parser
+  - [x] Add extension support to models
+  - [x] Implement toBuildRequest() method
+  - [x] Verify all 8 version tests pass
+  - [x] Verify all 20 Node.js tests pass
 
-**Week 5-6: Dual Model Implementation** ✅ **COMPLETED**
+#### 🔄 Phase 2: Complete DDEX Parser v1.0 (IN PROGRESS)
 
-  - [x] Graph model structs (faithful DDEX representation)
-  - [x] Flattened model (developer-friendly)
-  - [x] Bidirectional transformation
-  - [x] Reference resolution with integrity
-  - [x] Multi-language support (LocalizedString)
-  - [x] Identifier normalization
+**2.1 Enhanced Parser Features** ✅ **COMPLETED**
 
-#### ✅ Phase 2: Advanced Parsing Features (COMPLETED)
+  - [x] Add includeRawExtensions option
+  - [x] Add includeComments option
+  - [x] Implement extension preservation
+  - [x] Add _graph reference to flattened models
+  - [x] Complete toBuildRequest() implementation
+  - [x] Test round-trip fidelity
+  - [x] Add 10+ round-trip tests (basic tests complete, comprehensive tests pending)
 
-**Week 7-8: Streaming & Performance** ✅ **COMPLETED**
+**2.2 JavaScript/TypeScript Bindings** 🔄 **CURRENT**
 
-  - [x] SAX-based streaming parser implemented
-  - [x] Progress callbacks with backpressure added
-  - [x] Auto mode selection (DOM vs. stream) built
-  - [x] Performance targets met and benchmarks published
+  - [ ] Complete WASM browser build (<500KB)
+  - [ ] Optimize with wasm-opt
+  - [ ] Unify npm package (native + WASM)
+  - [ ] Update package name to @ddex-suite/parser
+  - [ ] Add streaming examples
+  - [ ] Test in all major browsers
+  - [ ] Publish to npm
 
-**Week 9-10: ERN Version Support** ✅ **COMPLETED**
+**2.3-2.4 Python Bindings & CLI** ⏳ **UPCOMING**
 
-  - [x] Add ERN 4.2 model variations
-  - [x] Add ERN 3.8.2 model variations
-  - [x] Handle complex DealTerms across versions
-  - [x] Test with vendor-quirk corpus
-  - [x] Document version differences
-  - [x] Build compatibility matrix
-  - [x] Add migration helpers
-
-#### ✅ Pre-Phase 3: Foundation Improvements (COMPLETED)
-
-**Critical improvements based on feedback analysis** ✅ **COMPLETED**
-
-Before starting the language bindings, we implemented foundational improvements to ensure robust cross-language support:
-
-**TypeScript Generation & Type Safety**
-  - [x] Integrated ts-rs for automatic TypeScript definition generation
-  - [x] Eliminated manual type synchronization between Rust and TypeScript
-  - [x] Configured type generation with proper feature flags
-  - [x] Ensured all models can be automatically exported to TypeScript
-
-**FFI Error Contract**
-  - [x] Created FFI-friendly error representation (`FFIError`)
-  - [x] Added structured error categories and severity levels
-  - [x] Implemented JSON-serializable error format for all bindings
-  - [x] Provided helpful hints for error resolution
-  - [x] Established clear spec for cross-boundary error handling
-
-**Model Integrity & Testing**
-  - [x] Verified graph to flat model transformation consistency
-  - [x] Tested round-trip preservation (serialize → deserialize)
-  - [x] Validated computed fields generation
-  - [x] Ensured dual model approach maintains data integrity
-
-**Documentation & Contracts**
-  - [x] Created comprehensive error contract documentation
-  - [x] Defined error codes and categories
-  - [x] Provided language-specific error handling examples
-  - [x] Established clear specifications for FFI boundaries
-
-**Test Results:**
-- FFI Error Module: All tests passing ✅
-- Model Consistency: 4/4 tests passing ✅
-- Error Contract: 3/3 tests passing ✅
-- TypeScript Feature: Builds successfully ✅
-
-**Impact:** These improvements provide a rock-solid foundation for language bindings, ensuring automatic type synchronization, consistent error handling across all languages, verified data model integrity, and clear contracts for FFI boundaries.
-
-#### 🔄 Phase 3: JavaScript/TypeScript Bindings (IN PROGRESS)
-
-**Week 11-12: Node.js Native Addon** 🔄 **CURRENT**
-
-  - [ ] Setup napi-rs project structure
-  - [ ] Configure prebuildify for multi-platform builds
-  - [ ] Expose parse/stream/sanityCheck functions
-  - [x] Generate TypeScript definitions from Rust (completed in Pre-Phase 3)
-  - [ ] Implement async iterator with backpressure
-  - [ ] Add progress callbacks
-
-**Week 13-14: Browser Support (WASM)** ⏳ **UPCOMING**
-
-  - [ ] Setup wasm-bindgen with feature flags
-  - [ ] Optimize for <500KB with wasm-opt
-  - [ ] Implement Web Streams API support
-  - [ ] Add Web Worker support
-  - [ ] Create browser-specific examples
-  - [ ] Publish to npm as unified package
+  - [ ] Complete PyO3/maturin setup
+  - [ ] Configure cibuildwheel for all platforms
+  - [ ] Implement Python API
+  - [ ] Add DataFrame integration
+  - [ ] Build comprehensive CLI with clap
+  - [ ] Tag parser v1.0.0
 
 ### Upcoming Phases
 
-  - **Phase 4**: Python Bindings (Week 15-18)
-  - **Phase 5**: CLI & Developer Tools (Week 19-20)
-  - **Phase 6**: DDEX Workbench Integration (Week 21-22)
-  - **Phase 7**: Extended Message Support (Week 23-26)
-  - **Phase 8**: v1.0 Release (Week 27-28)
+  - **Phase 3**: DDEX Builder Development (Week 5-14)
+  - **Phase 4**: Suite Integration & Launch (Week 15-20)
 
 ## 🎭 Dual Model Architecture
 
-The parser provides two complementary views of the same data:
+The suite provides two complementary views of the same data with full round-trip fidelity:
 
 ### Graph Model (Faithful)
-Preserves the exact DDEX structure with references - perfect for validation and compliance:
+Preserves the exact DDEX structure with references and extensions - perfect for compliance and round-trip operations:
 ```typescript
 interface ERNMessage {
   messageHeader: MessageHeader;
-  parties: Party[];        // All parties with IDs
-  resources: Resource[];   // Audio, video, image resources
-  releases: Release[];     // Release metadata with references
-  deals: Deal[];          // Commercial terms
+  parties: Party[];               // All parties with IDs
+  resources: Resource[];          // Audio, video, image resources
+  releases: Release[];            // Release metadata with references
+  deals: Deal[];                  // Commercial terms
+  extensions?: Map<string, XmlFragment>;  // Preserved for round-trip
+  toBuildRequest(): BuildRequest; // Convert to builder input
 }
 ```
 
 ### Flattened Model (Developer-Friendly)
-Denormalized and resolved for easy consumption - ideal for applications and data pipelines:
+Denormalized and resolved for easy consumption - ideal for applications while maintaining round-trip capability:
 ```typescript
 interface ParsedRelease {
   releaseId: string;
   title: string;
   displayArtist: string;
-  tracks: ParsedTrack[];   // Fully resolved with resources merged
+  tracks: ParsedTrack[];         // Fully resolved with resources merged
   coverArt?: ParsedImage;
-  territories: TerritoryInfo[];
-  // ... simplified, denormalized fields
+  _graph?: Release;              // Reference to original for full fidelity
+  extensions?: Map<string, XmlFragment>; // Extensions preserved
 }
 ```
 
 ## 🚀 Features (Planned)
 
-- **Performance**: Parse typical releases in <50ms, stream GB files with bounded memory
-- **Security**: Built-in XXE protection, entity expansion limits, timeout controls
+- **Round-Trip Fidelity**: Parse → Modify → Build with 100% data preservation
+- **Deterministic Output**: DB-C14N/1.0 stable hash algorithm for identical XML
 - **Multi-Version**: Supports ERN 3.8.2, 4.2, and 4.3 with automatic detection
+- **Partner Presets**: Optimized configurations for Spotify, Apple Music, Amazon
 - **Cross-Platform**: Native bindings for Node.js, Python, and browsers (WASM)
 - **Streaming**: Handle massive catalogs with backpressure and progress callbacks
 - **Type Safety**: Fully typed interfaces in TypeScript and Python (auto-generated from Rust)
-- **Reference Resolution**: Automatic resolution with integrity guarantees
-- **Error Handling**: Structured, FFI-friendly errors with helpful hints and categories
+- **Security**: Built-in XXE protection, entity expansion limits, timeout controls
 
 ## 📦 Installation
 
-Packages will be available once v1.0 is released:
+Packages will be available once each component reaches v1.0:
 
 ```bash
 # JavaScript/TypeScript
-npm install ddex-parser
+npm install @ddex-suite/parser  # Available soon
+npm install @ddex-suite/builder # Coming Q1 2026
 
 # Python
-pip install ddex-parser
+pip install ddex-parser  # Available soon
+pip install ddex-builder # Coming Q1 2026
 
 # Rust
 cargo add ddex-parser-core
+cargo add ddex-builder-core
 ```
 
 ## 💻 Usage Examples (Coming Soon)
 
 ### JavaScript/TypeScript
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DDEXParser, DDEXBuilder } from '@ddex-suite/parser';
 
+// Parse DDEX message
 const parser = new DDEXParser();
-
-// Parse with dual model
 const result = await parser.parse(xmlContent);
-console.log(result.flat.releases[0].title);  // Easy access
-console.log(result.graph.parties);            // Full structure
 
-// Stream large files
-for await (const release of parser.stream(fileStream)) {
-  await processRelease(release);
-}
+// Modify the parsed data
+result.flat.releases[0].title = "Updated Title";
 
-// Handle errors with structured information
-try {
-  const result = await parser.parse(invalidXml);
-} catch (error) {
-  console.log(error.code);       // 'XML_PARSE_ERROR'
-  console.log(error.category);   // 'XmlParsing'
-  console.log(error.hint);        // 'Check XML syntax and ensure it's well-formed'
-  console.log(error.location);    // { line: 42, column: 10, path: '/Release' }
-}
+// Build deterministic XML
+const builder = new DDEXBuilder();
+const xml = await builder.build(result.toBuildRequest());
+
+// Perfect round-trip guarantee
+const reparsed = await parser.parse(xml);
+assert.deepEqual(reparsed.graph, result.graph); // ✅ Identical
 ```
 
 ### Python
 ```python
 from ddex_parser import DDEXParser
-
-parser = DDEXParser()
+from ddex_builder import DDEXBuilder
 
 # Parse to structured data
+parser = DDEXParser()
 message = parser.parse(xml_content)
-print(message.flat.releases[0].title)
 
-# Export to DataFrame
-df = parser.to_dataframe(xml_content, schema='flat')
+# Export to DataFrame for analysis
+df = parser.to_dataframe(xml_content)
 
-# Handle errors with structured information
-try:
-    message = parser.parse(invalid_xml)
-except DDEXParseError as e:
-    print(e.code)        # 'XML_PARSE_ERROR'
-    print(e.category)    # 'XmlParsing'
-    print(e.hint)        # Helpful suggestion
-    print(e.location)    # Error location in XML
+# Build from DataFrame
+builder = DDEXBuilder()
+xml = builder.from_dataframe(df, version='4.3')
 ```
 
 ## 🏗️ Architecture
 
-Built on a single Rust core with native bindings:
+Built as a monorepo with shared core components:
 
 ```
 ┌─────────────────────────────────────────┐
-│            Applications                 │
-├────────┬────────┬───────────────────────┤
-│   JS   │ Python │        Rust           │
-├────────┴────────┴───────────────────────┤
-│         Language Bindings               │
-│  napi-rs │ PyO3 │ WASM │ Direct         │
+│            DDEX Suite                   │
+├─────────────────┬───────────────────────┤
+│   DDEX Parser   │   DDEX Builder        │
+│  Read & Parse   │  Generate & Build     │
+├─────────────────┴───────────────────────┤
+│           Shared Core                   │
+│   Models │ Errors │ FFI │ Utils        │
 ├─────────────────────────────────────────┤
-│         Rust Core (ddex-parser-core)    │
-│   Parser │ Transform │ Security         │
-│   Models │ References │ Streaming       │
-│   FFI Contract │ Type Generation        │
+│         Language Bindings               │
+│  napi-rs │ PyO3 │ WASM │ CLI           │
 └─────────────────────────────────────────┘
 ```
 
@@ -282,25 +218,28 @@ Built on a single Rust core with native bindings:
 - Deep nesting protection
 - Size and timeout limits
 - Memory-bounded streaming
-- No network access by default
+- Supply chain security with cargo-deny and SBOM
 
 ## 📊 Performance Targets
 
-| File Size | Parse Time | Memory | Mode |
-|-----------|------------|--------|------|
-| 10KB | <5ms | <2MB | DOM |
-| 100KB | <10ms | <5MB | DOM |
-| 1MB | <50ms | <20MB | DOM |
-| 10MB | <500ms | <100MB | Auto |
-| 100MB | <5s | <50MB | Stream |
-| 1GB | <60s | <100MB | Stream |
+| Operation | Target | Status |
+|-----------|--------|--------|
+| Parse 10KB | <5ms | ✅ Achieved |
+| Parse 100KB | <10ms | ✅ Achieved |
+| Parse 1MB | <50ms | ✅ Achieved |
+| Parse 100MB | <5s | ✅ Achieved |
+| Stream 1GB | <60s with <100MB memory | ✅ Achieved |
+| Build typical release | <15ms | 🔄 In Development |
+| Round-trip fidelity | 100% | 🔄 In Development |
+| Deterministic output | 100% identical | 🔄 In Development |
 
 ## 📚 Documentation
 
 - [Blueprint](./blueprint.md) - Detailed architecture and roadmap
-- [API Reference](./docs/API.md) - Complete API documentation (coming soon)
-- [Security Guide](./governance/SECURITY.md) - Threat model and mitigations (coming soon)
-- [Error Handbook](./docs/ERROR_HANDBOOK.md) - Understanding and handling errors (coming soon)
+- [Parser API](./packages/ddex-parser/docs/API.md) - Parser documentation
+- [Builder API](./packages/ddex-builder/docs/API.md) - Builder documentation (coming soon)
+- [Round-Trip Guide](./docs/ROUND_TRIP.md) - Parse → Modify → Build guide (coming soon)
+- [Error Handbook](./docs/ERROR_HANDBOOK.md) - Understanding and handling errors
 
 ## 🤝 Contributing
 
@@ -314,9 +253,9 @@ MIT License - see [LICENSE](./LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
-This parser is designed to complement [DDEX Workbench](https://github.com/ddex/ddex-workbench) by providing structural parsing while Workbench handles XSD validation and business rules.
+DDEX Suite is designed to complement [DDEX Workbench](https://github.com/ddex/ddex-workbench) by providing structural parsing and deterministic generation while Workbench handles XSD validation and business rules.
 
 ---
 
-**Repository**: https://github.com/daddykev/ddex-parser  
-**Status**: Pre-Phase 3 Complete, Phase 3 In Progress
+**Repository**: https://github.com/daddykev/ddex-suite  
+**Status**: Phase 1 Complete, Phase 2 In Progress

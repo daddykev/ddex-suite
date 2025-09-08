@@ -1,0 +1,36 @@
+// examples/browser-streaming.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DDEX Parser Browser Streaming</title>
+    <script type="module">
+        import { DDEXParser } from 'https://unpkg.com/@ddex-suite/parser/dist/browser.js';
+        
+        async function parseFile(file) {
+            const parser = new DDEXParser();
+            const stream = file.stream();
+            
+            try {
+                const result = await parser.stream(stream, {
+                    streaming: true,
+                    includeRawExtensions: true
+                });
+                
+                console.log('Parsed releases:', result.flat.releases.length);
+                displayResults(result);
+            } catch (error) {
+                console.error('Parse error:', error);
+            }
+        }
+        
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) parseFile(file);
+        });
+    </script>
+</head>
+<body>
+    <input type="file" id="fileInput" accept=".xml" />
+    <div id="results"></div>
+</body>
+</html>
