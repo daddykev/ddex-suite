@@ -3,7 +3,7 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "commonjs",
-    "lib": ["ES2020"],
+    "lib": ["ES2020", "DOM"],  // Add DOM for window global
     "declaration": true,
     "outDir": "./dist",
     "rootDir": "./src",
@@ -13,7 +13,8 @@
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "types": ["node"]  // Include Node types
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "test-*.js"]

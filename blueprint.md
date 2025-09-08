@@ -258,7 +258,7 @@ interface BuildRequest {
 **Scenario**: UMG needs to migrate their entire back catalog (3M+ recordings) from a legacy system to a new distribution platform requiring DDEX ERN 4.3.
 
 ```typescript
-import { DDEXBuilder } from '@ddex-builder';
+import { DDEXBuilder } from 'ddex-builder';
 import { DatabaseConnection } from './legacy-db';
 
 const builder = new DDEXBuilder();
@@ -361,7 +361,7 @@ for dsp, dsp_config in DSP_CONFIGS.items():
 **Scenario**: DistroKid processes 10,000+ new releases daily from independent artists and needs to generate DDEX feeds for multiple platforms.
 
 ```typescript
-import { DDEXBuilder } from '@ddex-builder';
+import { DDEXBuilder } from 'ddex-builder';
 import { Queue } from 'bull';
 
 const builder = new DDEXBuilder();
@@ -528,8 +528,8 @@ class MultiFormatBuilder:
 This is the primary use case, demonstrating the power of the full suite:
 
 ```typescript
-import { DDEXParser } from '@ddex-parser';
-import { DDEXBuilder } from '@ddex-builder';
+import { DDEXParser } from 'ddex-parser';
+import { DDEXBuilder } from 'ddex-builder';
 import * as fs from 'fs/promises';
 
 const parser = new DDEXParser();
@@ -1109,7 +1109,7 @@ Using `napi-rs` with `prebuildify` for maximum compatibility:
   },
   "scripts": {
     "prebuildify": "prebuildify --platform win32,darwin,linux --arch x64,arm64 --strip",
-    "test:import": "node -e \"import('@ddex-parser').then(m => console.log(m.version))\""
+    "test:import": "node -e \"import('ddex-parser').then(m => console.log(m.version))\""
   }
 }
 ```
@@ -1520,7 +1520,7 @@ ddex-suite/
 ### Phase 2 (Parser v1.0) 🔄 IN PROGRESS
 - [x] Extension support working (Phase 2.1 complete)
 - [ ] WASM <500KB
-- [ ] Published to npm as @ddex-suite/parser
+- [ ] Published to npm as ddex-parser
 - [ ] Published to PyPI
 - [ ] CLI functional
 - [ ] Documentation complete
@@ -1529,7 +1529,7 @@ ddex-suite/
 - [ ] DB-C14N/1.0 implemented
 - [ ] Deterministic output verified
 - [ ] All presets working
-- [ ] Published to npm as @ddex-suite/builder
+- [ ] Published to npm as ddex-builder
 - [ ] Published to PyPI
 - [ ] CLI functional
 

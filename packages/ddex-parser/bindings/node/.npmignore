@@ -1,0 +1,29 @@
+# packages/ddex-parser/bindings/node/.npmignore
+# Source files
+src/
+*.ts
+!*.d.ts
+
+# Config files
+tsconfig.json
+binding.gyp
+Cargo.toml*
+build.rs
+
+# Test files
+test-*.js
+**tests**/
+*.test.*
+
+# Build artifacts we don't need
+*.node
+build/
+target/
+
+# Development files
+.env
+.npmrc
+*.log
+
+# Keep only dist folder and README
+# The "files" field in package.json will handle this, but this is backup

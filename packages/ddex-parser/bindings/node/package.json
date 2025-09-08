@@ -5,14 +5,6 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "npm run build:ts",
-    "build:ts": "tsc",
-    "build:native": "napi build --platform --release",
-    "build:all": "npm run build:native && npm run build:ts",
-    "test": "node test-manual.js",
-    "prepublishOnly": "npm run build:ts"
-  },
   "browser": "dist/browser.js",
   "exports": {
     ".": {
@@ -22,11 +14,23 @@
       },
       "browser": "./dist/browser.js",
       "types": "./dist/index.d.ts"
-    },
-    "./wasm": {
-      "import": "./wasm/ddex_parser.js",
-      "types": "./wasm/ddex_parser.d.ts"
     }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "npm run build:ts",
+    "build:ts": "tsc",
+    "build:native": "napi build --platform --release",
+    "build:all": "npm run build:native && npm run build:ts",
+    "test": "node test-manual.js",
+    "prepublishOnly": "npm run build:ts"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "keywords": [
     "ddex",
@@ -49,5 +53,10 @@
   "homepage": "https://github.com/daddykev/ddex-suite/tree/main/packages/ddex-parser",
   "bugs": {
     "url": "https://github.com/daddykev/ddex-suite/issues"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^2.18.4",
+    "@types/node": "^20.19.13",
+    "typescript": "^5.9.2"
   }
 }
