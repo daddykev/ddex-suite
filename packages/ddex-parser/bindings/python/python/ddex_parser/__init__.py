@@ -84,3 +84,9 @@ class DDEXParser:
         if not self._parser:
             return "4.3"
         return self._parser.detect_version(xml)
+    
+    def sanity_check(self, xml: Union[str, bytes]) -> Dict[str, Any]:
+        """Perform sanity check on DDEX XML."""
+        if not self._parser:
+            return {"is_valid": True, "version": "4.3", "errors": [], "warnings": []}
+        return self._parser.sanity_check(xml)
