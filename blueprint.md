@@ -258,7 +258,7 @@ interface BuildRequest {
 **Scenario**: UMG needs to migrate their entire back catalog (3M+ recordings) from a legacy system to a new distribution platform requiring DDEX ERN 4.3.
 
 ```typescript
-import { DDEXBuilder } from '@ddex-suite/builder';
+import { DDEXBuilder } from '@ddex-builder';
 import { DatabaseConnection } from './legacy-db';
 
 const builder = new DDEXBuilder();
@@ -361,7 +361,7 @@ for dsp, dsp_config in DSP_CONFIGS.items():
 **Scenario**: DistroKid processes 10,000+ new releases daily from independent artists and needs to generate DDEX feeds for multiple platforms.
 
 ```typescript
-import { DDEXBuilder } from '@ddex-suite/builder';
+import { DDEXBuilder } from '@ddex-builder';
 import { Queue } from 'bull';
 
 const builder = new DDEXBuilder();
@@ -528,8 +528,8 @@ class MultiFormatBuilder:
 This is the primary use case, demonstrating the power of the full suite:
 
 ```typescript
-import { DDEXParser } from '@ddex-suite/parser';
-import { DDEXBuilder } from '@ddex-suite/builder';
+import { DDEXParser } from '@ddex-parser';
+import { DDEXBuilder } from '@ddex-builder';
 import * as fs from 'fs/promises';
 
 const parser = new DDEXParser();
@@ -1099,7 +1099,7 @@ Using `napi-rs` with `prebuildify` for maximum compatibility:
 
 ```json
 {
-  "name": "@ddex-suite/parser",
+  "name": "ddex-parser",
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
@@ -1109,7 +1109,7 @@ Using `napi-rs` with `prebuildify` for maximum compatibility:
   },
   "scripts": {
     "prebuildify": "prebuildify --platform win32,darwin,linux --arch x64,arm64 --strip",
-    "test:import": "node -e \"import('@ddex-suite/parser').then(m => console.log(m.version))\""
+    "test:import": "node -e \"import('@ddex-parser').then(m => console.log(m.version))\""
   }
 }
 ```
@@ -1397,7 +1397,6 @@ ddex-suite/
 - [ ] Complete WASM browser build (<500KB)
 - [ ] Optimize with wasm-opt
 - [ ] Unify npm package (native + WASM)
-- [ ] Update package name to `@ddex-suite/parser`
 - [ ] Add streaming examples
 - [ ] Test in all major browsers
 - [ ] Publish to npm

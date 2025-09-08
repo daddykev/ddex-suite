@@ -73,7 +73,6 @@ Beyond the core implementation, this is a showcase of **software craftsmanship a
   - [ ] Complete WASM browser build (<500KB)
   - [ ] Optimize with wasm-opt
   - [ ] Unify npm package (native + WASM)
-  - [ ] Update package name to @ddex-suite/parser
   - [ ] Add streaming examples
   - [ ] Test in all major browsers
   - [ ] Publish to npm
@@ -141,12 +140,12 @@ Packages will be available once each component reaches v1.0:
 
 ```bash
 # JavaScript/TypeScript
-npm install @ddex-suite/parser  # Available soon
-npm install @ddex-suite/builder # Coming Q1 2026
+npm install ddex-parser  # Available soon
+npm install ddex-builder # Coming Q4 2025
 
 # Python
 pip install ddex-parser  # Available soon
-pip install ddex-builder # Coming Q1 2026
+pip install ddex-builder # Coming Q4 2025
 
 # Rust
 cargo add ddex-parser-core
@@ -157,7 +156,8 @@ cargo add ddex-builder-core
 
 ### JavaScript/TypeScript
 ```typescript
-import { DDEXParser, DDEXBuilder } from '@ddex-suite/parser';
+import { DDEXParser } from 'ddex-parser';
+import { DDEXBuilder } from 'ddex-builder';
 
 // Parse DDEX message
 const parser = new DDEXParser();
@@ -197,18 +197,18 @@ xml = builder.from_dataframe(df, version='4.3')
 Built as a monorepo with shared core components:
 
 ```
-┌─────────────────────────────────────────┐
-│            DDEX Suite                   │
-├─────────────────┬───────────────────────┤
-│   DDEX Parser   │   DDEX Builder        │
-│  Read & Parse   │  Generate & Build     │
-├─────────────────┴───────────────────────┤
-│           Shared Core                   │
-│   Models │ Errors │ FFI │ Utils        │
-├─────────────────────────────────────────┤
-│         Language Bindings               │
-│  napi-rs │ PyO3 │ WASM │ CLI           │
-└─────────────────────────────────────────┘
+┌───────────────────────────────────────┐
+│            DDEX Suite                 │
+├─────────────────┬─────────────────────┤
+│   DDEX Parser   │   DDEX Builder      │
+│  Read & Parse   │  Generate & Build   │
+├─────────────────┴─────────────────────┤
+│           Shared Core                 │
+│    Models │ Errors │ FFI │ Utils      │
+├───────────────────────────────────────┤
+│         Language Bindings             │
+│   napi-rs │ PyO3 │ WASM │ CLI         │
+└───────────────────────────────────────┘
 ```
 
 ## 🔒 Security
