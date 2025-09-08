@@ -1407,7 +1407,7 @@ ddex-suite/
 - [x] Generate type stubs (created, need to test)
 - [x] Test on macOS/ARM (working!)
 - [ ] Test on Linux/macOS/Windows (CI needed)
-- [ ] Publish to PyPI as `ddex-parser`
+- [x] Publish to PyPI as `ddex-parser`
 
 #### 2.4 CLI & Polish
 - [ ] Build comprehensive CLI with clap
