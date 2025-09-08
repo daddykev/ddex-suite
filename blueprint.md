@@ -254,8 +254,8 @@ interface BuildRequest {
 
 ### Major Record Labels
 
-#### Universal Music Group - Catalog Migration
-**Scenario**: UMG needs to migrate their entire back catalog (3M+ recordings) from a legacy system to a new distribution platform requiring DDEX ERN 4.3.
+#### Major Label Group - Catalog Migration
+**Scenario**: XYZ Music Group needs to migrate their entire back catalog (3M+ recordings) from a legacy system to a new distribution platform requiring DDEX ERN 4.3.
 
 ```typescript
 import { DDEXBuilder } from 'ddex-builder';
@@ -293,7 +293,7 @@ for await (const batch of catalogStream) {
   // Generate DDEX message with stable IDs for cross-batch consistency
   const { xml, warnings, canonicalHash } = await builder.build({
     header: {
-      messageSender: { partyName: [{ text: 'Universal Music Group' }] },
+      messageSender: { partyName: [{ text: 'XYZ Music Group' }] },
       messageRecipient: { partyName: [{ text: 'Spotify' }] }
     },
     version: '4.3',
@@ -313,8 +313,8 @@ for await (const batch of catalogStream) {
 }
 ```
 
-#### Sony Music - Weekly New Release Feed
-**Scenario**: Sony needs to generate weekly DDEX feeds for all new releases across their labels for 50+ DSP partners.
+#### Major Label - Weekly New Release Feed
+**Scenario**: XYZ needs to generate weekly DDEX feeds for all new releases across their labels for 50+ DSP partners.
 
 ```python
 from ddex_builder import DDEXBuilder
@@ -358,7 +358,7 @@ for dsp, dsp_config in DSP_CONFIGS.items():
 ### Digital Distributors
 
 #### DistroKid - Independent Artist Onboarding
-**Scenario**: DistroKid processes 10,000+ new releases daily from independent artists and needs to generate DDEX feeds for multiple platforms.
+**Scenario**: DistroKid delivers 100,000+ new releases daily from independent artists and needs to generate DDEX feeds for multiple platforms.
 
 ```typescript
 import { DDEXBuilder } from 'ddex-builder';
@@ -402,7 +402,7 @@ releaseQueue.process(async (job) => {
   };
 
   // Generate DDEX for each target platform
-  const platforms = ['spotify', 'apple', 'amazon', 'youtube'];
+  const platforms = ['spotify', 'amazon', 'youtube'];
   
   for (const platform of platforms) {
     const { xml } = await builder.build({
@@ -419,8 +419,8 @@ releaseQueue.process(async (job) => {
 
 ### Streaming Platforms
 
-#### Spotify - Ingestion Pipeline
-**Scenario**: Spotify receives 100,000+ DDEX messages daily and needs to normalize them for internal processing.
+#### YouTube - Ingestion Pipeline
+**Scenario**: YouTube receives 1M+ DDEX messages daily and needs to normalize them for internal processing.
 
 ```python
 from ddex_parser import DDEXParser
@@ -439,10 +439,10 @@ async def normalize_incoming_ddex(raw_xml: bytes) -> dict:
     # Normalize to internal canonical format
     normalized_releases = []
     for release in parsed.flat.releases:
-        # Apply Spotify-specific business rules
+        # Apply YouTube-specific business rules
         normalized = {
             **release,
-            'spotify_id': generate_spotify_id(release),
+            'youtube_id': youtube_spotify_id(release),
             'availability': calculate_availability(release),
             'content_rating': derive_content_rating(release),
             'algorithmic_tags': generate_ml_tags(release)
@@ -473,8 +473,8 @@ async def normalize_incoming_ddex(raw_xml: bytes) -> dict:
 
 ### Enterprise Catalog Management
 
-#### Warner Music Group - Multi-Format Delivery
-**Scenario**: WMG needs to deliver the same release in different formats (physical, digital, streaming) with format-specific metadata.
+#### Major Label Group - Multi-Format Delivery
+**Scenario**: XYZ Music Group needs to deliver the same release in different formats (physical, digital, streaming) with format-specific metadata.
 
 ```python
 from ddex_builder import DDEXBuilder
@@ -1384,7 +1384,7 @@ ddex-suite/
 
 ### Phase 2: Complete DDEX Parser v1.0
 
-#### 2.1 Enhanced Parser Features ✅ COMPLETED (Sept 7, 2025)
+#### 2.1 Enhanced Parser Features
 - [x] Add `includeRawExtensions` option
 - [x] Add `includeComments` option
 - [x] Implement extension preservation
