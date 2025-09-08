@@ -33,7 +33,7 @@ fn test_round_trip_preservation() {
 #[test]
 fn test_ffi_error_conversion() {
     use ddex_parser::error::{ParseError, ErrorLocation};
-    use ddex_parser::error::ffi::FFIError;
+    use ddex_core::ffi::FFIError;
     
     let error = ParseError::XmlError {
         message: "Test error".to_string(),

@@ -489,7 +489,7 @@ impl<'a, R: BufRead> ReleaseIterator<'a, R> {
         let estimated_size = std::mem::size_of::<Release>() * self.parser.releases_parsed;
         if estimated_size > self.parser.max_memory {
             return Err(ParseError::SecurityViolation {
-                limit: format!("Memory limit exceeded: {} > {}", estimated_size, self.parser.max_memory),
+                message: format!("Memory limit exceeded: {} > {}", estimated_size, self.parser.max_memory),
             });
         }
         

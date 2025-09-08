@@ -27,7 +27,7 @@ fn test_error_on_malformed_xml() {
 
 #[test]
 fn test_ffi_error_serialization() {
-    use ddex_parser::error::ffi::{FFIError, FFIErrorCategory, FFIErrorSeverity};
+    use ddex_core::ffi::{FFIError, FFIErrorCategory, FFIErrorSeverity};
     
     let ffi_error = FFIError {
         code: "TEST_ERROR".to_string(),

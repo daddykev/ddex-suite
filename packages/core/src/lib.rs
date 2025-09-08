@@ -1,6 +1,9 @@
+//! DDEX Core - Shared models and types for DDEX Suite
+
 pub mod models;
 pub mod error;
+pub mod ffi;
 
 // Re-export commonly used types
-pub use error::{Error, ParseError, Result};
-pub use models::{graph, flat, common, versions};
+pub use error::{DDEXError, ErrorLocation};
+pub use models::versions::ERNVersion;

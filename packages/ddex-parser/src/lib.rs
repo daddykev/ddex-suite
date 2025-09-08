@@ -54,7 +54,7 @@ impl DDEXParser {
         // Apply security config
         if !self.config.disable_external_entities {
             return Err(error::ParseError::SecurityViolation {
-                limit: "External entities are disabled".to_string(),
+                message: "External entities are disabled".to_string(),
             });
         }
         

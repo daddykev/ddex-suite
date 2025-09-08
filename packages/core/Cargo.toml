@@ -16,7 +16,5 @@ ts-rs = { version = "7.1", optional = true }
 
 [features]
 default = []
-extensions = []
-builder-support = []
-ts-rs = ["dep:ts-rs"]
+ffi = []
 typescript = ["ts-rs"]
