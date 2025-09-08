@@ -1384,14 +1384,14 @@ ddex-suite/
 
 ### Phase 2: Complete DDEX Parser v1.0
 
-#### 2.1 Enhanced Parser Features
-- [ ] Add `includeRawExtensions` option
-- [ ] Add `includeComments` option
-- [ ] Implement extension preservation
-- [ ] Add `_graph` reference to flattened models
-- [ ] Complete `toBuildRequest()` implementation
-- [ ] Test round-trip fidelity
-- [ ] Add 10+ round-trip tests
+#### 2.1 Enhanced Parser Features ✅ COMPLETED (Sept 7, 2025)
+- [x] Add `includeRawExtensions` option
+- [x] Add `includeComments` option
+- [x] Implement extension preservation
+- [x] Add `_graph` reference to flattened models
+- [x] Complete `toBuildRequest()` implementation
+- [x] Test round-trip fidelity
+- [ ] Add 10+ round-trip tests (basic tests complete, comprehensive tests pending)
 
 #### 2.2 JavaScript/TypeScript Bindings
 - [ ] Complete WASM browser build (<500KB)
@@ -1510,16 +1510,16 @@ ddex-suite/
 
 ## Go/No-Go Checklist
 
-### Phase 1 (Monorepo Setup)
+### Phase 1 (Monorepo Setup) ✅
 - [x] Monorepo structure created
-- [x] All ✅ files successfully migrated
+- [x] All files successfully migrated
 - [x] Core package extracted
 - [x] All existing tests passing
 - [x] CI/CD pipelines working
 - [x] Round-trip tests added
 
-### Phase 2 (Parser v1.0)
-- [ ] Extension support working
+### Phase 2 (Parser v1.0) 🔄 IN PROGRESS
+- [x] Extension support working (Phase 2.1 complete)
 - [ ] WASM <500KB
 - [ ] Published to npm as @ddex-suite/parser
 - [ ] Published to PyPI
@@ -1543,11 +1543,11 @@ ddex-suite/
 
 ---
 
-**Version**: 2.0.0  
+**Version**: 2.0.1  
 **Last Updated**: September 7, 2025  
-**Status**: Ready to Execute - Phase 1 Starting  
-**Repository**: github.com/daddykev/ddex-suite (to be created)  
-**Parser Target**: v1.0.0 in 4 weeks  
-**Builder Target**: v1.0.0 in 8 weeks  
-**Suite Target**: v1.0.0 in 10 weeks  
+**Status**: Phase 2.1 Complete - Phase 2.2 Starting  
+**Repository**: github.com/daddykev/ddex-suite  
+**Parser Target**: v1.0.0 in 3-4 weeks  
+**Builder Target**: v1.0.0 in 7-8 weeks  
+**Suite Target**: v1.0.0 in 9-10 weeks  
 **License**: MIT
