@@ -28,7 +28,7 @@ mod tests {
     #[test]
     fn test_version_detection_382() {
         let xml = r#"<?xml version="1.0"?>
-<ern:NewReleaseMessage MessageSchemaVersionId="ern/382">
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/382" MessageSchemaVersionId="ern/382">
 </ern:NewReleaseMessage>"#;
         
         let version = VersionDetector::detect(Cursor::new(xml)).unwrap();
