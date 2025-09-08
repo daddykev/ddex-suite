@@ -89,3 +89,5 @@ select = ["E", "F", "I", "N", "W"]
 python_version = "3.8"
 warn_return_any = true
 warn_unused_configs = true
+[project.scripts]
+ddex-parser = "ddex_parser:main"

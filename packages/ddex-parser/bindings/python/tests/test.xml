@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43">
+    <MessageHeader>
+        <MessageId>CLI_TEST_001</MessageId>
+    </MessageHeader>
+</ern:NewReleaseMessage>

@@ -3,6 +3,8 @@ test-env/
 test-env-arm/
 venv/
 env/
+test-*/
+*-env/
 ENV/
 .venv/
 
