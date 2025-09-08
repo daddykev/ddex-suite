@@ -5,6 +5,14 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "npm run build:ts",
+    "build:ts": "tsc",
+    "build:native": "napi build --platform --release",
+    "build:all": "npm run build:native && npm run build:ts",
+    "test": "node test-manual.js",
+    "prepublishOnly": "npm run build:ts"
+  },
   "browser": "dist/browser.js",
   "exports": {
     ".": {
