@@ -65,6 +65,8 @@ impl GraphBuilder {
             version: self.version,
             profile: None,
             message_audit_trail: None,
+            extensions: None,
+            comments: None,
         })
     }
     

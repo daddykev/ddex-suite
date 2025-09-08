@@ -24,9 +24,6 @@ pub struct ParseOptions {
     pub max_memory: usize,
     pub timeout_ms: u64,
     pub allow_blocking: bool,
-    pub include_raw_extensions: bool,
-    pub include_comments: bool,
-    pub preserve_unknown_elements: bool,
     pub chunk_size: usize,
 }
 
@@ -41,9 +38,6 @@ impl Default for ParseOptions {
             timeout_ms: 30000, // 30 seconds
             allow_blocking: false,
             chunk_size: 100,
-            include_raw_extensions: false,
-            include_comments: false,
-            preserve_unknown_elements: false,
         }
     }
 }
@@ -74,24 +68,3 @@ pub fn parse<R: BufRead + std::io::Seek>(
         mode::ParseMode::Auto => unreachable!(), // Already resolved
     }
 }pub mod version_ext;
-
-impl ParseOptions {
-    pub fn with_extensions() -> Self {
-        Self {
-            include_raw_extensions: true,
-            include_comments: true,
-            preserve_unknown_elements: true,
-            ..Default::default()
-        }
-    }
-    
-    pub fn for_round_trip() -> Self {
-        Self {
-            include_raw_extensions: true,
-            include_comments: true,
-            preserve_unknown_elements: true,
-            resolve_references: false,
-            ..Default::default()
-        }
-    }
-}

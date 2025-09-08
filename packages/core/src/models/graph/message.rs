@@ -15,6 +15,8 @@ pub struct ERNMessage {
     pub version: ERNVersion,
     pub profile: Option<ERNProfile>,
     pub message_audit_trail: Option<MessageAuditTrail>,
+    pub extensions: Option<std::collections::HashMap<String, String>>,
+    pub comments: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -36,4 +38,10 @@ pub struct AuditTrailEvent {
     pub message_audit_trail_event_type: String,
     pub date_time: chrono::DateTime<chrono::Utc>,
     pub responsible_party_reference: Option<String>,
+}
+
+impl ERNMessage {
+    pub fn to_build_request(&self) -> Self {
+        self.clone()
+    }
 }
