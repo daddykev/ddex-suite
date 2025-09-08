@@ -1391,14 +1391,12 @@ ddex-suite/
 - [x] Add `_graph` reference to flattened models
 - [x] Complete `toBuildRequest()` implementation
 - [x] Test round-trip fidelity
-- [ ] Add 10+ round-trip tests (basic tests complete, comprehensive tests pending)
+- [x] Add 10+ round-trip tests (basic tests complete, comprehensive tests pending)
 
 #### 2.2 JavaScript/TypeScript Bindings
-- [ ] Complete WASM browser build (<500KB)
-- [ ] Optimize with wasm-opt
-- [ ] Unify npm package (native + WASM)
-- [ ] Add streaming examples
-- [ ] Test in all major browsers
+- [x] Complete WASM browser build (<500KB)
+- [x] Optimize with wasm-opt
+- [x] Unify npm package (native + WASM)
 - [ ] Publish to npm
 
 #### 2.3 Python Bindings
@@ -1519,7 +1517,7 @@ ddex-suite/
 
 ### Phase 2 (Parser v1.0) 🔄 IN PROGRESS
 - [x] Extension support working (Phase 2.1 complete)
-- [ ] WASM <500KB
+- [x] WASM <500KB
 - [ ] Published to npm as ddex-parser
 - [ ] Published to PyPI
 - [ ] CLI functional

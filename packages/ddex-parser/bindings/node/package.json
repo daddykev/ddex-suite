@@ -47,7 +47,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/daddykev/ddex-suite.git",
+    "url": "git+https://github.com/daddykev/ddex-suite.git",
     "directory": "packages/ddex-parser"
   },
   "homepage": "https://github.com/daddykev/ddex-suite/tree/main/packages/ddex-parser",
