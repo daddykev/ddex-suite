@@ -75,54 +75,18 @@ fn test_linker_with_xml_generation() {
     println!("  Linked resources: {}", link_report.linked_resources);
     println!("  Validation passed: {}", link_report.validation_passed);
     
-    // Debug: Print what references were generated
-    println!("\nGenerated References:");
-    println!("  Release reference: {:?}", request.releases[0].release_reference);
-    println!("  Track 1 reference: {:?}", request.releases[0].tracks[0].resource_reference);
-    println!("  Track 2 reference: {:?}", request.releases[0].tracks[1].resource_reference);
-    println!("  Sender reference: {:?}", request.header.message_sender.party_reference);
-    println!("  Recipient reference: {:?}", request.header.message_recipient.party_reference);
-    
     // Now build XML with linked references
     let result = builder.build(request, BuildOptions::default()).unwrap();
     
-    // Debug: Print the actual XML to see what we're getting
-    println!("\nGenerated XML ({} bytes):", result.xml.len());
-    println!("=====================================");
-    println!("{}", result.xml);
-    println!("=====================================\n");
-    
     // Verify XML contains auto-generated references
-    // Check for both with and without namespace prefix
-    assert!(
-        result.xml.contains("ReleaseReference>R1<") || 
-        result.xml.contains("<ReleaseReference>R1</ReleaseReference>"),
-        "Could not find ReleaseReference R1 in XML. Check the actual output above."
-    );
+    assert!(result.xml.contains("<ReleaseReference>R1</ReleaseReference>"));
+    assert!(result.xml.contains("<ResourceReference>A1</ResourceReference>"));
+    assert!(result.xml.contains("<ResourceReference>A2</ResourceReference>"));
+    assert!(result.xml.contains("<PartyReference>P1</PartyReference>")); // Sender
+    assert!(result.xml.contains("<PartyReference>P2</PartyReference>")); // Recipient
     
-    assert!(
-        result.xml.contains("ResourceReference>A1<") || 
-        result.xml.contains("<ResourceReference>A1</ResourceReference>"),
-        "Could not find ResourceReference A1 in XML"
-    );
-    
-    assert!(
-        result.xml.contains("ResourceReference>A2<") || 
-        result.xml.contains("<ResourceReference>A2</ResourceReference>"),
-        "Could not find ResourceReference A2 in XML"
-    );
-    
-    assert!(
-        result.xml.contains("PartyReference>P1<") || 
-        result.xml.contains("<PartyReference>P1</PartyReference>"),
-        "Could not find PartyReference P1 (Sender) in XML"
-    );
-    
-    assert!(
-        result.xml.contains("PartyReference>P2<") || 
-        result.xml.contains("<PartyReference>P2</PartyReference>"),
-        "Could not find PartyReference P2 (Recipient) in XML"
-    );
+    println!("\nGenerated XML with auto-linked references:");
+    println!("{}", result.xml);
 }
 
 #[test]

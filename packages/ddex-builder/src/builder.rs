@@ -41,6 +41,7 @@ pub struct MessageHeaderRequest {
 pub struct PartyRequest {
     pub party_name: Vec<LocalizedStringRequest>,
     pub party_id: Option<String>,
+    pub party_reference: Option<String>,  // Added for linker
 }
 
 /// Localized string request
@@ -54,28 +55,38 @@ pub struct LocalizedStringRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReleaseRequest {
     pub release_id: String,
+    pub release_reference: Option<String>,  // Added for linker
     pub title: Vec<LocalizedStringRequest>,
     pub artist: String,
     pub tracks: Vec<TrackRequest>,
-    // ... more fields
+    pub resource_references: Option<Vec<String>>,  // Added for linker
 }
 
 /// Track request
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TrackRequest {
-    pub position: usize,
-    pub isrc: Option<String>,
+    pub track_id: String,                     // Added for linker
+    pub resource_reference: Option<String>,   // Added for linker
+    pub isrc: String,                        // Changed from Option<String>
     pub title: String,
-    pub duration: u32,
+    pub duration: String,                    // Keep as String for ISO 8601 format
+    pub artist: String,
 }
 
 /// Deal request
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DealRequest {
-    pub deal_id: Option<String>,
-    pub territories: Vec<String>,
+    pub deal_reference: Option<String>,       // Added for linker
+    pub deal_terms: DealTerms,               // Define this
+    pub release_references: Vec<String>,      // Added for linker
+}
+
+/// Deal terms (simple definition for now)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DealTerms {
+    pub commercial_model_type: String,
+    pub territory_code: Vec<String>,
     pub start_date: Option<String>,
-    pub end_date: Option<String>,
 }
 
 /// Build options

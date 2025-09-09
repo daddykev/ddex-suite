@@ -1,10 +1,10 @@
-use ddex_builder::{DDEXBuilder, BuildRequest, BuildOptions};
+use ddex_builder::DDEXBuilder;
 use indexmap::IndexMap;
 
 #[test]
 fn test_builder_creation() {
-    let builder = DDEXBuilder::new();
-    // Just verify it was created - no .is_ok() needed since it's not a Result
+    let _builder = DDEXBuilder::new();  // Added underscore to suppress warning
+    // Just verify it was created
     assert!(true); // Builder created successfully
 }
 

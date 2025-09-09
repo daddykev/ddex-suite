@@ -13,6 +13,7 @@ pub mod determinism;
 pub mod error;
 pub mod generator;
 pub mod presets;
+pub mod linker;
 
 // Re-export main types
 pub use builder::{DDEXBuilder, BuildOptions, BuildRequest, BuildResult};
@@ -20,6 +21,7 @@ pub use canonical::DB_C14N;
 pub use determinism::DeterminismConfig;
 pub use error::{BuildError, BuildWarning};
 pub use presets::PartnerPreset;
+pub use linker::{ReferenceLinker, LinkerConfig, EntityType, LinkerError};
 
 use indexmap::IndexMap;
 // Remove unused serde imports
