@@ -3,6 +3,7 @@ use pyo3::prelude::*;
 use pyo3::exceptions::PyValueError;
 use pyo3::types::{PyBytes, PyDict, PyList};
 use pythonize::pythonize;
+use pyo3_asyncio_0_21 as pyo3_asyncio;  // ADD THIS LINE - creates alias for the renamed package
 
 /// Main DDEX Parser class for Python
 #[pyclass(name = "DDEXParser")]

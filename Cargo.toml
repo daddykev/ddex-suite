@@ -4,7 +4,7 @@ members = [
     "packages/core",
     "packages/ddex-parser",
     "packages/ddex-parser/bindings/node",
-    "packages/ddex-parser/bindings/python",
+    # "packages/ddex-parser/bindings/python", # Temporarily disabled - PyO3 API changes
     # "packages/ddex-parser/bindings/wasm",  # Comment this out for now
 ]
 resolver = "2"

@@ -34,6 +34,21 @@ tokio = { workspace = true, optional = true }
 futures = { workspace = true, optional = true }
 ts-rs = { workspace = true, optional = true }
 
+# CLI dependencies
+clap = { version = "4.4", features = ["derive", "env", "color", "suggestions"] }
+clap_complete = "4.4"
+env_logger = "0.11"
+log = "0.4"
+indicatif = "0.17"
+colored = "2.1"
+anyhow = "1.0"
+rayon = "1.8"
+glob = "0.3"
+csv = "1.3"
+serde_yaml = "0.9"
+toml = "0.8"
+rmp-serde = "1.1"
+
 [dev-dependencies]
 criterion = { workspace = true, features = ["html_reports"] }
 tempfile = { workspace = true }
@@ -45,6 +60,7 @@ insta = { workspace = true }
 [features]
 default = ["async"]
 async = ["tokio", "futures"]
+# cli feature not needed - dependencies are already included
 typescript = ["ts-rs", "ddex-core/ts-rs"]
 simd = []
 bench = []

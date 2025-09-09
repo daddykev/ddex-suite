@@ -1,9 +1,16 @@
-//! DDEX Parser CLI
-//! 
-//! Command-line interface for the DDEX parser.
+//! DDEX Parser CLI entry point
+
+mod cli;
+mod error;
+mod parser;
+mod transform;
+
+// Re-export for CLI use
+pub use ddex_parser::DDEXParser;
 
 fn main() {
-    println!("DDEX Parser CLI v{}", env!("CARGO_PKG_VERSION"));
-    println!("Phase 1: Core implementation in progress");
-    println!("CLI functionality will be implemented in Phase 5");
+    if let Err(e) = cli::main() {
+        eprintln!("Error: {:#}", e);
+        std::process::exit(1);
+    }
 }
