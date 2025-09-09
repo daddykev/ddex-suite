@@ -1269,41 +1269,6 @@ ddex-suite/
 │   │   └── determinism-audit.yml     # Scan for HashMap/HashSet
 │   └── dependabot.yml                # Dependency updates
 │
-├── packages/
-│   ├── core/                         # Shared Rust crate
-│   │   ├── src/
-│   │   │   ├── models/               # DDEX data models
-│   │   │   │   ├── common/           # Shared types
-│   │   │   │   ├── flat/             # Flattened model
-│   │   │   │   ├── graph/            # Graph model
-│   │   │   │   ├── versions/         # Version variations
-│   │   │   │   └── extensions.rs     # Extension support
-│   │   │   ├── error.rs              # Common error types
-│   │   │   ├── ffi.rs                # FFI-friendly types
-│   │   │   └── lib.rs                # Library entry
-│   │   └── Cargo.toml
-│   │
-│   ├── ddex-parser/                  # The DDEX Parser tool
-│   │   ├── node/                     # Node.js package
-│   │   ├── python/                   # Python package
-│   │   ├── wasm/                     # WASM for browsers
-│   │   ├── src/                      # Rust parser implementation
-│   │   └── README.md
-│   │
-│   └── ddex-builder/                 # The DDEX Builder tool
-│       ├── node/                     # Node.js package
-│       ├── python/                   # Python package
-│       ├── wasm/                     # WASM for browsers
-│       ├── src/                      # Rust builder implementation
-│       │   ├── builder/
-│       │   ├── canonical/            # DB-C14N/1.0
-│       │   ├── determinism/
-│       │   ├── generator/
-│       │   ├── linker/
-│       │   ├── presets/
-│       │   └── preflight/
-│       └── README.md
-│
 ├── docs/                             # Suite-wide documentation
 │   ├── parser/
 │   │   ├── API.md
@@ -1313,49 +1278,174 @@ ddex-suite/
 │   │   ├── API.md
 │   │   ├── DB_C14N_SPEC.md
 │   │   └── PRESETS.md
-│   ├── ARCHITECTURE.md              # Monorepo architecture
-│   ├── SUITE_OVERVIEW.md            # DDEX Suite vision
-│   ├── ROUND_TRIP.md                # Parse→Modify→Build guide
-│   └── CONTRIBUTING.md              # Contribution guidelines
+│   ├── ARCHITECTURE.md               # Monorepo architecture
+│   ├── SUITE_OVERVIEW.md             # DDEX Suite vision
+│   ├── ROUND_TRIP.md                 # Parse→Modify→Build guide
+│   └── CONTRIBUTING.md               # Contribution guidelines
 │
 ├── examples/                         # Example usage
-│   ├── parse-modify-build/          # Round-trip examples
+│   ├── parse-modify-build/           # Round-trip examples
 │   ├── parser-only/
 │   └── builder-only/
 │
-├── test-suite/                       # Shared test fixtures
-│   ├── round-trip/                   # Round-trip test cases
-│   ├── valid/                        # Valid DDEX files
-│   ├── nasty/                        # Attack vectors
-│   ├── vendor-quirks/                # Real-world edge cases
-│   ├── golden/                       # Expected outputs
-│   └── README.md
-│
-├── scripts/                          # Build and release scripts
-│   ├── setup-monorepo.sh            # Initialize workspace
-│   ├── migrate-parser.sh            # Migrate existing code
-│   ├── extract-core.sh              # Extract shared models
-│   ├── build-all.sh
-│   ├── test-all.sh
-│   ├── release-parser.sh
-│   ├── release-builder.sh
-│   └── publish-all.sh
+├── packages/
+│   ├── core/                         # Shared Rust crate
+│   │   ├── src/
+│   │   │   ├── models/               # DDEX data models
+│   │   │   │   ├── common/           # Shared types
+│   │   │   │   │   ├── identifier.rs # 
+│   │   │   │   │   ├── localized.rs  # 
+│   │   │   │   │   ├── mod.rs        # 
+│   │   │   │   │   └── territory.rs  # 
+│   │   │   │   ├── flat/             # Flattened model
+│   │   │   │   │   ├── deal.rs       # 
+│   │   │   │   │   ├── message.rs    # 
+│   │   │   │   │   ├── mod.rs        # 
+│   │   │   │   │   ├── release.rs    # 
+│   │   │   │   │   └── track.rs      # 
+│   │   │   │   ├── graph/            # Graph model
+│   │   │   │   │   ├── deal.rs       # 
+│   │   │   │   │   ├── header.rs     # 
+│   │   │   │   │   ├── message.rs    # 
+│   │   │   │   │   ├── mod.rs        # 
+│   │   │   │   │   ├── party.rs      # 
+│   │   │   │   │   ├── release.rs    # 
+│   │   │   │   │   └── resource.rs   # 
+│   │   │   │   ├── versions/         # Version variations
+│   │   │   │   │   ├── common.rs     # 
+│   │   │   │   │   ├── ern_42.rs     # 
+│   │   │   │   │   ├── ern_43.rs     # 
+│   │   │   │   │   ├── ern_382.rs    # 
+│   │   │   │   │   ├── mod.rs        # 
+│   │   │   │   │   ├── tests.rs      # 
+│   │   │   │   │   └── version.rs    # 
+│   │   │   │   ├── extensions.rs     # Extension support
+│   │   │   │   └── mod.rs            # 
+│   │   │   ├── Cargo.toml            #
+│   │   │   ├── error.rs              # Common error types
+│   │   │   ├── ffi.rs                # FFI-friendly types
+│   │   │   └── lib.rs                # Library entry
+│   │   └── Cargo.toml
+│   │
+│   ├── ddex-builder/                 # The DDEX Builder tool
+│   │   ├── benches/                  # 
+│   │   │   ├── building.rs           # 
+│   │   │   └── canonicalization.rs   # 
+│   │   ├── bindings/
+│   │   │   ├── models/               # DDEX data models
+│   │   │   │   ├── common/           # Shared types
+│   │   │   │   │   ├── identifier.rs # 
+│   │   │   │   │   ├── localized.rs  # 
+│   │   │   │   │   ├── mod.rs        # 
+│   │   │   │   │   └── territory.rs  # 
+│   │   ├── node/                     # Node.js package
+│   │   ├── python/                   # Python package
+│   │   ├── wasm/                     # WASM for browsers
+│   │   ├── src/                      # Rust builder implementation
+│   │   │   ├── builder/
+│   │   │   │   ├── package.json      # 
+│   │   │   │   ├── README.md         # 
+│   │   │   │   └── tsconfig.json     # 
+│   │   │   ├── canonical/            # DB-C14N/1.0
+│   │   │   ├── determinism/
+│   │   │   ├── generator/
+│   │   │   ├── linker/
+│   │   │   ├── presets/
+│   │   │   └── preflight/
+│   │   └── README.md
+│   │
+│   └── ddex-parser/                  # The DDEX Parser tool
+│       ├── benches/                  # 
+│       │   ├── memory.rs             # 
+│       │   ├── parsing.rs            # 
+│       │   └── streaming.rs          # 
+│       ├── benchmarks/               # 
+│       ├── bindings/
+│       │   ├── node/                 # 
+│       │   │   ├── src/              # 
+│       │   │   │   ├── Cargo.tolm    # 
+│       │   │   │   ├── index.ts      # 
+│       │   │   │   ├── lib.rs        # 
+│       │   │   │   ├── parser.ts     # 
+│       │   │   │   ├── types.ts      # 
+│       │   │   │   └── wasm.d.ts     # 
+│       │   │   ├── build.rs          # 
+│       │   │   ├── Cargo.toml        # 
+│       │   │   ├── index.d.ts        # 
+│       │   │   ├── index.js          # 
+│       │   │   ├── LICENSE           # 
+│       │   │   ├── package.json      # 
+│       │   │   ├── README.md         # 
+│       │   │   └── tsconfig.json     # 
+│       │   ├── python/               # 
+│       │   │   ├── python/           # 
+│       │   │   │   ├── ddex_parser/  # 
+│       │   │   │   │   ├── __init__.py  # 
+│       │   │   │   │   └── cli.py    # 
+│       │   │   │   ├── types.ts      # 
+│       │   │   │   └── wasm.d.ts     # 
+│       │   │   ├── src/              # 
+│       │   │   │   └── lib.rs        # 
+│       │   │   ├── Cargo.toml        # 
+│       │   │   ├── pyproject.tolm    # 
+│       │   │   └── README.md         # 
+│       │   └── wasm/                 # 
+│       │       ├── src/              # 
+│       │       │   └── lib.rs        # 
+│       │       ├── build.sh          # 
+│       │       └── Cargo.toml        # 
+│       ├── src/                      #
+│       │   ├── node/                 # 
+│       │   │   ├── src/              # 
+│       │   │   │   ├── Cargo.tolm    # 
+│       │   │   │   ├── index.ts      # 
+│       │   │   │   ├── lib.rs        # 
+│       │   │   │   ├── parser.ts     # 
+│       │   │   │   ├── types.ts      # 
+│       │   │   │   └── wasm.d.ts     # 
+│       │   │   ├── build.rs          # 
+│       │   │   ├── Cargo.toml        # 
+│       │   ├── memory.rs             # 
+│       │   ├── parsing.rs            # 
+│       │   └── streaming.rs          # 
+│       ├── tests/                    #
+│       ├── build.rs                  #
+│       ├── Cargo.toml                #
+│       └── README.md                 #
 │
 ├── recipes/                          # Stable hash ID recipes
 │   ├── release_v1.toml
 │   ├── resource_v1.toml
 │   └── party_v1.toml
 │
+├── scripts/                          # Build and release scripts
+│   ├── setup-monorepo.sh             # Initialize workspace
+│   ├── migrate-parser.sh             # Migrate existing code
+│   ├── extract-core.sh               # Extract shared models
+│   ├── build-all.sh
+│   ├── test-all.sh
+│   ├── release-parser.sh
+│   ├── release-builder.sh
+│   └── publish-all.sh
+│
 ├── supply-chain/                     # Supply chain security
 │   ├── cargo-deny.toml
 │   ├── SBOM.json
 │   └── sigstore/
 │
-├── clippy.toml                       # Determinism lint config
+├── test-suite/                       # Shared test fixtures
+│   ├── edge-cases/                   # 
+│   ├── golden/                       # Expected outputs
+│   ├── nasty/                        # Attack vectors
+│   ├── valid/                        # Valid DDEX files
+│   ├── generate_test_corpus.py       # 
+│   └── README.md                     #
+│
+├── blueprint.md                      # This document
 ├── Cargo.toml                        # Root workspace config
-├── package.json                      # Root npm workspace config
-├── tsconfig.json                     # Shared TypeScript config
+├── karma.conf.js                     # 
 ├── LICENSE                           # MIT License
+├── package.json                      # Root npm workspace config
 └── README.md                         # Suite documentation
 ```
 
