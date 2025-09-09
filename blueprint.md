@@ -1522,20 +1522,35 @@ ddex-suite/
 - [x] Generate valid DDEX ERN 4.3 XML
 - [x] Add basic tests (7 passing)
 
-#### 3.2 Core Builder Features 🔄 IN PROGRESS (Sept 9, 2025)
-- [x] Implement Flat→AST→XML pipeline ✅
-- [x] Basic XML serialization with namespaces ✅
-- [x] Element ordering and formatting ✅
-- [x] Build reference linker (auto-link releases/resources) ✅ COMPLETED
+#### 3.2 Core Builder Features ✅ COMPLETED (Sept 9, 2025)
+- [x] Implement Flat→AST→XML pipeline
+- [x] Basic XML serialization with namespaces
+- [x] Element ordering and formatting
+- [x] Build reference linker (auto-link releases/resources)
   - [x] Create linker module structure
   - [x] Implement deterministic reference generation
   - [x] Build automatic relationship linking
   - [x] Integrate with XML generation pipeline
   - [x] Add comprehensive test coverage (9 tests passing)
-- [ ] Add stable-hash ID generation (content-based IDs)
-- [ ] Implement comprehensive preflight checks (ISRC/UPC validation)
-- [ ] Support full ERN 4.3 AudioAlbum profile
-- [ ] Create golden file tests
+- [x] Add stable-hash ID generation (content-based IDs)
+  - [x] SHA256/Blake3 hash algorithms
+  - [x] Versioned recipe system (v1)
+  - [x] Unicode normalization (NFC/NFD/NFKC/NFKD)
+  - [x] Content-based deterministic IDs
+- [x] Implement comprehensive preflight checks (ISRC/UPC validation)
+  - [x] ISRC format validation with regex
+  - [x] UPC format and checksum validation
+  - [x] Territory code validation
+  - [x] ISO 8601 duration validation
+  - [x] Profile-specific validation (AudioAlbum/AudioSingle)
+- [x] Support full ERN 4.3 AudioAlbum profile
+  - [x] Profile-specific requirements
+  - [x] Track count validation
+  - [x] Required field enforcement
+- [x] Create golden file tests
+  - [x] Snapshot testing with insta
+  - [x] Determinism verification
+  - [x] 26 total tests passing
 
 #### 3.3 Builder Bindings
 - [ ] Setup napi-rs for Node.js
@@ -1599,17 +1614,21 @@ ddex-suite/
 - **Builder Core**: ✅ Basic XML generation working
 - **Builder Pipeline**: ✅ AST→XML functioning with valid DDEX output
 - **Reference Linker**: ✅ Complete with auto-linking and 9 passing tests
-- **Determinism**: ✅ IndexMap enforced, canonical hash working
+- **Stable Hash IDs**: ✅ Content-based deterministic ID generation
+- **Preflight Validation**: ✅ Comprehensive ISRC/UPC/profile validation
+- **Determinism**: ✅ IndexMap enforced, canonical hash, fixed timestamps
+- **Golden File Tests**: ✅ Snapshot testing with insta
 - **Security**: ✅ Clean audit for Rust CLI
-- **Next Step**: Implement stable-hash ID generation and preflight validation
+- **Test Coverage**: ✅ 26 tests passing across all modules
+- **Next Step**: Phase 3.3 - Builder Bindings (napi-rs, PyO3, wasm-bindgen)
 
 ---
 
-**Version**: 2.0.4  
+**Version**: 2.1.0  
 **Last Updated**: September 9, 2025  
-**Status**: Phase 3.2 In Progress (Reference Linker Complete)  
+**Status**: Phase 3.3 Ready to Start (Builder Bindings)  
 **Repository**: github.com/daddykev/ddex-suite  
 **Parser Target**: v1.0.0 ready to tag  
-**Builder Target**: v1.0.0 in 4-5 weeks  
-**Suite Target**: v1.0.0 in 6-7 weeks  
+**Builder Target**: v1.0.0 in 3-4 weeks  
+**Suite Target**: v1.0.0 in 5-6 weeks  
 **License**: MIT
