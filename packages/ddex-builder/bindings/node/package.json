@@ -1,11 +1,30 @@
 {
-  "name": "ddex-builder",
+  "name": "@ddex-suite/builder",
   "version": "0.1.0",
-  "description": "DDEX XML builder with deterministic output",
+  "description": "DDEX XML builder with deterministic output and DB-C14N/1.0 canonicalization",
+  "keywords": ["ddex", "xml", "builder", "music", "deterministic", "canonicalization"],
   "main": "index.js",
   "types": "index.d.ts",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daddykev/ddex-suite.git",
+    "directory": "packages/ddex-builder/bindings/node"
+  },
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "require": "./index.js",
+      "types": "./index.d.ts"
+    }
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "*.node"
+  ],
   "napi": {
-    "name": "ddex-builder",
+    "name": "ddex-builder-node",
     "triples": {
       "defaults": true,
       "additional": [
@@ -23,7 +42,11 @@
     "build:debug": "napi build --platform",
     "prepublishOnly": "napi prepublish -t npm",
     "artifacts": "napi artifacts",
-    "version": "napi version"
+    "version": "napi version",
+    "test": "node test.js"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   },
   "devDependencies": {
     "@napi-rs/cli": "^2.18.4",

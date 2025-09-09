@@ -1561,7 +1561,7 @@ ddex-suite/
 - [ ] Test all bindings
 
 #### 3.4 Advanced Builder Features
-- [ ] Add partner presets (Spotify, Apple, etc.)
+- [ ] Add partner presets (Spotify, YouTube)
 - [ ] Implement streaming writer
 - [ ] Add semantic diff engine
 - [ ] Support UpdateReleaseMessage

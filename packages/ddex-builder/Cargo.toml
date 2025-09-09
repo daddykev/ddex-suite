@@ -58,6 +58,8 @@ default = ["async"]
 async = ["tokio", "futures"]
 strict = []  # Enable strict validation
 bench = []
+ffi = []  # Foreign Function Interface support
+wasm = []  # WebAssembly support
 
 # Benchmarks
 [[bench]]

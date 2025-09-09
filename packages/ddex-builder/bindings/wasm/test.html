@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDEX Builder WASM Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1, h2 {
+            color: #333;
+            border-bottom: 2px solid #007acc;
+            padding-bottom: 5px;
+        }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #005a9e;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-family: inherit;
+        }
+        textarea {
+            height: 150px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .stat-item {
+            background: #f0f8ff;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #007acc;
+        }
+        .error {
+            background: #ffe6e6;
+            border: 1px solid #ff9999;
+            color: #cc0000;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #e6ffe6;
+            border: 1px solid #99cc99;
+            color: #006600;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .log {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            height: 200px;
+            overflow-y: auto;
+        }
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>DDEX Builder WASM Interactive Test</h1>
+    
+    <div class="container">
+        <h2>WASM Module Status</h2>
+        <div id="wasm-status">Loading WASM module...</div>
+        <div id="wasm-info"></div>
+    </div>
+
+    <div class="two-column">
+        <div class="container">
+            <h2>Add Release</h2>
+            <div class="form-group">
+                <label>Release ID:</label>
+                <input type="text" id="releaseId" placeholder="REL001" value="REL001">
+            </div>
+            <div class="form-group">
+                <label>Release Type:</label>
+                <input type="text" id="releaseType" placeholder="Album" value="Album">
+            </div>
+            <div class="form-group">
+                <label>Title:</label>
+                <input type="text" id="releaseTitle" placeholder="Test Album" value="Test Album">
+            </div>
+            <div class="form-group">
+                <label>Artist:</label>
+                <input type="text" id="releaseArtist" placeholder="Test Artist" value="Test Artist">
+            </div>
+            <div class="form-group">
+                <label>Label (optional):</label>
+                <input type="text" id="releaseLabel" placeholder="Test Label">
+            </div>
+            <div class="form-group">
+                <label>UPC (optional):</label>
+                <input type="text" id="releaseUpc" placeholder="123456789012">
+            </div>
+            <button onclick="addRelease()">Add Release</button>
+        </div>
+
+        <div class="container">
+            <h2>Add Resource</h2>
+            <div class="form-group">
+                <label>Resource ID:</label>
+                <input type="text" id="resourceId" placeholder="RES001" value="RES001">
+            </div>
+            <div class="form-group">
+                <label>Resource Type:</label>
+                <input type="text" id="resourceType" placeholder="SoundRecording" value="SoundRecording">
+            </div>
+            <div class="form-group">
+                <label>Title:</label>
+                <input type="text" id="resourceTitle" placeholder="Test Track" value="Test Track">
+            </div>
+            <div class="form-group">
+                <label>Artist:</label>
+                <input type="text" id="resourceArtist" placeholder="Test Artist" value="Test Artist">
+            </div>
+            <div class="form-group">
+                <label>ISRC (optional):</label>
+                <input type="text" id="resourceIsrc" placeholder="USRC17607839">
+            </div>
+            <div class="form-group">
+                <label>Duration (optional):</label>
+                <input type="text" id="resourceDuration" placeholder="PT3M45S">
+            </div>
+            <button onclick="addResource()">Add Resource</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Builder Operations</h2>
+        <button onclick="buildDdex()">Build DDEX XML</button>
+        <button onclick="validate()">Validate</button>
+        <button onclick="showStats()">Show Statistics</button>
+        <button onclick="reset()">Reset Builder</button>
+        <button onclick="testBatchBuild()">Test Batch Build</button>
+        <button onclick="testValidateStructure()">Test XML Validation</button>
+        
+        <div id="operation-result"></div>
+    </div>
+
+    <div class="container">
+        <h2>Builder Statistics</h2>
+        <div id="stats" class="stats"></div>
+    </div>
+
+    <div class="container">
+        <h2>Generated DDEX XML</h2>
+        <textarea id="xml-output" readonly></textarea>
+        <button onclick="copyXml()">Copy XML</button>
+        <button onclick="downloadXml()">Download XML</button>
+    </div>
+
+    <div class="container">
+        <h2>Console Log</h2>
+        <div id="console-log" class="log"></div>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <script type="module">
+        import init, { 
+            WasmDdexBuilder, 
+            Release, 
+            Resource,
+            batchBuild,
+            validateStructure,
+            version
+        } from './pkg/ddex_builder_wasm.js';
+
+        let builder = null;
+        let logEntries = [];
+
+        // Override console.log to capture output
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            logEntries.push(args.join(' '));
+            updateConsoleLog();
+        };
+
+        function updateConsoleLog() {
+            const logElement = document.getElementById('console-log');
+            logElement.innerHTML = logEntries.slice(-50).join('<br>');
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        window.clearLog = function() {
+            logEntries = [];
+            updateConsoleLog();
+        };
+
+        async function initWasm() {
+            try {
+                await init();
+                builder = new WasmDdexBuilder();
+                
+                document.getElementById('wasm-status').innerHTML = 
+                    '<div class="success">✅ WASM module loaded successfully!</div>';
+                
+                document.getElementById('wasm-info').innerHTML = `
+                    <div class="stat-item">
+                        <strong>Version:</strong> ${version()}
+                    </div>
+                `;
+                
+                console.log('DDEX Builder WASM initialized');
+                showStats();
+            } catch (error) {
+                document.getElementById('wasm-status').innerHTML = 
+                    `<div class="error">❌ Failed to load WASM: ${error}</div>`;
+                console.error('WASM initialization failed:', error);
+            }
+        }
+
+        window.addRelease = function() {
+            if (!builder) {
+                showError('WASM not initialized');
+                return;
+            }
+
+            try {
+                const release = new Release(
+                    document.getElementById('releaseId').value,
+                    document.getElementById('releaseType').value,
+                    document.getElementById('releaseTitle').value,
+                    document.getElementById('releaseArtist').value
+                );
+
+                const label = document.getElementById('releaseLabel').value;
+                if (label) release.label = label;
+
+                const upc = document.getElementById('releaseUpc').value;
+                if (upc) release.upc = upc;
+
+                builder.addRelease(release);
+                showSuccess('Release added successfully');
+                showStats();
+            } catch (error) {
+                showError(`Failed to add release: ${error}`);
+            }
+        };
+
+        window.addResource = function() {
+            if (!builder) {
+                showError('WASM not initialized');
+                return;
+            }
+
+            try {
+                const resource = new Resource(
+                    document.getElementById('resourceId').value,
+                    document.getElementById('resourceType').value,
+                    document.getElementById('resourceTitle').value,
+                    document.getElementById('resourceArtist').value
+                );
+
+                const isrc = document.getElementById('resourceIsrc').value;
+                if (isrc) resource.isrc = isrc;
+
+                const duration = document.getElementById('resourceDuration').value;
+                if (duration) resource.duration = duration;
+
+                builder.addResource(resource);
+                showSuccess('Resource added successfully');
+                showStats();
+            } catch (error) {
+                showError(`Failed to add resource: ${error}`);
+            }
+        };
+
+        window.buildDdex = async function() {
+            if (!builder) {
+                showError('WASM not initialized');
+                return;
+            }
+
+            try {
+                const startTime = performance.now();
+                const xml = await builder.build();
+                const endTime = performance.now();
+                
+                document.getElementById('xml-output').value = xml;
+                showSuccess(`DDEX XML built successfully in ${(endTime - startTime).toFixed(2)}ms`);
+                showStats();
+                console.log('Build completed, XML length:', xml.length);
+            } catch (error) {
+                showError(`Build failed: ${error}`);
+            }
+        };
+
+        window.validate = function() {
+            if (!builder) {
+                showError('WASM not initialized');
+                return;
+            }
+
+            try {
+                const result = builder.validate();
+                if (result.is_valid) {
+                    showSuccess('✅ Validation passed');
+                } else {
+                    const errors = result.errors();
+                    showError(`❌ Validation failed: ${errors.join(', ')}`);
+                }
+            } catch (error) {
+                showError(`Validation error: ${error}`);
+            }
+        };
+
+        window.showStats = function() {
+            if (!builder) return;
+
+            try {
+                const stats = builder.getStats();
+                document.getElementById('stats').innerHTML = `
+                    <div class="stat-item">
+                        <strong>Releases:</strong> ${stats.releases_count}
+                    </div>
+                    <div class="stat-item">
+                        <strong>Resources:</strong> ${stats.resources_count}
+                    </div>
+                    <div class="stat-item">
+                        <strong>Total Build Time:</strong> ${stats.total_build_time_ms.toFixed(2)}ms
+                    </div>
+                    <div class="stat-item">
+                        <strong>Last Build Size:</strong> ${stats.last_build_size_bytes} bytes
+                    </div>
+                    <div class="stat-item">
+                        <strong>Validation Errors:</strong> ${stats.validation_errors}
+                    </div>
+                    <div class="stat-item">
+                        <strong>Validation Warnings:</strong> ${stats.validation_warnings}
+                    </div>
+                `;
+            } catch (error) {
+                showError(`Failed to get stats: ${error}`);
+            }
+        };
+
+        window.reset = function() {
+            if (!builder) {
+                showError('WASM not initialized');
+                return;
+            }
+
+            try {
+                builder.reset();
+                document.getElementById('xml-output').value = '';
+                showSuccess('Builder reset successfully');
+                showStats();
+            } catch (error) {
+                showError(`Reset failed: ${error}`);
+            }
+        };
+
+        window.testBatchBuild = async function() {
+            try {
+                const requests = [
+                    { releaseId: 'BATCH001', title: 'Batch Release 1' },
+                    { releaseId: 'BATCH002', title: 'Batch Release 2' },
+                    { releaseId: 'BATCH003', title: 'Batch Release 3' }
+                ];
+
+                const startTime = performance.now();
+                const results = await batchBuild(requests);
+                const endTime = performance.now();
+
+                showSuccess(`Batch build completed: ${results.length} results in ${(endTime - startTime).toFixed(2)}ms`);
+                console.log('Batch build results:', results.length);
+            } catch (error) {
+                showError(`Batch build failed: ${error}`);
+            }
+        };
+
+        window.testValidateStructure = function() {
+            const testXml = document.getElementById('xml-output').value || 
+                '<?xml version="1.0"?><test>Hello World</test>';
+
+            try {
+                const result = validateStructure(testXml);
+                if (result.is_valid) {
+                    showSuccess('✅ XML structure validation passed');
+                } else {
+                    const errors = result.errors();
+                    showError(`❌ XML structure validation failed: ${errors.join(', ')}`);
+                }
+            } catch (error) {
+                showError(`XML validation error: ${error}`);
+            }
+        };
+
+        window.copyXml = function() {
+            const xmlOutput = document.getElementById('xml-output');
+            xmlOutput.select();
+            document.execCommand('copy');
+            showSuccess('XML copied to clipboard');
+        };
+
+        window.downloadXml = function() {
+            const xml = document.getElementById('xml-output').value;
+            if (!xml) {
+                showError('No XML to download');
+                return;
+            }
+
+            const blob = new Blob([xml], { type: 'application/xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ddex-output.xml';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showSuccess('XML download started');
+        };
+
+        function showError(message) {
+            document.getElementById('operation-result').innerHTML = 
+                `<div class="error">${message}</div>`;
+        }
+
+        function showSuccess(message) {
+            document.getElementById('operation-result').innerHTML = 
+                `<div class="success">${message}</div>`;
+        }
+
+        // Initialize WASM when the page loads
+        initWasm();
+    </script>
+</body>
+</html>
