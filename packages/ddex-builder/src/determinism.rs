@@ -3,7 +3,7 @@
 //! CRITICAL: This module ensures deterministic output by using IndexMap
 //! everywhere instead of HashMap/HashSet.
 
-use indexmap::{IndexMap, IndexSet};
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
 /// Determinism configuration for XML generation

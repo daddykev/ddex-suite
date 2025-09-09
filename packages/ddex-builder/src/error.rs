@@ -1,9 +1,10 @@
 //! Error types for the builder
 
 use thiserror::Error;
+use serde::{Serialize, Deserialize};
 
 /// Build error
-#[derive(Debug, Clone, Error)]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
 pub enum BuildError {
     /// Missing required field
     #[error("Missing required field: {field}")]
@@ -33,17 +34,24 @@ pub enum BuildError {
     #[error("Determinism check failed: {message}")]
     DeterminismFailure { message: String },
     
-    /// IO error
+    /// IO error (changed to store string instead of std::io::Error)
     #[error("IO error: {0}")]
-    Io(#[from] std::io::Error),
+    Io(String),
     
     /// Serialization error
     #[error("Serialization error: {0}")]
     Serialization(String),
 }
 
+// Implement From<std::io::Error> manually
+impl From<std::io::Error> for BuildError {
+    fn from(err: std::io::Error) -> Self {
+        BuildError::Io(err.to_string())
+    }
+}
+
 /// Build warning
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildWarning {
     pub code: String,
     pub message: String,
