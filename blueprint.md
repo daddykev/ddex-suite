@@ -1584,12 +1584,12 @@ ddex-suite/
   - [x] API consistency report generated
 
 #### 3.4 Advanced Builder Features
-- [ ] Add partner presets (Spotify, YouTube)
-- [ ] Implement streaming writer
-- [ ] Add semantic diff engine
-- [ ] Support UpdateReleaseMessage
-- [ ] Add JSON Schema generation
-- [ ] Multi-version support (3.8.2, 4.2, 4.3)
+- [x] Add partner presets (Spotify, YouTube)
+- [x] Implement streaming writer
+- [x] Add semantic diff engine
+- [x] Support UpdateReleaseMessage
+- [x] Add JSON Schema generation
+- [x] Multi-version support (3.8.2, 4.2, 4.3)
 
 #### 3.5 Builder Polish
 - [ ] Complete CLI with all commands

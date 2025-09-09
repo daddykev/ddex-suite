@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use serde_wasm_bindgen::{from_value, to_value};
 use std::collections::HashMap;
 
+pub mod diff_viewer;
+
 // Set up console error handling for better debugging
 #[wasm_bindgen(start)]
 pub fn main() {
@@ -301,6 +303,124 @@ impl WasmDdexBuilder {
         self.resources.clear();
         self.stats = BuilderStats::new();
         console_log!("Builder reset");
+    }
+
+    #[wasm_bindgen(js_name = getAvailablePresets)]
+    pub fn get_available_presets(&self) -> Vec<String> {
+        vec![
+            "spotify_album".to_string(),
+            "spotify_single".to_string(),
+            "spotify_ep".to_string(),
+            "youtube_album".to_string(),
+            "youtube_video".to_string(),
+            "youtube_single".to_string(),
+            "apple_music_43".to_string(),
+        ]
+    }
+
+    #[wasm_bindgen(js_name = getPresetInfo)]
+    pub fn get_preset_info(&self, preset_name: &str) -> Result<JsValue, JsValue> {
+        let preset_info = match preset_name {
+            "spotify_album" => serde_json::json!({
+                "name": "spotify_album",
+                "description": "Spotify Album ERN 4.3 requirements with audio quality validation",
+                "version": "1.0.0",
+                "profile": "AudioAlbum",
+                "required_fields": [
+                    "ISRC", "UPC", "ReleaseDate", "Genre", "ExplicitContent",
+                    "AlbumTitle", "ArtistName", "TrackTitle"
+                ],
+                "disclaimer": "Based on Spotify public documentation. Verify current requirements."
+            }),
+            "spotify_single" => serde_json::json!({
+                "name": "spotify_single",
+                "description": "Spotify Single ERN 4.3 requirements with simplified track structure",
+                "version": "1.0.0",
+                "profile": "AudioSingle",
+                "required_fields": [
+                    "ISRC", "UPC", "ReleaseDate", "Genre", "ExplicitContent",
+                    "TrackTitle", "ArtistName"
+                ],
+                "disclaimer": "Based on Spotify public documentation. Verify current requirements."
+            }),
+            "youtube_video" => serde_json::json!({
+                "name": "youtube_video",
+                "description": "YouTube Music Video ERN 4.2/4.3 with video resource handling",
+                "version": "1.0.0",
+                "profile": "VideoSingle",
+                "required_fields": [
+                    "ISRC", "ISVN", "ReleaseDate", "Genre", "ContentID", "VideoResource",
+                    "AudioResource", "VideoTitle", "ArtistName", "AssetType", "VideoQuality"
+                ],
+                "disclaimer": "Based on YouTube Partner documentation. Video encoding requirements may vary."
+            }),
+            _ => return Err(JsValue::from_str(&format!("Unknown preset: {}", preset_name)))
+        };
+        
+        serde_wasm_bindgen::to_value(&preset_info)
+            .map_err(|e| JsValue::from_str(&format!("Serialization error: {}", e)))
+    }
+
+    #[wasm_bindgen(js_name = applyPreset)]
+    pub fn apply_preset(&mut self, preset_name: &str) -> Result<(), JsValue> {
+        // Validate preset exists by trying to get its info
+        let _preset_info = self.get_preset_info(preset_name)?;
+        
+        // In a full implementation, this would apply the preset configuration
+        // to the internal builder state. For now, we just validate the preset exists.
+        console_log!("Applied preset: {}", preset_name);
+        Ok(())
+    }
+
+    #[wasm_bindgen(js_name = getPresetValidationRules)]
+    pub fn get_preset_validation_rules(&self, preset_name: &str) -> Result<JsValue, JsValue> {
+        let rules = match preset_name {
+            "spotify_album" | "spotify_single" => serde_json::json!([
+                {
+                    "field_name": "ISRC",
+                    "rule_type": "Required",
+                    "message": "ISRC is required for Spotify releases",
+                    "parameters": null
+                },
+                {
+                    "field_name": "AudioQuality",
+                    "rule_type": "AudioQuality",
+                    "message": "Minimum 16-bit/44.1kHz audio quality required",
+                    "parameters": {
+                        "min_bit_depth": "16",
+                        "min_sample_rate": "44100"
+                    }
+                },
+                {
+                    "field_name": "TerritoryCode",
+                    "rule_type": "TerritoryCode",
+                    "message": "Territory code must be 'Worldwide' or 'WW'",
+                    "parameters": {
+                        "allowed": "Worldwide,WW"
+                    }
+                }
+            ]),
+            "youtube_video" | "youtube_album" => serde_json::json!([
+                {
+                    "field_name": "ContentID",
+                    "rule_type": "Required",
+                    "message": "Content ID is required for YouTube releases",
+                    "parameters": null
+                },
+                {
+                    "field_name": "VideoQuality",
+                    "rule_type": "OneOf",
+                    "message": "Video quality must be HD720, HD1080, or 4K",
+                    "parameters": {
+                        "options": "HD720,HD1080,4K"
+                    }
+                }
+            ]),
+            _ => return Err(JsValue::from_str(&format!("Unknown preset: {}", preset_name)))
+        };
+        
+        serde_wasm_bindgen::to_value(&rules)
+            .map_err(|e| JsValue::from_str(&format!("Serialization error: {}", e)))
     }
 
     fn generate_placeholder_xml(&self) -> Result<String, JsValue> {

@@ -35,6 +35,7 @@ blake3 = "1.5"
 unicode-normalization = "0.1"
 regex = "1.10"
 once_cell = "1.19"
+html-escape = "0.2"
 
 # Validation
 url = "2.5"

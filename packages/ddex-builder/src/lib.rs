@@ -13,9 +13,14 @@ pub mod determinism;
 pub mod error;
 pub mod generator;
 pub mod presets;
+pub mod streaming;
+pub mod diff;
+pub mod messages;
 pub mod linker;
 pub mod id_generator;
 pub mod preflight;
+pub mod schema;
+pub mod versions;
 
 // Re-export main types
 pub use builder::{DDEXBuilder, BuildOptions, BuildRequest, BuildResult};
@@ -26,6 +31,13 @@ pub use presets::PartnerPreset;
 pub use linker::{ReferenceLinker, LinkerConfig, EntityType, LinkerError};
 pub use id_generator::{StableHashGenerator, StableHashConfig, HashAlgorithm};
 pub use preflight::{PreflightValidator, ValidationConfig, ValidationResult, PreflightLevel};
+pub use diff::{DiffEngine, DiffConfig, VersionCompatibility};
+pub use diff::types::{ChangeSet, SemanticChange, DiffPath, ChangeType, ImpactLevel};
+pub use diff::formatter::DiffFormatter;
+pub use messages::{UpdateReleaseMessage, UpdateGenerator, UpdateAction, UpdateConfig, ValidationStatus};
+pub use schema::{SchemaGenerator, JsonSchema, SchemaConfig, SchemaDraft, SchemaCommand};
+pub use versions::{VersionManager, VersionConverter, ConverterResult as ConversionResult, ConversionOptions};
+pub use presets::DdexVersion;
 
 use indexmap::IndexMap;
 // Remove unused serde imports
@@ -39,6 +51,8 @@ pub struct Builder {
     config: DeterminismConfig,
     presets: IndexMap<String, PartnerPreset>,
     locked_preset: Option<String>,
+    version_manager: versions::VersionManager,
+    target_version: Option<DdexVersion>,
 }
 
 impl Default for Builder {
@@ -54,6 +68,8 @@ impl Builder {
             config: DeterminismConfig::default(),
             presets: Self::load_default_presets(),
             locked_preset: None,
+            version_manager: versions::VersionManager::new(),
+            target_version: None,
         }
     }
     
@@ -63,6 +79,8 @@ impl Builder {
             config,
             presets: Self::load_default_presets(),
             locked_preset: None,
+            version_manager: versions::VersionManager::new(),
+            target_version: None,
         }
     }
     
@@ -85,6 +103,22 @@ impl Builder {
         
         Ok(())
     }
+
+    /// Apply a preset configuration (alias for apply_preset for convenience)
+    pub fn preset(&mut self, preset_name: &str) -> Result<&mut Self, error::BuildError> {
+        self.apply_preset(preset_name, false)?;
+        Ok(self)
+    }
+
+    /// Get available preset names
+    pub fn available_presets(&self) -> Vec<String> {
+        self.presets.keys().cloned().collect()
+    }
+
+    /// Get preset details
+    pub fn get_preset(&self, preset_name: &str) -> Option<&PartnerPreset> {
+        self.presets.get(preset_name)
+    }
     
     /// Check if a preset is locked
     pub fn is_preset_locked(&self) -> bool {
@@ -96,12 +130,45 @@ impl Builder {
         &self.config
     }
     
+    /// Set target DDEX version for building
+    pub fn with_version(&mut self, version: DdexVersion) -> &mut Self {
+        self.target_version = Some(version);
+        self
+    }
+    
+    /// Get the target DDEX version
+    pub fn target_version(&self) -> Option<DdexVersion> {
+        self.target_version
+    }
+    
+    /// Detect version from XML content
+    pub fn detect_version(&self, xml_content: &str) -> Result<DdexVersion, error::BuildError> {
+        self.version_manager.detect_version(xml_content)
+            .map(|detection| detection.detected_version)
+            .map_err(|e| error::BuildError::InvalidFormat {
+                field: "version".to_string(),
+                message: format!("Version detection failed: {}", e),
+            })
+    }
+    
+    /// Convert XML between DDEX versions
+    pub fn convert_version(&self, xml_content: &str, from_version: DdexVersion, to_version: DdexVersion, options: Option<ConversionOptions>) -> Result<versions::ConverterResult, error::BuildError> {
+        let converter = versions::VersionConverter::new();
+        Ok(converter.convert(xml_content, from_version, to_version, options))
+    }
+    
+    /// Get version compatibility information
+    pub fn is_version_compatible(&self, from: DdexVersion, to: DdexVersion) -> bool {
+        self.version_manager.is_conversion_supported(from, to)
+    }
+    
+    /// Get supported DDEX versions
+    pub fn supported_versions(&self) -> Vec<DdexVersion> {
+        versions::utils::supported_versions()
+    }
+    
     fn load_default_presets() -> IndexMap<String, PartnerPreset> {
-        let mut presets = IndexMap::new();
-        // Load built-in presets
-        presets.insert("spotify_audio_43".to_string(), presets::spotify_audio_43());
-        presets.insert("apple_music_43".to_string(), presets::apple_music_43());
-        presets
+        presets::all_presets()
     }
     
     /// Internal build method used by determinism verifier

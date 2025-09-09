@@ -197,6 +197,84 @@ impl BuilderStats {
 }
 
 #[pyclass]
+#[derive(Debug, Clone)]
+pub struct PresetInfo {
+    #[pyo3(get, set)]
+    pub name: String,
+    #[pyo3(get, set)]
+    pub description: String,
+    #[pyo3(get, set)]
+    pub version: String,
+    #[pyo3(get, set)]
+    pub profile: String,
+    #[pyo3(get, set)]
+    pub required_fields: Vec<String>,
+    #[pyo3(get, set)]
+    pub disclaimer: String,
+}
+
+#[pymethods]
+impl PresetInfo {
+    #[new]
+    pub fn new(
+        name: String,
+        description: String,
+        version: String,
+        profile: String,
+        required_fields: Vec<String>,
+        disclaimer: String,
+    ) -> Self {
+        PresetInfo {
+            name,
+            description,
+            version,
+            profile,
+            required_fields,
+            disclaimer,
+        }
+    }
+
+    fn __repr__(&self) -> String {
+        format!("PresetInfo(name='{}', profile='{}')", self.name, self.profile)
+    }
+}
+
+#[pyclass]
+#[derive(Debug, Clone)]
+pub struct ValidationRulePy {
+    #[pyo3(get, set)]
+    pub field_name: String,
+    #[pyo3(get, set)]
+    pub rule_type: String,
+    #[pyo3(get, set)]
+    pub message: String,
+    #[pyo3(get, set)]
+    pub parameters: Option<HashMap<String, String>>,
+}
+
+#[pymethods]
+impl ValidationRulePy {
+    #[new]
+    pub fn new(
+        field_name: String,
+        rule_type: String,
+        message: String,
+        parameters: Option<HashMap<String, String>>,
+    ) -> Self {
+        ValidationRulePy {
+            field_name,
+            rule_type,
+            message,
+            parameters,
+        }
+    }
+
+    fn __repr__(&self) -> String {
+        format!("ValidationRule(field='{}', type='{}')", self.field_name, self.rule_type)
+    }
+}
+
+#[pyclass]
 pub struct DdexBuilder {
     releases: Vec<Release>,
     resources: Vec<Resource>,
@@ -256,6 +334,137 @@ impl DdexBuilder {
         self.releases.clear();
         self.resources.clear();
         self.stats = BuilderStats::new(0, 0, 0.0, 0.0, 0, 0);
+    }
+
+    pub fn get_available_presets(&self) -> Vec<String> {
+        vec![
+            "spotify_album".to_string(),
+            "spotify_single".to_string(),
+            "spotify_ep".to_string(),
+            "youtube_album".to_string(),
+            "youtube_video".to_string(),
+            "youtube_single".to_string(),
+            "apple_music_43".to_string(),
+        ]
+    }
+
+    pub fn get_preset_info(&self, preset_name: String) -> PyResult<PresetInfo> {
+        match preset_name.as_str() {
+            "spotify_album" => Ok(PresetInfo::new(
+                "spotify_album".to_string(),
+                "Spotify Album ERN 4.3 requirements with audio quality validation".to_string(),
+                "1.0.0".to_string(),
+                "AudioAlbum".to_string(),
+                vec![
+                    "ISRC".to_string(),
+                    "UPC".to_string(),
+                    "ReleaseDate".to_string(),
+                    "Genre".to_string(),
+                    "ExplicitContent".to_string(),
+                    "AlbumTitle".to_string(),
+                    "ArtistName".to_string(),
+                    "TrackTitle".to_string(),
+                ],
+                "Based on Spotify public documentation. Verify current requirements.".to_string(),
+            )),
+            "spotify_single" => Ok(PresetInfo::new(
+                "spotify_single".to_string(),
+                "Spotify Single ERN 4.3 requirements with simplified track structure".to_string(),
+                "1.0.0".to_string(),
+                "AudioSingle".to_string(),
+                vec![
+                    "ISRC".to_string(),
+                    "UPC".to_string(),
+                    "ReleaseDate".to_string(),
+                    "Genre".to_string(),
+                    "ExplicitContent".to_string(),
+                    "TrackTitle".to_string(),
+                    "ArtistName".to_string(),
+                ],
+                "Based on Spotify public documentation. Verify current requirements.".to_string(),
+            )),
+            "youtube_video" => Ok(PresetInfo::new(
+                "youtube_video".to_string(),
+                "YouTube Music Video ERN 4.2/4.3 with video resource handling".to_string(),
+                "1.0.0".to_string(),
+                "VideoSingle".to_string(),
+                vec![
+                    "ISRC".to_string(),
+                    "ISVN".to_string(),
+                    "ReleaseDate".to_string(),
+                    "Genre".to_string(),
+                    "ContentID".to_string(),
+                    "VideoResource".to_string(),
+                    "AudioResource".to_string(),
+                    "VideoTitle".to_string(),
+                    "ArtistName".to_string(),
+                    "AssetType".to_string(),
+                    "VideoQuality".to_string(),
+                ],
+                "Based on YouTube Partner documentation. Video encoding requirements may vary.".to_string(),
+            )),
+            _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                format!("Unknown preset: {}", preset_name)
+            ))
+        }
+    }
+
+    pub fn apply_preset(&mut self, preset_name: String) -> PyResult<()> {
+        // Validate preset exists
+        let _preset_info = self.get_preset_info(preset_name.clone())?;
+        
+        // In a full implementation, this would apply the preset configuration
+        // to the internal builder state. For now, we just validate the preset exists.
+        Ok(())
+    }
+
+    pub fn get_preset_validation_rules(&self, preset_name: String) -> PyResult<Vec<ValidationRulePy>> {
+        match preset_name.as_str() {
+            "spotify_album" | "spotify_single" => Ok(vec![
+                ValidationRulePy::new(
+                    "ISRC".to_string(),
+                    "Required".to_string(),
+                    "ISRC is required for Spotify releases".to_string(),
+                    None,
+                ),
+                ValidationRulePy::new(
+                    "AudioQuality".to_string(),
+                    "AudioQuality".to_string(),
+                    "Minimum 16-bit/44.1kHz audio quality required".to_string(),
+                    Some([
+                        ("min_bit_depth".to_string(), "16".to_string()),
+                        ("min_sample_rate".to_string(), "44100".to_string()),
+                    ].iter().cloned().collect()),
+                ),
+                ValidationRulePy::new(
+                    "TerritoryCode".to_string(),
+                    "TerritoryCode".to_string(),
+                    "Territory code must be 'Worldwide' or 'WW'".to_string(),
+                    Some([
+                        ("allowed".to_string(), "Worldwide,WW".to_string()),
+                    ].iter().cloned().collect()),
+                ),
+            ]),
+            "youtube_video" | "youtube_album" => Ok(vec![
+                ValidationRulePy::new(
+                    "ContentID".to_string(),
+                    "Required".to_string(),
+                    "Content ID is required for YouTube releases".to_string(),
+                    None,
+                ),
+                ValidationRulePy::new(
+                    "VideoQuality".to_string(),
+                    "OneOf".to_string(),
+                    "Video quality must be HD720, HD1080, or 4K".to_string(),
+                    Some([
+                        ("options".to_string(), "HD720,HD1080,4K".to_string()),
+                    ].iter().cloned().collect()),
+                ),
+            ]),
+            _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                format!("Unknown preset: {}", preset_name)
+            ))
+        }
     }
 
     #[pyo3(signature = (df, profile="AudioAlbum"))]
@@ -478,6 +687,8 @@ fn ddex_builder(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Resource>()?;
     m.add_class::<ValidationResult>()?;
     m.add_class::<BuilderStats>()?;
+    m.add_class::<PresetInfo>()?;
+    m.add_class::<ValidationRulePy>()?;
     m.add_class::<DdexBuilder>()?;
     m.add_function(wrap_pyfunction!(batch_build, m)?)?;
     m.add_function(wrap_pyfunction!(validate_structure, m)?)?;

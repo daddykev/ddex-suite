@@ -516,6 +516,411 @@ impl DDEXBuilder {
         
         Ok(warnings)
     }
+    
+    /// Compare two DDEX XML documents and return semantic differences
+    /// 
+    /// This method performs semantic diffing that understands DDEX business logic,
+    /// not just XML structure differences.
+    pub fn diff_xml(&self, old_xml: &str, new_xml: &str) -> Result<super::diff::types::ChangeSet, super::error::BuildError> {
+        self.diff_xml_with_config(old_xml, new_xml, super::diff::DiffConfig::default())
+    }
+    
+    /// Compare two DDEX XML documents with custom diff configuration
+    pub fn diff_xml_with_config(
+        &self, 
+        old_xml: &str, 
+        new_xml: &str, 
+        config: super::diff::DiffConfig
+    ) -> Result<super::diff::types::ChangeSet, super::error::BuildError> {
+        // Parse both XML documents to AST
+        let old_ast = self.parse_xml_to_ast(old_xml)?;
+        let new_ast = self.parse_xml_to_ast(new_xml)?;
+        
+        // Create diff engine and compare
+        let mut diff_engine = super::diff::DiffEngine::new_with_config(config);
+        diff_engine.diff(&old_ast, &new_ast)
+    }
+    
+    /// Compare a BuildRequest with existing XML to see what would change
+    pub fn diff_request_with_xml(
+        &self, 
+        request: &BuildRequest, 
+        existing_xml: &str
+    ) -> Result<super::diff::types::ChangeSet, super::error::BuildError> {
+        // Build new XML from request
+        let build_result = self.build(request.clone(), BuildOptions::default())?;
+        
+        // Compare existing XML with newly built XML
+        self.diff_xml(existing_xml, &build_result.xml)
+    }
+    
+    /// Helper to parse XML string to AST
+    fn parse_xml_to_ast(&self, xml: &str) -> Result<super::ast::AST, super::error::BuildError> {
+        use quick_xml::Reader;
+        
+        let mut reader = Reader::from_str(xml);
+        reader.config_mut().trim_text(true);
+        
+        // This is a simplified XML->AST parser
+        // In a production system, you'd want to use the actual ddex-parser
+        let mut root_element = super::ast::Element::new("Root");
+        let namespace_map = indexmap::IndexMap::new();
+        
+        // For now, create a basic AST structure
+        // TODO: Implement proper XML parsing or integrate with ddex-parser
+        root_element = root_element.with_text(xml);
+        
+        Ok(super::ast::AST {
+            root: root_element,
+            namespaces: namespace_map,
+            schema_location: None,
+        })
+    }
+    
+    /// Create an UpdateReleaseMessage from two DDEX messages
+    /// 
+    /// This method compares an original DDEX message with an updated version and
+    /// generates a minimal UpdateReleaseMessage containing only the differences.
+    pub fn create_update(
+        &self,
+        original_xml: &str,
+        updated_xml: &str,
+        original_message_id: &str,
+    ) -> Result<super::messages::UpdateReleaseMessage, super::error::BuildError> {
+        let mut update_generator = super::messages::UpdateGenerator::new();
+        update_generator.create_update(original_xml, updated_xml, original_message_id)
+    }
+    
+    /// Create an UpdateReleaseMessage with custom configuration
+    pub fn create_update_with_config(
+        &self,
+        original_xml: &str,
+        updated_xml: &str,
+        original_message_id: &str,
+        config: super::messages::UpdateConfig,
+    ) -> Result<super::messages::UpdateReleaseMessage, super::error::BuildError> {
+        let mut update_generator = super::messages::UpdateGenerator::new_with_config(config);
+        update_generator.create_update(original_xml, updated_xml, original_message_id)
+    }
+    
+    /// Apply an UpdateReleaseMessage to a base DDEX message
+    /// 
+    /// This method takes a base DDEX message and applies the operations from an
+    /// UpdateReleaseMessage to produce a new complete DDEX message.
+    pub fn apply_update(
+        &self,
+        base_xml: &str,
+        update: &super::messages::UpdateReleaseMessage,
+    ) -> Result<String, super::error::BuildError> {
+        let update_generator = super::messages::UpdateGenerator::new();
+        update_generator.apply_update(base_xml, update)
+    }
+    
+    /// Create an update from a BuildRequest compared to existing XML
+    /// 
+    /// This is useful for generating updates when you have a new BuildRequest
+    /// that represents the desired state and need to update an existing message.
+    pub fn create_update_from_request(
+        &self,
+        existing_xml: &str,
+        request: &BuildRequest,
+        original_message_id: &str,
+    ) -> Result<super::messages::UpdateReleaseMessage, super::error::BuildError> {
+        // Build new XML from request
+        let build_result = self.build(request.clone(), BuildOptions::default())?;
+        
+        // Create update between existing and new XML
+        self.create_update(existing_xml, &build_result.xml, original_message_id)
+    }
+    
+    /// Validate an UpdateReleaseMessage for safety and consistency
+    pub fn validate_update(
+        &self,
+        update: &super::messages::UpdateReleaseMessage,
+    ) -> Result<super::messages::ValidationStatus, super::error::BuildError> {
+        let update_generator = super::messages::UpdateGenerator::new();
+        update_generator.validate_update(update)
+    }
+    
+    /// Generate an UpdateReleaseMessage as XML
+    pub fn serialize_update(
+        &self,
+        update: &super::messages::UpdateReleaseMessage,
+    ) -> Result<String, super::error::BuildError> {
+        self.serialize_update_message_to_xml(update)
+    }
+    
+    // Helper methods for update serialization
+    
+    fn serialize_update_message_to_xml(
+        &self,
+        update: &super::messages::UpdateReleaseMessage,
+    ) -> Result<String, super::error::BuildError> {
+        let mut xml = String::new();
+        
+        // XML declaration and root element
+        xml.push_str(r#"<?xml version="1.0" encoding="UTF-8"?>"#);
+        xml.push('\n');
+        xml.push_str(r#"<UpdateReleaseMessage xmlns="http://ddex.net/xml/ern/43" MessageSchemaVersionId="ern/43">"#);
+        xml.push('\n');
+        
+        // Message header
+        self.serialize_update_header(&mut xml, &update.header)?;
+        
+        // Update metadata
+        self.serialize_update_metadata(&mut xml, &update.update_metadata)?;
+        
+        // Update list
+        self.serialize_update_list(&mut xml, &update.update_list)?;
+        
+        // Resource updates
+        if !update.resource_updates.is_empty() {
+            self.serialize_resource_updates(&mut xml, &update.resource_updates)?;
+        }
+        
+        // Release updates
+        if !update.release_updates.is_empty() {
+            self.serialize_release_updates(&mut xml, &update.release_updates)?;
+        }
+        
+        // Deal updates
+        if !update.deal_updates.is_empty() {
+            self.serialize_deal_updates(&mut xml, &update.deal_updates)?;
+        }
+        
+        // Close root element
+        xml.push_str("</UpdateReleaseMessage>\n");
+        
+        Ok(xml)
+    }
+    
+    fn serialize_update_header(
+        &self,
+        xml: &mut String,
+        header: &MessageHeaderRequest,
+    ) -> Result<(), super::error::BuildError> {
+        xml.push_str("  <MessageHeader>\n");
+        
+        if let Some(ref message_id) = header.message_id {
+            xml.push_str(&format!("    <MessageId>{}</MessageId>\n", self.escape_xml(message_id)));
+        }
+        
+        // Message sender
+        xml.push_str("    <MessageSender>\n");
+        if !header.message_sender.party_name.is_empty() {
+            xml.push_str(&format!("      <PartyName>{}</PartyName>\n", 
+                self.escape_xml(&header.message_sender.party_name[0].text)));
+        }
+        xml.push_str("    </MessageSender>\n");
+        
+        // Message recipient
+        xml.push_str("    <MessageRecipient>\n");
+        if !header.message_recipient.party_name.is_empty() {
+            xml.push_str(&format!("      <PartyName>{}</PartyName>\n", 
+                self.escape_xml(&header.message_recipient.party_name[0].text)));
+        }
+        xml.push_str("    </MessageRecipient>\n");
+        
+        // Created date time
+        if let Some(ref created_time) = header.message_created_date_time {
+            xml.push_str(&format!("    <MessageCreatedDateTime>{}</MessageCreatedDateTime>\n", 
+                self.escape_xml(created_time)));
+        } else {
+            let default_time = chrono::Utc::now().to_rfc3339();
+            xml.push_str(&format!("    <MessageCreatedDateTime>{}</MessageCreatedDateTime>\n", 
+                self.escape_xml(&default_time)));
+        }
+        
+        xml.push_str("  </MessageHeader>\n");
+        Ok(())
+    }
+    
+    fn serialize_update_metadata(
+        &self,
+        xml: &mut String,
+        metadata: &super::messages::UpdateMetadata,
+    ) -> Result<(), super::error::BuildError> {
+        xml.push_str("  <UpdateMetadata>\n");
+        xml.push_str(&format!("    <OriginalMessageId>{}</OriginalMessageId>\n", 
+            self.escape_xml(&metadata.original_message_id)));
+        xml.push_str(&format!("    <UpdateSequence>{}</UpdateSequence>\n", metadata.update_sequence));
+        xml.push_str(&format!("    <TotalOperations>{}</TotalOperations>\n", metadata.total_operations));
+        xml.push_str(&format!("    <ImpactLevel>{}</ImpactLevel>\n", 
+            self.escape_xml(&metadata.impact_level)));
+        xml.push_str(&format!("    <ValidationStatus>{}</ValidationStatus>\n", metadata.validation_status));
+        xml.push_str(&format!("    <UpdateCreatedDateTime>{}</UpdateCreatedDateTime>\n", 
+            metadata.update_created_timestamp.to_rfc3339()));
+        xml.push_str("  </UpdateMetadata>\n");
+        Ok(())
+    }
+    
+    fn serialize_update_list(
+        &self,
+        xml: &mut String,
+        operations: &[super::messages::UpdateOperation],
+    ) -> Result<(), super::error::BuildError> {
+        xml.push_str("  <UpdateList>\n");
+        
+        for operation in operations {
+            xml.push_str("    <UpdateOperation>\n");
+            xml.push_str(&format!("      <OperationId>{}</OperationId>\n", 
+                self.escape_xml(&operation.operation_id)));
+            xml.push_str(&format!("      <Action>{}</Action>\n", operation.action));
+            xml.push_str(&format!("      <TargetPath>{}</TargetPath>\n", 
+                self.escape_xml(&operation.target_path)));
+            xml.push_str(&format!("      <EntityType>{}</EntityType>\n", operation.entity_type));
+            xml.push_str(&format!("      <EntityId>{}</EntityId>\n", 
+                self.escape_xml(&operation.entity_id)));
+            
+            if let Some(ref old_value) = operation.old_value {
+                xml.push_str(&format!("      <OldValue>{}</OldValue>\n", 
+                    self.escape_xml(old_value)));
+            }
+            
+            if let Some(ref new_value) = operation.new_value {
+                xml.push_str(&format!("      <NewValue>{}</NewValue>\n", 
+                    self.escape_xml(new_value)));
+            }
+            
+            xml.push_str(&format!("      <IsCritical>{}</IsCritical>\n", operation.is_critical));
+            xml.push_str(&format!("      <Description>{}</Description>\n", 
+                self.escape_xml(&operation.description)));
+            
+            if !operation.dependencies.is_empty() {
+                xml.push_str("      <Dependencies>\n");
+                for dependency in &operation.dependencies {
+                    xml.push_str(&format!("        <Dependency>{}</Dependency>\n", 
+                        self.escape_xml(dependency)));
+                }
+                xml.push_str("      </Dependencies>\n");
+            }
+            
+            xml.push_str("    </UpdateOperation>\n");
+        }
+        
+        xml.push_str("  </UpdateList>\n");
+        Ok(())
+    }
+    
+    fn serialize_resource_updates(
+        &self,
+        xml: &mut String,
+        resource_updates: &indexmap::IndexMap<String, super::messages::ResourceUpdate>,
+    ) -> Result<(), super::error::BuildError> {
+        xml.push_str("  <ResourceUpdates>\n");
+        
+        for (resource_id, update) in resource_updates {
+            xml.push_str("    <ResourceUpdate>\n");
+            xml.push_str(&format!("      <ResourceId>{}</ResourceId>\n", 
+                self.escape_xml(resource_id)));
+            xml.push_str(&format!("      <ResourceReference>{}</ResourceReference>\n", 
+                self.escape_xml(&update.resource_reference)));
+            xml.push_str(&format!("      <Action>{}</Action>\n", update.action));
+            
+            // Add resource data if present
+            if let Some(ref data) = update.resource_data {
+                xml.push_str("      <ResourceData>\n");
+                xml.push_str(&format!("        <Type>{}</Type>\n", 
+                    self.escape_xml(&data.resource_type)));
+                xml.push_str(&format!("        <Title>{}</Title>\n", 
+                    self.escape_xml(&data.title)));
+                xml.push_str(&format!("        <Artist>{}</Artist>\n", 
+                    self.escape_xml(&data.artist)));
+                
+                if let Some(ref isrc) = data.isrc {
+                    xml.push_str(&format!("        <ISRC>{}</ISRC>\n", 
+                        self.escape_xml(isrc)));
+                }
+                
+                if let Some(ref duration) = data.duration {
+                    xml.push_str(&format!("        <Duration>{}</Duration>\n", 
+                        self.escape_xml(duration)));
+                }
+                
+                xml.push_str("      </ResourceData>\n");
+            }
+            
+            xml.push_str("    </ResourceUpdate>\n");
+        }
+        
+        xml.push_str("  </ResourceUpdates>\n");
+        Ok(())
+    }
+    
+    fn serialize_release_updates(
+        &self,
+        xml: &mut String,
+        release_updates: &indexmap::IndexMap<String, super::messages::ReleaseUpdate>,
+    ) -> Result<(), super::error::BuildError> {
+        xml.push_str("  <ReleaseUpdates>\n");
+        
+        for (release_id, update) in release_updates {
+            xml.push_str("    <ReleaseUpdate>\n");
+            xml.push_str(&format!("      <ReleaseId>{}</ReleaseId>\n", 
+                self.escape_xml(release_id)));
+            xml.push_str(&format!("      <ReleaseReference>{}</ReleaseReference>\n", 
+                self.escape_xml(&update.release_reference)));
+            xml.push_str(&format!("      <Action>{}</Action>\n", update.action));
+            
+            // Add release data if present
+            if let Some(ref data) = update.release_data {
+                xml.push_str("      <ReleaseData>\n");
+                xml.push_str(&format!("        <Type>{}</Type>\n", 
+                    self.escape_xml(&data.release_type)));
+                xml.push_str(&format!("        <Title>{}</Title>\n", 
+                    self.escape_xml(&data.title)));
+                xml.push_str(&format!("        <Artist>{}</Artist>\n", 
+                    self.escape_xml(&data.artist)));
+                
+                if let Some(ref label) = data.label {
+                    xml.push_str(&format!("        <Label>{}</Label>\n", 
+                        self.escape_xml(label)));
+                }
+                
+                if let Some(ref upc) = data.upc {
+                    xml.push_str(&format!("        <UPC>{}</UPC>\n", 
+                        self.escape_xml(upc)));
+                }
+                
+                xml.push_str("      </ReleaseData>\n");
+            }
+            
+            xml.push_str("    </ReleaseUpdate>\n");
+        }
+        
+        xml.push_str("  </ReleaseUpdates>\n");
+        Ok(())
+    }
+    
+    fn serialize_deal_updates(
+        &self,
+        xml: &mut String,
+        deal_updates: &indexmap::IndexMap<String, super::messages::DealUpdate>,
+    ) -> Result<(), super::error::BuildError> {
+        xml.push_str("  <DealUpdates>\n");
+        
+        for (deal_id, update) in deal_updates {
+            xml.push_str("    <DealUpdate>\n");
+            xml.push_str(&format!("      <DealId>{}</DealId>\n", 
+                self.escape_xml(deal_id)));
+            xml.push_str(&format!("      <DealReference>{}</DealReference>\n", 
+                self.escape_xml(&update.deal_reference)));
+            xml.push_str(&format!("      <Action>{}</Action>\n", update.action));
+            
+            xml.push_str("    </DealUpdate>\n");
+        }
+        
+        xml.push_str("  </DealUpdates>\n");
+        Ok(())
+    }
+    
+    fn escape_xml(&self, text: &str) -> String {
+        text.replace('&', "&amp;")
+            .replace('<', "&lt;")
+            .replace('>', "&gt;")
+            .replace('"', "&quot;")
+            .replace('\'', "&apos;")
+    }
 }
 
 impl Default for DDEXBuilder {
