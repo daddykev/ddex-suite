@@ -141,7 +141,7 @@ Beyond the core implementation, this is a showcase of **software craftsmanship a
 - [ ] Test all bindings
 
 **3.4 Advanced Builder Features**
-- [ ] Add partner presets (Spotify, YouTube, etc.)
+- [ ] Add partner presets (Spotify, YouTube)
 - [ ] Implement streaming writer
 - [ ] Add semantic diff engine
 - [ ] Support UpdateReleaseMessage
@@ -218,7 +218,7 @@ interface ParsedRelease {
 - **Preflight Validation**: ISRC/UPC format checking with checksums
 
 ### 🔄 In Development
-- **Partner Presets**: Optimized configurations for Spotify, Apple Music, Amazon
+- **Partner Presets**: Optimized configurations for Spotify, YouTube, Amazon
 - **Cross-Platform Bindings**: Native bindings for Node.js, Python, and browsers (WASM)
 - **Streaming**: Handle massive catalogs with backpressure and progress callbacks
 - **Semantic Diff**: Track changes between DDEX message versions

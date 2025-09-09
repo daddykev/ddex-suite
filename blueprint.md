@@ -342,7 +342,7 @@ for dsp, dsp_config in DSP_CONFIGS.items():
     # Build DDEX message with DSP-specific formatting
     result = builder.build({
         'header': {
-            'message_sender': {'party_name': [{'text': 'Sony Music Entertainment'}]},
+            'message_sender': {'party_name': [{'text': 'XYZ Music Entertainment'}]},
             'message_recipient': {'party_name': [{'text': dsp_config['name']}]}
         },
         'version': dsp_config['ern_version'],  # DSP-specific version
@@ -357,8 +357,8 @@ for dsp, dsp_config in DSP_CONFIGS.items():
 
 ### Digital Distributors
 
-#### DistroKid - Independent Artist Onboarding
-**Scenario**: DistroKid delivers 100,000+ new releases daily from independent artists and needs to generate DDEX feeds for multiple platforms.
+#### Indie Distro - Independent Artist Onboarding
+**Scenario**: Indie Distro delivers 10,000+ new releases daily from independent artists and needs to generate DDEX feeds for multiple platforms.
 
 ```typescript
 import { DDEXBuilder } from 'ddex-builder';
@@ -375,7 +375,7 @@ releaseQueue.process(async (job) => {
     identifiers: {
       upc: await generateUPC(artistSubmission),
       proprietary: [{ 
-        namespace: 'distrokid', 
+        namespace: 'indieDistro', 
         value: artistSubmission.releaseId 
       }]
     },
@@ -523,7 +523,7 @@ class MultiFormatBuilder:
         })
 ```
 
-### The "Parse → Modify → Build" Workflow
+### Trifecta - The "Parse → Modify → Build" Workflow
 
 This is the primary use case, demonstrating the power of the full suite:
 
@@ -1499,7 +1499,7 @@ ddex-suite/
 - [ ] Test on Linux/Windows (CI needed)
 - [ ] Publish to PyPI as `ddex-parser`
 
-#### 2.4 CLI & Polish ✅ COMPLETED (Sept 8, 2025)
+#### 2.4 CLI & Polish ✅ COMPLETED
 - [x] Build comprehensive CLI with clap
 - [x] Add parse/detect-version/sanity-check commands
 - [x] Create basic documentation
@@ -1511,7 +1511,7 @@ ddex-suite/
 
 ### Phase 3: DDEX Builder Development 🔄 IN PROGRESS
 
-#### 3.1 Builder Foundation ✅ COMPLETED (Sept 8, 2025)
+#### 3.1 Builder Foundation ✅ COMPLETED
 - [x] Initialize `packages/ddex-builder`
 - [x] Import `packages/core` as dependency
 - [x] Implement DB-C14N/1.0 spec (basic implementation)
@@ -1522,7 +1522,7 @@ ddex-suite/
 - [x] Generate valid DDEX ERN 4.3 XML
 - [x] Add basic tests (7 passing)
 
-#### 3.2 Core Builder Features ✅ COMPLETED (Sept 9, 2025)
+#### 3.2 Core Builder Features ✅ COMPLETED
 - [x] Implement Flat→AST→XML pipeline
 - [x] Basic XML serialization with namespaces
 - [x] Element ordering and formatting
@@ -1588,7 +1588,6 @@ ddex-suite/
 #### 4.2 Documentation & Launch
 - [ ] Create unified documentation site
 - [ ] Build interactive tutorials
-- [ ] Record demo videos
 - [ ] Prepare marketing materials
 - [ ] Setup community channels
 - [ ] Official v1.0.0 release
