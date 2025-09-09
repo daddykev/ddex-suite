@@ -43,6 +43,19 @@ pub enum BuildError {
     #[error("XML generation error: {0}")]
     XmlGeneration(String),
     
+    /// Determinism verification failed
+    #[error("Determinism verification failed: {message}")]
+    DeterminismFailed {
+        message: String,
+    },
+    
+    /// Determinism guarantee violation
+    #[error("Determinism guarantee violated: {guarantee} - {details}")]
+    DeterminismGuaranteeViolated {
+        guarantee: String,
+        details: String,
+    },
+    
     /// Other error
     #[error("{0}")]
     Other(String),

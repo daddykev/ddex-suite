@@ -1592,8 +1592,8 @@ ddex-suite/
 - [x] Multi-version support (3.8.2, 4.2, 4.3)
 
 #### 3.5 Builder Polish
-- [ ] Complete CLI with all commands
-- [ ] Add `--verify-determinism` flag
+- [x] Complete CLI with all commands
+- [x] Add `--verify-determinism` flag
 - [ ] Performance optimization
 - [ ] Security audit
 - [ ] Complete documentation
