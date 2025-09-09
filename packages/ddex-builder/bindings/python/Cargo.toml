@@ -1,0 +1,22 @@
+[package]
+name = "ddex-builder-python"
+version = "0.1.0"
+edition = "2021"
+authors = ["Kevin Marques Moo"]
+license = "MIT"
+publish = false
+
+[lib]
+name = "ddex_builder"
+crate-type = ["cdylib"]
+
+[dependencies]
+ddex-builder = { path = "../.." }
+ddex-core = { path = "../../../core" }
+pyo3 = { version = "0.20", features = ["extension-module", "abi3-py38"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+pythonize = "0.20"
+
+[build-dependencies]
+pyo3-build-config = "0.20"

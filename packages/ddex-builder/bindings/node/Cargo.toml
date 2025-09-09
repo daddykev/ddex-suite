@@ -1,0 +1,25 @@
+[package]
+name = "ddex-builder-node"
+version = "0.1.0"
+edition = "2021"
+authors = ["Kevin Marques Moo"]
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+ddex-builder = { path = "../..", features = ["ffi"] }
+ddex-core = { path = "../../../core", features = ["typescript"] }
+napi = { version = "2", features = ["async", "serde-json", "tokio_rt"] }
+napi-derive = "2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1", features = ["rt-multi-thread"] }
+
+[build-dependencies]
+napi-build = "2"
+
+[profile.release]
+lto = true
