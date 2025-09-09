@@ -1,0 +1,50 @@
+---
+source: packages/ddex-builder/tests/golden_files.rs
+expression: result.xml
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" MessageSchemaVersionId="ern/4.3">
+  <MessageHeader>
+    <MessageThreadId>B3:2a6d499dac3c1616b08e50d49267bdb79bb78c3c526c4c6380b42d0135fab9a9</MessageThreadId>
+    <MessageId>B3:2a6d499dac3c1616b08e50d49267bdb79bb78c3c526c4c6380b42d0135fab9a9</MessageId>
+    <MessageCreatedDateTime>2025-01-01T00:00:00Z</MessageCreatedDateTime>
+    <MessageSender>
+      <PartyName>Test Sender</PartyName>
+    </MessageSender>
+    <MessageRecipient>
+      <PartyName>Test Recipient</PartyName>
+    </MessageRecipient>
+  </MessageHeader>
+  <ResourceList>
+    <SoundRecording>
+      <ResourceReference>A1</ResourceReference>
+      <ResourceId>
+        <ISRC>USRC12345678</ISRC>
+      </ResourceId>
+      <ReferenceTitle>
+        <TitleText>Track One</TitleText>
+      </ReferenceTitle>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A2</ResourceReference>
+      <ResourceId>
+        <ISRC>USRC12345679</ISRC>
+      </ResourceId>
+      <ReferenceTitle>
+        <TitleText>Track Two</TitleText>
+      </ReferenceTitle>
+      <Duration>PT4M20S</Duration>
+    </SoundRecording>
+  </ResourceList>
+  <ReleaseList>
+    <Release>
+      <ReleaseReference>R1</ReleaseReference>
+      <ReleaseId>
+        <GRid>REL001</GRid>
+      </ReleaseId>
+      <ReleaseResourceReference>A1</ReleaseResourceReference>
+      <ReleaseResourceReference>A2</ReleaseResourceReference>
+    </Release>
+  </ReleaseList>
+</ern:NewReleaseMessage>

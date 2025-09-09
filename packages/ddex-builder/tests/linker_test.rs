@@ -205,6 +205,7 @@ fn create_test_build_request() -> BuildRequest {
                 party_reference: None,
             },
             message_control_type: Some("LiveMessage".to_string()),
+            message_created_date_time: None,  // Add to existing MessageHeaderRequest structs
         },
         version: "4.3".to_string(),
         profile: Some("AudioAlbum".to_string()),
@@ -217,6 +218,9 @@ fn create_test_build_request() -> BuildRequest {
                     language_code: Some("en".to_string()),
                 }],
                 artist: "Test Artist".to_string(),
+                label: None,  // Add this
+                release_date: None,  // Add this
+                upc: None,  // Add this
                 tracks: vec![
                     TrackRequest {
                         track_id: "TRACK_001".to_string(),

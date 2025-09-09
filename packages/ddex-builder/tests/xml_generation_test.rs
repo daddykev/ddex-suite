@@ -30,6 +30,7 @@ fn test_linker_with_xml_generation() {
                 party_reference: None,
             },
             message_control_type: Some("LiveMessage".to_string()),
+            message_created_date_time: None,  // Add to existing MessageHeaderRequest structs
         },
         version: "4.3".to_string(),
         profile: Some("AudioAlbum".to_string()),
@@ -42,6 +43,9 @@ fn test_linker_with_xml_generation() {
                     language_code: Some("en".to_string()),
                 }],
                 artist: "Linked Artist".to_string(),
+                label: None,  // Add this
+                release_date: None,  // Add this
+                upc: None,  // Add this
                 tracks: vec![
                     TrackRequest {
                         track_id: "TRK_001".to_string(),
@@ -60,7 +64,7 @@ fn test_linker_with_xml_generation() {
                         artist: "Linked Artist".to_string(),
                     },
                 ],
-                resource_references: None, // Will be auto-generated
+                resource_references: None,  // Add this
             },
         ],
         deals: vec![],
@@ -163,6 +167,7 @@ fn create_simple_request() -> BuildRequest {
                 party_reference: None,
             },
             message_control_type: None,
+            message_created_date_time: None,  // Add to existing MessageHeaderRequest structs
         },
         version: "4.3".to_string(),
         profile: None,
@@ -172,6 +177,9 @@ fn create_simple_request() -> BuildRequest {
                 release_reference: None,
                 title: vec![],
                 artist: "Artist".to_string(),
+                label: None,  // Add this
+                release_date: None,  // Add this
+                upc: None,  // Add this
                 tracks: vec![
                     TrackRequest {
                         track_id: "TRK1".to_string(),

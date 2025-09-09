@@ -14,6 +14,8 @@ pub mod error;
 pub mod generator;
 pub mod presets;
 pub mod linker;
+pub mod id_generator;
+pub mod preflight;
 
 // Re-export main types
 pub use builder::{DDEXBuilder, BuildOptions, BuildRequest, BuildResult};
@@ -22,6 +24,8 @@ pub use determinism::DeterminismConfig;
 pub use error::{BuildError, BuildWarning};
 pub use presets::PartnerPreset;
 pub use linker::{ReferenceLinker, LinkerConfig, EntityType, LinkerError};
+pub use id_generator::{StableHashGenerator, StableHashConfig, HashAlgorithm};
+pub use preflight::{PreflightValidator, ValidationConfig, ValidationResult, PreflightLevel};
 
 use indexmap::IndexMap;
 // Remove unused serde imports

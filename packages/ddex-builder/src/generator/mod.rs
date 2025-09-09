@@ -57,10 +57,15 @@ impl ASTGenerator {
             header.add_child(Element::new("MessageId").with_text(msg_id));
         }
         
-        // Add MessageCreatedDateTime
+        // Add MessageCreatedDateTime - use provided timestamp or current time
+        let created_time = request.header.message_created_date_time
+            .as_ref()
+            .map(|t| t.clone())
+            .unwrap_or_else(|| chrono::Utc::now().to_rfc3339());
+        
         header.add_child(
             Element::new("MessageCreatedDateTime")
-                .with_text(chrono::Utc::now().to_rfc3339())
+                .with_text(created_time)
         );
         
         // Add MessageSender

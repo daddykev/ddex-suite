@@ -1,60 +1,75 @@
-//! Error types for the builder
+//! Error types for DDEX Builder
 
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 
-/// Build error
-#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+/// Build error types
+#[derive(Error, Debug, Clone, Serialize, Deserialize)]
 pub enum BuildError {
+    /// Invalid format
+    #[error("Invalid format in {field}: {message}")]
+    InvalidFormat {
+        field: String,
+        message: String,
+    },
+    
     /// Missing required field
     #[error("Missing required field: {field}")]
-    MissingRequired { field: String },
+    MissingRequired {
+        field: String,
+    },
     
-    /// Invalid format
-    #[error("Invalid format for {field}: {message}")]
-    InvalidFormat { field: String, message: String },
-    
-    /// Unknown field
-    #[error("Unknown field: {field}")]
-    UnknownField { field: String },
-    
-    /// Bad reference
+    /// Invalid reference
     #[error("Invalid reference: {reference}")]
-    BadReference { reference: String },
+    InvalidReference {
+        reference: String,
+    },
     
-    /// Cycle detected
-    #[error("Circular reference detected: {reference}")]
-    CycleDetected { reference: String },
+    /// Validation failed
+    #[error("Validation failed: {}", errors.join(", "))]
+    ValidationFailed {
+        errors: Vec<String>,
+    },
     
-    /// Namespace violation
-    #[error("Namespace lock violation: {message}")]
-    NamespaceLockViolation { message: String },
-    
-    /// Determinism failure
-    #[error("Determinism check failed: {message}")]
-    DeterminismFailure { message: String },
-    
-    /// IO error (changed to store string instead of std::io::Error)
+    /// IO error
     #[error("IO error: {0}")]
     Io(String),
     
     /// Serialization error
     #[error("Serialization error: {0}")]
     Serialization(String),
+    
+    /// XML generation error
+    #[error("XML generation error: {0}")]
+    XmlGeneration(String),
+    
+    /// Other error
+    #[error("{0}")]
+    Other(String),
 }
 
-// Implement From<std::io::Error> manually
 impl From<std::io::Error> for BuildError {
     fn from(err: std::io::Error) -> Self {
         BuildError::Io(err.to_string())
     }
 }
 
-/// Build warning
+impl From<serde_json::Error> for BuildError {
+    fn from(err: serde_json::Error) -> Self {
+        BuildError::Serialization(err.to_string())
+    }
+}
+
+impl From<quick_xml::Error> for BuildError {
+    fn from(err: quick_xml::Error) -> Self {
+        BuildError::XmlGeneration(err.to_string())
+    }
+}
+
+/// Build warning (non-fatal)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildWarning {
     pub code: String,
     pub message: String,
     pub location: Option<String>,
-    pub hint: Option<String>,
 }
