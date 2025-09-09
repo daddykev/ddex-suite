@@ -1,0 +1,69 @@
+[package]
+name = "ddex-builder"
+version = "0.1.0"
+edition = "2021"
+authors = ["Kevin Marques Moo"]
+license = "MIT"
+repository = "https://github.com/daddykev/ddex-suite"
+description = "Deterministic DDEX XML builder with DB-C14N/1.0 canonicalization"
+keywords = ["ddex", "xml", "builder", "deterministic", "music"]
+categories = ["encoding", "multimedia::audio"]
+
+[dependencies]
+# Core dependency
+ddex-core = { path = "../core" }
+
+# Deterministic collections (CRITICAL for determinism)
+indexmap = { version = "2.2", features = ["serde"] }
+
+# XML generation
+quick-xml = { workspace = true }
+xmltree = "0.10"
+
+# Core dependencies
+thiserror = { workspace = true }
+chrono = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# ID generation
+uuid = { workspace = true }
+sha2 = "0.10"
+blake3 = "1.5"
+
+# String operations
+unicode-normalization = "0.1"
+regex = "1.10"
+once_cell = "1.19"
+
+# Validation
+url = "2.5"
+mime = "0.3"
+
+# Optional features
+tokio = { workspace = true, optional = true }
+futures = { workspace = true, optional = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
+tempfile = { workspace = true }
+pretty_assertions = { workspace = true }
+proptest = { workspace = true }
+insta = { workspace = true }
+similar = "2.4"
+
+[features]
+default = ["async"]
+async = ["tokio", "futures"]
+strict = []  # Enable strict validation
+bench = []
+
+# Benchmarks
+[[bench]]
+name = "building"
+harness = false
+
+[[bench]]
+name = "canonicalization"
+harness = false
