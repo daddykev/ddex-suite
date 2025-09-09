@@ -1293,125 +1293,124 @@ ddex-suite/
 │   │   ├── src/
 │   │   │   ├── models/               # DDEX data models
 │   │   │   │   ├── common/           # Shared types
-│   │   │   │   │   ├── identifier.rs # 
-│   │   │   │   │   ├── localized.rs  # 
-│   │   │   │   │   ├── mod.rs        # 
-│   │   │   │   │   └── territory.rs  # 
+│   │   │   │   │   ├── identifier.rs # Defines DDEX identifiers like ISRC, ISNI, GRid with validation and formatting
+│   │   │   │   │   ├── localized.rs  # Handles localized strings with language codes and territory-specific text
+│   │   │   │   │   ├── mod.rs        # Module exports for common types used across DDEX models
+│   │   │   │   │   └── territory.rs  # Territory and region codes with ISO 3166 country code support
 │   │   │   │   ├── flat/             # Flattened model
-│   │   │   │   │   ├── deal.rs       # 
-│   │   │   │   │   ├── message.rs    # 
-│   │   │   │   │   ├── mod.rs        # 
-│   │   │   │   │   ├── release.rs    # 
-│   │   │   │   │   └── track.rs      # 
+│   │   │   │   │   ├── deal.rs       # Flattened deal structure for easier manipulation of commercial terms
+│   │   │   │   │   ├── message.rs    # Flattened DDEX message representation with direct access to all entities
+│   │   │   │   │   ├── mod.rs        # Module exports for flattened model types
+│   │   │   │   │   ├── release.rs    # Flattened release model with denormalized resource references
+│   │   │   │   │   └── track.rs      # Flattened track/resource model with inline technical details
 │   │   │   │   ├── graph/            # Graph model
-│   │   │   │   │   ├── deal.rs       # 
-│   │   │   │   │   ├── header.rs     # 
-│   │   │   │   │   ├── message.rs    # 
-│   │   │   │   │   ├── mod.rs        # 
-│   │   │   │   │   ├── party.rs      # 
-│   │   │   │   │   ├── release.rs    # 
-│   │   │   │   │   └── resource.rs   # 
+│   │   │   │   │   ├── deal.rs       # Graph-based deal model preserving DDEX reference relationships
+│   │   │   │   │   ├── header.rs     # Message header with sender, recipient, and control metadata
+│   │   │   │   │   ├── message.rs    # Root graph message structure with collections of parties, resources, releases, deals
+│   │   │   │   │   ├── mod.rs        # Module exports for graph model types
+│   │   │   │   │   ├── party.rs      # Party entities representing labels, publishers, and rights holders
+│   │   │   │   │   ├── release.rs    # Graph release model with resource references and display artists
+│   │   │   │   │   └── resource.rs   # Resource model for sound recordings, videos, images with technical details
 │   │   │   │   ├── versions/         # Version variations
-│   │   │   │   │   ├── common.rs     # 
-│   │   │   │   │   ├── ern_42.rs     # 
-│   │   │   │   │   ├── ern_43.rs     # 
-│   │   │   │   │   ├── ern_382.rs    # 
-│   │   │   │   │   ├── mod.rs        # 
-│   │   │   │   │   ├── tests.rs      # 
-│   │   │   │   │   └── version.rs    # 
-│   │   │   │   ├── extensions.rs     # Extension support
-│   │   │   │   └── mod.rs            # 
-│   │   │   ├── Cargo.toml            #
-│   │   │   ├── error.rs              # Common error types
-│   │   │   ├── ffi.rs                # FFI-friendly types
-│   │   │   └── lib.rs                # Library entry
-│   │   └── Cargo.toml
+│   │   │   │   │   ├── common.rs     # Shared version-agnostic DDEX structures and traits
+│   │   │   │   │   ├── ern_42.rs     # ERN 4.2 specific model variations and mappings
+│   │   │   │   │   ├── ern_43.rs     # ERN 4.3 specific model variations and mappings
+│   │   │   │   │   ├── ern_382.rs    # ERN 3.8.2 specific model variations and legacy support
+│   │   │   │   │   ├── mod.rs        # Version detection and routing module
+│   │   │   │   │   ├── tests.rs      # Unit tests for version-specific model transformations
+│   │   │   │   │   └── version.rs    # Version enum and detection logic for DDEX standards
+│   │   │   │   ├── extensions.rs     # Handles unknown XML elements and namespace extensions for round-trip fidelity
+│   │   │   │   └── mod.rs            # Root module exports for all DDEX models
+│   │   │   ├── Cargo.toml            # Core library manifest with minimal dependencies
+│   │   │   ├── error.rs              # Shared error types and result aliases for the suite
+│   │   │   ├── ffi.rs                # Foreign function interface types for language bindings
+│   │   │   └── lib.rs                # Core library entry point and re-exports
+│   │   └── Cargo.toml                # Workspace member configuration for core package
 │   │
 │   ├── ddex-builder/                 # The DDEX Builder tool
 │   │   ├── benches/                  # 
-│   │   │   ├── building.rs           # 
-│   │   │   └── canonicalization.rs   # 
-│   │   ├── bindings/
-│   │   │   ├── models/               # DDEX data models
-│   │   │   │   ├── common/           # Shared types
-│   │   │   │   │   ├── identifier.rs # 
-│   │   │   │   │   ├── localized.rs  # 
-│   │   │   │   │   ├── mod.rs        # 
-│   │   │   │   │   └── territory.rs  # 
-│   │   ├── node/                     # Node.js package
-│   │   ├── python/                   # Python package
-│   │   ├── wasm/                     # WASM for browsers
+│   │   │   ├── building.rs           # Performance benchmarks for XML generation and building operations
+│   │   │   └── canonicalization.rs   # Benchmarks for DB-C14N canonicalization performance
+│   │   ├── bindings/                 #
+│   │   │   ├── node/                 # Node.js native bindings using napi-rs (future)
+│   │   │   ├── python/               # Python bindings using PyO3/maturin (future)
+│   │   │   └── wasm/                 # WebAssembly bindings for browser support (future)
 │   │   ├── src/                      # Rust builder implementation
-│   │   │   ├── builder/
-│   │   │   │   ├── package.json      # 
-│   │   │   │   ├── README.md         # 
-│   │   │   │   └── tsconfig.json     # 
-│   │   │   ├── canonical/            # DB-C14N/1.0
-│   │   │   ├── determinism/
-│   │   │   ├── generator/
-│   │   │   ├── linker/
+│   │   │   ├── builder/              # High-level builder API implementation
+│   │   │   ├── canonical/            #
+│   │   │   │   └── mod.rs            # DB-C14N implementation for deterministic XML canonicalization
+│   │   │   ├── determinism/          # Deterministic output enforcement and IndexMap usage
+│   │   │   ├── generator/            #
+│   │   │   │   ├── mod.rs            # XML generation orchestration and AST-to-XML transformation
+│   │   │   │   └── xml_writer.rs     # Low-level XML writing with proper escaping and formatting
+│   │   │   ├── linker/               #
+│   │   │   │   ├── auto_linker.rs    # Automatic reference linking between releases, resources, and deals
+│   │   │   │   ├── mod.rs            # Reference linker module exports and configuration
+│   │   │   │   ├── reference_generator.rs  # Generates unique references for entities (R1, A1, etc.)
+│   │   │   │   ├── relationship_manager.rs  # Manages and validates entity relationships in DDEX messages
+│   │   │   │   └── types.rs          # Type definitions for linking operations and reference maps
 │   │   │   ├── presets/
-│   │   │   └── preflight/
-│   │   └── README.md
+│   │   │   │   └── mod.rs            # Pre-configured builder settings for common DDEX profiles
+│   │   │   ├── ast.rs                # Abstract syntax tree representation for XML generation
+│   │   │   ├── builder.rs            # Main builder API for constructing DDEX messages programmatically
+│   │   │   ├── determinism.rs        # Ensures deterministic output with stable ordering and formatting
+│   │   │   ├── error.rs              # Builder-specific error types and error handling
+│   │   │   ├── id_generator.rs       # Generates stable, deterministic IDs using content hashing
+│   │   │   ├── lib.rs                # Builder library entry point and public API exports
+│   │   │   └── preflight.rs          # Pre-build validation and compliance checking
+│   │   ├── tests/                    #
+│   │   │   ├── snashopts/            # Snapshot testing fixtures for golden file tests
+│   │   │   ├── basic_test.rs         # Core builder functionality tests
+│   │   │   ├── golden_files.rs       # Tests against known-good DDEX XML outputs
+│   │   │   ├── linker_test.rs        # Unit tests for reference linking logic
+│   │   │   ├── linker_xml_intergration_test.rs  # Integration tests for linker with real XML generation
+│   │   │   └── xml_generation_text.rs  # Tests for XML generation correctness and formatting
+│   │   ├── Cargo.toml                # Builder package dependencies and metadata
+│   │   └── clippy.toml               # Rust linter configuration for code quality
 │   │
 │   └── ddex-parser/                  # The DDEX Parser tool
 │       ├── benches/                  # 
-│       │   ├── memory.rs             # 
-│       │   ├── parsing.rs            # 
-│       │   └── streaming.rs          # 
-│       ├── benchmarks/               # 
-│       ├── bindings/
+│       │   ├── memory.rs             # Memory usage benchmarks for parsing operations
+│       │   ├── parsing.rs            # Performance benchmarks for XML parsing speed
+│       │   └── streaming.rs          # Benchmarks for streaming parser with large files
+│       ├── benchmarks/               # Additional benchmark data and results storage
+│       ├── bindings/                 #
 │       │   ├── node/                 # 
 │       │   │   ├── src/              # 
-│       │   │   │   ├── Cargo.tolm    # 
-│       │   │   │   ├── index.ts      # 
-│       │   │   │   ├── lib.rs        # 
-│       │   │   │   ├── parser.ts     # 
-│       │   │   │   ├── types.ts      # 
-│       │   │   │   └── wasm.d.ts     # 
-│       │   │   ├── build.rs          # 
-│       │   │   ├── Cargo.toml        # 
-│       │   │   ├── index.d.ts        # 
-│       │   │   ├── index.js          # 
-│       │   │   ├── LICENSE           # 
-│       │   │   ├── package.json      # 
-│       │   │   ├── README.md         # 
-│       │   │   └── tsconfig.json     # 
+│       │   │   │   ├── Cargo.toml    # Node binding crate configuration (if separate crate)
+│       │   │   │   ├── index.ts      # TypeScript entry point with unified native/WASM detection
+│       │   │   │   ├── lib.rs        # Rust NAPI bindings for Node.js native addon
+│       │   │   │   ├── parser.ts     # TypeScript parser class wrapping native/WASM implementation
+│       │   │   │   ├── types.ts      # TypeScript type definitions for parsed DDEX structures
+│       │   │   │   └── wasm.d.ts     # WASM module type declarations
+│       │   │   ├── build.rs          # Build script for compiling Node.js native addon
+│       │   │   ├── Cargo.toml        # Node bindings package configuration
+│       │   │   ├── index.d.ts        # TypeScript declaration file for npm package
+│       │   │   ├── index.js          # JavaScript entry point with platform detection
+│       │   │   ├── LICENSE           # MIT license for the npm package
+│       │   │   ├── package.json      # npm package metadata and dependencies
+│       │   │   ├── README.md         # Documentation for JavaScript/TypeScript users
+│       │   │   └── tsconfig.json     # TypeScript compiler configuration
 │       │   ├── python/               # 
 │       │   │   ├── python/           # 
 │       │   │   │   ├── ddex_parser/  # 
-│       │   │   │   │   ├── __init__.py  # 
-│       │   │   │   │   └── cli.py    # 
-│       │   │   │   ├── types.ts      # 
-│       │   │   │   └── wasm.d.ts     # 
+│       │   │   │   │   ├── __init__.py  # Python package initialization and public API exports
+│       │   │   │   │   └── cli.py    # Command-line interface for Python users
 │       │   │   ├── src/              # 
-│       │   │   │   └── lib.rs        # 
-│       │   │   ├── Cargo.toml        # 
-│       │   │   ├── pyproject.tolm    # 
-│       │   │   └── README.md         # 
+│       │   │   │   └── lib.rs        # PyO3 bindings for Python extension module
+│       │   │   ├── Cargo.toml        # Python bindings package configuration
+│       │   │   ├── pyproject.toml    # Python package metadata and build configuration
+│       │   │   └── README.md         # Documentation for Python users
 │       │   └── wasm/                 # 
 │       │       ├── src/              # 
-│       │       │   └── lib.rs        # 
-│       │       ├── build.sh          # 
-│       │       └── Cargo.toml        # 
-│       ├── src/                      #
-│       │   ├── node/                 # 
-│       │   │   ├── src/              # 
-│       │   │   │   ├── Cargo.tolm    # 
-│       │   │   │   ├── index.ts      # 
-│       │   │   │   ├── lib.rs        # 
-│       │   │   │   ├── parser.ts     # 
-│       │   │   │   ├── types.ts      # 
-│       │   │   │   └── wasm.d.ts     # 
-│       │   │   ├── build.rs          # 
-│       │   │   ├── Cargo.toml        # 
-│       │   ├── memory.rs             # 
-│       │   ├── parsing.rs            # 
-│       │   └── streaming.rs          # 
-│       ├── tests/                    #
-│       ├── build.rs                  #
-│       ├── Cargo.toml                #
-│       └── README.md                 #
+│       │       │   └── lib.rs        # WebAssembly bindings for browser usage
+│       │       ├── build.sh          # Build script for WASM compilation with wasm-opt
+│       │       └── Cargo.toml        # WASM package configuration
+│       ├── src/                      # Main parser implementation (placeholder for future extraction)
+│       ├── tests/                    # Parser integration and unit tests
+│       ├── build.rs                  # Parser build script for code generation and optimization
+│       ├── Cargo.toml                # Parser package dependencies and configuration
+│       └── README.md                 # Main parser documentation and usage guide
 │
 ├── recipes/                          # Stable hash ID recipes
 │   ├── release_v1.toml
