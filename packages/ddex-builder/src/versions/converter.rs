@@ -17,7 +17,7 @@ pub enum ConversionResult {
     },
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ConversionReport {
     pub from_version: DdexVersion,
     pub to_version: DdexVersion,
@@ -27,7 +27,7 @@ pub struct ConversionReport {
     pub elements_added: usize,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum ConversionWarningType {
     ElementRenamed,
     ElementDropped,
@@ -37,7 +37,7 @@ pub enum ConversionWarningType {
     FormatMigrated,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ConversionWarning {
     pub warning_type: ConversionWarningType,
     pub message: String,

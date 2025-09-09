@@ -41,6 +41,26 @@ html-escape = "0.2"
 url = "2.5"
 mime = "0.3"
 
+# CLI dependencies
+clap = { version = "4.4", features = ["derive", "env", "color"] }
+clap_complete = "4.4"
+indicatif = "0.17"
+console = "0.15"
+atty = "0.2"
+
+# File format support
+serde_yaml = "0.9"
+toml = { version = "0.8", features = ["preserve_order"] }
+
+# Parallel processing
+rayon = "1.8"
+
+# System information
+num_cpus = "1.16"
+
+# Logging
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
 # Optional features
 tokio = { workspace = true, optional = true }
 futures = { workspace = true, optional = true }
@@ -70,3 +90,8 @@ harness = false
 [[bench]]
 name = "canonicalization"
 harness = false
+
+# Binary target for CLI
+[[bin]]
+name = "ddex-builder"
+path = "src/bin/ddex-builder.rs"
