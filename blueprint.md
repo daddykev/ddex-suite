@@ -1373,7 +1373,7 @@ ddex-suite/
 - [x] Create migration scripts
 
 #### 1.2 Migration & Core Extraction ✅
-- [x] Run migration script to move all ✅ files
+- [x] Run migration script to move all files
 - [x] Extract models to `packages/core/src/models/`
 - [x] Extract errors to `packages/core/src/error.rs`
 - [x] Extract FFI types to `packages/core/src/ffi.rs`
@@ -1422,7 +1422,7 @@ ddex-suite/
 
 ### Phase 3: DDEX Builder Development 🔄 IN PROGRESS
 
-#### 3.1 Builder Foundation ✅ COMPLETED
+#### 3.1 Builder Foundation ✅ COMPLETED (Sept 8, 2025)
 - [x] Initialize `packages/ddex-builder`
 - [x] Import `packages/core` as dependency
 - [x] Implement DB-C14N/1.0 spec (basic implementation)
@@ -1433,13 +1433,18 @@ ddex-suite/
 - [x] Generate valid DDEX ERN 4.3 XML
 - [x] Add basic tests (7 passing)
 
-#### 3.2 Core Builder Features 🔄 IN PROGRESS
+#### 3.2 Core Builder Features 🔄 IN PROGRESS (Sept 9, 2025)
 - [x] Implement Flat→AST→XML pipeline ✅
 - [x] Basic XML serialization with namespaces ✅
 - [x] Element ordering and formatting ✅
-- [ ] Build reference linker (auto-link releases/resources)
-- [ ] Add stable-hash ID generation
-- [ ] Implement comprehensive preflight checks
+- [x] Build reference linker (auto-link releases/resources) ✅ COMPLETED
+  - [x] Create linker module structure
+  - [x] Implement deterministic reference generation
+  - [x] Build automatic relationship linking
+  - [x] Integrate with XML generation pipeline
+  - [x] Add comprehensive test coverage (9 tests passing)
+- [ ] Add stable-hash ID generation (content-based IDs)
+- [ ] Implement comprehensive preflight checks (ISRC/UPC validation)
 - [ ] Support full ERN 4.3 AudioAlbum profile
 - [ ] Create golden file tests
 
@@ -1489,7 +1494,7 @@ ddex-suite/
 ### Technical KPIs
 - ✅ Parse 95% of real-world DDEX files (tested with valid samples)
 - ✅ Perfect round-trip fidelity
-- 🔄 Deterministic XML generation (basic implementation complete)
+- ✅ Deterministic XML generation (reference linker complete, basic canonicalization working)
 - ✅ <50ms parsing for typical releases (achieved)
 - ✅ <15ms generation for typical releases (achieved - ~0.27s for test suite)
 - ✅ Memory bounded streaming (implemented, needs testing)
@@ -1503,18 +1508,19 @@ ddex-suite/
 - **JavaScript/WASM**: ✅ Published to npm
 - **Python Bindings**: 🔄 70% complete (PyO3 compatibility issues)
 - **Builder Core**: ✅ Basic XML generation working
-- **Builder Pipeline**: ✅ AST→XML functioning with 2.6KB output
+- **Builder Pipeline**: ✅ AST→XML functioning with valid DDEX output
+- **Reference Linker**: ✅ Complete with auto-linking and 9 passing tests
 - **Determinism**: ✅ IndexMap enforced, canonical hash working
 - **Security**: ✅ Clean audit for Rust CLI
-- **Next Step**: Complete Phase 3.2 - Reference linking & stable hash IDs
+- **Next Step**: Implement stable-hash ID generation and preflight validation
 
 ---
 
-**Version**: 2.0.3  
-**Last Updated**: September 8, 2025  
-**Status**: Phase 3.1 Complete, Phase 3.2 In Progress  
+**Version**: 2.0.4  
+**Last Updated**: September 9, 2025  
+**Status**: Phase 3.2 In Progress (Reference Linker Complete)  
 **Repository**: github.com/daddykev/ddex-suite  
 **Parser Target**: v1.0.0 ready to tag  
-**Builder Target**: v1.0.0 in 5-6 weeks  
-**Suite Target**: v1.0.0 in 7-8 weeks  
+**Builder Target**: v1.0.0 in 4-5 weeks  
+**Suite Target**: v1.0.0 in 6-7 weeks  
 **License**: MIT
