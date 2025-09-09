@@ -357,8 +357,8 @@ for dsp, dsp_config in DSP_CONFIGS.items():
 
 ### Digital Distributors
 
-#### Indie Distro - Independent Artist Onboarding
-**Scenario**: Indie Distro delivers 10,000+ new releases daily from independent artists and needs to generate DDEX feeds for multiple platforms.
+#### Independent Distributor - New Release Pipeline
+**Scenario**: Independent Distributor delivers 100,000+ new releases daily from independent artists and needs to generate DDEX feeds for multiple platforms.
 
 ```typescript
 import { DDEXBuilder } from 'ddex-builder';
