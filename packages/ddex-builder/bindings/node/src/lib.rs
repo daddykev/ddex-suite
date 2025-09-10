@@ -114,17 +114,26 @@ impl DdexBuilder {
     }
 
     #[napi]
-    pub async unsafe fn build(&mut self) -> Result<String> {
+    pub async unsafe fn build(&mut self, data: Option<serde_json::Value>) -> Result<String> {
         let start_time = std::time::Instant::now();
 
-        // For now, return a simple XML structure
-        // In a complete implementation, this would use the actual DDEXBuilder
-        let xml_output = self.generate_placeholder_xml()?;
+        // Create BuildRequest based on whether data was provided
+        let build_request = match data {
+            Some(json_data) => self.create_build_request_from_json(json_data)?,
+            None => self.create_build_request_from_stored_data()?,
+        };
         
-        self.stats.last_build_size_bytes = xml_output.len() as f64;
+        // Use the actual DDEX builder
+        let builder = ddex_builder::builder::DDEXBuilder::new();
+        let options = ddex_builder::builder::BuildOptions::default();
+        
+        let result = builder.build(build_request, options)
+            .map_err(|e| Error::new(Status::Unknown, format!("Build failed: {}", e)))?;
+        
+        self.stats.last_build_size_bytes = result.xml.len() as f64;
         self.stats.total_build_time_ms += start_time.elapsed().as_millis() as f64;
 
-        Ok(xml_output)
+        Ok(result.xml)
     }
 
     #[napi]
@@ -296,6 +305,156 @@ impl DdexBuilder {
                 format!("Unknown preset: {}", preset_name)
             ))
         }
+    }
+
+    fn create_build_request_from_json(&self, data: serde_json::Value) -> Result<ddex_builder::builder::BuildRequest> {
+        let obj = data.as_object()
+            .ok_or_else(|| Error::new(Status::InvalidArg, "Expected object"))?;
+
+        // Extract version
+        let version = obj.get("version")
+            .and_then(|v| v.as_str())
+            .unwrap_or("4.3")
+            .to_string();
+
+        // Create message header
+        let header = ddex_builder::builder::MessageHeaderRequest {
+            message_id: Some(uuid::Uuid::new_v4().to_string()),
+            message_sender: ddex_builder::builder::PartyRequest {
+                party_name: vec![ddex_builder::builder::LocalizedStringRequest {
+                    text: "DDEX Suite".to_string(),
+                    language_code: None,
+                }],
+                party_id: None,
+                party_reference: None,
+            },
+            message_recipient: ddex_builder::builder::PartyRequest {
+                party_name: vec![ddex_builder::builder::LocalizedStringRequest {
+                    text: "Recipient".to_string(),
+                    language_code: None,
+                }],
+                party_id: None,
+                party_reference: None,
+            },
+            message_control_type: None,
+            message_created_date_time: Some(chrono::Utc::now().to_rfc3339()),
+        };
+
+        // Convert releases from JSON
+        let mut releases = Vec::new();
+        if let Some(releases_array) = obj.get("releases").and_then(|v| v.as_array()) {
+            for release_val in releases_array {
+                if let Some(release_obj) = release_val.as_object() {
+                    let release_id = release_obj.get("release_id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("UNKNOWN")
+                        .to_string();
+                    
+                    let title = release_obj.get("title")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("Untitled")
+                        .to_string();
+                    
+                    let artist = release_obj.get("display_artist")
+                        .or_else(|| release_obj.get("artist"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("Unknown Artist")
+                        .to_string();
+
+                    releases.push(ddex_builder::builder::ReleaseRequest {
+                        release_id: release_id.clone(),
+                        release_reference: Some(release_id.clone()),
+                        title: vec![ddex_builder::builder::LocalizedStringRequest {
+                            text: title,
+                            language_code: None,
+                        }],
+                        artist,
+                        label: release_obj.get("label").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                        release_date: release_obj.get("release_date").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                        upc: release_obj.get("upc").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                        tracks: vec![], // No tracks in the simple format for now
+                        resource_references: None,
+                    });
+                }
+            }
+        }
+
+        // Create build request
+        Ok(ddex_builder::builder::BuildRequest {
+            header,
+            version,
+            profile: Some("AudioAlbum".to_string()),
+            releases,
+            deals: vec![], // Empty for now
+            extensions: None,
+        })
+    }
+
+    fn create_build_request_from_stored_data(&self) -> Result<ddex_builder::builder::BuildRequest> {
+        // Create message header
+        let header = ddex_builder::builder::MessageHeaderRequest {
+            message_id: Some(uuid::Uuid::new_v4().to_string()),
+            message_sender: ddex_builder::builder::PartyRequest {
+                party_name: vec![ddex_builder::builder::LocalizedStringRequest {
+                    text: "DDEX Suite".to_string(),
+                    language_code: None,
+                }],
+                party_id: None,
+                party_reference: None,
+            },
+            message_recipient: ddex_builder::builder::PartyRequest {
+                party_name: vec![ddex_builder::builder::LocalizedStringRequest {
+                    text: "Recipient".to_string(),
+                    language_code: None,
+                }],
+                party_id: None,
+                party_reference: None,
+            },
+            message_control_type: None,
+            message_created_date_time: Some(chrono::Utc::now().to_rfc3339()),
+        };
+
+        // Convert releases
+        let mut releases = Vec::new();
+        for release in &self.releases {
+            let tracks = self.resources
+                .iter()
+                .filter(|resource| release.track_ids.contains(&resource.resource_id))
+                .map(|resource| ddex_builder::builder::TrackRequest {
+                    track_id: resource.resource_id.clone(),
+                    resource_reference: Some(resource.resource_id.clone()),
+                    isrc: resource.isrc.clone().unwrap_or_else(|| "TEMP00000000".to_string()),
+                    title: resource.title.clone(),
+                    duration: resource.duration.clone().unwrap_or_else(|| "PT3M00S".to_string()),
+                    artist: resource.artist.clone(),
+                })
+                .collect();
+
+            releases.push(ddex_builder::builder::ReleaseRequest {
+                release_id: release.release_id.clone(),
+                release_reference: Some(release.release_id.clone()),
+                title: vec![ddex_builder::builder::LocalizedStringRequest {
+                    text: release.title.clone(),
+                    language_code: None,
+                }],
+                artist: release.artist.clone(),
+                label: release.label.clone(),
+                release_date: release.release_date.clone(),
+                upc: release.upc.clone(),
+                tracks,
+                resource_references: Some(release.track_ids.clone()),
+            });
+        }
+
+        // Create build request
+        Ok(ddex_builder::builder::BuildRequest {
+            header,
+            version: "4.3".to_string(),
+            profile: Some("AudioAlbum".to_string()),
+            releases,
+            deals: vec![], // Empty for now
+            extensions: None,
+        })
     }
 
     fn generate_placeholder_xml(&self) -> Result<String> {

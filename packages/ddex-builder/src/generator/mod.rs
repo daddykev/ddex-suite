@@ -232,6 +232,45 @@ impl ASTGenerator {
             release_id.add_child(Element::new("GRid").with_text(&release.release_id));
             release_elem.add_child(release_id);
             
+            // Add Title(s)
+            if !release.title.is_empty() {
+                for title in &release.title {
+                    let mut title_elem = Element::new("ReferenceTitle");
+                    let mut title_text = Element::new("TitleText").with_text(&title.text);
+                    if let Some(ref lang) = title.language_code {
+                        title_text.attributes.insert("LanguageAndScriptCode".to_string(), lang.clone());
+                    }
+                    title_elem.add_child(title_text);
+                    release_elem.add_child(title_elem);
+                }
+            }
+            
+            // Add DisplayArtist
+            let mut display_artist_name = Element::new("DisplayArtistName");
+            display_artist_name.add_child(Element::new("FullName").with_text(&release.artist));
+            release_elem.add_child(display_artist_name);
+            
+            // Add Label if present
+            if let Some(ref label) = release.label {
+                let mut label_name = Element::new("LabelName");
+                label_name.add_child(Element::new("LabelName").with_text(label));
+                release_elem.add_child(label_name);
+            }
+            
+            // Add UPC if present  
+            if let Some(ref upc) = release.upc {
+                let mut release_id_upc = Element::new("ReleaseId");
+                release_id_upc.add_child(Element::new("ICPN").with_text(upc));
+                release_elem.add_child(release_id_upc);
+            }
+            
+            // Add ReleaseDate if present
+            if let Some(ref release_date) = release.release_date {
+                release_elem.add_child(
+                    Element::new("ReleaseDate").with_text(release_date)
+                );
+            }
+            
             // Add ReleaseResourceReferences
             if let Some(ref resource_refs) = release.resource_references {
                 for resource_ref in resource_refs {

@@ -1,6 +1,7 @@
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyAny};
 use std::collections::HashMap;
+use ::ddex_builder::builder::{DDEXBuilder, BuildOptions, BuildRequest, MessageHeaderRequest, PartyRequest, LocalizedStringRequest, ReleaseRequest, TrackRequest};
 
 #[pyclass]
 #[derive(Debug, Clone)]
@@ -305,13 +306,20 @@ impl DdexBuilder {
     pub fn build(&mut self) -> PyResult<String> {
         let start_time = std::time::Instant::now();
 
-        // Generate a basic DDEX-like XML structure for demonstration
-        let xml_output = self.generate_placeholder_xml()?;
+        // Create a BuildRequest from stored releases and resources
+        let build_request = self.create_build_request_from_stored_data()?;
         
-        self.stats.last_build_size_bytes = xml_output.len() as f64;
+        // Use the actual DDEX builder
+        let builder = DDEXBuilder::new();
+        let options = BuildOptions::default();
+        
+        let result = builder.build(build_request, options)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Build failed: {}", e)))?;
+        
+        self.stats.last_build_size_bytes = result.xml.len() as f64;
         self.stats.total_build_time_ms += start_time.elapsed().as_millis() as f64;
 
-        Ok(xml_output)
+        Ok(result.xml)
     }
 
     pub fn validate(&self) -> ValidationResult {
@@ -504,6 +512,7 @@ impl DdexBuilder {
         Ok(())
     }
 
+
     fn generate_placeholder_xml(&self) -> PyResult<String> {
         // Generate a basic DDEX-like XML structure for demonstration
         let mut xml = String::new();
@@ -678,6 +687,75 @@ pub fn validate_structure(xml: String) -> PyResult<ValidationResult> {
             vec![format!("XML parsing error: {}", e)], 
             vec![]
         )),
+    }
+}
+
+impl DdexBuilder {
+    fn create_build_request_from_stored_data(&self) -> Result<BuildRequest, PyErr> {
+        // Create message header
+        let header = MessageHeaderRequest {
+            message_id: Some(uuid::Uuid::new_v4().to_string()),
+            message_sender: PartyRequest {
+                party_name: vec![LocalizedStringRequest {
+                    text: "DDEX Suite".to_string(),
+                    language_code: None,
+                }],
+                party_id: None,
+                party_reference: None,
+            },
+            message_recipient: PartyRequest {
+                party_name: vec![LocalizedStringRequest {
+                    text: "Recipient".to_string(),
+                    language_code: None,
+                }],
+                party_id: None,
+                party_reference: None,
+            },
+            message_control_type: None,
+            message_created_date_time: Some(chrono::Utc::now().to_rfc3339()),
+        };
+
+        // Convert releases
+        let mut releases = Vec::new();
+        for release in &self.releases {
+            let tracks = self.resources
+                .iter()
+                .filter(|resource| release.track_ids.contains(&resource.resource_id))
+                .map(|resource| TrackRequest {
+                    track_id: resource.resource_id.clone(),
+                    resource_reference: Some(resource.resource_id.clone()),
+                    isrc: resource.isrc.clone().unwrap_or_else(|| "TEMP00000000".to_string()),
+                    title: resource.title.clone(),
+                    duration: resource.duration.clone().unwrap_or_else(|| "PT3M00S".to_string()),
+                    artist: resource.artist.clone(),
+                })
+                .collect();
+
+            releases.push(ReleaseRequest {
+                release_id: release.release_id.clone(),
+                release_reference: Some(release.release_id.clone()),
+                title: vec![LocalizedStringRequest {
+                    text: release.title.clone(),
+                    language_code: None,
+                }],
+                artist: release.artist.clone(),
+                label: release.label.clone(),
+                release_date: release.release_date.clone(),
+                upc: release.upc.clone(),
+                tracks,
+                resource_references: Some(release.track_ids.clone()),
+            });
+        }
+
+        // Create build request
+        Ok(BuildRequest {
+            header,
+            version: "4.3".to_string(),
+            profile: Some("AudioAlbum".to_string()),
+            releases,
+            deals: vec![], // Empty for now
+            extensions: None,
+        })
     }
 }
 

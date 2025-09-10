@@ -88,7 +88,7 @@ export declare class DdexBuilder {
   constructor()
   addRelease(release: Release): void
   addResource(resource: Resource): void
-  build(): Promise<string>
+  build(data?: any | undefined | null): Promise<string>
   validate(): Promise<ValidationResult>
   getStats(): BuilderStats
   reset(): void
