@@ -1,0 +1,7 @@
+{
+  "name": "ddex-suite",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ]
+}

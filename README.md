@@ -33,14 +33,14 @@ Beyond the core implementation, this is a showcase of **software craftsmanship a
 ## 🚧 Development Status
 
 **Current Phase**: Phase 4.2 - Documentation & Launch Prep  
-**Latest Release**: Suite v0.2.0 🎉 | Builder v0.2.0 | Parser v0.2.0  
+**Latest Release**: Suite v0.2.5 🎉 | Builder v0.2.5 | Parser v0.2.5  
 **Target Release**: Suite v1.0.0 in Q4 2025
 
 ### 🎉 Recent Achievements
 
-- **🚀 DDEX Suite v0.2.0 Released!** Complete integration with enhanced Python bindings
-- **DDEX Builder v0.2.0 Published!** Available on [npm](https://www.npmjs.com/package/ddex-builder) and [PyPI](https://pypi.org/project/ddex-builder/)
-- **DDEX Parser v0.2.0 Released!** Available on [npm](https://www.npmjs.com/package/ddex-parser) and [PyPI](https://pypi.org/project/ddex-parser/)
+- **🚀 DDEX Suite v0.2.5 Released!** Complete integration with enhanced Python bindings
+- **DDEX Builder v0.2.5 Published!** Available on [npm](https://www.npmjs.com/package/ddex-builder) and [PyPI](https://pypi.org/project/ddex-builder/)
+- **DDEX Parser v0.2.5 Released!** Available on [npm](https://www.npmjs.com/package/ddex-parser) and [PyPI](https://pypi.org/project/ddex-parser/)
 - **Complete Round-Trip Integration**: Parse → Modify → Build workflow with 100% fidelity
 - **Enhanced Python Support**: Full PyO3 0.21 compatibility with improved bindings
 - **Advanced CLI Features**: Complete command-line interfaces with comprehensive functionality
@@ -102,7 +102,7 @@ All monorepo setup and core extraction completed.
 - [x] Cross-package integration tests  
 - [x] Performance benchmarks validated
 - [x] Core functionality testing (94 tests passing)
-- [x] **Suite v0.2.0 Published** to npm and PyPI
+- [x] **Suite v0.2.5 Published** to npm and PyPI
 
 **4.2 Documentation & Launch** 🔄 **IN PROGRESS**
 - [ ] Create unified documentation site
@@ -169,12 +169,12 @@ Both parser and builder are now available!
 
 ```bash
 # JavaScript/TypeScript
-npm install ddex-parser  # ✅ Latest: v0.2.0
-npm install ddex-builder # ✅ Latest: v0.2.0
+npm install ddex-parser  # ✅ Latest: v0.2.5
+npm install ddex-builder # ✅ Latest: v0.2.5
 
 # Python
-pip install ddex-parser  # ✅ Latest: v0.2.0
-pip install ddex-builder # ✅ Latest: v0.2.0
+pip install ddex-parser  # ✅ Latest: v0.2.5
+pip install ddex-builder # ✅ Latest: v0.2.5
 
 # Rust
 cargo add ddex-parser-core  # Coming soon
@@ -310,7 +310,7 @@ DDEX Suite is designed to complement [DDEX Workbench](https://github.com/ddex/dd
 
 **Repository**: https://github.com/daddykev/ddex-suite  
 **Status**: Phase 4.2 - Documentation & Launch Prep  
-**Parser**: v0.2.0 on [npm](https://www.npmjs.com/package/ddex-parser) and [PyPI](https://pypi.org/project/ddex-parser/)  
-**Builder**: v0.2.0 on [npm](https://www.npmjs.com/package/ddex-builder) and [PyPI](https://pypi.org/project/ddex-builder/)  
+**Parser**: v0.2.5 on [npm](https://www.npmjs.com/package/ddex-parser) and [PyPI](https://pypi.org/project/ddex-parser/)  
+**Builder**: v0.2.5 on [npm](https://www.npmjs.com/package/ddex-builder) and [PyPI](https://pypi.org/project/ddex-builder/)  
 **Suite Target**: v1.0.0 in Q4 2025  
 **Last Updated**: September 10, 2025

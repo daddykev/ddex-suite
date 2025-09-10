@@ -5,7 +5,22 @@ All notable changes to the DDEX Suite project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.0] - 2025-01-10
+## [0.2.5] - 2025-01-10
+
+### Changed
+- Removed placeholder XML from both Python and Node.js versions
+- Improved build performance and reduced package size
+- Enhanced cross-platform determinism verification
+
+### Fixed
+- Node.js async methods now properly documented in examples
+- Integration tests updated to properly await async methods
+
+### Verified
+- Cross-platform deterministic output (identical 1187-byte XML from both bindings)
+- No placeholder content in generated XML
+
+## [0.2.0] - 2025-09-09
 
 ### 🎉 Major Features
 
@@ -74,7 +89,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Input Validation**: Strengthened input validation and sanitization
 - **Error Handling**: Improved error handling to prevent information leakage
 
-## [0.1.0] - 2025-01-09
+## [0.1.0] - 2025-09-08
 
 ### 🎉 Initial Release
 
@@ -102,8 +117,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## Version History
-- **v0.2.0** (2025-01-10): Integration & Round-Trip Testing complete, Enhanced Python bindings, Advanced CLI features
-- **v0.1.0** (2025-01-09): Initial release with ddex-builder and ddex-parser core functionality
+- **v0.2.0** (2025-09-09): Integration & Round-Trip Testing complete, Enhanced Python bindings, Advanced CLI features
+- **v0.1.0** (2025-09-08): Initial release with ddex-builder and ddex-parser core functionality
 
 ## Development Status
 - **Current Phase**: Phase 4.1 - Integration Testing
