@@ -1,7 +1,7 @@
 # bindings/node/Cargo.toml
 [package]
 name = "ddex-parser-node"
-version = "0.1.0"
+version = "0.2.5"
 edition = "2021"
 authors = ["DDEX Parser Contributors"]
 license = "MIT"
