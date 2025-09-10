@@ -1618,6 +1618,18 @@ ddex-suite/
   - ddex-builder-python-v0.1.0
   - ddex-builder-wasm-v0.1.0
 
+#### 3.6 Core Feature Implementation v0.2.0
+- [x] Fix PyO3 0.21 compatibility and complete Python bindings
+- [x] Complete parser core functionality
+- [x] Enhanced Parser CLI
+- [x] Enhanced Builder 
+- [x] Comprehensive integration tests
+- [x] Complete documentation v0.2.0
+- [ ] **Published to npm as `ddex-builder` v0.2.0**
+- [ ] **Published to PyPI as `ddex-builder` v0.2.0**
+- [ ] **Published to npm as `ddex-parser` v0.2.0**
+- [ ] **Published to PyPI as `ddex-parser` v0.2.0**
+
 ### Phase 4: Round-Trip Excellence 🔄 PLANNED
 
 #### 4.1 Perfect Fidelity Engine
@@ -1764,7 +1776,7 @@ interface DeterminismConfig {
 
 ## Contributing
 
-The project is currently in active development. Community contributions will be welcomed starting in Q2 2025 once the core architecture stabilizes.
+The project is currently in active development. Community contributions will be welcomed starting in Q1 2026 once the core architecture stabilizes.
 
 ## License
 
