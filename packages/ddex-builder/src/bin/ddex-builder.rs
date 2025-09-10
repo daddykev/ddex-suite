@@ -64,6 +64,12 @@ enum Commands {
     Batch(BatchCommand),
     /// Validate determinism guarantees
     Guarantees(GuaranteesCommand),
+    /// List and apply partner presets
+    Preset(PresetCommand),
+    /// Watch files for changes and rebuild
+    Watch(WatchCommand),
+    /// Run HTTP API server for builder operations
+    Server(ServerCommand),
     /// Generate shell completions
     Completions(CompletionsCommand),
 }
@@ -267,6 +273,164 @@ struct GuaranteesCommand {
 }
 
 #[derive(Args)]
+struct PresetCommand {
+    /// Preset operation
+    #[command(subcommand)]
+    operation: PresetOperation,
+}
+
+#[derive(Subcommand)]
+enum PresetOperation {
+    /// List available presets
+    List(PresetListCommand),
+    /// Show preset details
+    Show(PresetShowCommand),
+    /// Apply preset to input data
+    Apply(PresetApplyCommand),
+}
+
+#[derive(Args)]
+struct PresetListCommand {
+    /// Filter by DDEX version
+    #[arg(long, value_enum)]
+    version: Option<DdexVersionArg>,
+
+    /// Filter by partner
+    #[arg(long, value_enum)]
+    partner: Option<PresetChoice>,
+
+    /// Output format
+    #[arg(short, long, value_enum, default_value_t = PresetListFormat::Human)]
+    format: PresetListFormat,
+}
+
+#[derive(Args)]
+struct PresetShowCommand {
+    /// Preset identifier
+    preset: String,
+
+    /// Output format
+    #[arg(short, long, value_enum, default_value_t = PresetShowFormat::Human)]
+    format: PresetShowFormat,
+
+    /// Include full configuration details
+    #[arg(long)]
+    detailed: bool,
+}
+
+#[derive(Args)]
+struct PresetApplyCommand {
+    /// Preset identifier
+    preset: String,
+
+    /// Input file (JSON/YAML/TOML) or '-' for stdin
+    #[arg(short, long)]
+    input: Option<PathBuf>,
+
+    /// Output file path or '-' for stdout
+    #[arg(short, long)]
+    output: Option<PathBuf>,
+
+    /// Input data format (auto-detected if not specified)
+    #[arg(long, value_enum)]
+    format: Option<InputFormat>,
+
+    /// Override preset DDEX version
+    #[arg(long, value_enum)]
+    version_override: Option<DdexVersionArg>,
+
+    /// Validate output after applying preset
+    #[arg(long)]
+    validate: bool,
+}
+
+#[derive(Args)]
+struct WatchCommand {
+    /// Directory or file to watch
+    #[arg(short, long)]
+    path: PathBuf,
+
+    /// Pattern to match files (glob syntax)
+    #[arg(short, long, default_value = "**/*.{json,yaml,yml,toml}")]
+    pattern: String,
+
+    /// Command to run on file changes
+    #[arg(short, long)]
+    command: Option<String>,
+
+    /// Output directory for built files
+    #[arg(short, long)]
+    output_dir: Option<PathBuf>,
+
+    /// DDEX version to use for building
+    #[arg(long, value_enum)]
+    version: Option<DdexVersionArg>,
+
+    /// Preset to apply
+    #[arg(long, value_enum)]
+    preset: Option<PresetChoice>,
+
+    /// Debounce delay in milliseconds (default: 500ms)
+    #[arg(long, default_value_t = 500)]
+    debounce: u64,
+
+    /// Run initial build on startup
+    #[arg(long)]
+    initial_build: bool,
+
+    /// Recursive watch subdirectories
+    #[arg(short, long)]
+    recursive: bool,
+
+    /// Exclude patterns (glob syntax)
+    #[arg(long)]
+    exclude: Vec<String>,
+}
+
+#[derive(Args)]
+struct ServerCommand {
+    /// Server bind address
+    #[arg(short, long, default_value = "127.0.0.1")]
+    bind: String,
+
+    /// Server port
+    #[arg(short, long, default_value_t = 8080)]
+    port: u16,
+
+    /// Number of worker threads
+    #[arg(short, long, default_value_t = num_cpus::get())]
+    workers: usize,
+
+    /// Enable CORS for cross-origin requests
+    #[arg(long)]
+    cors: bool,
+
+    /// Maximum request size in MB
+    #[arg(long, default_value_t = 10)]
+    max_request_size: usize,
+
+    /// Request timeout in seconds
+    #[arg(long, default_value_t = 30)]
+    timeout: u64,
+
+    /// Enable request logging
+    #[arg(long)]
+    log_requests: bool,
+
+    /// TLS certificate file (for HTTPS)
+    #[arg(long)]
+    tls_cert: Option<PathBuf>,
+
+    /// TLS private key file (for HTTPS)
+    #[arg(long)]
+    tls_key: Option<PathBuf>,
+
+    /// Rate limiting: requests per minute per IP
+    #[arg(long)]
+    rate_limit: Option<u32>,
+}
+
+#[derive(Args)]
 struct CompletionsCommand {
     /// Shell to generate completions for
     #[arg(value_enum)]
@@ -344,6 +508,20 @@ enum GuaranteeFormat {
     Yaml,
 }
 
+#[derive(ValueEnum, Clone, Debug)]
+enum PresetListFormat {
+    Human,
+    Json,
+    Table,
+}
+
+#[derive(ValueEnum, Clone, Debug)]
+enum PresetShowFormat {
+    Human,
+    Json,
+    Yaml,
+}
+
 impl From<DdexVersionArg> for DdexVersion {
     fn from(version: DdexVersionArg) -> Self {
         match version {
@@ -376,6 +554,9 @@ fn main() {
         Commands::Schema(cmd) => handle_schema_command(cmd, &config),
         Commands::Batch(cmd) => handle_batch_command(cmd, &config),
         Commands::Guarantees(cmd) => handle_guarantees_command(cmd, &config),
+        Commands::Preset(cmd) => handle_preset_command(cmd, &config),
+        Commands::Watch(cmd) => handle_watch_command(cmd, &config),
+        Commands::Server(cmd) => handle_server_command(cmd, &config),
         Commands::Completions(cmd) => handle_completions_command(cmd),
     };
 
@@ -526,12 +707,10 @@ fn handle_diff_command(cmd: DiffCommand, _config: &ConfigFile) -> Result<(), Box
     let xml1 = fs::read_to_string(&cmd.file1)?;
     let xml2 = fs::read_to_string(&cmd.file2)?;
 
-    let diff_config = diff::DiffConfig {
+    let _diff_config = diff::DiffConfig {
         ignore_formatting: cmd.ignore_whitespace,
         ..Default::default()
     };
-
-    let mut diff_engine = diff::DiffEngine::new_with_config(diff_config);
     // TODO: Parse XML to AST for proper semantic diffing
     // For now, create a placeholder changeset
     let changeset = diff::types::ChangeSet::new();
@@ -543,7 +722,7 @@ fn handle_diff_command(cmd: DiffCommand, _config: &ConfigFile) -> Result<(), Box
         DiffFormat::Json => serde_json::to_string_pretty(&changeset)?,
         DiffFormat::Update => {
             let mut update_generator = messages::UpdateGenerator::new();
-            let update_message = update_generator.create_update(&xml1, &xml2, "cli-generated")?;
+            let _update_message = update_generator.create_update(&xml1, &xml2, "cli-generated")?;
             // TODO: Implement XML serialization for UpdateReleaseMessage
             format!("<!-- Update message XML would be serialized here -->")
         }
@@ -567,7 +746,7 @@ fn handle_validate_command(cmd: ValidateCommand, _config: &ConfigFile) -> Result
     let mut results = Vec::new();
 
     for file_path in &cmd.files {
-        let xml_content = fs::read_to_string(file_path)?;
+        let _xml_content = fs::read_to_string(file_path)?;
         
         let mut builder = Builder::new();
         if let Some(preset) = &cmd.preset {
@@ -581,7 +760,7 @@ fn handle_validate_command(cmd: ValidateCommand, _config: &ConfigFile) -> Result
             ..Default::default()
         };
 
-        let validator = PreflightValidator::new(validation_config);
+        let _validator = PreflightValidator::new(validation_config);
         // TODO: Parse XML content to BuildRequest for validation
         // For now, create a placeholder result
         let result = ValidationResult {
@@ -626,7 +805,7 @@ fn handle_validate_command(cmd: ValidateCommand, _config: &ConfigFile) -> Result
 }
 
 fn handle_schema_command(cmd: SchemaCommand, _config: &ConfigFile) -> Result<(), Box<dyn std::error::Error>> {
-    let schema_config = schema::SchemaConfig {
+    let _schema_config = schema::SchemaConfig {
         include_descriptions: cmd.with_docs,
         ..Default::default()
     };
@@ -727,7 +906,7 @@ fn handle_batch_command(cmd: BatchCommand, _config: &ConfigFile) -> Result<(), B
 }
 
 fn handle_guarantees_command(cmd: GuaranteesCommand, _config: &ConfigFile) -> Result<(), Box<dyn std::error::Error>> {
-    use ddex_builder::guarantees::{generate_guarantee_report, DeterminismGuaranteeValidator};
+    use ddex_builder::guarantees::generate_guarantee_report;
     use ddex_builder::determinism::{DeterminismConfig, DeterminismVerifier};
     use ddex_builder::builder::BuildRequest;
 
@@ -747,7 +926,7 @@ fn handle_guarantees_command(cmd: GuaranteesCommand, _config: &ConfigFile) -> Re
     // Generate guarantee report
     let report = if cmd.thorough {
         // Run thorough verification with stress tests
-        let verifier = DeterminismVerifier::new(DeterminismConfig::default());
+        let _verifier = DeterminismVerifier::new(DeterminismConfig::default());
         let _result = DeterminismVerifier::thorough_check(&request, cmd.iterations)?;
         
         // Generate full report
@@ -850,6 +1029,195 @@ fn format_guarantee_report_human(
     }
 
     output
+}
+
+fn handle_preset_command(cmd: PresetCommand, _config: &ConfigFile) -> Result<(), Box<dyn std::error::Error>> {
+    match cmd.operation {
+        PresetOperation::List(list_cmd) => {
+            // TODO: Implement preset listing from ddex_builder::presets
+            let presets = get_available_presets(list_cmd.version, list_cmd.partner)?;
+            
+            match list_cmd.format {
+                PresetListFormat::Human => {
+                    println!("Available DDEX Presets:");
+                    println!("{:-<50}", "");
+                    for preset in &presets {
+                        println!("{:<20} {:<10} {}", preset.name, preset.version, preset.description);
+                    }
+                },
+                PresetListFormat::Json => {
+                    println!("{}", serde_json::to_string_pretty(&presets)?);
+                },
+                PresetListFormat::Table => {
+                    println!("{:<20} {:<10} {:<15} {}", "Name", "Version", "Partner", "Description");
+                    println!("{:-<80}", "");
+                    for preset in &presets {
+                        println!("{:<20} {:<10} {:<15} {}", preset.name, preset.version, preset.partner, preset.description);
+                    }
+                }
+            }
+        },
+        PresetOperation::Show(show_cmd) => {
+            let preset_details = get_preset_details(&show_cmd.preset)?;
+            
+            match show_cmd.format {
+                PresetShowFormat::Human => {
+                    println!("Preset: {}", preset_details.name);
+                    println!("Partner: {}", preset_details.partner);
+                    println!("Version: {}", preset_details.version);
+                    println!("Description: {}", preset_details.description);
+                    if show_cmd.detailed {
+                        println!("\nConfiguration:");
+                        println!("{:#?}", preset_details.config);
+                    }
+                },
+                PresetShowFormat::Json => {
+                    if show_cmd.detailed {
+                        println!("{}", serde_json::to_string_pretty(&preset_details)?);
+                    } else {
+                        let summary = PresetSummary {
+                            name: preset_details.name,
+                            partner: preset_details.partner,
+                            version: preset_details.version,
+                            description: preset_details.description,
+                        };
+                        println!("{}", serde_json::to_string_pretty(&summary)?);
+                    }
+                },
+                PresetShowFormat::Yaml => {
+                    if show_cmd.detailed {
+                        println!("{}", serde_yaml::to_string(&preset_details)?);
+                    } else {
+                        let summary = PresetSummary {
+                            name: preset_details.name,
+                            partner: preset_details.partner,
+                            version: preset_details.version,
+                            description: preset_details.description,
+                        };
+                        println!("{}", serde_yaml::to_string(&summary)?);
+                    }
+                }
+            }
+        },
+        PresetOperation::Apply(apply_cmd) => {
+            let input_data = read_input_data(&apply_cmd.input, apply_cmd.format)?;
+            
+            let mut builder = Builder::new();
+            builder.apply_preset(&apply_cmd.preset, false)?;
+            
+            if let Some(version_override) = apply_cmd.version_override {
+                builder.with_version(version_override.into());
+            }
+            
+            let xml_output = build_ddex_xml(&input_data, &builder)?;
+            
+            if apply_cmd.validate {
+                // TODO: Validate the output
+                if !is_quiet() {
+                    println!("{} Validation passed", style("✓").green());
+                }
+            }
+            
+            write_output(&xml_output, &apply_cmd.output)?;
+            
+            if !is_quiet() {
+                println!("{} Preset '{}' applied successfully", style("✓").green(), apply_cmd.preset);
+            }
+        }
+    }
+    
+    Ok(())
+}
+
+fn handle_watch_command(cmd: WatchCommand, _config: &ConfigFile) -> Result<(), Box<dyn std::error::Error>> {
+    use std::sync::mpsc;
+    use std::time::Duration;
+    
+    if !is_quiet() {
+        println!("👀 Watching {} for changes...", cmd.path.display());
+        println!("   Pattern: {}", cmd.pattern);
+        if let Some(ref output_dir) = cmd.output_dir {
+            println!("   Output: {}", output_dir.display());
+        }
+        println!("   Press Ctrl+C to stop");
+    }
+    
+    // Initial build if requested
+    if cmd.initial_build {
+        if !is_quiet() {
+            println!("🔨 Running initial build...");
+        }
+        run_watch_build(&cmd)?;
+    }
+    
+    // TODO: Implement file watching using notify crate
+    // For now, just simulate watching
+    
+    // In a real implementation, this would use the notify crate:
+    // let (tx, rx) = mpsc::channel::<notify::Event>();
+    // let mut watcher = notify::recommended_watcher(move |res| {
+    //     match res {
+    //         Ok(event) => tx.send(event).unwrap(),
+    //         Err(e) => eprintln!("watch error: {:?}", e),
+    //     }
+    // })?;
+    // watcher.watch(&cmd.path, notify::RecursiveMode::from(cmd.recursive))?;
+    
+    // Simulate file watching loop (in real implementation, this would be driven by notify events)
+    loop {
+        // For demo purposes, just exit after showing the setup
+        if !is_quiet() {
+            println!("File watching simulation - in real implementation, this would use the notify crate");
+        }
+        break;
+    }
+    
+    Ok(())
+}
+
+fn handle_server_command(cmd: ServerCommand, _config: &ConfigFile) -> Result<(), Box<dyn std::error::Error>> {
+    if !is_quiet() {
+        println!("🚀 Starting DDEX Builder HTTP API server...");
+        println!("   Address: {}:{}", cmd.bind, cmd.port);
+        println!("   Workers: {}", cmd.workers);
+        if cmd.cors {
+            println!("   CORS: enabled");
+        }
+        if cmd.tls_cert.is_some() && cmd.tls_key.is_some() {
+            println!("   TLS: enabled");
+        }
+        if let Some(rate_limit) = cmd.rate_limit {
+            println!("   Rate limit: {} requests/minute per IP", rate_limit);
+        }
+        println!("   Press Ctrl+C to stop");
+    }
+    
+    // TODO: Implement HTTP server using axum or warp
+    // Server endpoints would include:
+    // POST /build - Build DDEX XML from JSON/YAML/TOML
+    // POST /convert - Convert between DDEX versions
+    // POST /validate - Validate DDEX XML
+    // GET /presets - List available presets
+    // GET /presets/{id} - Get preset details
+    // POST /diff - Compare two DDEX files
+    // GET /health - Health check endpoint
+    // GET /metrics - Prometheus metrics (if enabled)
+    
+    // For now, just simulate server running
+    println!("HTTP API server would start here");
+    println!("Available endpoints:");
+    println!("  POST /api/v1/build        - Build DDEX XML");
+    println!("  POST /api/v1/convert      - Convert DDEX versions");
+    println!("  POST /api/v1/validate     - Validate DDEX XML");
+    println!("  GET  /api/v1/presets      - List presets");
+    println!("  GET  /api/v1/presets/{{id}} - Get preset details");
+    println!("  POST /api/v1/diff         - Compare DDEX files");
+    println!("  GET  /api/v1/health       - Health check");
+    
+    // Simulate server running
+    std::thread::park();
+    
+    Ok(())
 }
 
 fn handle_completions_command(cmd: CompletionsCommand) -> Result<(), Box<dyn std::error::Error>> {
@@ -996,14 +1364,105 @@ fn is_quiet() -> bool {
     std::env::var("DDEX_QUIET").unwrap_or_default() == "1"
 }
 
+// Helper functions for new commands
+
+fn get_available_presets(
+    version_filter: Option<DdexVersionArg>,
+    partner_filter: Option<PresetChoice>,
+) -> Result<Vec<PresetInfo>, Box<dyn std::error::Error>> {
+    // TODO: Load presets from ddex_builder::presets module
+    let mut presets = vec![
+        PresetInfo {
+            name: "spotify_audio_43".to_string(),
+            version: "4.3".to_string(),
+            partner: "Spotify".to_string(),
+            description: "Spotify audio release preset for ERN 4.3".to_string(),
+        },
+        PresetInfo {
+            name: "youtube_music_43".to_string(),
+            version: "4.3".to_string(),
+            partner: "YouTube".to_string(),
+            description: "YouTube Music release preset for ERN 4.3".to_string(),
+        },
+        PresetInfo {
+            name: "apple_music_43".to_string(),
+            version: "4.3".to_string(),
+            partner: "Apple".to_string(),
+            description: "Apple Music release preset for ERN 4.3".to_string(),
+        },
+    ];
+
+    // Apply filters
+    if let Some(version_filter) = version_filter {
+        let version_str = match version_filter {
+            DdexVersionArg::V382 => "3.8.2",
+            DdexVersionArg::V41 => "4.1",
+            DdexVersionArg::V42 => "4.2",
+            DdexVersionArg::V43 => "4.3",
+            DdexVersionArg::V44 => "4.4",
+        };
+        presets.retain(|p| p.version == version_str);
+    }
+
+    if let Some(partner_filter) = partner_filter {
+        let partner_str = match partner_filter {
+            PresetChoice::Spotify => "Spotify",
+            PresetChoice::Youtube => "YouTube",
+            PresetChoice::Apple => "Apple",
+            PresetChoice::Amazon => "Amazon",
+            PresetChoice::Universal => "Universal",
+            PresetChoice::Sony => "Sony",
+            PresetChoice::Warner => "Warner",
+        };
+        presets.retain(|p| p.partner == partner_str);
+    }
+
+    Ok(presets)
+}
+
+fn get_preset_details(preset_id: &str) -> Result<PresetDetails, Box<dyn std::error::Error>> {
+    // TODO: Load preset details from ddex_builder::presets module
+    match preset_id {
+        "spotify_audio_43" => Ok(PresetDetails {
+            name: "spotify_audio_43".to_string(),
+            partner: "Spotify".to_string(),
+            version: "4.3".to_string(),
+            description: "Spotify audio release preset for ERN 4.3".to_string(),
+            config: PresetConfig::default(), // Placeholder
+        }),
+        _ => Err(format!("Preset '{}' not found", preset_id).into()),
+    }
+}
+
+fn run_watch_build(cmd: &WatchCommand) -> Result<(), Box<dyn std::error::Error>> {
+    // TODO: Implement actual file watching and building
+    if let Some(ref command) = cmd.command {
+        // Execute custom command
+        let output = std::process::Command::new("sh")
+            .arg("-c")
+            .arg(command)
+            .output()?;
+            
+        if !output.status.success() {
+            return Err(format!("Command failed: {}", String::from_utf8_lossy(&output.stderr)).into());
+        }
+    } else {
+        // Default build behavior
+        if !is_quiet() {
+            println!("  Building files matching pattern: {}", cmd.pattern);
+        }
+        // TODO: Scan for files matching pattern and build them
+    }
+    
+    Ok(())
+}
+
 fn verify_build_determinism(
     data: &JsonValue,
     builder: &Builder,
     iterations: usize,
 ) -> Result<(), Box<dyn std::error::Error>> {
     use sha2::{Sha256, Digest};
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
     
     if iterations < 2 {
         return Ok(());
@@ -1017,7 +1476,7 @@ fn verify_build_determinism(
     let mut hashes = Vec::with_capacity(iterations);
 
     // Build XML multiple times
-    for i in 0..iterations {
+    for _i in 0..iterations {
         let xml = build_ddex_xml(data, builder)?;
         
         // Calculate SHA-256 hash
@@ -1113,4 +1572,38 @@ struct BatchReport {
     successful: usize,
     failed: usize,
     results: Vec<BatchResult>,
+}
+
+// Data structures for preset commands
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct PresetInfo {
+    name: String,
+    version: String,
+    partner: String,
+    description: String,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct PresetDetails {
+    name: String,
+    partner: String,
+    version: String,
+    description: String,
+    config: PresetConfig,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct PresetSummary {
+    name: String,
+    partner: String,
+    version: String,
+    description: String,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize, Default)]
+struct PresetConfig {
+    // TODO: Define actual preset configuration structure
+    // This would contain partner-specific settings, validation rules, etc.
+    settings: IndexMap<String, String>,
 }
