@@ -10,6 +10,8 @@ High-performance DDEX XML parser with native bindings for JavaScript, Python, an
 
 Part of the [DDEX Suite](https://github.com/ddex-suite/ddex-suite) - a comprehensive toolkit for working with DDEX metadata in the music industry.
 
+> **Version 0.2.5** - Aligned with ddex-builder v0.2.5 for consistent versioning across the entire ddex-suite. All functionality from v0.2.0 remains unchanged.
+
 ## 🚀 Language Support
 
 Choose your preferred language and get started immediately:
@@ -262,22 +264,27 @@ Performance comparison across environments:
 
 ## Migration Guides
 
-### From v0.1.0 to v0.2.0
+### From v0.1.0 to v0.2.5
 
-The v0.2.0 release introduced significant improvements with some breaking changes:
+The v0.2.0 release introduced significant improvements with some breaking changes. Version 0.2.5 maintains full compatibility with v0.2.0 while aligning with ddex-builder versioning:
 
 ```javascript
 // v0.1.0 (deprecated)
 import ddexParser from 'ddex-parser';
 const result = ddexParser.parse(xml);
 
-// v0.2.0+ (current)
+// v0.2.5+ (current)
 import { DDEXParser } from 'ddex-parser';
 const parser = new DDEXParser();
 const result = await parser.parseString(xml);
 ```
 
-**New in v0.2.0:**
+**New in v0.2.5:**
+- Version alignment with ddex-builder v0.2.5
+- Consistent versioning across entire ddex-suite
+- Documentation improvements
+
+**Previous changes in v0.2.0:**
 - Dual model architecture (graph + flattened)
 - Async/await throughout
 - Enhanced security features
