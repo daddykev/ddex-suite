@@ -1,14 +1,37 @@
 # DDEX Builder
 
 [![Crates.io](https://img.shields.io/crates/v/ddex-builder)](https://crates.io/crates/ddex-builder)
+[![npm version](https://img.shields.io/npm/v/ddex-builder)](https://www.npmjs.com/package/ddex-builder)
+[![PyPI version](https://badge.fury.io/py/ddex-builder.svg)](https://badge.fury.io/py/ddex-builder)
 [![Documentation](https://docs.rs/ddex-builder/badge.svg)](https://docs.rs/ddex-builder)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Security Audit](https://github.com/daddykev/ddex-suite/actions/workflows/security.yml/badge.svg)](https://github.com/daddykev/ddex-suite/actions/workflows/security.yml)
-[![Test Coverage](https://codecov.io/gh/daddykev/ddex-suite/branch/main/graph/badge.svg)](https://codecov.io/gh/daddykev/ddex-suite)
+[![Build Status](https://github.com/daddykev/ddex-suite/workflows/CI/badge.svg)](https://github.com/daddykev/ddex-suite/actions)
 
 **The fastest, most secure, and deterministic DDEX XML builder for modern music distribution.**
 
-Generate byte-perfect, DDEX-compliant XML with guaranteed reproducibility, comprehensive security features, and sub-millisecond performance. Built in Rust with bindings for JavaScript, Python, and WebAssembly.
+Generate byte-perfect, DDEX-compliant XML with guaranteed reproducibility, comprehensive security features, and sub-millisecond performance. Built in Rust with native bindings for JavaScript/TypeScript, Python, and WebAssembly.
+
+## 🚀 Quick Install
+
+```bash
+# Rust
+cargo add ddex-builder
+
+# Node.js/TypeScript  
+npm install ddex-builder
+
+# Python
+pip install ddex-builder
+
+# WebAssembly
+npm install ddex-builder-wasm
+```
+
+📖 **Language-Specific Documentation:**
+- 🦀 **[Rust Documentation](https://docs.rs/ddex-builder)** - Complete API reference
+- 📦 **[Node.js Guide](bindings/node/README.md)** - TypeScript examples, streaming
+- 🐍 **[Python Guide](bindings/python/README.md)** - Pandas integration, Jupyter notebooks
+- 🌐 **[WASM Guide](bindings/wasm/README.md)** - Browser integration, bundle optimization
 
 ## 🎯 Status: v0.1.0 - Initial Release
 
@@ -39,78 +62,125 @@ Generate byte-perfect, DDEX-compliant XML with guaranteed reproducibility, compr
 
 ## 🏁 Quick Start
 
-### Installation
-
-```bash
-# Rust
-cargo add ddex-builder
-
-# Node.js
-npm install ddex-builder
-
-# Python
-pip install ddex-builder
-```
-
-### Basic Usage
+### Basic Usage (Rust)
 
 ```rust
-use ddex_builder::{Builder, BuildRequest, OutputFormat};
+use ddex_builder::{DdexBuilder, Release, Resource};
 
-// Create builder with Spotify preset
-let mut builder = Builder::new();
-builder.preset("spotify_audio_43")?;
+// Create builder instance
+let mut builder = DdexBuilder::new();
 
-// Build DDEX XML
-let request = BuildRequest {
-    source_xml: r#"
-        <SoundRecording>
-            <SoundRecordingId><ISRC>USRC17607839</ISRC></SoundRecordingId>
-            <ReferenceTitle><TitleText>My Amazing Song</TitleText></ReferenceTitle>
-            <Duration>PT3M45S</Duration>
-        </SoundRecording>
-    "#.to_string(),
-    output_format: OutputFormat::Xml,
-    preset: Some("spotify_audio_43".to_string()),
-    validate_schema: true,
+// Add a release
+let release = Release {
+    release_id: "R001".to_string(),
+    release_type: "Album".to_string(),
+    title: "My Album".to_string(),
+    artist: "Artist Name".to_string(),
+    label: Some("Record Label".to_string()),
+    upc: Some("123456789012".to_string()),
+    track_ids: vec!["T001".to_string()],
+    ..Default::default()
 };
 
-let result = builder.build_internal(&request)?;
-println!("Generated: {}", result.xml);
-// Output: Complete, valid DDEX ERN 4.3 XML ready for Spotify
+builder.add_release(release)?;
+
+// Add a resource (track)
+let track = Resource {
+    resource_id: "T001".to_string(),
+    resource_type: "SoundRecording".to_string(),
+    title: "Track 1".to_string(),
+    artist: "Artist Name".to_string(),
+    isrc: Some("USRC17607839".to_string()),
+    duration: Some("PT3M30S".to_string()),
+    ..Default::default()
+};
+
+builder.add_resource(track)?;
+
+// Build DDEX XML
+let xml = builder.build()?;
+println!("Generated {} bytes of DDEX XML", xml.len());
 ```
 
-### JavaScript/Node.js
+### JavaScript/TypeScript
 
 ```javascript
-const { DDEXBuilder } = require('ddex-builder');
+import { DdexBuilder } from 'ddex-builder';
 
-const builder = new DDEXBuilder();
-await builder.applyPreset('spotify_audio_43');
+const builder = new DdexBuilder();
 
-const result = await builder.build({
-    sourceXml: '<SoundRecording>...</SoundRecording>',
-    validateSchema: true
+// Add release
+builder.addRelease({
+  releaseId: 'R001',
+  releaseType: 'Album',
+  title: 'My Album',
+  artist: 'Artist Name',
+  trackIds: ['T001']
 });
 
-console.log(`Built in ${result.stats.generationTimeMs}ms`);
+// Add track
+builder.addResource({
+  resourceId: 'T001',
+  resourceType: 'SoundRecording',
+  title: 'Track 1',
+  artist: 'Artist Name',
+  isrc: 'USRC17607839'
+});
+
+// Generate XML
+const xml = await builder.build();
+console.log(`Generated ${xml.length} bytes`);
 ```
 
 ### Python
 
 ```python
-from ddex_builder import Builder, BuildRequest, OutputFormat
+import ddex_builder
 
-builder = Builder()
-builder.preset('spotify_audio_43')
+builder = ddex_builder.DdexBuilder()
 
-result = builder.build_internal(BuildRequest(
-    source_xml='<SoundRecording>...</SoundRecording>',
-    output_format=OutputFormat.XML,
-    validate_schema=True
-))
+# Add release
+release = ddex_builder.Release(
+    release_id='R001',
+    release_type='Album',
+    title='My Album',
+    artist='Artist Name',
+    track_ids=['T001']
+)
+builder.add_release(release)
 
-print(f"Generated {len(result.xml)} bytes in {result.generation_time_ms}ms")
+# Add track
+track = ddex_builder.Resource(
+    resource_id='T001',
+    resource_type='SoundRecording',
+    title='Track 1',
+    artist='Artist Name',
+    isrc='USRC17607839'
+)
+builder.add_resource(track)
+
+# Generate XML
+xml = builder.build()
+print(f"Generated {len(xml)} bytes")
+```
+
+### Python with Pandas
+
+```python
+import pandas as pd
+import ddex_builder
+
+# Load from CSV/Excel
+releases_df = pd.read_csv('releases.csv')
+resources_df = pd.read_csv('tracks.csv')
+
+# Build from DataFrames
+builder = ddex_builder.DdexBuilder()
+builder.from_dataframe(releases_df)
+builder.from_dataframe(resources_df)
+
+# Generate XML for all releases
+xml = builder.build()
 ```
 
 ## 🎯 Core Features
@@ -244,55 +314,110 @@ let result = builder.convert_version(
 | **ERN 4.2** | ✅ Full | Enhanced features, stable |
 | **ERN 4.3** | ✅ Full | Latest standard, recommended |
 
-## 🌐 Platform Support
+## 🌐 Language Bindings
 
-### Rust
+### 🦀 Rust (Core Library)
 
 ```toml
 [dependencies]
-ddex-builder = "1.0.0"
+ddex-builder = "0.1.0"
 
 # Optional features
 ddex-builder = { 
-    version = "1.0.0", 
-    features = ["async", "strict", "wasm"] 
+    version = "0.1.0", 
+    features = ["serde", "validation"] 
 }
 ```
 
-### Node.js
+**Features:**
+- Zero-cost abstractions and memory safety
+- Full type system with compile-time guarantees
+- Direct access to all core functionality
+- Maximum performance (sub-millisecond builds)
+
+📚 **[Complete Rust Documentation →](https://docs.rs/ddex-builder)**
+
+### 📦 Node.js/TypeScript
 
 ```bash
 npm install ddex-builder
 ```
 
-```javascript
-const { DDEXBuilder } = require('ddex-builder');
-// or ESM
-import { DDEXBuilder } from 'ddex-builder';
+```typescript
+import { DdexBuilder, Release, Resource } from 'ddex-builder';
+// or CommonJS
+const { DdexBuilder } = require('ddex-builder');
 ```
 
-### Python
+**Features:**
+- Full TypeScript support with type definitions
+- Native performance with Rust backend
+- Streaming support for large datasets
+- Cross-platform binaries (Windows, macOS, Linux)
+- Node.js ≥14 support
+
+📚 **[Complete Node.js Guide →](bindings/node/README.md)**
+
+### 🐍 Python
 
 ```bash
 pip install ddex-builder
 ```
 
 ```python
-from ddex_builder import Builder, BuildRequest, OutputFormat
+import ddex_builder
+from ddex_builder import DdexBuilder, Release, Resource
 ```
 
-### WebAssembly
+**Features:**
+- Native Pandas DataFrame integration
+- Jupyter notebook support
+- Streaming for large datasets
+- Python 3.8+ support
+- Type hints throughout
+- Memory-efficient processing
+
+📚 **[Complete Python Guide →](bindings/python/README.md)**
+
+### 🌐 WebAssembly
 
 ```bash
 npm install ddex-builder-wasm
 ```
 
 ```javascript
-import init, { DDEXBuilder } from 'ddex-builder-wasm';
+import init, { DdexBuilder } from 'ddex-builder-wasm';
 
 await init();
-const builder = new DDEXBuilder();
+const builder = new DdexBuilder();
 ```
+
+**Features:**
+- Browser-compatible (117KB bundle)
+- No server required
+- Same API as Node.js version
+- Worker thread support
+- Streaming capabilities
+
+📚 **[Complete WASM Guide →](bindings/wasm/README.md)**
+
+## 📊 Language Comparison
+
+| Feature | Rust | Node.js | Python | WASM |
+|---------|------|---------|--------|---------|
+| **Performance** | 🟢 Fastest | 🟡 Fast | 🟡 Fast | 🟡 Fast |
+| **Memory Usage** | 🟢 Lowest | 🟡 Low | 🟡 Medium | 🟡 Low |
+| **Type Safety** | 🟢 Compile-time | 🟢 TypeScript | 🟡 Runtime | 🟢 TypeScript |
+| **DataFrame Support** | ❌ Manual | ❌ Manual | 🟢 Native | ❌ Manual |
+| **Streaming** | 🟢 Full | 🟢 Full | 🟢 Full | 🟢 Full |
+| **Bundle Size** | N/A | 738KB | N/A | 117KB |
+| **Platform Support** | All | All | All | Browser |
+
+**Choose based on your needs:**
+- **🦀 Rust**: Maximum performance, type safety, systems programming
+- **📦 Node.js**: Web services, APIs, TypeScript projects
+- **🐍 Python**: Data science, ML pipelines, Jupyter notebooks
+- **🌐 WASM**: Browser applications, client-side processing
 
 ## 📈 Performance Benchmarks
 
@@ -369,71 +494,136 @@ let validation = ValidationConfig {
 
 ## 🧪 Examples
 
-### Complete Release Example
+### Complete Album Example (Rust)
 
 ```rust
-use ddex_builder::*;
+use ddex_builder::{DdexBuilder, Release, Resource};
 
-let mut builder = Builder::new();
-builder.preset("spotify_audio_43")?;
-
-let request = BuildRequest {
-    source_xml: r#"
-        <NewReleaseMessage>
-            <MessageHeader>
-                <MessageId>MSG123456789</MessageId>
-                <MessageSender>
-                    <PartyName><FullName>My Record Label</FullName></PartyName>
-                </MessageSender>
-            </MessageHeader>
-            <ReleaseList>
-                <Release>
-                    <ReleaseId>
-                        <ICPN>1234567890123</ICPN>
-                    </ReleaseId>
-                    <ReferenceTitle>
-                        <TitleText>My Amazing Album</TitleText>
-                    </ReferenceTitle>
-                    <ReleaseResourceReferenceList>
-                        <ReleaseResourceReference>A1</ReleaseResourceReference>
-                    </ReleaseResourceReferenceList>
-                </Release>
-            </ReleaseList>
-            <ResourceList>
-                <SoundRecording>
-                    <SoundRecordingId>
-                        <ISRC>USRC17607839</ISRC>
-                    </SoundRecordingId>
-                    <ResourceReference>A1</ResourceReference>
-                    <ReferenceTitle>
-                        <TitleText>Track One</TitleText>
-                    </ReferenceTitle>
-                    <Duration>PT3M45S</Duration>
-                    <DisplayArtist>
-                        <PartyName><FullName>Artist Name</FullName></PartyName>
-                    </DisplayArtist>
-                </SoundRecording>
-            </ResourceList>
-        </NewReleaseMessage>
-    "#.to_string(),
-    output_format: OutputFormat::Xml,
-    preset: Some("spotify_audio_43".to_string()),
-    validate_schema: true,
-};
-
-let result = builder.build_internal(&request)?;
-
-// Verify results
-assert!(result.xml.contains("ERN/4.3"));
-assert!(result.stats.generation_time_ms < 20);
-assert_eq!(result.stats.releases, 1);
-assert_eq!(result.stats.tracks, 1);
-
-println!("✅ Generated valid Spotify DDEX XML ({} bytes) in {}ms", 
-    result.stats.xml_size_bytes,
-    result.stats.generation_time_ms
-);
+fn build_complete_album() -> Result<String, Box<dyn std::error::Error>> {
+    let mut builder = DdexBuilder::new();
+    
+    // Album metadata
+    let release = Release {
+        release_id: "ALB2024001".to_string(),
+        release_type: "Album".to_string(),
+        title: "Digital Dreams".to_string(),
+        artist: "Future Sounds".to_string(),
+        label: Some("Electronic Records".to_string()),
+        catalog_number: Some("ER2024001".to_string()),
+        upc: Some("123456789012".to_string()),
+        release_date: Some("2024-03-15".to_string()),
+        genre: Some("Electronic".to_string()),
+        track_ids: vec!["TRK001".to_string(), "TRK002".to_string(), "TRK003".to_string()],
+        ..Default::default()
+    };
+    
+    builder.add_release(release)?;
+    
+    // Album tracks
+    let tracks = vec![
+        Resource {
+            resource_id: "TRK001".to_string(),
+            resource_type: "SoundRecording".to_string(),
+            title: "Digital Awakening".to_string(),
+            artist: "Future Sounds".to_string(),
+            isrc: Some("USRC17607001".to_string()),
+            duration: Some("PT4M15S".to_string()),
+            track_number: Some(1),
+            volume_number: Some(1),
+            ..Default::default()
+        },
+        Resource {
+            resource_id: "TRK002".to_string(),
+            resource_type: "SoundRecording".to_string(),
+            title: "Neon Nights".to_string(),
+            artist: "Future Sounds".to_string(),
+            isrc: Some("USRC17607002".to_string()),
+            duration: Some("PT3M45S".to_string()),
+            track_number: Some(2),
+            volume_number: Some(1),
+            ..Default::default()
+        },
+        Resource {
+            resource_id: "TRK003".to_string(),
+            resource_type: "SoundRecording".to_string(),
+            title: "Cyber Dreams".to_string(),
+            artist: "Future Sounds".to_string(),
+            isrc: Some("USRC17607003".to_string()),
+            duration: Some("PT5M22S".to_string()),
+            track_number: Some(3),
+            volume_number: Some(1),
+            ..Default::default()
+        },
+    ];
+    
+    for track in tracks {
+        builder.add_resource(track)?;
+    }
+    
+    // Validate before building
+    let validation = builder.validate()?;
+    if !validation.is_valid {
+        return Err(format!("Validation failed: {:?}", validation.errors).into());
+    }
+    
+    // Build XML
+    let xml = builder.build()?;
+    
+    // Show stats
+    let stats = builder.get_stats();
+    println!("✅ Generated DDEX XML:");
+    println!("   Size: {} bytes", xml.len());
+    println!("   Releases: {}", stats.releases_count);
+    println!("   Resources: {}", stats.resources_count);
+    println!("   Build time: {:.2}ms", stats.total_build_time_ms);
+    
+    Ok(xml)
+}
 ```
+
+### Multi-Language Comparison
+
+<table>
+<tr><th>Rust</th><th>Node.js</th><th>Python</th></tr>
+<tr>
+<td>
+
+```rust
+use ddex_builder::DdexBuilder;
+
+let mut builder = DdexBuilder::new();
+builder.add_release(release)?;
+builder.add_resource(resource)?;
+let xml = builder.build()?;
+```
+
+</td>
+<td>
+
+```javascript
+import { DdexBuilder } from 'ddex-builder';
+
+const builder = new DdexBuilder();
+builder.addRelease(release);
+builder.addResource(resource);
+const xml = await builder.build();
+```
+
+</td>
+<td>
+
+```python
+import ddex_builder
+
+builder = ddex_builder.DdexBuilder()
+builder.add_release(release)
+builder.add_resource(resource)
+xml = builder.build()
+```
+
+</td>
+</tr>
+</table>
 
 ### Error Handling
 
@@ -516,14 +706,31 @@ cargo audit
 cargo deny check
 ```
 
-## 📚 Documentation
+## 📚 Documentation & Examples
 
+### Core Documentation
 - **📖 [User Guide](docs/user-guide.md)** - Complete usage guide with examples
 - **🔧 [Developer Guide](docs/developer-guide.md)** - Architecture and contributing
-- **🔗 [API Reference](https://docs.rs/ddex-builder)** - Complete API documentation
 - **🛡️ [Security Policy](SECURITY.md)** - Security features and reporting
-- **📝 [Examples](examples/)** - Real-world usage examples
 - **🚀 [Performance Guide](docs/performance-guide.md)** - Optimization tips
+
+### Language-Specific Guides
+- **🦀 [Rust API Reference](https://docs.rs/ddex-builder)** - Complete API documentation
+- **📦 [Node.js Documentation](bindings/node/README.md)** - Installation, API, examples
+- **🐍 [Python Documentation](bindings/python/README.md)** - Pandas integration, Jupyter
+- **🌐 [WASM Documentation](bindings/wasm/README.md)** - Browser integration
+
+### Real-World Examples
+- **📝 [Rust Examples](examples/rust/)** - Complete album processing, streaming
+- **📝 [Node.js Examples](bindings/node/examples/)** - Express.js API, batch processing
+- **📝 [Python Examples](bindings/python/examples/)** - CSV processing, ML pipelines
+- **📝 [WASM Examples](bindings/wasm/examples/)** - Browser apps, web workers
+
+### Integration Guides
+- **🔄 [CI/CD Integration](docs/ci-cd.md)** - GitHub Actions, automated testing
+- **☁️ [Cloud Deployment](docs/cloud-deployment.md)** - AWS Lambda, Docker
+- **📊 [Data Pipeline Integration](docs/data-pipelines.md)** - Airflow, Spark
+- **🎵 [Music Platform APIs](docs/platform-apis.md)** - Spotify, Apple, YouTube
 
 ## 🛡️ Security
 
@@ -554,12 +761,25 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md).
 
 Licensed under the [MIT License](LICENSE).
 
-## 🌟 Support
+## 🌟 Support & Community
 
-- **🐛 Issues**: [GitHub Issues](https://github.com/daddykev/ddex-suite/issues)
+### Getting Help
+- **🐛 Bug Reports**: [GitHub Issues](https://github.com/daddykev/ddex-suite/issues)
 - **💬 Discussions**: [GitHub Discussions](https://github.com/daddykev/ddex-suite/discussions)
-- **📧 Email**: [support@ddex-suite.com](mailto:support@ddex-suite.com)
-- **🔗 Discord**: [DDEX Builder Community](https://discord.gg/ddex-builder)
+- **📖 Documentation**: Language-specific guides linked above
+- **💡 Feature Requests**: [Feature Request Template](https://github.com/daddykev/ddex-suite/issues/new?template=feature_request.md)
+
+### Community Resources
+- **🎵 Music Industry Discord**: [DDEX Builder Community](https://discord.gg/ddex-builder)
+- **📊 Data Science**: [Python DataFrame Examples](bindings/python/examples/)
+- **🌐 Web Development**: [Node.js API Examples](bindings/node/examples/)
+- **🦀 Rust Users**: [Rust Performance Examples](examples/rust/)
+
+### Commercial Support
+- **📧 Enterprise Support**: [enterprise@ddex-suite.com](mailto:enterprise@ddex-suite.com)
+- **🏢 Custom Development**: Integration consulting available
+- **📈 Training**: DDEX workshops and training sessions
+- **🔒 Priority Security**: Dedicated security response for enterprise users
 
 ---
 
