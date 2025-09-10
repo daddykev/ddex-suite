@@ -5,10 +5,10 @@
 ![Python](https://img.shields.io/badge/Python-3.8%20|%203.9%20|%203.10%20|%203.11%20|%203.12-blue?logo=python)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-blue?logo=typescript)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20|%20macOS%20|%20Windows-lightgrey)
-[![npm ddex-builder](https://img.shields.io/npm/v/ddex-builder?label=ddex-builder)](https://www.npmjs.com/package/ddex-builder)
-[![npm ddex-parser](https://img.shields.io/npm/v/ddex-parser?label=ddex-parser)](https://www.npmjs.com/package/ddex-parser)
-[![PyPI ddex-builder](https://img.shields.io/pypi/v/ddex-builder?label=ddex-builder)](https://pypi.org/project/ddex-builder/)
-[![PyPI ddex-parser](https://img.shields.io/pypi/v/ddex-builder?label=ddex-parser)](https://pypi.org/project/ddex-parser/)
+[![npm ddex-builder](https://img.shields.io/npm/v/ddex-builder?label=npm%20ddex-builder)](https://www.npmjs.com/package/ddex-builder)
+[![npm ddex-parser](https://img.shields.io/npm/v/ddex-parser?label=npm%20ddex-parser)](https://www.npmjs.com/package/ddex-parser)
+[![PyPI ddex-builder](https://img.shields.io/pypi/v/ddex-builder?label=PyPI%20ddex-builder)](https://pypi.org/project/ddex-builder/)
+[![PyPI ddex-parser](https://img.shields.io/pypi/v/ddex-parser?label=PyPI%20ddex-parser)](https://pypi.org/project/ddex-parser/)
 
 > High-performance DDEX XML builder and parser with native bindings for TypeScript/JavaScript and Python. Built on a single Rust core for consistent behavior across all platforms.
 
@@ -33,83 +33,25 @@ Beyond the core implementation, this is a showcase of **software craftsmanship a
 ## 🚧 Development Status
 
 **Current Phase**: Phase 4.2 - Documentation & Launch Prep  
-**Latest Release**: Suite v0.2.5 🎉 | Builder v0.2.5 | Parser v0.2.5  
+**Latest Release**: Suite v0.2.5 🎉  
 **Target Release**: Suite v1.0.0 in Q4 2025
 
-### 🎉 Recent Achievements
+### 📦 Available Packages
 
-- **DDEX Builder v0.2.5 Published!** Available on [npm](https://www.npmjs.com/package/ddex-builder) and [PyPI](https://pypi.org/project/ddex-builder/)
-- **DDEX Parser v0.2.5 Published!** Available on [npm](https://www.npmjs.com/package/ddex-parser) and [PyPI](https://pypi.org/project/ddex-parser/)
-- **Complete Round-Trip Integration**: Parse → Modify → Build workflow with 100% fidelity
-- **Enhanced Python Support**: Full PyO3 0.21 compatibility with improved bindings
-- **Advanced CLI Features**: Complete command-line interfaces with comprehensive functionality
+Both parser and builder are now published and ready for use!
 
-### Progress Tracker
+| Package | npm | PyPI | Version |
+|---------|-----|------|---------|
+| **ddex-parser** | ✅ [Published](https://www.npmjs.com/package/ddex-parser) | ✅ [Published](https://pypi.org/project/ddex-parser/) | v0.2.5 |
+| **ddex-builder** | ✅ [Published](https://www.npmjs.com/package/ddex-builder) | ✅ [Published](https://pypi.org/project/ddex-builder/) | v0.2.5 |
 
-#### ✅ Phase 1: Foundation Refactor (COMPLETED)
+### Progress Overview
 
-All monorepo setup and core extraction completed.
+✅ **Phase 1-3: Complete** - Core foundation, parser, and builder are fully implemented  
+✅ **Phase 4.1: Integration Testing** - Round-trip functionality validated with 94 tests passing  
+🔄 **Phase 4.2: Documentation & Launch** - Creating unified docs and tutorials  
 
-#### ✅ Phase 2: Complete DDEX Parser v1.0 (90% COMPLETE)
-
-**Enhanced Parser Features** ✅ **COMPLETED**  
-**JavaScript/TypeScript Bindings** ✅ **COMPLETED & PUBLISHED**  
-**Python Bindings** ✅ **COMPLETED & PUBLISHED**  
-**CLI & Polish** ✅ **COMPLETED**
-
-#### ✅ Phase 3: DDEX Builder Development (COMPLETED)
-
-**3.1 Builder Foundation** ✅ **COMPLETED**
-- Valid DDEX ERN 4.3 XML generation
-- DB-C14N/1.0 canonicalization
-- Determinism engine with IndexMap
-
-**3.2 Core Builder Features** ✅ **COMPLETED**
-- Reference linker with auto-linking (9 tests passing)
-- Stable-hash ID generation with versioned recipes
-- Comprehensive preflight validation (ISRC/UPC/profile)
-- Full ERN 4.3 AudioAlbum profile support
-- 26 total tests passing
-
-**3.3 Builder Bindings** ✅ **COMPLETED & PUBLISHED**
-- [x] Node.js with native N-API bindings
-- [x] Python with DataFrame integration
-- [x] WASM at 114KB (77% under 500KB target!)
-- [x] TypeScript definitions with full coverage
-- [x] 95% API consistency across platforms
-
-**3.4 Advanced Builder Features** (Deferred to v1.1)
-- Partner presets (Spotify, YouTube)
-- Streaming writer
-- Semantic diff engine
-- UpdateReleaseMessage support
-- JSON Schema generation
-- Multi-version support (3.8.2, 4.2, 4.3)
-
-**3.5 Builder Polish** ✅ **COMPLETED**
-- [x] Complete CLI with all commands
-- [x] Performance optimization
-- [x] Security audit
-- [x] Complete documentation
-- [x] Tag ddex-builder v0.1.0
-- [x] Published to npm and PyPI
-
-#### ✅ Phase 4: Suite Integration & Launch (CURRENT)
-
-**4.1 Integration Testing** ✅ **COMPLETED**
-- [x] End-to-end round-trip tests
-- [x] Cross-package integration tests  
-- [x] Performance benchmarks validated
-- [x] Core functionality testing (94 tests passing)
-- [x] **Suite v0.2.5 Published** to npm and PyPI
-
-**4.2 Documentation & Launch** 🔄 **IN PROGRESS**
-- [ ] Create unified documentation site
-- [ ] Build interactive tutorials
-- [ ] Record demo videos
-- [ ] Prepare marketing materials
-- [ ] Setup community channels
-- [ ] Official v1.0.0 release
+For detailed development progress and technical implementation details, see [blueprint.md](./blueprint.md).
 
 ## 🎭 Dual Model Architecture
 
@@ -164,8 +106,6 @@ interface ParsedRelease {
 
 ## 📦 Installation
 
-Both parser and builder are now available!
-
 ```bash
 # JavaScript/TypeScript
 npm install ddex-parser  # ✅ Latest: v0.2.5
@@ -175,9 +115,9 @@ npm install ddex-builder # ✅ Latest: v0.2.5
 pip install ddex-parser  # ✅ Latest: v0.2.5
 pip install ddex-builder # ✅ Latest: v0.2.5
 
-# Rust
-cargo add ddex-parser-core  # Coming soon
-cargo add ddex-builder-core # Coming soon
+# Rust (coming soon)
+cargo add ddex-parser-core
+cargo add ddex-builder-core
 ```
 
 ## 💻 Usage Examples
@@ -205,8 +145,12 @@ assert.deepEqual(reparsed.graph, result.graph); // ✅ Identical
 
 ### Python
 ```python
-from ddex_parser import DDEXParser  # Available now!
-from ddex_builder import DDEXBuilder  # Available now!
+from ddex_parser import DDEXParser
+from ddex_builder import DDEXBuilder
+
+# Parse DDEX message
+parser = DDEXParser()
+message = parser.parse(xml_content)
 
 # Build DDEX from scratch
 builder = DDEXBuilder()
@@ -225,11 +169,6 @@ xml = builder.build({
         ]
     }]
 })
-
-# Parse to structured data (coming soon)
-# parser = DDEXParser()
-# message = parser.parse(xml_content)
-# df = parser.to_dataframe(xml_content)
 ```
 
 ## 🏗️ Architecture
@@ -262,7 +201,7 @@ Built as a monorepo with shared core components:
 
 ## 📊 Performance Metrics
 
-### Current Performance (v0.1.0)
+### Current Performance (v0.2.5)
 
 | Operation | Target | Status |
 |-----------|--------|--------|
@@ -271,7 +210,7 @@ Built as a monorepo with shared core components:
 | Parse 1MB | <50ms | ✅ Achieved |
 | Parse 100MB | <5s | ✅ Achieved |
 | Stream 1GB | <60s with <100MB memory | ✅ Achieved |
-| Build typical release | <15ms | ✅ Achieved (~0.27s for test suite) |
+| Build typical release | <15ms | ✅ Achieved |
 | Round-trip fidelity | 100% | ✅ Achieved |
 | Deterministic output | 100% identical | ✅ Achieved |
 
@@ -286,7 +225,7 @@ Built as a monorepo with shared core components:
 
 ## 📚 Documentation
 
-- [Blueprint](./blueprint.md) - Detailed architecture and roadmap
+- [Blueprint](./blueprint.md) - Detailed architecture, roadmap, and technical implementation
 - [Parser API](./packages/ddex-parser/docs/API.md) - Parser documentation
 - [Builder API](./packages/ddex-builder/docs/API.md) - Builder documentation
 - [Round-Trip Guide](./docs/ROUND_TRIP.md) - Parse → Modify → Build guide
@@ -303,7 +242,7 @@ MIT License - see [LICENSE](./LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
-DDEX Suite is designed to complement [DDEX Workbench](https://github.com/ddex/ddex-workbench) by providing structural parsing and deterministic generation while Workbench handles XSD validation and business rules.
+DDEX Suite is designed to complement [DDEX Workbench](https://ddex-workbench.org) by providing structural parsing and deterministic generation while Workbench handles XSD validation and business rules.
 
 ---
 
