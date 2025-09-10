@@ -1,1 +1,22 @@
-{}
+{
+  "name": "ddex-builder-wasm",
+  "version": "0.1.0",
+  "description": "WASM bindings for DDEX Builder",
+  "main": "pkg/ddex_builder_wasm.js",
+  "files": [
+    "pkg"
+  ],
+  "scripts": {
+    "build": "wasm-pack build --target web --out-dir pkg",
+    "test": "node test-headless.js",
+    "test:browser": "python3 -m http.server 8080"
+  },
+  "devDependencies": {
+    "jsdom": "^22.1.0",
+    "@types/jest": "^29.5.0",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0"
+  },
+  "license": "MIT",
+  "author": "Kevin Marques Moo"
+}
