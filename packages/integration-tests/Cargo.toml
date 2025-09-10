@@ -1,0 +1,41 @@
+[package]
+name = "integration-tests"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Comprehensive integration tests for DDEX Suite parser and builder"
+publish = false
+
+[dependencies]
+# Core DDEX packages
+ddex-core = { path = "../core" }
+ddex-parser = { path = "../ddex-parser" }
+ddex-builder = { path = "../ddex-builder" }
+
+# Core dependencies from workspace
+thiserror = { workspace = true }
+chrono = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+
+# Test dependencies
+pretty_assertions = { workspace = true }
+tempfile = { workspace = true }
+insta = { workspace = true }
+test-case = { workspace = true }
+
+# Additional integration test dependencies
+similar = { workspace = true }
+walkdir = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+indexmap = { version = "2.2", features = ["serde"] }
+
+[features]
+default = []
+strict = ["ddex-builder/strict"]
+
+# This is a test-only crate, so no binary targets
