@@ -1632,7 +1632,7 @@ ddex-suite/
 
 ### Phase 4: Suite Integration & Launch 🔄 IN PROGRESS
 
-#### 4.1 Integration Testing ✅ **COMPLETED (v0.2.0)**
+#### 4.1 Integration Testing ✅ **COMPLETED (v0.2.5)**
 - [x] End-to-end round-trip tests
 - [x] Cross-package integration tests  
 - [x] Performance benchmarks validated (94 core tests passing)
@@ -1640,7 +1640,7 @@ ddex-suite/
 - [x] Advanced CLI features for both parser and builder
 - [x] Complete workspace version management
 - [x] Comprehensive CHANGELOG.md documentation
-- [x] **Suite v0.2.0 Published** to npm and PyPI
+- [x] **Suite v0.2.5 Published** to npm and PyPI
 
 #### 4.2 Documentation & Launch 🔄 **IN PROGRESS**
 - [ ] Create unified documentation site

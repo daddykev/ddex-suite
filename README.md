@@ -38,9 +38,8 @@ Beyond the core implementation, this is a showcase of **software craftsmanship a
 
 ### 🎉 Recent Achievements
 
-- **🚀 DDEX Suite v0.2.5 Released!** Complete integration with enhanced Python bindings
 - **DDEX Builder v0.2.5 Published!** Available on [npm](https://www.npmjs.com/package/ddex-builder) and [PyPI](https://pypi.org/project/ddex-builder/)
-- **DDEX Parser v0.2.5 Released!** Available on [npm](https://www.npmjs.com/package/ddex-parser) and [PyPI](https://pypi.org/project/ddex-parser/)
+- **DDEX Parser v0.2.5 Published!** Available on [npm](https://www.npmjs.com/package/ddex-parser) and [PyPI](https://pypi.org/project/ddex-parser/)
 - **Complete Round-Trip Integration**: Parse → Modify → Build workflow with 100% fidelity
 - **Enhanced Python Support**: Full PyO3 0.21 compatibility with improved bindings
 - **Advanced CLI Features**: Complete command-line interfaces with comprehensive functionality

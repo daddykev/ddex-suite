@@ -3,5 +3,9 @@
   "private": true,
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "ddex-builder": "^0.2.5",
+    "ddex-parser": "^0.2.5"
+  }
 }
