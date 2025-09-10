@@ -313,4 +313,4 @@ DDEX Suite is designed to complement [DDEX Workbench](https://github.com/ddex/dd
 **Parser**: v0.2.0 on [npm](https://www.npmjs.com/package/ddex-parser) and [PyPI](https://pypi.org/project/ddex-parser/)  
 **Builder**: v0.2.0 on [npm](https://www.npmjs.com/package/ddex-builder) and [PyPI](https://pypi.org/project/ddex-builder/)  
 **Suite Target**: v1.0.0 in Q4 2025  
-**Last Updated**: January 10, 2025
+**Last Updated**: September 10, 2025
