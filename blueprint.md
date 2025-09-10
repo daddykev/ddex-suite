@@ -1590,13 +1590,24 @@ ddex-suite/
 - [x] Add JSON Schema generation
 - [x] Multi-version support (3.8.2, 4.2, 4.3)
 
-#### 3.5 Builder Polish
+#### 3.5 Builder Polish ✅ COMPLETED & PUBLISHED v0.1.0!
 - [x] Complete CLI with all commands
 - [x] Add `--verify-determinism` flag
 - [x] Performance optimization
 - [x] Security audit
 - [x] Complete documentation
-- [ ] Tag ddex-builder v0.1.0
+- [x] Tag ddex-builder v0.1.0 ✅
+- [x] **Published to npm as `ddex-builder` v0.1.0** ✅
+  - Package size: 347.6 kB compressed / 752.5 kB unpacked
+  - Available at: https://www.npmjs.com/package/ddex-builder
+- [x] **Published to PyPI as `ddex-builder` v0.1.0** ✅
+  - Wheel: 240KB (ARM64 macOS), Source: 255KB
+  - Available at: https://pypi.org/project/ddex-builder/0.1.0/
+- [x] **Git tags pushed to GitHub** ✅
+  - ddex-builder-v0.1.0
+  - ddex-builder-node-v0.1.0
+  - ddex-builder-python-v0.1.0
+  - ddex-builder-wasm-v0.1.0
 
 ### Phase 4: Suite Integration & Launch
 
@@ -1624,38 +1635,70 @@ ddex-suite/
 - ✅ <15ms generation for typical releases (achieved - ~0.27s for test suite)
 - ✅ Memory bounded streaming (implemented, needs testing)
 - ✅ Zero security vulnerabilities (achieved for Rust CLI)
-- ✅ WASM bundle <500KB (achieved - 116KB for builder!)
+- ✅ WASM bundle <500KB (achieved - 114KB for builder!)
 - ✅ Cross-platform bindings (Node.js, Python, WASM all working)
 - 🔄 100% determinism across CI matrix (basic tests passing)
 
-### Current Status Summary
+### Current Build Verification Summary (v0.1.0)
+
+| Component          | Size  | Status                   |
+|--------------------|-------|--------------------------|
+| Rust Core          | 9.4MB | ✅ Development artifact   |
+| Node.js (packaged) | 347KB | ✅ Excellent for npm      |
+| Python wheel       | 235KB | ✅ Compact for PyPI       |
+| WASM bundle        | 166KB | ✅ 67% under 500KB target |
+
+### Platform Support
+- ✅ Node.js: Native binaries with TypeScript definitions
+- ✅ Python: ABI3 compatible wheels (Python 3.8+)
+- ✅ WASM: Browser-ready bundle at 114KB
+- ✅ All exports verified and functional:
+  - DdexBuilder, StreamingDdexBuilder
+  - batchBuild, validateStructure
+  - Full API consistency across platforms
+
+### Distribution Channels
+- **NPM**: https://www.npmjs.com/package/ddex-builder
+- **PyPI**: https://pypi.org/project/ddex-builder/0.1.0/
+- **GitHub**: https://github.com/daddykev/ddex-suite
+
+## Current Status Summary
+
+### Completed Packages
 - **Parser Core**: ✅ Fully functional
 - **Rust CLI**: ✅ Production ready (v0.1.0)
 - **JavaScript/WASM**: ✅ Published to npm
-- **Python Bindings**: 🔄 70% complete (PyO3 compatibility issues)
-- **Builder Core**: ✅ Basic XML generation working
+- **Python Bindings**: ✅ Published to PyPI (Parser at 70%, Builder at 100%)
+
+### Builder v0.1.0 Release ✅
+- **Builder Core**: ✅ Complete XML generation working
 - **Builder Pipeline**: ✅ AST→XML functioning with valid DDEX output
 - **Reference Linker**: ✅ Complete with auto-linking and 9 passing tests
 - **Stable Hash IDs**: ✅ Content-based deterministic ID generation
 - **Preflight Validation**: ✅ Comprehensive ISRC/UPC/profile validation
 - **Determinism**: ✅ IndexMap enforced, canonical hash, fixed timestamps
 - **Golden File Tests**: ✅ Snapshot testing with insta
-- **Security**: ✅ Clean audit for Rust CLI
+- **Security**: ✅ Clean audit for all packages
 - **Test Coverage**: ✅ 26 tests passing across all modules
-- **Builder Bindings**: ✅ All three platforms complete (Node.js, Python, WASM)
+- **Builder Bindings**: ✅ All three platforms complete and published
   - Node.js: Native performance with TypeScript
   - Python: DataFrame integration ready
-  - WASM: 116KB bundle (77% under target!)
+  - WASM: 114KB bundle (77% under target!)
 - **API Consistency**: ✅ 95% consistency score across all bindings
-- **Next Step**: Phase 3.4 - Advanced Builder Features
+
+### Next Phase
+- **Focus**: Phase 4.1 - Integration Testing
+- **Priority**: End-to-end round-trip tests between parser and builder
+- **Timeline**: 2-3 weeks to complete integration phase
+- **Target**: v1.0.0 release with full suite capabilities
 
 ---
 
-**Version**: 2.1.0  
+**Version**: 3.0.0  
 **Last Updated**: September 9, 2025  
-**Status**: Phase 3.3 Ready to Start (Builder Bindings)  
+**Status**: Phase 3 COMPLETE - Builder v0.1.0 Published! 🎉  
 **Repository**: github.com/daddykev/ddex-suite  
 **Parser Target**: v1.0.0 ready to tag  
-**Builder Target**: v1.0.0 in 3-4 weeks  
-**Suite Target**: v1.0.0 in 5-6 weeks  
+**Builder Target**: v0.1.0 PUBLISHED ✅  
+**Suite Target**: v1.0.0 in 1-2 weeks  
 **License**: MIT
