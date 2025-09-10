@@ -19,6 +19,8 @@ web-sys = { version = "0.3", features = ["console", "Performance", "Window"] }
 serde-wasm-bindgen = "0.6"
 console_error_panic_hook = "0.1"
 serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+html-escape = "0.2"
 uuid = { version = "1.0", features = ["v4", "js"] }
 chrono = { version = "0.4", features = ["serde", "wasm-bindgen"] }
 

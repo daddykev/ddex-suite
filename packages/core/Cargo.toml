@@ -1,10 +1,10 @@
 [package]
 name = "ddex-core"
-version = "0.2.0"
-edition = "2021"
-license = "MIT"
-authors = ["Kevin Marques Moo"]
-repository = "https://github.com/daddykev/ddex-suite"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
 description = "Shared DDEX data models and utilities"
 
 [dependencies]
