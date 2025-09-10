@@ -65,10 +65,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     // The preset includes validation rules, default values, and format constraints
     // Note: preset functionality not available in current DDEXBuilder
     // if let Err(e) = builder.preset("spotify_audio_43") {
-        eprintln!("❌ Failed to apply Spotify preset: {}", e);
-        eprintln!("💡 Make sure the 'spotify_audio_43' preset is available");
-        return Err(e.into());
-    }
+    //     eprintln!("❌ Failed to apply Spotify preset: {}", e);
+    //     eprintln!("💡 Make sure the 'spotify_audio_43' preset is available");
+    //     return Err(e.into());
+    // }
     
     println!("✅ Applied Spotify Audio 4.3 preset");
     println!("   • ERN 4.3 schema validation enabled");

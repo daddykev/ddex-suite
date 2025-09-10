@@ -114,3 +114,7 @@ harness = false
 [[bin]]
 name = "ddex-builder"
 path = "src/bin/ddex-builder.rs"
+
+# Strict linting configuration to ensure determinism
+[lints.clippy]
+disallowed_types = "deny"

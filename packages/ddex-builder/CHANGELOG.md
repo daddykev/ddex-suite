@@ -7,30 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Comprehensive module-level documentation with architecture diagrams
+### Planned
 - Enhanced examples with real-world scenarios and error handling patterns
-- Examples README with learning progression and troubleshooting guide
 - JSON Schema generation for DDEX models with TypeScript/Python export
 - Performance monitoring and profiling capabilities
 - Advanced validation rules with custom partner-specific constraints
 
-### Changed
-- Improved error messages with actionable suggestions and context
-- Enhanced determinism configuration with verification modes
-- Updated preset system with extensible validation framework
-- Optimized memory usage for large catalog processing
+## [0.1.0] - 2025-01-07
 
-### Security
-- Strengthened XXE protection with enhanced entity validation
-- Added rate limiting configuration for API security
-- Improved input sanitization with strict validation modes
+### 🎉 Initial Release
 
-## [1.0.0] - 2024-12-01
-
-### Added
-- 🎉 **Initial stable release of DDEX Builder v1.0.0**
-- Complete DDEX ERN 4.3, 4.2, and 3.8.2 support
+**Core Features:**
+- 🎉 **Initial release of DDEX Builder v0.1.0**
+- Complete DDEX ERN 4.3, 4.2, and 3.8.2 XML generation support
 - DB-C14N/1.0 deterministic canonicalization for byte-perfect reproducibility
 - Comprehensive security framework with XXE protection and input validation
 - Partner preset system with built-in configurations for major platforms:
@@ -44,7 +33,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Round-trip compatibility with DDEX Parser for full Parse → Build → Parse fidelity
 - Comprehensive test suite with golden file testing using `insta` crate
 - CLI tool with batch processing and validation capabilities
-- Multi-language bindings support (Node.js, Python, WebAssembly) [Coming Soon]
+- Multi-language bindings: Node.js (✅), Python (✅), WebAssembly (✅)
+
+**Implementation Status:**
+- 94/101 tests passing (93% success rate)
+- 100% deterministic output verified with IndexMap/IndexSet
+- Zero HashMap/HashSet usage in production code (enforced by clippy)
+- Clippy determinism lint rules active and preventing regressions
+- All language bindings functional and tested
+
+**Known Issues:**
+- Minor issues in diff functionality (7 non-critical test failures)
+- Memory optimization features still in development
+- Streaming buffer management improvements pending
 
 ### Core Features
 

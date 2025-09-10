@@ -41,6 +41,47 @@ export interface BuilderStats {
   validationErrors: number
   validationWarnings: number
 }
+export interface PresetInfo {
+  name: string
+  description: string
+  version: string
+  profile: string
+  requiredFields: Array<string>
+  disclaimer: string
+}
+export interface ValidationRule {
+  fieldName: string
+  ruleType: string
+  message: string
+  parameters?: Record<string, string>
+}
+export interface StreamingConfig {
+  maxBufferSize: number
+  deterministic: boolean
+  validateDuringStream: boolean
+  progressCallbackFrequency: number
+}
+export interface StreamingProgress {
+  releasesWritten: number
+  resourcesWritten: number
+  bytesWritten: number
+  currentMemoryUsage: number
+  estimatedCompletionPercent?: number
+}
+export interface StreamingStats {
+  releasesWritten: number
+  resourcesWritten: number
+  dealsWritten: number
+  bytesWritten: number
+  warnings: Array<string>
+  peakMemoryUsage: number
+}
+export interface MessageHeader {
+  messageId?: string
+  messageSenderName: string
+  messageRecipientName: string
+  messageCreatedDateTime?: string
+}
 export declare function batchBuild(requests: Array<string>): Promise<Array<string>>
 export declare function validateStructure(xml: string): Promise<ValidationResult>
 export declare class DdexBuilder {
@@ -50,5 +91,21 @@ export declare class DdexBuilder {
   build(): Promise<string>
   validate(): Promise<ValidationResult>
   getStats(): BuilderStats
+  reset(): void
+  getAvailablePresets(): Array<string>
+  getPresetInfo(presetName: string): PresetInfo
+  applyPreset(presetName: string): void
+  getPresetValidationRules(presetName: string): Array<ValidationRule>
+}
+export declare class StreamingDdexBuilder {
+  constructor(config?: StreamingConfig | undefined | null)
+  setProgressCallback(callback: (...args: any[]) => any): void
+  setEstimatedTotal(total: number): void
+  startMessage(header: MessageHeader, version: string): void
+  writeResource(resourceId: string, title: string, artist: string, isrc?: string | undefined | null, duration?: string | undefined | null, filePath?: string | undefined | null): string
+  finishResourcesStartReleases(): void
+  writeRelease(releaseId: string, title: string, artist: string, label: string | undefined | null, upc: string | undefined | null, releaseDate: string | undefined | null, genre: string | undefined | null, resourceReferences: Array<string>): string
+  finishMessage(): StreamingStats
+  getXml(): string
   reset(): void
 }

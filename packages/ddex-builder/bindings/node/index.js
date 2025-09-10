@@ -37,7 +37,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./ddex-builder-node.android-arm64.node')
           } else {
-            nativeBinding = require('@ddex-suite/builder-android-arm64')
+            nativeBinding = require('ddex-builder-android-arm64')
           }
         } catch (e) {
           loadError = e
@@ -49,7 +49,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./ddex-builder-node.android-arm-eabi.node')
           } else {
-            nativeBinding = require('@ddex-suite/builder-android-arm-eabi')
+            nativeBinding = require('ddex-builder-android-arm-eabi')
           }
         } catch (e) {
           loadError = e
@@ -69,7 +69,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./ddex-builder-node.win32-x64-msvc.node')
           } else {
-            nativeBinding = require('@ddex-suite/builder-win32-x64-msvc')
+            nativeBinding = require('ddex-builder-win32-x64-msvc')
           }
         } catch (e) {
           loadError = e
@@ -83,7 +83,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./ddex-builder-node.win32-ia32-msvc.node')
           } else {
-            nativeBinding = require('@ddex-suite/builder-win32-ia32-msvc')
+            nativeBinding = require('ddex-builder-win32-ia32-msvc')
           }
         } catch (e) {
           loadError = e
@@ -97,7 +97,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./ddex-builder-node.win32-arm64-msvc.node')
           } else {
-            nativeBinding = require('@ddex-suite/builder-win32-arm64-msvc')
+            nativeBinding = require('ddex-builder-win32-arm64-msvc')
           }
         } catch (e) {
           loadError = e
@@ -113,7 +113,7 @@ switch (platform) {
       if (localFileExisted) {
         nativeBinding = require('./ddex-builder-node.darwin-universal.node')
       } else {
-        nativeBinding = require('@ddex-suite/builder-darwin-universal')
+        nativeBinding = require('ddex-builder-darwin-universal')
       }
       break
     } catch {}
@@ -124,7 +124,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./ddex-builder-node.darwin-x64.node')
           } else {
-            nativeBinding = require('@ddex-suite/builder-darwin-x64')
+            nativeBinding = require('ddex-builder-darwin-x64')
           }
         } catch (e) {
           loadError = e
@@ -138,7 +138,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./ddex-builder-node.darwin-arm64.node')
           } else {
-            nativeBinding = require('@ddex-suite/builder-darwin-arm64')
+            nativeBinding = require('ddex-builder-darwin-arm64')
           }
         } catch (e) {
           loadError = e
@@ -157,7 +157,7 @@ switch (platform) {
       if (localFileExisted) {
         nativeBinding = require('./ddex-builder-node.freebsd-x64.node')
       } else {
-        nativeBinding = require('@ddex-suite/builder-freebsd-x64')
+        nativeBinding = require('ddex-builder-freebsd-x64')
       }
     } catch (e) {
       loadError = e
@@ -174,7 +174,7 @@ switch (platform) {
             if (localFileExisted) {
               nativeBinding = require('./ddex-builder-node.linux-x64-musl.node')
             } else {
-              nativeBinding = require('@ddex-suite/builder-linux-x64-musl')
+              nativeBinding = require('ddex-builder-linux-x64-musl')
             }
           } catch (e) {
             loadError = e
@@ -187,7 +187,7 @@ switch (platform) {
             if (localFileExisted) {
               nativeBinding = require('./ddex-builder-node.linux-x64-gnu.node')
             } else {
-              nativeBinding = require('@ddex-suite/builder-linux-x64-gnu')
+              nativeBinding = require('ddex-builder-linux-x64-gnu')
             }
           } catch (e) {
             loadError = e
@@ -203,7 +203,7 @@ switch (platform) {
             if (localFileExisted) {
               nativeBinding = require('./ddex-builder-node.linux-arm64-musl.node')
             } else {
-              nativeBinding = require('@ddex-suite/builder-linux-arm64-musl')
+              nativeBinding = require('ddex-builder-linux-arm64-musl')
             }
           } catch (e) {
             loadError = e
@@ -216,7 +216,7 @@ switch (platform) {
             if (localFileExisted) {
               nativeBinding = require('./ddex-builder-node.linux-arm64-gnu.node')
             } else {
-              nativeBinding = require('@ddex-suite/builder-linux-arm64-gnu')
+              nativeBinding = require('ddex-builder-linux-arm64-gnu')
             }
           } catch (e) {
             loadError = e
@@ -232,7 +232,7 @@ switch (platform) {
             if (localFileExisted) {
               nativeBinding = require('./ddex-builder-node.linux-arm-musleabihf.node')
             } else {
-              nativeBinding = require('@ddex-suite/builder-linux-arm-musleabihf')
+              nativeBinding = require('ddex-builder-linux-arm-musleabihf')
             }
           } catch (e) {
             loadError = e
@@ -245,7 +245,7 @@ switch (platform) {
             if (localFileExisted) {
               nativeBinding = require('./ddex-builder-node.linux-arm-gnueabihf.node')
             } else {
-              nativeBinding = require('@ddex-suite/builder-linux-arm-gnueabihf')
+              nativeBinding = require('ddex-builder-linux-arm-gnueabihf')
             }
           } catch (e) {
             loadError = e
@@ -261,7 +261,7 @@ switch (platform) {
             if (localFileExisted) {
               nativeBinding = require('./ddex-builder-node.linux-riscv64-musl.node')
             } else {
-              nativeBinding = require('@ddex-suite/builder-linux-riscv64-musl')
+              nativeBinding = require('ddex-builder-linux-riscv64-musl')
             }
           } catch (e) {
             loadError = e
@@ -274,7 +274,7 @@ switch (platform) {
             if (localFileExisted) {
               nativeBinding = require('./ddex-builder-node.linux-riscv64-gnu.node')
             } else {
-              nativeBinding = require('@ddex-suite/builder-linux-riscv64-gnu')
+              nativeBinding = require('ddex-builder-linux-riscv64-gnu')
             }
           } catch (e) {
             loadError = e
@@ -289,7 +289,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./ddex-builder-node.linux-s390x-gnu.node')
           } else {
-            nativeBinding = require('@ddex-suite/builder-linux-s390x-gnu')
+            nativeBinding = require('ddex-builder-linux-s390x-gnu')
           }
         } catch (e) {
           loadError = e
@@ -310,8 +310,9 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { DdexBuilder, batchBuild, validateStructure } = nativeBinding
+const { DdexBuilder, StreamingDdexBuilder, batchBuild, validateStructure } = nativeBinding
 
 module.exports.DdexBuilder = DdexBuilder
+module.exports.StreamingDdexBuilder = StreamingDdexBuilder
 module.exports.batchBuild = batchBuild
 module.exports.validateStructure = validateStructure

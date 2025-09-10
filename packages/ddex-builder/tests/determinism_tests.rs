@@ -72,7 +72,7 @@ fn create_test_build_request() -> BuildRequest {
 /// Create a complex build request with many fields that could cause non-determinism
 fn create_complex_build_request() -> BuildRequest {
     let mut extensions = IndexMap::new();
-    extensions.insert("customField1".to_string(), format!("value_{}", thread::current().id().as_u64()));
+    extensions.insert("customField1".to_string(), format!("value_{:?}", thread::current().id()));
     extensions.insert("customField2".to_string(), SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs().to_string());
     
     BuildRequest {

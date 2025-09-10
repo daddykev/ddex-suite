@@ -109,7 +109,7 @@ fn test_preset_validation_rules() {
         
         // Check version is set correctly
         match preset.config.version {
-            DdexVersion::Ern41 | DdexVersion::Ern42 | DdexVersion::Ern43 => {
+            DdexVersion::Ern382 | DdexVersion::Ern41 | DdexVersion::Ern42 | DdexVersion::Ern43 => {
                 // Valid version
             }
         }
