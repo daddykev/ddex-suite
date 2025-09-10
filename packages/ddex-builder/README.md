@@ -120,10 +120,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### 🏭 Industry Presets
 - **Spotify**: Streaming platform requirements and content flags
-- **Apple Music**: iTunes Store compliance and specifications
 - **YouTube Music**: Content ID and monetization standards
 - **Amazon Music**: Prime Music and Unlimited requirements
-- **Universal**: Generic preset for broad distributor compatibility
+- **Generic**: Default preset for broad distributor compatibility
 
 ### 🌐 Universal Compatibility
 - **Node.js 16+** with native addon performance  
@@ -313,26 +312,11 @@ description: "Optimized for Spotify streaming platform"
 requirements:
   - explicit_content_flag: required
   - territory_restrictions: streaming_only
-  - genre_normalization: spotify_taxonomy
-  - audio_quality: preferred_formats
+  - artist_id: required
 validation_rules:
   - isrc: required
-  - duration: max_10_minutes
+  - duration: min_30_seconds
   - territories: ["WorldWide", "US", "EU"]
-```
-
-### Apple Music Preset
-```yaml
-name: "apple_music"
-description: "iTunes Store compliance and specifications"
-requirements:
-  - mastered_for_itunes: preferred
-  - pricing_tiers: region_specific
-  - artwork: itunes_specifications
-validation_rules:
-  - upc: required_for_albums
-  - isrc: required_for_tracks
-  - explicit_flag: required
 ```
 
 ### YouTube Music Preset
@@ -495,23 +479,9 @@ npm run test:determinism
 
 ### Upcoming Features
 
-#### v0.3.0 (Q1 2025)
-- **Partner API Integration**: Direct integration with distributor APIs
-- **Batch Processing Engine**: Parallel processing of multiple releases  
-- **Advanced Streaming**: Support for incremental updates
-- **Schema Evolution**: Support for future DDEX versions
-
-#### v0.4.0 (Q2 2025)  
-- **AI-Powered Validation**: Smart error detection and correction
-- **Performance Dashboard**: Real-time build metrics and optimization
-- **Template System**: Pre-built templates for common release types
-- **Multi-format Export**: Support for other metadata formats
-
 #### v1.0.0 (Q3 2025)
 - **Production Grade**: Enterprise-ready stability and performance
 - **Complete Documentation**: Comprehensive guides and tutorials
-- **Certification**: Official DDEX compliance testing
-- **Community Ecosystem**: Plugin system and community presets
 
 ## Support
 

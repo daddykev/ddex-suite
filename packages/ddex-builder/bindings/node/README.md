@@ -208,24 +208,20 @@ const builder = new DDEXBuilder({ preset: 'spotify' });
 // Automatically applies:
 // - Explicit content flagging requirements
 // - Territory-specific streaming rights
-// - Preferred genre normalization
-// - Audio quality specifications
-// - Spotify-specific metadata fields
+// - Artist ID
 
 const xml = await builder.buildFromObject(catalogData, { version: '4.3' });
 ```
 
-#### Apple Music Preset
+#### YouTube Preset
 
 ```typescript
-const builder = new DDEXBuilder({ preset: 'apple_music' });
+const builder = new DDEXBuilder({ preset: 'youtube' });
 
 // Automatically applies:
-// - iTunes Store compliance rules
-// - Mastered for iTunes requirements
-// - Region-specific pricing tiers
-// - Album artwork specifications
-// - Apple-specific territory handling
+// - Content ID settings
+// - Region-specific restrictions
+// - Channel ID
 ```
 
 #### Custom Preset
