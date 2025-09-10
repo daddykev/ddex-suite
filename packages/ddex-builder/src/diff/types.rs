@@ -1,7 +1,7 @@
 //! Type definitions for DDEX semantic diffing
 
 use serde::{Serialize, Deserialize};
-use std::collections::HashMap;
+use indexmap::IndexMap;
 use std::fmt;
 
 /// Result of a semantic diff operation
@@ -29,7 +29,7 @@ pub struct ChangeSet {
     pub summary: ChangeSummary,
     
     /// Additional metadata about the diff
-    pub metadata: HashMap<String, String>,
+    pub metadata: IndexMap<String, String>,
     
     /// Timestamp when diff was performed
     pub timestamp: chrono::DateTime<chrono::Utc>,
@@ -41,7 +41,7 @@ impl ChangeSet {
         Self {
             changes: Vec::new(),
             summary: ChangeSummary::default(),
-            metadata: HashMap::new(),
+            metadata: IndexMap::new(),
             timestamp: chrono::Utc::now(),
         }
     }
@@ -352,7 +352,7 @@ pub struct ChangeContext {
     pub business_context: Option<String>,
     
     /// Technical context (schema version, etc.)
-    pub technical_context: HashMap<String, String>,
+    pub technical_context: IndexMap<String, String>,
 }
 
 /// Configuration for what constitutes a significant change

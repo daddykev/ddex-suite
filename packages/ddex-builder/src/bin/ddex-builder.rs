@@ -11,7 +11,7 @@ use ddex_builder::*;
 use indicatif::{ProgressBar, ProgressStyle};
 use rayon::prelude::*;
 use serde_json::Value as JsonValue;
-use std::collections::HashMap;
+use indexmap::IndexMap;
 use std::fs;
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};

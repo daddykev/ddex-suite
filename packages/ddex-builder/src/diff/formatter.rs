@@ -3,7 +3,7 @@
 use super::types::{ChangeSet, SemanticChange, ChangeType};
 use crate::error::BuildError;
 use serde_json::json;
-use std::collections::HashMap;
+use indexmap::IndexMap;
 use std::fmt::Write;
 
 /// Formatter for diff output in various formats
@@ -44,7 +44,7 @@ impl DiffFormatter {
         }
         
         // Group remaining changes by type
-        let mut changes_by_type: HashMap<ChangeType, Vec<&SemanticChange>> = HashMap::new();
+        let mut changes_by_type: IndexMap<ChangeType, Vec<&SemanticChange>> = IndexMap::new();
         for change in &changeset.changes {
             if !change.is_critical {
                 changes_by_type.entry(change.change_type).or_default().push(change);
@@ -303,7 +303,7 @@ impl DiffFormatter {
             }
             
             // Group other changes by type
-            let mut changes_by_type: HashMap<ChangeType, Vec<&SemanticChange>> = HashMap::new();
+            let mut changes_by_type: IndexMap<ChangeType, Vec<&SemanticChange>> = IndexMap::new();
             for change in &changeset.changes {
                 if !change.is_critical {
                     changes_by_type.entry(change.change_type).or_default().push(change);

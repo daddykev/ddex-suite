@@ -274,8 +274,8 @@ impl PreflightValidator {
         result: &mut ValidationResult,
     ) -> Result<(), super::error::BuildError> {
         // Collect all references
-        let mut release_refs = std::collections::HashSet::new();
-        let mut resource_refs = std::collections::HashSet::new();
+        let mut release_refs = indexmap::IndexSet::new();
+        let mut resource_refs = indexmap::IndexSet::new();
         
         for release in &request.releases {
             if let Some(ref_val) = &release.release_reference {

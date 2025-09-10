@@ -16,8 +16,7 @@ mod diff_tests;
 use crate::error::BuildError;
 use crate::ast::{AST, Element, Node};
 use types::{ChangeSet, SemanticChange, DiffPath, ChangeType};
-use indexmap::IndexMap;
-use std::collections::{HashMap, HashSet};
+use indexmap::{IndexMap, IndexSet};
 use serde::{Serialize, Deserialize};
 
 /// Configuration for semantic diffing behavior
@@ -36,10 +35,10 @@ pub struct DiffConfig {
     pub version_compatibility: VersionCompatibility,
     
     /// Fields to ignore during comparison
-    pub ignored_fields: HashSet<String>,
+    pub ignored_fields: IndexSet<String>,
     
     /// Business-critical fields that should be highlighted
-    pub critical_fields: HashSet<String>,
+    pub critical_fields: IndexSet<String>,
     
     /// Tolerance for numeric differences (e.g., 0.01 for currency)
     pub numeric_tolerance: Option<f64>,
@@ -47,7 +46,7 @@ pub struct DiffConfig {
 
 impl Default for DiffConfig {
     fn default() -> Self {
-        let mut critical_fields = HashSet::new();
+        let mut critical_fields = IndexSet::new();
         critical_fields.insert("CommercialModelType".to_string());
         critical_fields.insert("TerritoryCode".to_string());
         critical_fields.insert("ValidityPeriod".to_string());
@@ -56,7 +55,7 @@ impl Default for DiffConfig {
         critical_fields.insert("ISRC".to_string());
         critical_fields.insert("Price".to_string());
         
-        let mut ignored_fields = HashSet::new();
+        let mut ignored_fields = IndexSet::new();
         ignored_fields.insert("MessageId".to_string());
         ignored_fields.insert("MessageCreatedDateTime".to_string());
         
@@ -87,7 +86,7 @@ pub enum VersionCompatibility {
 pub struct DiffEngine {
     config: DiffConfig,
     // Cache for reference resolution
-    reference_cache: HashMap<String, Element>,
+    reference_cache: IndexMap<String, Element>,
 }
 
 impl DiffEngine {
@@ -95,7 +94,7 @@ impl DiffEngine {
     pub fn new() -> Self {
         Self {
             config: DiffConfig::default(),
-            reference_cache: HashMap::new(),
+            reference_cache: IndexMap::new(),
         }
     }
     
@@ -103,7 +102,7 @@ impl DiffEngine {
     pub fn new_with_config(config: DiffConfig) -> Self {
         Self {
             config,
-            reference_cache: HashMap::new(),
+            reference_cache: IndexMap::new(),
         }
     }
     
@@ -166,8 +165,8 @@ impl DiffEngine {
         changeset: &mut ChangeSet,
     ) {
         // Find added, removed, and modified attributes
-        let old_keys: HashSet<_> = old.keys().collect();
-        let new_keys: HashSet<_> = new.keys().collect();
+        let old_keys: IndexSet<_> = old.keys().collect();
+        let new_keys: IndexSet<_> = new.keys().collect();
         
         // Removed attributes
         for &key in old_keys.difference(&new_keys) {
@@ -301,8 +300,8 @@ impl DiffEngine {
         path: &DiffPath,
         changeset: &mut ChangeSet,
     ) -> Result<(), BuildError> {
-        let old_keys: HashSet<_> = old_groups.keys().collect();
-        let new_keys: HashSet<_> = new_groups.keys().collect();
+        let old_keys: IndexSet<_> = old_groups.keys().collect();
+        let new_keys: IndexSet<_> = new_groups.keys().collect();
         
         // Removed element groups
         for &key in old_keys.difference(&new_keys) {

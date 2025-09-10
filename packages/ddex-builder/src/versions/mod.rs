@@ -28,7 +28,6 @@ use crate::error::BuildError;
 use crate::presets::DdexVersion;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 mod ern_382;
 mod ern_42;
@@ -404,7 +403,7 @@ impl VersionManager {
     /// Detect version from XML content
     pub fn detect_version(&self, xml_content: &str) -> Result<VersionDetection, BuildError> {
         let mut clues = Vec::new();
-        let mut version_scores = HashMap::new();
+        let mut version_scores = IndexMap::new();
         
         // Initialize scores
         for version in [DdexVersion::Ern382, DdexVersion::Ern42, DdexVersion::Ern43] {

@@ -4,7 +4,7 @@
 //! string operations to reduce allocations and improve build performance.
 
 use std::borrow::Cow;
-use std::collections::HashMap;
+use indexmap::IndexMap;
 use std::sync::Arc;
 use once_cell::sync::Lazy;
 use smartstring::{SmartString, LazyCompact};
@@ -15,8 +15,8 @@ use indexmap::IndexSet;
 pub type FastString = SmartString<LazyCompact>;
 
 /// Static string cache for common DDEX values
-static COMMON_STRINGS: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
-    let mut map = HashMap::new();
+static COMMON_STRINGS: Lazy<IndexMap<&'static str, &'static str>> = Lazy::new(|| {
+    let mut map = IndexMap::new();
     
     // Common DDEX versions
     map.insert("4.3", "4.3");
@@ -101,7 +101,7 @@ pub struct StringInterner {
     /// Interned strings storage
     strings: IndexSet<Arc<str>>,
     /// Quick lookup for atoms
-    atoms: HashMap<String, DefaultAtom>,
+    atoms: IndexMap<String, DefaultAtom>,
 }
 
 impl StringInterner {
@@ -109,7 +109,7 @@ impl StringInterner {
     pub fn new() -> Self {
         Self {
             strings: IndexSet::new(),
-            atoms: HashMap::new(),
+            atoms: IndexMap::new(),
         }
     }
     

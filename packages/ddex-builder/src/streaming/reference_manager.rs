@@ -5,8 +5,7 @@
 
 use crate::error::BuildError;
 use crate::id_generator::{StableHashGenerator, StableHashConfig};
-use indexmap::IndexMap;
-use std::collections::{HashMap, HashSet};
+use indexmap::{IndexMap, IndexSet};
 
 /// Configuration for reference management during streaming
 #[derive(Debug, Clone)]
@@ -64,12 +63,12 @@ pub struct StreamingReferenceManager {
     
     // Resource tracking
     resource_references: IndexMap<String, String>, // resource_id -> reference_id
-    resource_metadata: HashMap<String, ResourceReference>,
+    resource_metadata: IndexMap<String, ResourceReference>,
     resource_sequence: usize,
     
     // Release tracking
     release_references: IndexMap<String, String>, // release_id -> reference_id  
-    release_metadata: HashMap<String, ReleaseReference>,
+    release_metadata: IndexMap<String, ReleaseReference>,
     release_sequence: usize,
     
     // Deal tracking
@@ -77,10 +76,10 @@ pub struct StreamingReferenceManager {
     deal_sequence: usize,
     
     // Validation tracking
-    used_references: HashSet<String>,
+    used_references: IndexSet<String>,
     orphaned_references: Vec<String>,
-    duplicate_resource_ids: HashSet<String>,
-    duplicate_release_ids: HashSet<String>,
+    duplicate_resource_ids: IndexSet<String>,
+    duplicate_release_ids: IndexSet<String>,
     
     // Memory management
     references_generated: usize,
@@ -100,17 +99,17 @@ impl StreamingReferenceManager {
             config,
             hash_generator: StableHashGenerator::new(hash_config),
             resource_references: IndexMap::new(),
-            resource_metadata: HashMap::new(),
+            resource_metadata: IndexMap::new(),
             resource_sequence: 1,
             release_references: IndexMap::new(),
-            release_metadata: HashMap::new(),
+            release_metadata: IndexMap::new(),
             release_sequence: 1,
             deal_references: IndexMap::new(),
             deal_sequence: 1,
-            used_references: HashSet::new(),
+            used_references: IndexSet::new(),
             orphaned_references: Vec::new(),
-            duplicate_resource_ids: HashSet::new(),
-            duplicate_release_ids: HashSet::new(),
+            duplicate_resource_ids: IndexSet::new(),
+            duplicate_release_ids: IndexSet::new(),
             references_generated: 0,
         }
     }

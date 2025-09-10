@@ -210,7 +210,7 @@ fn test_reference_validation() {
         action: UpdateAction::Add,
         resource_data: None,
         technical_updates: Vec::new(),
-        metadata_updates: HashMap::new(),
+        metadata_updates: IndexMap::new(),
     };
     
     let mut resource_updates = IndexMap::new();
@@ -463,6 +463,6 @@ fn create_test_metadata() -> UpdateMetadata {
         total_operations: 1,
         impact_level: "Low".to_string(),
         validation_status: ValidationStatus::Pending,
-        custom_metadata: HashMap::new(),
+        custom_metadata: IndexMap::new(),
     }
 }

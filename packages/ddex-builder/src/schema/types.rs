@@ -1,13 +1,13 @@
 //! Type generation for TypeScript and Python from JSON Schema
 
 use super::*;
-use std::collections::HashSet;
+use indexmap::IndexSet;
 
 impl SchemaGenerator {
     /// Convert JSON Schema to TypeScript interface definition
     pub(crate) fn schema_to_typescript(&self, name: &str, schema: &JsonSchema) -> Result<String, BuildError> {
         let mut output = String::new();
-        let mut imports = HashSet::new();
+        let mut imports = IndexSet::new();
         
         // Add JSDoc comment if description exists
         if let Some(ref description) = schema.description {
@@ -19,7 +19,7 @@ impl SchemaGenerator {
                 output.push_str(&format!("export interface {} {{\n", name));
                 
                 if let Some(ref properties) = schema.properties {
-                    let required = schema.required.as_ref().map(|r| r.iter().collect::<HashSet<_>>()).unwrap_or_default();
+                    let required = schema.required.as_ref().map(|r| r.iter().collect::<IndexSet<_>>()).unwrap_or_default();
                     
                     for (prop_name, prop_schema) in properties {
                         let optional = if required.contains(prop_name) { "" } else { "?" };
@@ -75,7 +75,7 @@ impl SchemaGenerator {
     }
     
     /// Convert JSON Schema to TypeScript type string
-    fn schema_to_typescript_type(&self, schema: &JsonSchema, imports: &mut HashSet<String>) -> Result<String, BuildError> {
+    fn schema_to_typescript_type(&self, schema: &JsonSchema, imports: &mut IndexSet<String>) -> Result<String, BuildError> {
         // Handle references
         if let Some(ref reference) = schema.reference {
             if reference.starts_with("#/$defs/") {
@@ -146,7 +146,7 @@ impl SchemaGenerator {
             Some("object") => {
                 if let Some(ref properties) = schema.properties {
                     let mut object_type = String::from("{\n");
-                    let required = schema.required.as_ref().map(|r| r.iter().collect::<HashSet<_>>()).unwrap_or_default();
+                    let required = schema.required.as_ref().map(|r| r.iter().collect::<IndexSet<_>>()).unwrap_or_default();
                     
                     for (prop_name, prop_schema) in properties {
                         let optional = if required.contains(prop_name) { "" } else { "?" };
@@ -167,7 +167,7 @@ impl SchemaGenerator {
     /// Convert JSON Schema to Python TypedDict definition
     pub(crate) fn schema_to_python(&self, name: &str, schema: &JsonSchema) -> Result<String, BuildError> {
         let mut output = String::new();
-        let mut imports = HashSet::new();
+        let mut imports = IndexSet::new();
         
         // Add docstring if description exists
         if let Some(ref description) = schema.description {
@@ -177,7 +177,7 @@ impl SchemaGenerator {
         match schema.schema_type.as_deref() {
             Some("object") => {
                 // Determine if we need total=False for optional fields
-                let required = schema.required.as_ref().map(|r| r.iter().collect::<HashSet<_>>()).unwrap_or_default();
+                let required = schema.required.as_ref().map(|r| r.iter().collect::<IndexSet<_>>()).unwrap_or_default();
                 let has_optional = schema.properties.as_ref()
                     .map(|props| props.keys().any(|k| !required.contains(k)))
                     .unwrap_or(false);
@@ -241,7 +241,7 @@ impl SchemaGenerator {
     }
     
     /// Convert JSON Schema to Python type string
-    fn schema_to_python_type(&self, schema: &JsonSchema, imports: &mut HashSet<String>) -> Result<String, BuildError> {
+    fn schema_to_python_type(&self, schema: &JsonSchema, imports: &mut IndexSet<String>) -> Result<String, BuildError> {
         // Handle references
         if let Some(ref reference) = schema.reference {
             if reference.starts_with("#/$defs/") {

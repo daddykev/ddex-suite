@@ -9,8 +9,7 @@ use crate::builder::MessageHeaderRequest;
 use crate::diff::DiffEngine;
 use crate::diff::types::{ChangeSet, SemanticChange, ChangeType};
 use serde::{Serialize, Deserialize};
-use indexmap::IndexMap;
-use std::collections::{HashMap, HashSet};
+use indexmap::{IndexMap, IndexSet};
 use chrono::{DateTime, Utc};
 
 /// Complete UpdateReleaseMessage structure
@@ -116,7 +115,7 @@ pub struct ResourceUpdate {
     pub technical_updates: Vec<TechnicalUpdate>,
     
     /// Metadata updates
-    pub metadata_updates: HashMap<String, String>,
+    pub metadata_updates: IndexMap<String, String>,
 }
 
 /// Release update information
@@ -141,7 +140,7 @@ pub struct ReleaseUpdate {
     pub resource_reference_updates: Vec<ReferenceUpdate>,
     
     /// Metadata updates
-    pub metadata_updates: HashMap<String, String>,
+    pub metadata_updates: IndexMap<String, String>,
 }
 
 /// Deal update information
@@ -287,7 +286,7 @@ pub struct UpdateMetadata {
     pub validation_status: ValidationStatus,
     
     /// Additional metadata
-    pub custom_metadata: HashMap<String, String>,
+    pub custom_metadata: IndexMap<String, String>,
 }
 
 /// Validation status for updates
@@ -319,15 +318,15 @@ pub struct UpdateConfig {
     pub optimize_references: bool,
     
     /// Fields to exclude from updates
-    pub excluded_fields: HashSet<String>,
+    pub excluded_fields: IndexSet<String>,
     
     /// Custom update priorities
-    pub update_priorities: HashMap<String, u8>,
+    pub update_priorities: IndexMap<String, u8>,
 }
 
 impl Default for UpdateConfig {
     fn default() -> Self {
-        let mut excluded_fields = HashSet::new();
+        let mut excluded_fields = IndexSet::new();
         excluded_fields.insert("MessageId".to_string());
         excluded_fields.insert("MessageCreatedDateTime".to_string());
         
@@ -337,7 +336,7 @@ impl Default for UpdateConfig {
             validate_references: true,
             optimize_references: true,
             excluded_fields,
-            update_priorities: HashMap::new(),
+            update_priorities: IndexMap::new(),
         }
     }
 }
@@ -596,7 +595,7 @@ impl UpdateGenerator {
             action: operation.action,
             resource_data: None, // Would be populated from operation details
             technical_updates: Vec::new(),
-            metadata_updates: HashMap::new(),
+            metadata_updates: IndexMap::new(),
         })
     }
     
@@ -608,7 +607,7 @@ impl UpdateGenerator {
             release_data: None, // Would be populated from operation details
             track_updates: Vec::new(),
             resource_reference_updates: Vec::new(),
-            metadata_updates: HashMap::new(),
+            metadata_updates: IndexMap::new(),
         })
     }
     
@@ -637,7 +636,7 @@ impl UpdateGenerator {
             total_operations: operations.len(),
             impact_level: changeset.impact_level().to_string(),
             validation_status: ValidationStatus::Pending,
-            custom_metadata: HashMap::new(),
+            custom_metadata: IndexMap::new(),
         }
     }
     
@@ -768,8 +767,8 @@ impl UpdateGenerator {
     
     fn validate_references(&self, update: &UpdateReleaseMessage) -> Result<(), BuildError> {
         // Validate that all referenced entities exist
-        let mut referenced_resources = HashSet::new();
-        let mut referenced_releases = HashSet::new();
+        let mut referenced_resources = IndexSet::new();
+        let mut referenced_releases = IndexSet::new();
         
         // Collect all references
         for operation in &update.update_list {
@@ -797,7 +796,7 @@ impl UpdateGenerator {
     }
     
     fn validate_dependencies(&self, operations: &[UpdateOperation]) -> Result<(), BuildError> {
-        let operation_ids: HashSet<_> = operations.iter().map(|op| &op.operation_id).collect();
+        let operation_ids: IndexSet<_> = operations.iter().map(|op| &op.operation_id).collect();
         
         for operation in operations {
             for dependency in &operation.dependencies {
@@ -816,7 +815,7 @@ impl UpdateGenerator {
         let mut conflicts = Vec::new();
         
         // Check for operations targeting the same path
-        let mut path_operations: HashMap<String, Vec<&UpdateOperation>> = HashMap::new();
+        let mut path_operations: IndexMap<String, Vec<&UpdateOperation>> = IndexMap::new();
         
         for operation in operations {
             path_operations.entry(operation.target_path.clone())
@@ -946,7 +945,7 @@ mod tests {
                 total_operations: 1,
                 impact_level: "Low".to_string(),
                 validation_status: ValidationStatus::Pending,
-                custom_metadata: HashMap::new(),
+                custom_metadata: IndexMap::new(),
             },
         };
         

@@ -6,7 +6,6 @@
 use crate::error::BuildError;
 use crate::optimized_strings::OptimizedString;
 use indexmap::IndexMap;
-use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
@@ -71,17 +70,17 @@ impl GlobalCache {
 #[derive(Debug)]
 pub struct SchemaCache {
     /// Compiled schemas by version and profile
-    schemas: HashMap<SchemaKey, CachedSchema>,
+    schemas: IndexMap<SchemaKey, CachedSchema>,
     /// Schema metadata
-    metadata: HashMap<SchemaKey, SchemaMetadata>,
+    metadata: IndexMap<SchemaKey, SchemaMetadata>,
 }
 
 impl SchemaCache {
     /// Create new schema cache
     pub fn new() -> Self {
         Self {
-            schemas: HashMap::new(),
-            metadata: HashMap::new(),
+            schemas: IndexMap::new(),
+            metadata: IndexMap::new(),
         }
     }
     
@@ -225,7 +224,7 @@ pub struct ElementConstraint {
 #[derive(Debug)]
 pub struct ValidationCache {
     /// Validation results by content hash
-    results: HashMap<String, CachedValidationResult>,
+    results: IndexMap<String, CachedValidationResult>,
     /// Cache configuration
     config: ValidationCacheConfig,
 }
@@ -234,7 +233,7 @@ impl ValidationCache {
     /// Create new validation cache
     pub fn new() -> Self {
         Self {
-            results: HashMap::new(),
+            results: IndexMap::new(),
             config: ValidationCacheConfig::default(),
         }
     }
@@ -347,7 +346,7 @@ pub struct ValidationResult {
 #[derive(Debug)]
 pub struct HashCache {
     /// Computed hashes
-    hashes: HashMap<HashKey, CachedHash>,
+    hashes: IndexMap<HashKey, CachedHash>,
     /// Configuration
     config: HashCacheConfig,
 }
@@ -356,7 +355,7 @@ impl HashCache {
     /// Create new hash cache
     pub fn new() -> Self {
         Self {
-            hashes: HashMap::new(),
+            hashes: IndexMap::new(),
             config: HashCacheConfig::default(),
         }
     }
@@ -450,7 +449,7 @@ impl Default for HashCacheConfig {
 #[derive(Debug)]
 pub struct TemplateCache {
     /// Compiled templates
-    templates: HashMap<TemplateKey, CachedTemplate>,
+    templates: IndexMap<TemplateKey, CachedTemplate>,
     /// Configuration
     config: TemplateCacheConfig,
 }
@@ -459,7 +458,7 @@ impl TemplateCache {
     /// Create new template cache
     pub fn new() -> Self {
         Self {
-            templates: HashMap::new(),
+            templates: IndexMap::new(),
             config: TemplateCacheConfig::default(),
         }
     }
@@ -675,7 +674,7 @@ impl CacheManager {
                 }
                 _ => {
                     // Fallback to default hasher
-                    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+                    let mut hasher = std::hash::DefaultHasher::new();
                     v.hash(&mut hasher);
                     format!("{:016x}", hasher.finish())
                 }

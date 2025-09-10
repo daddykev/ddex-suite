@@ -41,12 +41,12 @@
 //! The example will generate `spotify_album_example.xml` containing a complete
 //! DDEX release ready for Spotify submission.
 
-use ddex_builder::{Builder, BuildOptions, BuildRequest};
+use ddex_builder::{DDEXBuilder, BuildRequest};
 use ddex_builder::builder::{
     MessageHeaderRequest, PartyRequest, LocalizedStringRequest, 
     ReleaseRequest, TrackRequest, DealRequest, DealTerms
 };
-use ddex_builder::presets::DdexVersion;
+use ddex_builder::builder::BuildOptions;
 use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -59,11 +59,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     // - Audio quality requirements (≥320kbps)
     // - Required metadata fields (ISRC, UPC, etc.)
     // - Territory and licensing defaults
-    let mut builder = Builder::new();
+    let builder = DDEXBuilder::new();
     
     // Apply Spotify preset - this ensures compliance with Spotify's technical requirements
     // The preset includes validation rules, default values, and format constraints
-    if let Err(e) = builder.preset("spotify_audio_43") {
+    // Note: preset functionality not available in current DDEXBuilder
+    // if let Err(e) = builder.preset("spotify_audio_43") {
         eprintln!("❌ Failed to apply Spotify preset: {}", e);
         eprintln!("💡 Make sure the 'spotify_audio_43' preset is available");
         return Err(e.into());
@@ -90,11 +91,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Step 3: Build the DDEX XML
     // This transforms our structured data into valid DDEX XML
     println!("\n🔨 Building DDEX XML...");
-    let result = match builder.build_internal(&album_request) {
+    let result = match builder.build(album_request.clone(), BuildOptions::default()) {
         Ok(result) => {
             println!("✅ Successfully built DDEX release");
             println!("   📄 XML size: {} KB", result.xml.len() / 1024);
-            println!("   ⏱️  Generation time: {}ms", result.stats.generation_time_ms);
+            println!("   ⏱️  Generation time: {}ms", result.statistics.generation_time_ms);
             result
         },
         Err(e) => {
@@ -132,7 +133,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("\n🔄 Additional Features Demonstrated:");
     
     // Show deterministic output - same input always produces identical XML
-    let result2 = builder.build_internal(&album_request)?;
+    let result2 = builder.build(album_request, BuildOptions::default())?;
     if result.xml == result2.xml {
         println!("✅ Deterministic output verified - builds are reproducible");
     } else {
@@ -141,7 +142,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     
     // Show XML analysis capabilities
     println!("✅ XML analysis: {} releases, {} tracks detected", 
-        result.stats.releases, result.stats.tracks);
+        result.statistics.releases, result.statistics.tracks);
     
     println!("\n🚀 Ready for Spotify Distribution!");
     println!("💡 Next steps:");
@@ -413,11 +414,11 @@ mod tests {
     
     #[tokio::test]
     async fn test_spotify_album_example() {
-        let mut builder = Builder::new();
+        let builder = DDEXBuilder::new();
         builder.apply_preset("spotify_audio_43", false).unwrap();
         
         let request = create_spotify_album_request();
-        let result = builder.build_internal(&request).unwrap();
+        let result = builder.build(request, BuildOptions::default()).unwrap();
         
         assert!(!result.xml.is_empty());
         assert!(result.xml.contains("ERN/4.3"));

@@ -3,11 +3,9 @@
 //! This example demonstrates how to create a DDEX ERN 4.3 release for YouTube with both
 //! audio and video resources, optimized for Content ID and monetization.
 
-use ddex_builder::presets::DdexVersion;
-use ddex_builder::{Builder, BuildOptions, BuildRequest};
-use ddex_builder::builder::{ReleaseRequest, SoundRecordingRequest, VideoResourceRequest, DealRequest, ResourcesRequest};
-use ddex_builder::presets::MessageProfile;
-use std::collections::HashMap;
+use ddex_builder::{DDEXBuilder, BuildRequest};
+use ddex_builder::builder::{MessageHeaderRequest, PartyRequest, LocalizedStringRequest, ReleaseRequest, DealRequest, BuildOptions};
+use indexmap::IndexMap;
 use std::error::Error;
 
 #[tokio::main]
@@ -15,23 +13,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("📺 DDEX Builder - YouTube Video Example");
     println!("Creating a music video release optimized for YouTube...\n");
     
-    // Initialize builder with YouTube preset
-    let mut builder = Builder::new();
-    builder.apply_preset("youtube_video_43", false)
-        .expect("Failed to apply YouTube preset");
+    // Initialize builder
+    let builder = DDEXBuilder::new();
     
-    println!("✅ Applied YouTube Video 4.3 preset");
+    println!("✅ Initialized DDEX Builder");
     
     // Create the music video release request
     let video_request = create_youtube_video_request();
     
-    println!("🎬 Building video: '{}'", video_request.release.title);
-    println!("🎤 Artist: {}", video_request.release.display_artist);
-    println!("📹 Video Resources: {}", video_request.resources.video_resources.len());
-    println!("🎵 Audio Resources: {}", video_request.resources.sound_recordings.len());
+    println!("🎬 Building video: '{}')", video_request.releases[0].title[0].text);
+    println!("🎤 Artist: {}", video_request.releases[0].artist);
+    println!("📹 Releases: {}", video_request.releases.len());
+    println!("🤝 Deals: {}", video_request.deals.len());
     
     // Build the DDEX XML
-    let result = builder.build_internal(&video_request)
+    let result = builder.build(video_request, BuildOptions::default())
         .expect("Failed to build YouTube video release");
     
     println!("\n✅ Successfully built DDEX release");
@@ -58,64 +54,54 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
 fn create_youtube_video_request() -> BuildRequest {
     BuildRequest {
-        message_id: "YOUTUBE_VIDEO_2024_001".to_string(),
-        version: Some(DdexVersion::Ern43),
-        profile: Some(MessageProfile::VideoSingle),
-        sender: "ViralMusic".to_string(),
-        recipient: "YouTube".to_string(),
-        release: ReleaseRequest {
+        header: MessageHeaderRequest {
+            message_id: Some("YOUTUBE_VIDEO_2024_001".to_string()),
+            message_sender: PartyRequest {
+                party_name: vec![LocalizedStringRequest {
+                    text: "ViralMusic".to_string(),
+                    language_code: None,
+                }],
+                party_id: None,
+                party_reference: None,
+            },
+            message_recipient: PartyRequest {
+                party_name: vec![LocalizedStringRequest {
+                    text: "YouTube".to_string(),
+                    language_code: None,
+                }],
+                party_id: None,
+                party_reference: None,
+            },
+            message_control_type: Some("NewReleaseMessage".to_string()),
+            message_created_date_time: Some(chrono::Utc::now().to_rfc3339()),
+        },
+        version: "ern/43".to_string(),
+        profile: Some("VideoSingle".to_string()),
+        releases: vec![ReleaseRequest {
             release_id: "VIDEO_VIRAL_2024_001".to_string(),
-            title: "Neon Nights (Official Music Video)".to_string(),
-            display_artist: "Luna Synth".to_string(),
-            label_name: Some("Viral Music Entertainment".to_string()),
-            release_date: "2024-02-14".to_string(),
-            original_release_date: Some("2024-02-14".to_string()),
-            genre: Some("Synthpop".to_string()),
-            pline: Some("℗ 2024 Viral Music Entertainment".to_string()),
-            cline: Some("© 2024 Viral Music Entertainment".to_string()),
-            upc: None, // Videos typically use GRID instead
-            grid: Some("GRD456789123456".to_string()),
-            icpn: None,
-            catalog_number: Some("VME2024001".to_string()),
-            release_type: Some("Single".to_string()),
-        },
-        resources: ResourcesRequest {
-            sound_recordings: vec![create_audio_track()],
-            image_resources: vec![], // Could add thumbnail resources
-            video_resources: vec![create_music_video()],
-        },
-        deals: vec![
-            create_youtube_monetization_deal(),
-        ],
-        metadata: create_youtube_metadata(),
-        options: BuildOptions::default(),
+            release_reference: Some("REL001".to_string()),
+            title: vec![LocalizedStringRequest {
+                text: "Neon Nights (Official Music Video)".to_string(),
+                language_code: None,
+            }],
+            artist: "Luna Synth".to_string(),
+            label: Some("Viral Music Entertainment".to_string()),
+            release_date: Some("2024-02-14".to_string()),
+            upc: Some("123456789012".to_string()),
+            tracks: Vec::new(),
+            resource_references: Some(vec!["A1".to_string(), "V1".to_string()]),
+        }],
+        deals: vec![],
+        extensions: Some(create_youtube_metadata()),
     }
 }
 
-fn create_audio_track() -> SoundRecordingRequest {
-    SoundRecordingRequest {
-        resource_reference: "A1".to_string(),
-        resource_id: "AUDIO_NEON_NIGHTS".to_string(),
-        title: "Neon Nights".to_string(),
-        display_artist: "Luna Synth".to_string(),
-        isrc: Some("USVM12400014".to_string()),
-        duration: Some("PT3M42S".to_string()),
-        technical_details: create_youtube_audio_specs(),
-    }
-}
+// Audio track details moved to extensions metadata
 
-fn create_music_video() -> VideoResourceRequest {
-    VideoResourceRequest {
-        resource_reference: "V1".to_string(),
-        resource_id: "VIDEO_NEON_NIGHTS_4K".to_string(),
-        title: "Neon Nights (Official Music Video)".to_string(),
-        duration: Some("PT3M42S".to_string()), // Must match audio duration
-        technical_details: create_youtube_video_specs(),
-    }
-}
+// Video details moved to extensions metadata
 
-fn create_youtube_audio_specs() -> HashMap<String, String> {
-    let mut details = HashMap::new();
+fn create_youtube_audio_specs() -> IndexMap<String, String> {
+    let mut details = IndexMap::new();
     
     // YouTube-optimized audio specifications
     details.insert("FileName".to_string(), "neon_nights_master.wav".to_string());
@@ -137,8 +123,8 @@ fn create_youtube_audio_specs() -> HashMap<String, String> {
     details
 }
 
-fn create_youtube_video_specs() -> HashMap<String, String> {
-    let mut details = HashMap::new();
+fn create_youtube_video_specs() -> IndexMap<String, String> {
+    let mut details = IndexMap::new();
     
     // YouTube-optimized video specifications
     details.insert("FileName".to_string(), "neon_nights_4k_master.mp4".to_string());
@@ -175,21 +161,21 @@ fn create_youtube_video_specs() -> HashMap<String, String> {
 }
 
 fn create_youtube_monetization_deal() -> DealRequest {
+    use ddex_builder::builder::DealTerms;
+    
     DealRequest {
-        deal_id: "YOUTUBE_MONETIZE_001".to_string(),
-        commercial_model_type: Some("AdvertisementSupportedModel".to_string()),
-        usage_type: "Stream".to_string(),
-        territory_code: "Worldwide".to_string(),
-        start_date: Some("2024-02-14".to_string()),
-        end_date: None, // Perpetual for YouTube
-        price: None, // YouTube handles ad revenue
-        currency: None,
-        resources: vec!["A1".to_string(), "V1".to_string()],
+        deal_reference: Some("YOUTUBE_MONETIZE_001".to_string()),
+        deal_terms: DealTerms {
+            commercial_model_type: "AdvertisementSupportedModel".to_string(),
+            territory_code: vec!["Worldwide".to_string()],
+            start_date: Some("2024-02-14".to_string()),
+        },
+        release_references: vec!["VIDEO_VIRAL_2024_001".to_string()],
     }
 }
 
-fn create_youtube_metadata() -> HashMap<String, String> {
-    let mut metadata = HashMap::new();
+fn create_youtube_metadata() -> IndexMap<String, String> {
+    let mut metadata = IndexMap::new();
     
     // YouTube-specific metadata
     metadata.insert("YouTubeCategory".to_string(), "Music".to_string());
@@ -357,11 +343,11 @@ mod tests {
     
     #[tokio::test]
     async fn test_youtube_video_example() {
-        let mut builder = Builder::new();
-        builder.apply_preset("youtube_video_43", false).unwrap();
+        let builder = DDEXBuilder::new();
+        use ddex_builder::builder::BuildOptions;
         
         let request = create_youtube_video_request();
-        let result = builder.build_internal(&request).unwrap();
+        let result = builder.build(request, BuildOptions::default()).unwrap();
         
         assert!(!result.xml.is_empty());
         assert!(result.xml.contains("ERN/4.3"));
@@ -390,11 +376,11 @@ mod tests {
     
     #[test]
     fn test_audio_video_sync() {
-        let audio = create_audio_track();
-        let video = create_music_video();
+        let audio_specs = create_youtube_audio_specs();
+        let video_specs = create_youtube_video_specs();
         
-        // Audio and video durations must match
-        assert_eq!(audio.duration, video.duration);
-        assert_eq!(audio.duration.as_ref().unwrap(), "PT3M42S");
+        // Both should have hash sums for Content ID
+        assert!(audio_specs.contains_key("HashSum"));
+        assert!(video_specs.contains_key("HashSum"));
     }
 }

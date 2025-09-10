@@ -398,7 +398,7 @@ impl InputValidator {
 /// Rate limiter for API endpoints
 #[derive(Debug)]
 pub struct RateLimiter {
-    requests: std::collections::HashMap<String, Vec<Instant>>,
+    requests: indexmap::IndexMap<String, Vec<Instant>>,
     config: SecurityConfig,
 }
 
@@ -406,7 +406,7 @@ impl RateLimiter {
     /// Create a new rate limiter
     pub fn new(config: SecurityConfig) -> Self {
         Self {
-            requests: std::collections::HashMap::new(),
+            requests: indexmap::IndexMap::new(),
             config,
         }
     }

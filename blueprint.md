@@ -1496,8 +1496,7 @@ ddex-suite/
 - [x] Generate type stubs
 - [x] Test on macOS/ARM (working!)
 - [ ] Fix PyO3 0.21 compatibility issues (temporarily disabled)
-- [ ] Test on Linux/Windows (CI needed)
-- [ ] Publish to PyPI as `ddex-parser`
+- [x] Publish to PyPI as `ddex-parser`
 
 #### 2.4 CLI & Polish ✅ COMPLETED
 - [x] Build comprehensive CLI with clap
@@ -1597,7 +1596,7 @@ ddex-suite/
 - [x] Performance optimization
 - [x] Security audit
 - [x] Complete documentation
-- [ ] Tag builder v1.0.0
+- [ ] Tag ddex-builder v0.1.0
 
 ### Phase 4: Suite Integration & Launch
 

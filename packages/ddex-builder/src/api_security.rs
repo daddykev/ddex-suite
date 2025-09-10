@@ -5,7 +5,7 @@
 
 use crate::error::BuildError;
 use crate::security::{SecurityConfig, RateLimiter, OutputSanitizer};
-use std::collections::HashMap;
+use indexmap::{IndexMap, IndexSet};
 use std::time::{Duration, Instant};
 
 /// API security manager for coordinating security features
@@ -59,8 +59,8 @@ impl ApiSecurityManager {
     }
     
     /// Get security headers for WASM builds
-    pub fn get_wasm_security_headers(&self) -> HashMap<String, String> {
-        let mut headers = HashMap::new();
+    pub fn get_wasm_security_headers(&self) -> IndexMap<String, String> {
+        let mut headers = IndexMap::new();
         
         // Content Security Policy
         headers.insert(
@@ -111,7 +111,7 @@ impl ApiSecurityManager {
 /// Monitor batch operations to prevent resource exhaustion
 #[derive(Debug)]
 pub struct BatchOperationMonitor {
-    operations: HashMap<String, Vec<OperationRecord>>,
+    operations: IndexMap<String, Vec<OperationRecord>>,
     config: SecurityConfig,
 }
 
@@ -126,7 +126,7 @@ impl BatchOperationMonitor {
     /// Create new batch operation monitor
     pub fn new(config: SecurityConfig) -> Self {
         Self {
-            operations: HashMap::new(),
+            operations: IndexMap::new(),
             config,
         }
     }
@@ -171,7 +171,7 @@ impl BatchOperationMonitor {
             unique_operations: recent_records
                 .iter()
                 .map(|r| r.operation.as_str())
-                .collect::<std::collections::HashSet<_>>()
+                .collect::<IndexSet<_>>()
                 .len(),
             time_window_seconds: 60,
         })
