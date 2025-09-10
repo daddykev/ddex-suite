@@ -8,7 +8,7 @@ members = [
     "packages/ddex-builder/bindings/node",
     "packages/ddex-builder/bindings/python",
     "packages/ddex-builder/bindings/wasm",
-    # "packages/ddex-parser/bindings/python", # Temporarily disabled - PyO3 API changes
+    "packages/ddex-parser/bindings/python",
     # "packages/ddex-parser/bindings/wasm",  # Comment this out for now
 ]
 resolver = "2"
@@ -46,7 +46,7 @@ insta = "1.34"
 # Bindings-specific
 napi = "2"
 napi-derive = "2"
-pyo3 = "0.20"
+pyo3 = "0.21"
 wasm-bindgen = "0.2"
 
 # Profile configurations for optimized builds (moved from packages)
