@@ -95,11 +95,10 @@ builder.buildFromObject(releaseData, { version: '4.3' })
 - **ESM and CommonJS** support for maximum compatibility
 
 ### 🏭 Industry Presets
-- **Spotify**: Streaming platform optimization with content flags
-- **Apple Music**: iTunes Store compliance and specifications
-- **YouTube Music**: Content ID and monetization requirements
+- **Spotify**: Streaming platform optimization with artist IDs
+- **YouTube Music**: Content ID and monetization settings
 - **Amazon Music**: Prime and Unlimited platform standards
-- **Universal**: Generic preset for broad distributor compatibility
+- **Generic**: Default preset for broad distributor compatibility
 
 ### 🚀 High Performance
 - Native Rust core with optimized Node.js bindings

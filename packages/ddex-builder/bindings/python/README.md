@@ -201,25 +201,20 @@ from ddex_builder import DDEXBuilder, SpotifyPreset
 
 builder = DDEXBuilder(preset='spotify')
 
-# Spotify-specific requirements automatically applied:
-# - Explicit content flagging
-# - Territory restrictions for streaming
-# - Preferred audio quality specifications
-# - Genre normalization to Spotify's taxonomy
+# Spotify-specific optimizations:
+# - Spotify Artist ID
 
 xml = builder.build_from_dict(catalog_data, version='4.3')
 ```
 
-#### Apple Music Preset
+#### YouTube Preset
 
 ```python
-builder = DDEXBuilder(preset='apple_music')
+builder = DDEXBuilder(preset='youtube_music')
 
-# Apple-specific optimizations:
-# - iTunes Store compliance
-# - Mastered for iTunes specifications
-# - Region-specific pricing tiers
-# - Album artwork requirements
+# YouTube-specific optimizations:
+# - ContentID tracking
+# - Territory restrictions
 
 xml = builder.build_from_dict(release_data, version='4.3')
 ```
