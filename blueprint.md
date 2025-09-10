@@ -1594,9 +1594,9 @@ ddex-suite/
 #### 3.5 Builder Polish
 - [x] Complete CLI with all commands
 - [x] Add `--verify-determinism` flag
-- [ ] Performance optimization
-- [ ] Security audit
-- [ ] Complete documentation
+- [x] Performance optimization
+- [x] Security audit
+- [x] Complete documentation
 - [ ] Tag builder v1.0.0
 
 ### Phase 4: Suite Integration & Launch

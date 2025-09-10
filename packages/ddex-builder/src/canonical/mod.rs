@@ -1,4 +1,76 @@
-//! DB-C14N/1.0 - DDEX Builder Canonicalization Specification
+//! # DB-C14N/1.0 - DDEX Builder Canonicalization
+//! 
+//! This module implements the DB-C14N/1.0 (DDEX Builder Canonical XML 1.0)
+//! specification for deterministic XML canonicalization. This ensures that
+//! identical logical XML documents always produce byte-identical output.
+//! 
+//! ## Why Canonicalization?
+//! 
+//! DDEX Builder guarantees deterministic output - the same input always
+//! produces identical XML bytes. This is critical for:
+//! 
+//! - **Supply chain integrity**: Partners can verify XML hasn't changed
+//! - **Reproducible builds**: CI/CD systems produce identical artifacts
+//! - **Digital signatures**: Cryptographic signatures remain valid
+//! - **Caching and deduplication**: Identical content can be detected
+//! 
+//! ## DB-C14N/1.0 Specification
+//! 
+//! ```text
+//! Canonicalization Process
+//! ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+//! │   Input XML     │───▶│   Parse & Sort   │───▶│  Canonical XML  │
+//! │ (any format)    │    │                  │    │ (deterministic) │
+//! └─────────────────┘    └──────────────────┘    └─────────────────┘
+//!                               │
+//!                               ▼
+//!                        ┌──────────────────┐
+//!                        │ Apply Rules:     │
+//!                        │ • Namespace lock │
+//!                        │ • Element order  │
+//!                        │ • Attribute sort │
+//!                        │ • Whitespace fix │
+//!                        └──────────────────┘
+//! ```
+//! 
+//! ## Key Features
+//! 
+//! - **Namespace Prefix Locking**: Fixed prefixes for DDEX namespaces
+//! - **Deterministic Element Ordering**: Stable child element sequences
+//! - **Attribute Canonicalization**: Alphabetical attribute ordering
+//! - **Whitespace Normalization**: Consistent formatting and indentation
+//! - **Comment Preservation**: Optional comment handling
+//! 
+//! ## Usage Example
+//! 
+//! ```rust
+//! use ddex_builder::canonical::DB_C14N;
+//! use ddex_builder::determinism::DeterminismConfig;
+//! 
+//! let config = DeterminismConfig::default();
+//! let canonicalizer = DB_C14N::new(config);
+//! 
+//! let input_xml = r#"<Release xmlns:ern="http://ddex.net/xml/ern/43">
+//!     <ReleaseId><GRid>A12345</GRid></ReleaseId>
+//! </Release>"#;
+//! 
+//! let canonical = canonicalizer.canonicalize(input_xml)?;
+//! let hash = canonicalizer.canonical_hash(&canonical)?;
+//! 
+//! // Same input always produces same output
+//! assert_eq!(hash, canonicalizer.canonical_hash(&canonical)?);
+//! ```
+//! 
+//! ## Specification Rules
+//! 
+//! The canonicalization follows these rules in order:
+//! 
+//! 1. **XML Declaration**: Always `<?xml version="1.0" encoding="UTF-8"?>`
+//! 2. **Namespace Prefixes**: Use locked prefix table for DDEX namespaces
+//! 3. **Element Order**: Apply schema-defined canonical element ordering
+//! 4. **Attribute Order**: Sort attributes alphabetically by qualified name
+//! 5. **Text Normalization**: Trim whitespace, normalize line endings
+//! 6. **Indentation**: Use 2-space indentation with no trailing whitespace
 
 use indexmap::IndexMap;
 use sha2::{Sha256, Digest};

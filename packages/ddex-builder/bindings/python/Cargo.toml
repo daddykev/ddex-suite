@@ -13,14 +13,14 @@ crate-type = ["cdylib"]
 [dependencies]
 ddex-builder = { path = "../..", features = ["ffi"] }
 ddex-core = { path = "../../../core" }
-pyo3 = { version = "0.20", features = ["extension-module", "abi3-py38"] }
+pyo3 = { version = "0.24", features = ["extension-module", "abi3-py38"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-pythonize = "0.20"
+pythonize = "0.24"
 uuid = { version = "1.0", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 indexmap = { version = "2.0", features = ["serde"] }
 quick-xml = "0.31"
 
 [build-dependencies]
-pyo3-build-config = "0.20"
+pyo3-build-config = "0.24"

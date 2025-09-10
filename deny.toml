@@ -1,0 +1,190 @@
+# cargo-deny configuration for DDEX Suite security
+# This file defines policies for dependency management, licensing, and security
+
+[graph]
+# If true, metadata will be collected with `--all-features`. Note that this can't
+# be toggled off if true, if you want to conditionally enable it, use `--all-features`
+all-features = true
+# If true, metadata will be collected with `--no-default-features`. Note that this
+# can't be toggled off if true, if you want to conditionally enable it, use `--no-default-features`
+no-default-features = false
+
+[output]
+# When outputting inclusion graphs in diagnostics that include features, this option can
+# be used to specify the depth at which feature edges will be added in the graph
+feature-depth = 1
+
+[advisories]
+# A path to a toml file specifying packages/versions to ignore when
+# encountering advisories that affect them
+ignore = [
+    # Temporarily ignore the unmaintained paste crate warning
+    # TODO: Replace rmp-serde or find alternative
+    # "RUSTSEC-2024-0436", # paste crate unmaintained
+]
+
+# If this is true, then cargo deny will use the git executable to fetch advisory database.
+# If this is false, then it uses a built-in git library.
+git-fetch-with-cli = true
+
+# The path where the advisory database is cloned/fetched into
+db-path = "~/.cargo/advisory-db"
+
+# The url(s) of the advisory databases to use
+db-urls = ["https://github.com/rustsec/advisory-db"]
+
+# The lint level for security vulnerabilities
+vulnerability = "deny"
+# The lint level for unmaintained crates
+unmaintained = "warn"
+# The lint level for crates that have been yanked from their source registry
+yanked = "warn"
+# The lint level for crates with security notices
+notice = "warn"
+# A list of advisory IDs to ignore. Note that ignored advisories will still
+# output a note when they are encountered.
+ignore = [
+    # Ignore the paste warning for now - transitive dependency
+    "RUSTSEC-2024-0436",
+]
+
+[licenses]
+# List of explicitly disallowed licenses
+# See https://spdx.org/licenses/ for list of possible licenses
+# The confidence threshold for detecting a license from a license text.
+# Expressed as a floating point number in (0.0, 1.0] range.
+confidence-threshold = 0.8
+
+# The lint level for when a license requirement is not satisfied
+unlicensed = "deny"
+
+# The lint level for when a license exception is encountered
+copyleft = "deny"
+
+# Blanket approval or denial for OSI-approved or FSF Free/Libre licenses
+# * both - The license will be approved if it is both OSI-approved *AND* FSF approved
+# * either - The license will be approved if it is either OSI-approved *OR* FSF approved
+# * osi-only - The license will be approved if is OSI-approved *BUT NOT* FSF approved
+# * fsf-only - The license will be approved if is FSF-approved *BUT NOT* OSI approved
+# * neither - This predicate is ignored and the default lint level is used
+allow = "OSI"
+
+# List of explicitly allowed licenses
+allowed = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-DFS-2016",
+    "CC0-1.0",
+]
+
+# List of explicitly disallowed licenses
+denied = [
+    "GPL-2.0",
+    "GPL-3.0", 
+    "AGPL-1.0",
+    "AGPL-3.0",
+    "LGPL-2.0",
+    "LGPL-2.1",
+    "LGPL-3.0",
+    "MPL-2.0", # Mozilla Public License can be problematic
+]
+
+# Lint level for when no license can be detected for a crate
+unlicensed = "deny"
+
+# Lint level for when a copyleft license is detected
+copyleft = "deny"
+
+# Blanket approval for OSI-approved licenses
+allow-osi-fsf-free = "both"
+
+# Some crates don't have (easily) machine readable licensing information,
+# adding a clarification or license text for a crate is one way to handle this
+[[licenses.clarify]]
+name = "ring"
+# SPDX identifier for the license
+expression = "MIT AND ISC AND OpenSSL"
+# One or more files in the crate's source used as the "source of truth" for
+# the license expression. If the files are missing, or do not contain the
+# expected content, the clarification will fail
+license-files = [
+    { path = "LICENSE", hash = 0xbd0eed23 }
+]
+
+[bans]
+# Lint level for when multiple versions of the same crate are detected
+multiple-versions = "warn"
+# Lint level for when a crate version requirement is neither a wildcard nor matches the latest version
+wildcards = "allow"
+# Lint level for when a banned crate is detected
+deny = "deny"
+
+# List of crates that are banned from being used
+# Each entry can be a crate name (applies to all versions) or a string formatted like "<crate_name>:<version>"
+# Note: you can specify an exact version or version range
+deny = [
+    # Security-problematic crates
+    { name = "openssl", reason = "Use rustls instead for better security" },
+    { name = "native-tls", reason = "Use rustls instead for better security" },
+    { name = "sha1", reason = "SHA-1 is cryptographically broken" },
+    { name = "md5", reason = "MD5 is cryptographically broken" },
+    { name = "md-5", reason = "MD5 is cryptographically broken" },
+    
+    # Memory safety issues
+    { name = "memmap", reason = "Use memmap2 instead" },
+    
+    # Unmaintained crates with security issues
+    { name = "tempdir", reason = "Use tempfile instead" },
+    { name = "term", reason = "Unmaintained, use crossterm instead" },
+    
+    # Crates with known vulnerabilities
+    { name = "smallvec", version = "< 1.6.1", reason = "Contains use-after-free vulnerability" },
+    { name = "yaml-rust", reason = "Unmaintained, use serde_yaml instead" },
+]
+
+# Certain crates/versions that will be skipped when doing duplicate detection.
+skip = [
+    # Allow different versions of these crates due to ecosystem fragmentation
+    { name = "bitflags" }, # Many crates still use older versions
+    { name = "syn" }, # Proc macros often require specific versions
+    { name = "windows-sys" }, # Windows crates have complex versioning
+]
+
+# Similarly to `skip` allows you to skip certain crates from being checked. Unlike `skip`,
+# `skip-tree` skips the crate and all the crates that depend on it.
+skip-tree = [
+    # Skip tree analysis for crates that commonly have version conflicts
+    { name = "winapi" }, # Windows-specific, complex dependency tree
+]
+
+[sources]
+# Lint level for what to happen when a crate from a crate registry that is
+# not in the allow list is encountered
+unknown-registry = "warn"
+# Lint level for what to happen when a crate from a git repository that is not
+# in the allow list is encountered
+unknown-git = "warn"
+# Allow crates from these registries
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+# Allow crates from these git repositories  
+allow-git = []
+
+# List of crate registries that are explicitly allowed
+# Format: "name:url"
+# The name is used for human-readable output
+# The url can be any URL that cargo accepts for registries
+allow-registries = [
+    # The main crates.io registry
+    "crates-io:https://github.com/rust-lang/crates.io-index",
+]
+
+# Git sources that are allowed. Note that this only applies to crates that
+# are in git repositories, not crates that have git dependencies
+allow-git-sources = [
+    # Add any specific git sources that should be allowed
+    # Example: "https://github.com/organization/repo",
+]

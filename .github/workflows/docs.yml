@@ -1,0 +1,504 @@
+name: Documentation
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'packages/ddex-builder/src/**'
+      - 'packages/ddex-builder/docs/**'
+      - 'packages/ddex-builder/examples/**'
+      - 'packages/ddex-builder/README.md'
+      - 'packages/ddex-builder/CHANGELOG.md'
+      - 'docs/**'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'packages/ddex-builder/src/**'
+      - 'packages/ddex-builder/docs/**'
+      - 'packages/ddex-builder/examples/**'
+      - 'packages/ddex-builder/README.md'
+      - 'packages/ddex-builder/CHANGELOG.md'
+      - 'docs/**'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Install mdbook
+        run: |
+          curl -L https://github.com/rust-lang/mdBook/releases/download/v0.4.36/mdbook-v0.4.36-x86_64-unknown-linux-gnu.tar.gz | tar xz
+          sudo mv mdbook /usr/local/bin/
+
+      - name: Install mdbook plugins
+        run: |
+          cargo install mdbook-mermaid mdbook-linkcheck mdbook-toc
+
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v4
+        if: github.ref == 'refs/heads/main'
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-docs-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-docs-
+            ${{ runner.os }}-cargo-
+
+      - name: Build rustdoc
+        run: |
+          cd packages/ddex-builder
+          cargo doc --no-deps --document-private-items --all-features
+          
+      - name: Create documentation site structure
+        run: |
+          mkdir -p site
+          
+          # Copy rustdoc
+          cp -r packages/ddex-builder/target/doc site/api
+          
+          # Create main index page
+          cat > site/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>DDEX Builder Documentation</title>
+              <style>
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      max-width: 1200px;
+                      margin: 0 auto;
+                      padding: 2rem;
+                      line-height: 1.6;
+                      color: #333;
+                  }
+                  .hero {
+                      text-align: center;
+                      padding: 3rem 0;
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      color: white;
+                      border-radius: 10px;
+                      margin-bottom: 3rem;
+                  }
+                  .hero h1 {
+                      font-size: 3rem;
+                      margin: 0;
+                  }
+                  .hero p {
+                      font-size: 1.2rem;
+                      margin: 1rem 0 0 0;
+                  }
+                  .cards {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                      gap: 2rem;
+                      margin-bottom: 3rem;
+                  }
+                  .card {
+                      border: 1px solid #ddd;
+                      border-radius: 8px;
+                      padding: 1.5rem;
+                      background: white;
+                      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                      transition: transform 0.2s, box-shadow 0.2s;
+                  }
+                  .card:hover {
+                      transform: translateY(-2px);
+                      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+                  }
+                  .card h3 {
+                      margin-top: 0;
+                      color: #667eea;
+                  }
+                  .card a {
+                      color: #667eea;
+                      text-decoration: none;
+                      font-weight: 500;
+                  }
+                  .card a:hover {
+                      text-decoration: underline;
+                  }
+                  .features {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                      gap: 1rem;
+                      margin: 2rem 0;
+                  }
+                  .feature {
+                      text-align: center;
+                      padding: 1rem;
+                  }
+                  .feature-icon {
+                      font-size: 2rem;
+                      margin-bottom: 0.5rem;
+                  }
+                  .stats {
+                      background: #f8f9fa;
+                      padding: 2rem;
+                      border-radius: 8px;
+                      text-align: center;
+                      margin: 2rem 0;
+                  }
+                  .stats-grid {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                      gap: 1rem;
+                      margin-top: 1rem;
+                  }
+                  .stat {
+                      padding: 1rem;
+                  }
+                  .stat-number {
+                      font-size: 2rem;
+                      font-weight: bold;
+                      color: #667eea;
+                  }
+                  .stat-label {
+                      font-size: 0.9rem;
+                      color: #666;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="hero">
+                  <h1>🎵 DDEX Builder</h1>
+                  <p>The fastest, most secure, and deterministic DDEX XML builder for modern music distribution</p>
+              </div>
+
+              <div class="stats">
+                  <h2>Performance Metrics</h2>
+                  <div class="stats-grid">
+                      <div class="stat">
+                          <div class="stat-number">&lt;15ms</div>
+                          <div class="stat-label">Typical Build Time</div>
+                      </div>
+                      <div class="stat">
+                          <div class="stat-number">100%</div>
+                          <div class="stat-label">Deterministic</div>
+                      </div>
+                      <div class="stat">
+                          <div class="stat-number">&lt;50MB</div>
+                          <div class="stat-label">Memory Usage</div>
+                      </div>
+                      <div class="stat">
+                          <div class="stat-number">3</div>
+                          <div class="stat-label">DDEX Versions</div>
+                      </div>
+                  </div>
+              </div>
+
+              <div class="features">
+                  <div class="feature">
+                      <div class="feature-icon">🔒</div>
+                      <h4>Security First</h4>
+                      <p>XXE protection, input validation, rate limiting</p>
+                  </div>
+                  <div class="feature">
+                      <div class="feature-icon">⚡</div>
+                      <h4>High Performance</h4>
+                      <p>Sub-millisecond builds, streaming support</p>
+                  </div>
+                  <div class="feature">
+                      <div class="feature-icon">🎯</div>
+                      <h4>Deterministic</h4>
+                      <p>Byte-perfect reproducible output</p>
+                  </div>
+                  <div class="feature">
+                      <div class="feature-icon">🛠️</div>
+                      <h4>Partner Ready</h4>
+                      <p>Spotify, YouTube, Apple presets</p>
+                  </div>
+                  <div class="feature">
+                      <div class="feature-icon">🌐</div>
+                      <h4>Multi-Platform</h4>
+                      <p>Rust, Node.js, Python, WASM</p>
+                  </div>
+                  <div class="feature">
+                      <div class="feature-icon">📊</div>
+                      <h4>DDEX Support</h4>
+                      <p>ERN 3.8.2, 4.2, 4.3 with conversion</p>
+                  </div>
+              </div>
+
+              <div class="cards">
+                  <div class="card">
+                      <h3>📚 User Guide</h3>
+                      <p>Complete guide to using DDEX Builder with tutorials, examples, and best practices.</p>
+                      <a href="user-guide.html">Read User Guide →</a>
+                  </div>
+
+                  <div class="card">
+                      <h3>🏗️ Developer Guide</h3>
+                      <p>Architecture overview, contributing guidelines, and advanced usage patterns.</p>
+                      <a href="developer-guide.html">Read Developer Guide →</a>
+                  </div>
+
+                  <div class="card">
+                      <h3>🔧 API Reference</h3>
+                      <p>Complete Rust API documentation with examples and type information.</p>
+                      <a href="api/ddex_builder/index.html">Browse API Docs →</a>
+                  </div>
+
+                  <div class="card">
+                      <h3>🎯 Examples</h3>
+                      <p>Real-world examples including Spotify albums, YouTube videos, and streaming catalogs.</p>
+                      <a href="examples.html">View Examples →</a>
+                  </div>
+
+                  <div class="card">
+                      <h3>📝 Changelog</h3>
+                      <p>Version history, breaking changes, and migration guides.</p>
+                      <a href="changelog.html">View Changelog →</a>
+                  </div>
+
+                  <div class="card">
+                      <h3>🚀 Quick Start</h3>
+                      <p>Get up and running with DDEX Builder in minutes.</p>
+                      <a href="quickstart.html">Get Started →</a>
+                  </div>
+              </div>
+
+              <div style="text-align: center; margin-top: 3rem; padding: 2rem; background: #f8f9fa; border-radius: 8px;">
+                  <h3>Ready to build DDEX XML?</h3>
+                  <p>
+                      <a href="https://github.com/daddykev/ddex-suite" style="margin: 0 1rem;">📂 GitHub Repository</a>
+                      <a href="https://crates.io/crates/ddex-builder" style="margin: 0 1rem;">📦 Crates.io</a>
+                      <a href="https://discord.gg/ddex-builder" style="margin: 0 1rem;">💬 Discord Community</a>
+                  </p>
+              </div>
+          </body>
+          </html>
+          EOF
+
+      - name: Convert Markdown to HTML
+        run: |
+          # Install pandoc for markdown conversion
+          sudo apt-get update
+          sudo apt-get install pandoc
+
+          # Convert user guide
+          pandoc packages/ddex-builder/docs/user-guide.md \
+            -o site/user-guide.html \
+            --standalone \
+            --css="https://cdn.jsdelivr.net/npm/github-markdown-css@5.4.0/github-markdown.min.css" \
+            --metadata title="DDEX Builder User Guide"
+
+          # Convert developer guide  
+          pandoc packages/ddex-builder/docs/developer-guide.md \
+            -o site/developer-guide.html \
+            --standalone \
+            --css="https://cdn.jsdelivr.net/npm/github-markdown-css@5.4.0/github-markdown.min.css" \
+            --metadata title="DDEX Builder Developer Guide"
+
+          # Convert changelog
+          pandoc packages/ddex-builder/CHANGELOG.md \
+            -o site/changelog.html \
+            --standalone \
+            --css="https://cdn.jsdelivr.net/npm/github-markdown-css@5.4.0/github-markdown.min.css" \
+            --metadata title="DDEX Builder Changelog"
+
+          # Convert examples README
+          pandoc packages/ddex-builder/examples/README.md \
+            -o site/examples.html \
+            --standalone \
+            --css="https://cdn.jsdelivr.net/npm/github-markdown-css@5.4.0/github-markdown.min.css" \
+            --metadata title="DDEX Builder Examples"
+
+      - name: Create quick start guide
+        run: |
+          cat > site/quickstart.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>DDEX Builder Quick Start</title>
+              <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.4.0/github-markdown.min.css">
+              <style>
+                  body { max-width: 800px; margin: 0 auto; padding: 2rem; }
+              </style>
+          </head>
+          <body class="markdown-body">
+              <h1>🚀 Quick Start Guide</h1>
+              
+              <h2>Installation</h2>
+              <h3>Rust</h3>
+              <pre><code>cargo add ddex-builder</code></pre>
+              
+              <h3>Node.js</h3>
+              <pre><code>npm install ddex-builder</code></pre>
+              
+              <h3>Python</h3>
+              <pre><code>pip install ddex-builder</code></pre>
+              
+              <h2>Basic Usage</h2>
+              <h3>Rust</h3>
+              <pre><code>use ddex_builder::{Builder, BuildRequest, OutputFormat};
+
+          // Create builder with Spotify preset
+          let mut builder = Builder::new();
+          builder.preset("spotify_audio_43")?;
+
+          // Build DDEX XML
+          let request = BuildRequest {
+              source_xml: r#"
+                  &lt;SoundRecording&gt;
+                      &lt;SoundRecordingId&gt;&lt;ISRC&gt;USRC17607839&lt;/ISRC&gt;&lt;/SoundRecordingId&gt;
+                      &lt;ReferenceTitle&gt;&lt;TitleText&gt;My Amazing Song&lt;/TitleText&gt;&lt;/ReferenceTitle&gt;
+                      &lt;Duration&gt;PT3M45S&lt;/Duration&gt;
+                  &lt;/SoundRecording&gt;
+              "#.to_string(),
+              output_format: OutputFormat::Xml,
+              preset: Some("spotify_audio_43".to_string()),
+              validate_schema: true,
+          };
+
+          let result = builder.build_internal(&request)?;
+          println!("Generated: {}", result.xml);</code></pre>
+
+              <h3>JavaScript/Node.js</h3>
+              <pre><code>const { DDEXBuilder } = require('ddex-builder');
+
+          const builder = new DDEXBuilder();
+          await builder.applyPreset('spotify_audio_43');
+
+          const result = await builder.build({
+              sourceXml: '&lt;SoundRecording&gt;...&lt;/SoundRecording&gt;',
+              validateSchema: true
+          });
+
+          console.log(`Built in ${result.stats.generationTimeMs}ms`);</code></pre>
+
+              <h3>Python</h3>
+              <pre><code>from ddex_builder import Builder, BuildRequest, OutputFormat
+
+          builder = Builder()
+          builder.preset('spotify_audio_43')
+
+          result = builder.build_internal(BuildRequest(
+              source_xml='&lt;SoundRecording&gt;...&lt;/SoundRecording&gt;',
+              output_format=OutputFormat.XML,
+              validate_schema=True
+          ))
+
+          print(f"Generated {len(result.xml)} bytes in {result.generation_time_ms}ms")</code></pre>
+
+              <h2>Next Steps</h2>
+              <ul>
+                  <li><a href="user-guide.html">Read the User Guide</a> for detailed tutorials</li>
+                  <li><a href="examples.html">Explore Examples</a> for real-world scenarios</li>
+                  <li><a href="api/ddex_builder/index.html">Browse API Documentation</a> for complete reference</li>
+                  <li><a href="https://github.com/daddykev/ddex-suite">Visit GitHub</a> for source code and issues</li>
+              </ul>
+              
+              <h2>Need Help?</h2>
+              <ul>
+                  <li><a href="https://github.com/daddykev/ddex-suite/issues">GitHub Issues</a> - Bug reports and feature requests</li>
+                  <li><a href="https://github.com/daddykev/ddex-suite/discussions">GitHub Discussions</a> - Community support</li>
+                  <li><a href="https://discord.gg/ddex-builder">Discord Community</a> - Real-time chat</li>
+                  <li><a href="mailto:support@ddex-suite.com">Email Support</a> - Direct support</li>
+              </ul>
+          </body>
+          </html>
+          EOF
+
+      - name: Add sitemap and robots.txt
+        run: |
+          cat > site/sitemap.xml << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+            <url>
+              <loc>https://daddykev.github.io/ddex-suite/</loc>
+              <lastmod>2024-12-01</lastmod>
+              <changefreq>weekly</changefreq>
+              <priority>1.0</priority>
+            </url>
+            <url>
+              <loc>https://daddykev.github.io/ddex-suite/user-guide.html</loc>
+              <lastmod>2024-12-01</lastmod>
+              <changefreq>weekly</changefreq>
+              <priority>0.9</priority>
+            </url>
+            <url>
+              <loc>https://daddykev.github.io/ddex-suite/developer-guide.html</loc>
+              <lastmod>2024-12-01</lastmod>
+              <changefreq>weekly</changefreq>
+              <priority>0.9</priority>
+            </url>
+            <url>
+              <loc>https://daddykev.github.io/ddex-suite/api/ddex_builder/index.html</loc>
+              <lastmod>2024-12-01</lastmod>
+              <changefreq>weekly</changefreq>
+              <priority>0.8</priority>
+            </url>
+            <url>
+              <loc>https://daddykev.github.io/ddex-suite/examples.html</loc>
+              <lastmod>2024-12-01</lastmod>
+              <changefreq>weekly</changefreq>
+              <priority>0.8</priority>
+            </url>
+            <url>
+              <loc>https://daddykev.github.io/ddex-suite/changelog.html</loc>
+              <lastmod>2024-12-01</lastmod>
+              <changefreq>monthly</changefreq>
+              <priority>0.7</priority>
+            </url>
+            <url>
+              <loc>https://daddykev.github.io/ddex-suite/quickstart.html</loc>
+              <lastmod>2024-12-01</lastmod>
+              <changefreq>weekly</changefreq>
+              <priority>0.8</priority>
+            </url>
+          </urlset>
+          EOF
+
+          cat > site/robots.txt << 'EOF'
+          User-agent: *
+          Allow: /
+
+          Sitemap: https://daddykev.github.io/ddex-suite/sitemap.xml
+          EOF
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build-docs
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

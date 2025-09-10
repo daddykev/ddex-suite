@@ -1,4 +1,118 @@
-//! Partner presets for common configurations
+//! # Partner Presets and Configuration Templates
+//! 
+//! This module provides pre-configured settings for major music distribution
+//! platforms and industry partners. Presets ensure compliance with specific
+//! partner requirements and reduce configuration complexity.
+//! 
+//! ## Available Presets
+//! 
+//! ### Streaming Platforms
+//! - **Spotify**: Audio releases (ERN 4.3)
+//! - **Apple Music**: Audio and video content
+//! - **YouTube Music**: Audio and video releases
+//! - **Amazon Music**: Audio distribution
+//! - **Deezer**: Audio releases
+//! 
+//! ### Record Labels  
+//! - **Universal Music Group**: Label-specific requirements
+//! - **Sony Music Entertainment**: Enhanced metadata rules
+//! - **Warner Music Group**: Territory and rights management
+//! 
+//! ### Distributors
+//! - **DistroKid**: Independent artist distribution
+//! - **CD Baby**: Digital distribution standards
+//! - **TuneCore**: Multi-platform distribution
+//! 
+//! ## Architecture
+//! 
+//! ```text
+//! Preset System
+//! ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+//! │  Base Config    │───▶│  Partner Rules   │───▶│ Final Settings  │
+//! │ (DDEX defaults) │    │ (customizations) │    │ (ready to use)  │
+//! └─────────────────┘    └──────────────────┘    └─────────────────┘
+//!           │                       │                       │
+//!           ▼                       ▼                       ▼
+//!    ┌─────────────┐      ┌─────────────────┐    ┌─────────────────┐
+//!    │ • Version   │      │ • Required      │    │ • Validation    │
+//!    │ • Profile   │      │ • Validation    │    │ • Defaults      │
+//!    │ • Schema    │      │ • Territories   │    │ • Mappings      │
+//!    │ • Defaults  │      │ • Quality       │    │ • Overrides     │
+//!    └─────────────┘      └─────────────────┘    └─────────────────┘
+//! ```
+//! 
+//! ## Usage Example
+//! 
+//! ```rust
+//! use ddex_builder::presets::*;
+//! use ddex_builder::Builder;
+//! 
+//! // Use Spotify preset
+//! let mut builder = Builder::new();
+//! builder.apply_preset(&spotify_audio_43())?;
+//! 
+//! // Or load by name
+//! let presets = all_presets();
+//! let spotify = &presets["spotify_audio_43"];
+//! builder.apply_partner_preset(spotify)?;
+//! 
+//! // List available presets
+//! for (name, preset) in all_presets() {
+//!     println!("{}: {}", name, preset.description);
+//! }
+//! ```
+//! 
+//! ## Preset Features
+//! 
+//! Each preset includes:
+//! 
+//! - **Schema Version**: DDEX ERN version (3.8.2, 4.2, 4.3)
+//! - **Message Profile**: Audio, Video, or Mixed content
+//! - **Required Fields**: Mandatory metadata fields
+//! - **Validation Rules**: Data format and quality requirements
+//! - **Default Values**: Common field defaults
+//! - **Territory Codes**: Allowed distribution territories
+//! - **Quality Standards**: Audio/video quality minimums
+//! 
+//! ## Custom Presets
+//! 
+//! Create your own preset for internal standards:
+//! 
+//! ```rust
+//! use ddex_builder::presets::*;
+//! use indexmap::IndexMap;
+//! 
+//! let mut custom_rules = IndexMap::new();
+//! custom_rules.insert("ISRC".to_string(), ValidationRule::Required);
+//! custom_rules.insert("Genre".to_string(), ValidationRule::OneOf(
+//!     vec!["Rock".to_string(), "Pop".to_string()]
+//! ));
+//! 
+//! let custom_preset = PartnerPreset {
+//!     name: "my_label_preset".to_string(),
+//!     description: "My Record Label Requirements".to_string(),
+//!     version: "1.0.0".to_string(),
+//!     config: PresetConfig {
+//!         version: DdexVersion::Ern43,
+//!         profile: MessageProfile::AudioAlbum,
+//!         validation_rules: custom_rules,
+//!         // ... other configuration
+//!     },
+//!     // ... other fields
+//! };
+//! ```
+//! 
+//! ## Validation Rules
+//! 
+//! Presets support comprehensive validation:
+//! 
+//! - **Required**: Field must be present
+//! - **MinLength/MaxLength**: String length constraints
+//! - **Pattern**: Regex pattern matching
+//! - **OneOf**: Value must be from allowed list
+//! - **AudioQuality**: Minimum bit depth and sample rate
+//! - **TerritoryCode**: Allowed distribution territories
+//! - **Custom**: Partner-specific validation logic
 
 pub mod spotify;
 pub mod youtube;

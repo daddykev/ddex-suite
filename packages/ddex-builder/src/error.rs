@@ -56,6 +56,22 @@ pub enum BuildError {
         details: String,
     },
     
+    /// Validation error
+    #[error("Validation error: {0}")]
+    Validation(String),
+    
+    /// Parallel processing error
+    #[error("Parallel processing error: {0}")]
+    Parallel(String),
+    
+    /// Security violation
+    #[error("Security violation: {0}")]
+    Security(String),
+    
+    /// Input sanitization failed
+    #[error("Input sanitization failed: {0}")]
+    InputSanitization(String),
+    
     /// Other error
     #[error("{0}")]
     Other(String),

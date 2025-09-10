@@ -1,0 +1,48 @@
+[package]
+name = "ddex-builder-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[workspace]
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1.3", features = ["derive"] }
+
+[dependencies.ddex-builder]
+path = ".."
+
+[dependencies.ddex-core]
+path = "../../core"
+
+[[bin]]
+name = "fuzz_xml_parsing"
+path = "fuzz_targets/fuzz_xml_parsing.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_json_parsing"
+path = "fuzz_targets/fuzz_json_parsing.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_builder_api"
+path = "fuzz_targets/fuzz_builder_api.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_version_conversion"
+path = "fuzz_targets/fuzz_version_conversion.rs"
+test = false
+doc = false
+bench = false
