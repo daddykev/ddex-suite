@@ -2,7 +2,14 @@
   "name": "ddex-builder",
   "version": "0.1.0",
   "description": "DDEX XML builder with deterministic output and DB-C14N/1.0 canonicalization",
-  "keywords": ["ddex", "xml", "builder", "music", "deterministic", "canonicalization"],
+  "keywords": [
+    "ddex",
+    "xml",
+    "builder",
+    "music",
+    "deterministic",
+    "canonicalization"
+  ],
   "main": "index.js",
   "types": "index.d.ts",
   "license": "MIT",
