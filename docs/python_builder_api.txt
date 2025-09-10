@@ -1,0 +1,252 @@
+Help on package ddex_builder:
+
+NAME
+    ddex_builder
+
+PACKAGE CONTENTS
+    ddex_builder
+
+CLASSES
+    builtins.object
+        builtins.BuilderStats
+        builtins.DdexBuilder
+        builtins.PresetInfo
+        builtins.Release
+        builtins.Resource
+        builtins.ValidationResult
+        builtins.ValidationRulePy
+
+    class BuilderStats(object)
+     |  BuilderStats(releases_count, resources_count, total_build_time_ms, last_build_size_bytes, validation_errors, validation_warnings)
+     |
+     |  Methods defined here:
+     |
+     |  __repr__(self, /)
+     |      Return repr(self).
+     |
+     |  ----------------------------------------------------------------------
+     |  Static methods defined here:
+     |
+     |  __new__(*args, **kwargs)
+     |      Create and return a new object.  See help(type) for accurate signature.
+     |
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |
+     |  last_build_size_bytes
+     |
+     |  releases_count
+     |
+     |  resources_count
+     |
+     |  total_build_time_ms
+     |
+     |  validation_errors
+     |
+     |  validation_warnings
+
+    class DdexBuilder(object)
+     |  Methods defined here:
+     |
+     |  __repr__(self, /)
+     |      Return repr(self).
+     |
+     |  add_release(self, /, release)
+     |
+     |  add_resource(self, /, resource)
+     |
+     |  apply_preset(self, /, preset_name)
+     |
+     |  build(self, /)
+     |
+     |  dict_to_release(self, /, record)
+     |
+     |  dict_to_resource(self, /, record)
+     |
+     |  from_dataframe(self, /, df, profile='AudioAlbum')
+     |
+     |  generate_placeholder_xml(self, /)
+     |
+     |  get_available_presets(self, /)
+     |
+     |  get_preset_info(self, /, preset_name)
+     |
+     |  get_preset_validation_rules(self, /, preset_name)
+     |
+     |  get_stats(self, /)
+     |
+     |  reset(self, /)
+     |
+     |  validate(self, /)
+     |
+     |  ----------------------------------------------------------------------
+     |  Static methods defined here:
+     |
+     |  __new__(*args, **kwargs)
+     |      Create and return a new object.  See help(type) for accurate signature.
+
+    class PresetInfo(object)
+     |  PresetInfo(name, description, version, profile, required_fields, disclaimer)
+     |
+     |  Methods defined here:
+     |
+     |  __repr__(self, /)
+     |      Return repr(self).
+     |
+     |  ----------------------------------------------------------------------
+     |  Static methods defined here:
+     |
+     |  __new__(*args, **kwargs)
+     |      Create and return a new object.  See help(type) for accurate signature.
+     |
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |
+     |  description
+     |
+     |  disclaimer
+     |
+     |  name
+     |
+     |  profile
+     |
+     |  required_fields
+     |
+     |  version
+
+    class Release(object)
+     |  Release(release_id, release_type, title, artist, label=None, catalog_number=None, upc=None, release_date=None, genre=None, parental_warning=None, track_ids=None, metadata=None)
+     |
+     |  Methods defined here:
+     |
+     |  __repr__(self, /)
+     |      Return repr(self).
+     |
+     |  ----------------------------------------------------------------------
+     |  Static methods defined here:
+     |
+     |  __new__(*args, **kwargs)
+     |      Create and return a new object.  See help(type) for accurate signature.
+     |
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |
+     |  artist
+     |
+     |  catalog_number
+     |
+     |  genre
+     |
+     |  label
+     |
+     |  metadata
+     |
+     |  parental_warning
+     |
+     |  release_date
+     |
+     |  release_id
+     |
+     |  release_type
+     |
+     |  title
+     |
+     |  track_ids
+     |
+     |  upc
+
+    class Resource(object)
+     |  Resource(resource_id, resource_type, title, artist, isrc=None, duration=None, track_number=None, volume_number=None, metadata=None)
+     |
+     |  Methods defined here:
+     |
+     |  __repr__(self, /)
+     |      Return repr(self).
+     |
+     |  ----------------------------------------------------------------------
+     |  Static methods defined here:
+     |
+     |  __new__(*args, **kwargs)
+     |      Create and return a new object.  See help(type) for accurate signature.
+     |
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |
+     |  artist
+     |
+     |  duration
+     |
+     |  isrc
+     |
+     |  metadata
+     |
+     |  resource_id
+     |
+     |  resource_type
+     |
+     |  title
+     |
+     |  track_number
+     |
+     |  volume_number
+
+    class ValidationResult(object)
+     |  ValidationResult(is_valid, errors, warnings)
+     |
+     |  Methods defined here:
+     |
+     |  __repr__(self, /)
+     |      Return repr(self).
+     |
+     |  ----------------------------------------------------------------------
+     |  Static methods defined here:
+     |
+     |  __new__(*args, **kwargs)
+     |      Create and return a new object.  See help(type) for accurate signature.
+     |
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |
+     |  errors
+     |
+     |  is_valid
+     |
+     |  warnings
+
+    class ValidationRulePy(object)
+     |  ValidationRulePy(field_name, rule_type, message, parameters=None)
+     |
+     |  Methods defined here:
+     |
+     |  __repr__(self, /)
+     |      Return repr(self).
+     |
+     |  ----------------------------------------------------------------------
+     |  Static methods defined here:
+     |
+     |  __new__(*args, **kwargs)
+     |      Create and return a new object.  See help(type) for accurate signature.
+     |
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |
+     |  field_name
+     |
+     |  message
+     |
+     |  parameters
+     |
+     |  rule_type
+
+FUNCTIONS
+    batch_build(requests)
+
+    validate_structure(xml)
+
+DATA
+    __all__ = ['Release', 'Resource', 'ValidationResult', 'BuilderStats', ...
+
+FILE
+    /Users/kevinmoo/miniconda3/lib/python3.12/site-packages/ddex_builder/__init__.py
+
+
