@@ -1,6 +1,6 @@
 # DSP Integration Guide
 
-Learn how to integrate the DDEX Suite with major Digital Service Providers (DSPs) including Spotify, Apple Music, YouTube Music, and Amazon Music.
+Learn how to integrate the DDEX Suite with major Digital Service Providers (DSPs) including Spotify, YouTube Music, and Amazon Music.
 
 ## Problem Statement
 

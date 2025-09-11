@@ -11,7 +11,7 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-ddex-parser-core = { path = "../../", features = ["wasm"] }
+ddex-parser = { path = "../../", features = ["wasm"] }
 ddex-core = { path = "../../../core", features = ["typescript"] }
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"

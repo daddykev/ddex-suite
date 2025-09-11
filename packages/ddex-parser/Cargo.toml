@@ -69,6 +69,7 @@ default = ["async"]
 async = ["tokio", "futures"]
 # cli feature not needed - dependencies are already included
 typescript = ["ts-rs", "ddex-core/ts-rs"]
+wasm = []  # WebAssembly support
 simd = []
 bench = []
 

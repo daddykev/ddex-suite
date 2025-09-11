@@ -1,0 +1,19 @@
+{
+  "name": "ddex-builder-wasm",
+  "type": "module",
+  "collaborators": [
+    "Kevin Marques Moo"
+  ],
+  "version": "0.1.0",
+  "license": "MIT",
+  "files": [
+    "ddex_builder_wasm_bg.wasm",
+    "ddex_builder_wasm.js",
+    "ddex_builder_wasm.d.ts"
+  ],
+  "main": "ddex_builder_wasm.js",
+  "types": "ddex_builder_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

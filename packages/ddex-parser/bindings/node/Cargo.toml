@@ -11,7 +11,7 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-# ddex-parser-core = { path = "../../core" }  # Comment out for now
+ddex-parser = { path = "../../" }
 napi = { version = "2.16", default-features = false, features = ["napi8", "async", "serde-json"] }
 napi-derive = "2.16"
 serde = { workspace = true }

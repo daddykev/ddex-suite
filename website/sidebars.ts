@@ -56,6 +56,39 @@ const sidebars: SidebarsConfig = {
       label: 'Guides',
       items: [
         'guides/index',
+        {
+          type: 'category',
+          label: 'Parser Guides',
+          items: [
+            'guides/parser/basic-parsing',
+            'guides/parser/large-files',
+            'guides/parser/error-handling',
+            'guides/parser/performance',
+            'guides/parser/dataframes',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Builder Guides',
+          items: [
+            'guides/builder/from-scratch',
+            'guides/builder/partner-outputs',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Troubleshooting',
+          items: [
+            'guides/troubleshooting/common-issues',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Reference',
+          items: [
+            'guides/reference/dsp-requirements',
+          ],
+        },
       ],
     },
   ],

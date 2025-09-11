@@ -34,15 +34,11 @@ const config: Config = {
             require('rehype-katex'),
           ],
         },
-        blog: {
-          showReadingTime: true,
-          editUrl: 'https://github.com/daddykev/ddex-suite/tree/main/website/',
-        },
         theme: {
           customCss: './src/css/custom.css',
         },
         gtag: {
-          trackingID: 'G-XXXXXXXXXX', // Add your Google Analytics ID
+          trackingID: 'G-H5TSB2963K', // Add your Google Analytics ID
           anonymizeIP: true,
         },
       } satisfies Preset.Options,
@@ -98,7 +94,6 @@ const config: Config = {
           position: 'left',
         },
         {to: '/playground', label: 'Playground', position: 'left'},
-        {to: '/blog', label: 'Blog', position: 'left'},
         {
           type: 'docsVersionDropdown',
           position: 'right',
@@ -147,10 +142,6 @@ const config: Config = {
               href: 'https://github.com/daddykev/ddex-suite',
             },
             {
-              label: 'Discord',
-              href: 'https://discord.gg/ddex-suite',
-            },
-            {
               label: 'Stack Overflow',
               href: 'https://stackoverflow.com/questions/tagged/ddex',
             },
@@ -160,16 +151,12 @@ const config: Config = {
           title: 'More',
           items: [
             {
-              label: 'Blog',
-              to: '/blog',
-            },
-            {
               label: 'DDEX Workbench',
               href: 'https://ddex-workbench.org',
             },
             {
               label: 'npm',
-              href: 'https://www.npmjs.com/org/ddex-suite',
+              href: 'https://www.npmjs.com/~daddykev',
             },
           ],
         },
