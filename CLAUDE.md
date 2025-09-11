@@ -22,6 +22,7 @@ This is a Rust workspace with the following structure:
 - `packages/ddex-parser/` - DDEX XML parser with CLI
 - `packages/ddex-builder/` - DDEX XML builder with DB-C14N/1.0 canonicalization
 - `packages/*/bindings/` - Language bindings (Node.js, Python, WASM)
+- `website/` - Docusaurus documentation site with Firebase hosting
 
 The project provides both "graph" (faithful DDEX structure) and "flattened" (developer-friendly) representations with full round-trip fidelity.
 
@@ -101,6 +102,21 @@ wasm-pack build
 
 cd packages/ddex-builder/bindings/wasm
 wasm-pack build
+```
+
+### Documentation Site
+```bash
+# Development server
+cd website
+npm install
+npm start
+
+# Build documentation
+npm run build
+
+# Deploy to Firebase
+npm run build
+firebase deploy
 ```
 
 ## Key Technical Details
@@ -223,9 +239,21 @@ Bindings use:
 - `PyO3 0.21` - Python bindings ✅
 - `wasm-bindgen` - WebAssembly bindings ✅
 
+## Documentation Site
+
+The project includes a comprehensive Docusaurus documentation site at `/website`:
+
+- **Framework**: Docusaurus 3.8.1 with TypeScript support
+- **Hosting**: Firebase with automated deployment
+- **Features**: Interactive tutorials, API documentation, live code examples
+- **Dependencies**: Includes both ddex-parser and ddex-builder packages for live demos
+- **Math Support**: LaTeX rendering with KaTeX for technical documentation
+
+The site provides complete documentation for all components and includes working examples of the DDEX Suite in action.
+
 ## Next Steps (Q1 2026)
 
-1. Create unified documentation site
+1. ✅ Create unified documentation site (Docusaurus site deployed)
 2. Build interactive tutorials and demo videos
 3. Setup community channels (Discord/Slack)
 4. Official v1.0.0 release announcement

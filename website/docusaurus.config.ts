@@ -3,8 +3,8 @@ import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
-  title: 'DDEX Suite',
-  tagline: 'Parse → Modify → Build with perfect fidelity',
+  title: 'DDEX Suite Documentation',
+  tagline: 'Parse → Modify → Build DDEX metadata with perfect fidelity',
   favicon: 'img/favicon.ico',
   url: 'https://ddex-suite.org',
   baseUrl: '/',
@@ -87,16 +87,16 @@ const config: Config = {
           position: 'left',
           label: 'Documentation',
         },
-        // {
-        //   to: '/parser/intro',
-        //   label: 'Parser',
-        //   position: 'left',
-        // },
-        // {
-        //   to: '/builder/intro',
-        //   label: 'Builder',
-        //   position: 'left',
-        // },
+        {
+          to: '/docs/parser/',
+          label: 'Parser',
+          position: 'left',
+        },
+        {
+          to: '/docs/builder/',
+          label: 'Builder',
+          position: 'left',
+        },
         {to: '/playground', label: 'Playground', position: 'left'},
         {to: '/blog', label: 'Blog', position: 'left'},
         {
@@ -125,14 +125,18 @@ const config: Config = {
               label: 'Getting Started',
               to: '/docs/intro',
             },
-            // {
-            //   label: 'Parser API',
-            //   to: '/parser/intro',
-            // },
-            // {
-            //   label: 'Builder API',
-            //   to: '/builder/intro',
-            // },
+            {
+              label: 'Parser API',
+              to: '/docs/parser/',
+            },
+            {
+              label: 'Builder API',
+              to: '/docs/builder/',
+            },
+            {
+              label: 'API Reference',
+              to: '/docs/api/',
+            },
           ],
         },
         {
