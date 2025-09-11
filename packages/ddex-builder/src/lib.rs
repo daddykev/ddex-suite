@@ -484,10 +484,10 @@ mod tests {
     #[test]
     fn test_preset_application() {
         let mut builder = Builder::new();
-        assert!(builder.apply_preset("spotify_audio_43", false).is_ok());
+        assert!(builder.apply_preset("audio_album", false).is_ok());
         assert!(!builder.is_preset_locked());
         
-        assert!(builder.apply_preset("spotify_audio_43", true).is_ok());
+        assert!(builder.apply_preset("audio_album", true).is_ok());
         assert!(builder.is_preset_locked());
     }
     

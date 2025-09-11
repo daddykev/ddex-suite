@@ -3,7 +3,7 @@
 
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
-use crate::models::{Extensions, common::{Identifier, LocalizedString}};
+use crate::models::{Extensions, Comment, common::{Identifier, LocalizedString}};
 use super::Artist;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,6 +22,8 @@ pub struct Release {
     pub excluded_territory_code: Vec<String>,
     /// Extensions for release
     pub extensions: Option<Extensions>,
+    /// Comments associated with release
+    pub comments: Option<Vec<Comment>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -39,6 +41,8 @@ pub struct Genre {
     pub sub_genre: Option<String>,
     /// Extensions for genre
     pub extensions: Option<Extensions>,
+    /// Comments associated with genre
+    pub comments: Option<Vec<Comment>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -52,6 +56,8 @@ pub struct ReleaseResourceReference {
     pub is_bonus: bool,
     /// Extensions for resource reference
     pub extensions: Option<Extensions>,
+    /// Comments associated with resource reference
+    pub comments: Option<Vec<Comment>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -60,6 +66,8 @@ pub struct ReleaseParty {
     pub role: Vec<String>,
     /// Extensions for release party
     pub extensions: Option<Extensions>,
+    /// Comments associated with release party
+    pub comments: Option<Vec<Comment>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,4 +77,6 @@ pub struct ReleaseEvent {
     pub territory: Option<String>,
     /// Extensions for release event
     pub extensions: Option<Extensions>,
+    /// Comments associated with release event
+    pub comments: Option<Vec<Comment>>,
 }

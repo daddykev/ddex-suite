@@ -464,13 +464,20 @@ enum DdexVersionArg {
 
 #[derive(ValueEnum, Clone, Copy, Debug)]
 enum PresetChoice {
-    Spotify,
-    Youtube,
-    Apple,
-    Amazon,
-    Universal,
-    Sony,
-    Warner,
+    /// Generic audio album preset (DDEX-compliant baseline)
+    AudioAlbum,
+    /// Generic audio single preset (DDEX-compliant baseline)
+    AudioSingle,
+    /// Generic video single preset (DDEX-compliant baseline)
+    VideoSingle,
+    /// Generic compilation preset (DDEX-compliant baseline)
+    Compilation,
+    /// YouTube album preset (based on public documentation)
+    YoutubeAlbum,
+    /// YouTube video preset (based on public documentation)
+    YoutubeVideo,
+    /// YouTube single preset (based on public documentation)
+    YoutubeSingle,
 }
 
 #[derive(ValueEnum, Clone, Debug)]
@@ -1299,13 +1306,13 @@ fn detect_input_format(path: &Path) -> InputFormat {
 
 fn preset_to_string(preset: &PresetChoice) -> String {
     match preset {
-        PresetChoice::Spotify => "spotify_audio_43".to_string(),
-        PresetChoice::Youtube => "youtube_music_43".to_string(),
-        PresetChoice::Apple => "apple_music_43".to_string(),
-        PresetChoice::Amazon => "amazon_music_43".to_string(),
-        PresetChoice::Universal => "universal_43".to_string(),
-        PresetChoice::Sony => "sony_43".to_string(),
-        PresetChoice::Warner => "warner_43".to_string(),
+        PresetChoice::AudioAlbum => "audio_album".to_string(),
+        PresetChoice::AudioSingle => "audio_single".to_string(),
+        PresetChoice::VideoSingle => "video_single".to_string(),
+        PresetChoice::Compilation => "compilation".to_string(),
+        PresetChoice::YoutubeAlbum => "youtube_album".to_string(),
+        PresetChoice::YoutubeVideo => "youtube_video".to_string(),
+        PresetChoice::YoutubeSingle => "youtube_single".to_string(),
     }
 }
 
@@ -1370,25 +1377,50 @@ fn get_available_presets(
     version_filter: Option<DdexVersionArg>,
     partner_filter: Option<PresetChoice>,
 ) -> Result<Vec<PresetInfo>, Box<dyn std::error::Error>> {
-    // TODO: Load presets from ddex_builder::presets module
     let mut presets = vec![
+        // Generic industry-standard presets
         PresetInfo {
-            name: "spotify_audio_43".to_string(),
+            name: "audio_album".to_string(),
             version: "4.3".to_string(),
-            partner: "Spotify".to_string(),
-            description: "Spotify audio release preset for ERN 4.3".to_string(),
+            partner: "Generic".to_string(),
+            description: "DDEX ERN 4.3 audio album baseline preset".to_string(),
         },
         PresetInfo {
-            name: "youtube_music_43".to_string(),
+            name: "audio_single".to_string(),
+            version: "4.3".to_string(),
+            partner: "Generic".to_string(),
+            description: "DDEX ERN 4.3 audio single baseline preset".to_string(),
+        },
+        PresetInfo {
+            name: "video_single".to_string(),
+            version: "4.3".to_string(),
+            partner: "Generic".to_string(),
+            description: "DDEX ERN 4.3 video single baseline preset".to_string(),
+        },
+        PresetInfo {
+            name: "compilation".to_string(),
+            version: "4.3".to_string(),
+            partner: "Generic".to_string(),
+            description: "DDEX ERN 4.3 compilation album baseline preset".to_string(),
+        },
+        // YouTube presets (based on public documentation)
+        PresetInfo {
+            name: "youtube_album".to_string(),
             version: "4.3".to_string(),
             partner: "YouTube".to_string(),
-            description: "YouTube Music release preset for ERN 4.3".to_string(),
+            description: "YouTube Music album preset based on public Partner documentation".to_string(),
         },
         PresetInfo {
-            name: "apple_music_43".to_string(),
+            name: "youtube_video".to_string(),
             version: "4.3".to_string(),
-            partner: "Apple".to_string(),
-            description: "Apple Music release preset for ERN 4.3".to_string(),
+            partner: "YouTube".to_string(),
+            description: "YouTube Music video preset based on public Partner documentation".to_string(),
+        },
+        PresetInfo {
+            name: "youtube_single".to_string(),
+            version: "4.3".to_string(),
+            partner: "YouTube".to_string(),
+            description: "YouTube Music single preset based on public Partner documentation".to_string(),
         },
     ];
 
@@ -1406,13 +1438,13 @@ fn get_available_presets(
 
     if let Some(partner_filter) = partner_filter {
         let partner_str = match partner_filter {
-            PresetChoice::Spotify => "Spotify",
-            PresetChoice::Youtube => "YouTube",
-            PresetChoice::Apple => "Apple",
-            PresetChoice::Amazon => "Amazon",
-            PresetChoice::Universal => "Universal",
-            PresetChoice::Sony => "Sony",
-            PresetChoice::Warner => "Warner",
+            PresetChoice::AudioAlbum => "Generic",
+            PresetChoice::AudioSingle => "Generic", 
+            PresetChoice::VideoSingle => "Generic",
+            PresetChoice::Compilation => "Generic",
+            PresetChoice::YoutubeAlbum => "YouTube",
+            PresetChoice::YoutubeVideo => "YouTube",
+            PresetChoice::YoutubeSingle => "YouTube",
         };
         presets.retain(|p| p.partner == partner_str);
     }

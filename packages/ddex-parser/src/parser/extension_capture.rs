@@ -4,7 +4,7 @@
 //! not part of the standard DDEX schema, enabling perfect round-trip fidelity for
 //! documents containing proprietary extensions.
 
-use ddex_core::models::{Extensions, XmlFragment, ProcessingInstruction, extensions::utils};
+use ddex_core::models::{Extensions, XmlFragment, ProcessingInstruction, Comment, CommentPosition, extensions::utils};
 use quick_xml::{Reader, events::{Event, BytesStart, BytesEnd, BytesText}};
 use indexmap::IndexMap;
 
@@ -31,6 +31,12 @@ pub struct ExtensionCaptureContext {
     
     /// Extensions collected during parsing
     pub extensions: Extensions,
+    
+    /// Current line number for position tracking
+    pub current_line: usize,
+    
+    /// Current column number for position tracking
+    pub current_column: usize,
 }
 
 impl ExtensionCaptureContext {
@@ -44,6 +50,8 @@ impl ExtensionCaptureContext {
             extension_buffer: String::new(),
             current_extension: None,
             extensions: Extensions::new(),
+            current_line: 1,
+            current_column: 1,
         }
     }
 
@@ -212,6 +220,42 @@ impl ExtensionCaptureContext {
     pub fn add_comment(&mut self, comment: String) {
         self.extensions.add_document_comment(comment);
     }
+    
+    /// Add a position-aware comment
+    pub fn add_comment_with_position(
+        &mut self, 
+        comment: String, 
+        position: CommentPosition,
+        line_number: Option<usize>,
+        column_number: Option<usize>
+    ) {
+        let xpath = if !self.element_path.is_empty() {
+            Some(format!("/{}", self.element_path.join("/")))
+        } else {
+            None
+        };
+        
+        let comment_struct = Comment::with_location(
+            comment,
+            position,
+            xpath,
+            line_number,
+            column_number
+        );
+        
+        if self.element_path.is_empty() || matches!(position, CommentPosition::Before | CommentPosition::After) {
+            // Document-level or standalone comment
+            self.extensions.add_document_comment_structured(comment_struct);
+        } else {
+            // Element-level comment - add to current extension or buffer for later association
+            if let Some(ref mut ext) = self.current_extension {
+                ext.comments.push(comment_struct);
+            } else {
+                // Store for later association with the next element
+                self.extensions.add_document_comment_structured(comment_struct);
+            }
+        }
+    }
 
     /// Get the accumulated extensions
     pub fn into_extensions(self) -> Extensions {
@@ -304,7 +348,19 @@ impl ExtensionAwareParser {
                     if self.context.in_extension {
                         self.context.add_extension_content(&format!("<!--{}-->", comment));
                     } else {
-                        self.context.add_comment(comment.to_string());
+                        // Determine comment position based on context
+                        let position = if self.context.element_path.is_empty() {
+                            CommentPosition::Before
+                        } else {
+                            CommentPosition::FirstChild
+                        };
+                        
+                        self.context.add_comment_with_position(
+                            comment.trim().to_string(),
+                            position,
+                            Some(self.context.current_line),
+                            Some(self.context.current_column)
+                        );
                     }
                 },
                 Ok(Event::PI(ref e)) => {

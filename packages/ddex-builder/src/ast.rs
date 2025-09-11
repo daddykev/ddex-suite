@@ -1,6 +1,7 @@
 //! Abstract Syntax Tree for DDEX XML generation
 
 use indexmap::IndexMap;
+use ddex_core::models::{Comment, CommentPosition};
 // Remove unused serde imports since we're not serializing AST
 
 /// Abstract Syntax Tree root
@@ -25,7 +26,9 @@ pub struct Element {
 pub enum Node {
     Element(Element),
     Text(String),
-    Comment(String),
+    Comment(Comment),
+    /// Legacy comment support for backward compatibility
+    SimpleComment(String),
 }
 
 impl Element {
@@ -59,5 +62,22 @@ impl Element {
     
     pub fn add_text(&mut self, text: impl Into<String>) {
         self.children.push(Node::Text(text.into()));
+    }
+    
+    /// Add a structured comment to this element
+    pub fn add_comment(&mut self, comment: Comment) {
+        self.children.push(Node::Comment(comment));
+    }
+    
+    /// Add a simple comment (for backward compatibility)
+    pub fn add_simple_comment(&mut self, comment: impl Into<String>) {
+        self.children.push(Node::SimpleComment(comment.into()));
+    }
+    
+    /// Add a comment with a specific position
+    pub fn with_comment(mut self, content: String, position: CommentPosition) -> Self {
+        let comment = Comment::new(content, position);
+        self.children.push(Node::Comment(comment));
+        self
     }
 }

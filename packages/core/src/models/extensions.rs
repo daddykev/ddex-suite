@@ -40,13 +40,53 @@ pub struct XmlFragment {
     pub processing_instructions: Vec<ProcessingInstruction>,
     
     /// Comments within this fragment
-    pub comments: Vec<String>,
+    pub comments: Vec<Comment>,
     
     /// Position hint for canonical ordering
     pub position_hint: Option<usize>,
     
     /// Whether this fragment should be preserved as-is (no canonicalization)
     pub preserve_formatting: bool,
+}
+
+/// Position of a comment relative to its parent element
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum CommentPosition {
+    /// Comment appears before the element's opening tag
+    Before,
+    /// Comment appears after the element's opening tag but before any child content
+    FirstChild,
+    /// Comment appears after the last child content but before the closing tag
+    LastChild,
+    /// Comment appears after the element's closing tag
+    After,
+    /// Comment appears inline with the element (for text-only elements)
+    Inline,
+}
+
+/// Enhanced comment structure with position and location metadata
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Comment {
+    /// The comment content (without <!-- --> markers)
+    pub content: String,
+    
+    /// Position relative to the parent element
+    pub position: CommentPosition,
+    
+    /// XPath-like location reference for precise positioning
+    pub xpath: Option<String>,
+    
+    /// Line number in original XML (for debugging/tooling)
+    pub line_number: Option<usize>,
+    
+    /// Column number in original XML (for debugging/tooling)
+    pub column_number: Option<usize>,
+    
+    /// Whether this comment should be preserved during canonicalization
+    pub preserve_formatting: bool,
+    
+    /// Processing hints for specific output formats
+    pub processing_hints: IndexMap<String, String>,
 }
 
 /// XML Processing Instruction
@@ -72,7 +112,7 @@ pub struct Extensions {
     pub document_processing_instructions: Vec<ProcessingInstruction>,
     
     /// Document-level comments
-    pub document_comments: Vec<String>,
+    pub document_comments: Vec<Comment>,
     
     /// Legacy simple extensions (for backward compatibility)
     #[serde(flatten)]
@@ -216,7 +256,12 @@ impl XmlFragment {
             
             // Comments
             for comment in &self.comments {
-                xml.push_str(&format!("{}  <!--{}-->\n", indent, comment));
+                let comment_indent = match comment.position {
+                    CommentPosition::Before | CommentPosition::After => indent.clone(),
+                    CommentPosition::FirstChild | CommentPosition::LastChild => format!("{}  ", indent),
+                    CommentPosition::Inline => String::new(),
+                };
+                xml.push_str(&format!("{}{}\n", comment_indent, comment.to_xml()));
             }
             
             // Child elements
@@ -229,6 +274,82 @@ impl XmlFragment {
         }
         
         xml
+    }
+}
+
+impl Comment {
+    /// Create a new comment with minimal information
+    pub fn new(content: String, position: CommentPosition) -> Self {
+        Self {
+            content,
+            position,
+            xpath: None,
+            line_number: None,
+            column_number: None,
+            preserve_formatting: false,
+            processing_hints: IndexMap::new(),
+        }
+    }
+    
+    /// Create a comment with location metadata
+    pub fn with_location(
+        content: String, 
+        position: CommentPosition, 
+        xpath: Option<String>,
+        line_number: Option<usize>,
+        column_number: Option<usize>
+    ) -> Self {
+        Self {
+            content,
+            position,
+            xpath,
+            line_number,
+            column_number,
+            preserve_formatting: false,
+            processing_hints: IndexMap::new(),
+        }
+    }
+    
+    /// Create a comment for document-level usage
+    pub fn document_comment(content: String) -> Self {
+        Self::new(content, CommentPosition::Before)
+    }
+    
+    /// Set preservation of original formatting
+    pub fn preserve_formatting(mut self) -> Self {
+        self.preserve_formatting = true;
+        self
+    }
+    
+    /// Add a processing hint
+    pub fn with_hint(mut self, key: String, value: String) -> Self {
+        self.processing_hints.insert(key, value);
+        self
+    }
+    
+    /// Get canonical comment content with proper whitespace normalization
+    pub fn canonical_content(&self) -> String {
+        if self.preserve_formatting {
+            return self.content.clone();
+        }
+        
+        // Normalize whitespace for canonical output
+        self.content.trim().to_string()
+    }
+    
+    /// Format as XML comment with proper escaping
+    pub fn to_xml(&self) -> String {
+        let content = if self.preserve_formatting {
+            self.content.clone()
+        } else {
+            // Normalize whitespace and ensure no double dashes
+            self.content.trim()
+                .replace("--", "- -")
+                .replace("<!--", "&lt;!--")
+                .replace("-->", "--&gt;")
+        };
+        
+        format!("<!--{}-->", content)
     }
 }
 
@@ -281,6 +402,11 @@ impl Extensions {
     
     /// Add a document-level comment
     pub fn add_document_comment(&mut self, comment: String) {
+        self.document_comments.push(Comment::document_comment(comment));
+    }
+    
+    /// Add a structured document-level comment
+    pub fn add_document_comment_structured(&mut self, comment: Comment) {
         self.document_comments.push(comment);
     }
     

@@ -304,6 +304,9 @@ impl ParallelProcessor {
                         buffer.push_str(&child_xml);
                     }
                     Node::Comment(comment) => {
+                        buffer.push_str(&comment.to_xml());
+                    }
+                    Node::SimpleComment(comment) => {
                         buffer.push_str(&format!("<!-- {} -->", comment));
                     }
                 }

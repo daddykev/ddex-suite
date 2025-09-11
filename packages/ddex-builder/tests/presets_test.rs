@@ -1,7 +1,7 @@
 //! Comprehensive tests for DDEX preset functionality
 
 use ddex_builder::presets::{
-    all_presets, spotify, youtube, DdexVersion, MessageProfile, ValidationRule, PartnerPreset, PresetConfig
+    all_presets, generic, youtube, DdexVersion, MessageProfile, ValidationRule, PartnerPreset, PresetConfig, PresetSource
 };
 use ddex_builder::{Builder, error::BuildError};
 use indexmap::IndexMap;
@@ -10,54 +10,56 @@ use indexmap::IndexMap;
 fn test_all_presets_loaded() {
     let presets = all_presets();
     
-    // Should have at least the core presets
-    assert!(presets.len() >= 7); // 2 legacy + 3 Spotify + 3 YouTube - 1 overlap
+    // Should have generic presets + YouTube presets
+    assert!(presets.len() >= 7); // 4 generic + 3 YouTube
     
-    // Check that key presets are present
-    assert!(presets.contains_key("spotify_album"));
-    assert!(presets.contains_key("spotify_single"));
+    // Check that generic presets are present
+    assert!(presets.contains_key("audio_album"));
+    assert!(presets.contains_key("audio_single"));
+    assert!(presets.contains_key("video_single"));
+    assert!(presets.contains_key("compilation"));
+    
+    // Check that YouTube presets are present
     assert!(presets.contains_key("youtube_album"));
     assert!(presets.contains_key("youtube_video"));
-    
-    // Legacy presets should still be available
-    assert!(presets.contains_key("spotify_audio_43"));
-    assert!(presets.contains_key("apple_music_43"));
+    assert!(presets.contains_key("youtube_single"));
 }
 
 #[test]
-fn test_spotify_presets() {
-    let spotify_presets = spotify::all_spotify_presets();
+fn test_generic_presets() {
+    let generic_presets = generic::all_generic_presets();
     
-    assert_eq!(spotify_presets.len(), 3);
-    assert!(spotify_presets.contains_key("spotify_album"));
-    assert!(spotify_presets.contains_key("spotify_single"));
-    assert!(spotify_presets.contains_key("spotify_ep"));
+    assert_eq!(generic_presets.len(), 4);
+    assert!(generic_presets.contains_key("audio_album"));
+    assert!(generic_presets.contains_key("audio_single"));
+    assert!(generic_presets.contains_key("video_single"));
+    assert!(generic_presets.contains_key("compilation"));
     
-    // Test album preset specifics
-    let album = spotify_presets.get("spotify_album").unwrap();
-    assert_eq!(album.config.version, DdexVersion::Ern43);
-    assert_eq!(album.config.profile, MessageProfile::AudioAlbum);
-    assert!(album.required_fields.contains(&"ISRC".to_string()));
-    assert!(album.required_fields.contains(&"UPC".to_string()));
-    assert!(album.required_fields.contains(&"ExplicitContent".to_string()));
+    // Test audio album preset specifics
+    let audio_album = generic_presets.get("audio_album").unwrap();
+    assert_eq!(audio_album.config.version, DdexVersion::Ern43);
+    assert_eq!(audio_album.config.profile, MessageProfile::AudioAlbum);
+    assert_eq!(audio_album.source, PresetSource::Community);
+    assert!(audio_album.required_fields.contains(&"ISRC".to_string()));
+    assert!(audio_album.required_fields.contains(&"AlbumTitle".to_string()));
+    assert!(audio_album.required_fields.contains(&"ArtistName".to_string()));
     
-    // Test audio quality validation
-    assert!(album.validation_rules.contains_key("AudioQuality"));
-    if let Some(ValidationRule::AudioQuality { min_bit_depth, min_sample_rate }) = 
-        album.validation_rules.get("AudioQuality") {
-        assert_eq!(*min_bit_depth, 16);
-        assert_eq!(*min_sample_rate, 44100);
-    } else {
-        panic!("AudioQuality validation rule not found or incorrect type");
-    }
+    // Test audio single preset specifics
+    let audio_single = generic_presets.get("audio_single").unwrap();
+    assert_eq!(audio_single.config.profile, MessageProfile::AudioSingle);
+    assert!(audio_single.required_fields.contains(&"TrackTitle".to_string()));
+    assert!(!audio_single.required_fields.contains(&"AlbumTitle".to_string()));
     
-    // Test territory code validation
-    assert!(album.validation_rules.contains_key("TerritoryCode"));
-    if let Some(ValidationRule::TerritoryCode { allowed }) = 
-        album.validation_rules.get("TerritoryCode") {
-        assert!(allowed.contains(&"Worldwide".to_string()));
-        assert!(allowed.contains(&"WW".to_string()));
-    }
+    // Test video single preset specifics
+    let video_single = generic_presets.get("video_single").unwrap();
+    assert_eq!(video_single.config.profile, MessageProfile::VideoSingle);
+    assert!(video_single.required_fields.contains(&"VideoResource".to_string()));
+    assert!(video_single.required_fields.contains(&"AudioResource".to_string()));
+    
+    // Test compilation preset specifics
+    let compilation = generic_presets.get("compilation").unwrap();
+    assert!(compilation.config.release_types.contains(&"CompilationAlbum".to_string()));
+    assert!(compilation.required_fields.contains(&"CompilationIndicator".to_string()));
 }
 
 #[test]
@@ -73,6 +75,7 @@ fn test_youtube_presets() {
     let video = youtube_presets.get("youtube_video").unwrap();
     assert_eq!(video.config.version, DdexVersion::Ern43);
     assert_eq!(video.config.profile, MessageProfile::VideoSingle);
+    assert_eq!(video.source, PresetSource::PublicDocs);
     assert!(video.required_fields.contains(&"ContentID".to_string()));
     assert!(video.required_fields.contains(&"ISVN".to_string()));
     assert!(video.required_fields.contains(&"VideoResource".to_string()));
@@ -88,6 +91,11 @@ fn test_youtube_presets() {
     // Test Content ID requirement
     assert!(video.required_fields.contains(&"ContentID".to_string()));
     assert!(video.custom_mappings.contains_key("ContentID"));
+    
+    // Test YouTube album preset
+    let album = youtube_presets.get("youtube_album").unwrap();
+    assert_eq!(album.config.profile, MessageProfile::AudioAlbum);
+    assert!(album.required_fields.contains(&"ContentID".to_string()));
 }
 
 #[test]
@@ -99,11 +107,15 @@ fn test_preset_validation_rules() {
         assert!(!preset.validation_rules.is_empty(), 
                 "Preset {} should have validation rules", name);
         
-        // Required fields should have Required validation
+        // Required fields should have corresponding validation where appropriate
         for field in &preset.required_fields {
-            if field == "ISRC" || field == "UPC" {
+            if field == "ISRC" {
+                // ISRC should have pattern validation
                 assert!(preset.validation_rules.contains_key(field), 
                         "Preset {} should have validation for required field {}", name, field);
+                if let Some(ValidationRule::Pattern(pattern)) = preset.validation_rules.get(field) {
+                    assert!(pattern.contains("[A-Z]{2}[A-Z0-9]{3}"));
+                }
             }
         }
         
@@ -133,10 +145,10 @@ fn test_builder_preset_integration() {
     let available = builder.available_presets();
     assert!(available.len() >= 7);
     
-    // Test applying Spotify album preset
-    assert!(builder.preset("spotify_album").is_ok());
-    let spotify_preset = builder.get_preset("spotify_album").unwrap();
-    assert_eq!(spotify_preset.name, "spotify_album");
+    // Test applying generic audio album preset
+    assert!(builder.preset("audio_album").is_ok());
+    let audio_preset = builder.get_preset("audio_album").unwrap();
+    assert_eq!(audio_preset.name, "audio_album");
     
     // Test applying YouTube video preset
     assert!(builder.preset("youtube_video").is_ok());
@@ -155,24 +167,24 @@ fn test_preset_locking() {
     assert!(!builder.is_preset_locked());
     
     // Apply preset without locking
-    assert!(builder.apply_preset("spotify_album", false).is_ok());
+    assert!(builder.apply_preset("audio_album", false).is_ok());
     assert!(!builder.is_preset_locked());
     
     // Apply preset with locking
-    assert!(builder.apply_preset("spotify_album", true).is_ok());
+    assert!(builder.apply_preset("audio_album", true).is_ok());
     assert!(builder.is_preset_locked());
 }
 
 #[test]
 fn test_custom_mappings() {
-    let spotify_album = spotify::spotify_album();
+    let generic_video = generic::video_single();
     let youtube_video = youtube::youtube_video();
     
-    // Spotify should have explicit content mapping
-    assert!(spotify_album.custom_mappings.contains_key("ExplicitContent"));
+    // Generic video should have basic resource mappings
+    assert!(generic_video.custom_mappings.contains_key("VideoResource"));
     assert_eq!(
-        spotify_album.custom_mappings.get("ExplicitContent").unwrap(),
-        "ParentalWarningType"
+        generic_video.custom_mappings.get("VideoResource").unwrap(),
+        "VideoTechnicalResourceDetails"
     );
     
     // YouTube should have Content ID mapping
@@ -189,12 +201,12 @@ fn test_custom_mappings() {
 
 #[test]
 fn test_default_values() {
-    let spotify_single = spotify::spotify_single();
+    let generic_single = generic::audio_single();
     let youtube_album = youtube::youtube_album();
     
-    // Spotify single should default to Single release type
+    // Generic single should default to Single release type
     assert_eq!(
-        spotify_single.config.default_values.get("ReleaseType").unwrap(),
+        generic_single.config.default_values.get("ReleaseType").unwrap(),
         "Single"
     );
     
@@ -206,7 +218,7 @@ fn test_default_values() {
     
     // Both should default to LiveMessage
     assert_eq!(
-        spotify_single.config.default_values.get("MessageControlType").unwrap(),
+        generic_single.config.default_values.get("MessageControlType").unwrap(),
         "LiveMessage"
     );
     assert_eq!(
@@ -217,34 +229,33 @@ fn test_default_values() {
 
 #[test]
 fn test_release_type_configurations() {
-    let spotify_album = spotify::spotify_album();
-    let spotify_single = spotify::spotify_single();
-    let spotify_ep = spotify::spotify_ep();
+    let generic_album = generic::audio_album();
+    let generic_single = generic::audio_single();
+    let generic_compilation = generic::compilation();
     
     // Album should support album types
-    assert!(spotify_album.config.release_types.contains(&"Album".to_string()));
-    assert!(spotify_album.config.release_types.contains(&"CompilationAlbum".to_string()));
+    assert!(generic_album.config.release_types.contains(&"Album".to_string()));
+    assert!(generic_album.config.release_types.contains(&"CompilationAlbum".to_string()));
     
     // Single should support single types
-    assert!(spotify_single.config.release_types.contains(&"Single".to_string()));
-    assert!(spotify_single.config.release_types.contains(&"VideoSingle".to_string()));
+    assert!(generic_single.config.release_types.contains(&"Single".to_string()));
     
-    // EP should support EP type
-    assert!(spotify_ep.config.release_types.contains(&"EP".to_string()));
+    // Compilation should support compilation type
+    assert!(generic_compilation.config.release_types.contains(&"CompilationAlbum".to_string()));
 }
 
 #[test]
 fn test_territory_codes() {
-    let spotify_album = spotify::spotify_album();
+    let generic_album = generic::audio_album();
     let youtube_video = youtube::youtube_video();
     
     // Both should support worldwide distribution
-    assert!(spotify_album.config.territory_codes.contains(&"Worldwide".to_string()));
+    assert!(generic_album.config.territory_codes.contains(&"Worldwide".to_string()));
     assert!(youtube_video.config.territory_codes.contains(&"Worldwide".to_string()));
     
-    // Territory validation should allow worldwide
+    // YouTube should have territory validation
     if let Some(ValidationRule::TerritoryCode { allowed }) = 
-        spotify_album.validation_rules.get("TerritoryCode") {
+        youtube_video.validation_rules.get("TerritoryCode") {
         assert!(allowed.contains(&"Worldwide".to_string()));
         assert!(allowed.contains(&"WW".to_string()));
     }
@@ -252,11 +263,11 @@ fn test_territory_codes() {
 
 #[test]
 fn test_distribution_channels() {
-    let spotify_album = spotify::spotify_album();
+    let generic_album = generic::audio_album();
     let youtube_album = youtube::youtube_album();
     
-    // Spotify should default to download/purchase channel
-    assert!(spotify_album.config.distribution_channels.contains(&"01".to_string()));
+    // Generic should default to download channel
+    assert!(generic_album.config.distribution_channels.contains(&"01".to_string()));
     
     // YouTube should default to streaming channel
     assert!(youtube_album.config.distribution_channels.contains(&"02".to_string()));
@@ -269,21 +280,22 @@ fn test_preset_provenance() {
     for (name, preset) in presets.iter() {
         // Each preset should have a clear source
         match preset.source {
-            ddex_builder::presets::PresetSource::PublicDocs |
-            ddex_builder::presets::PresetSource::CustomerFeedback |
-            ddex_builder::presets::PresetSource::Community => {
+            PresetSource::PublicDocs |
+            PresetSource::CustomerFeedback |
+            PresetSource::Community => {
                 // Valid source
             }
         }
         
-        // Most presets should have provenance URLs
-        if name.contains("spotify") {
-            assert!(preset.provenance_url.is_some(), 
-                    "Spotify preset {} should have provenance URL", name);
-            assert!(preset.provenance_url.as_ref().unwrap().contains("spotify.com"));
+        // Generic presets should be community-maintained
+        if name.starts_with("audio_") || name == "video_single" || name == "compilation" {
+            assert_eq!(preset.source, PresetSource::Community);
+            assert!(preset.provenance_url.as_ref().unwrap().contains("ddex.net"));
         }
         
+        // YouTube presets should have public docs provenance
         if name.contains("youtube") {
+            assert_eq!(preset.source, PresetSource::PublicDocs);
             assert!(preset.provenance_url.is_some(), 
                     "YouTube preset {} should have provenance URL", name);
             assert!(preset.provenance_url.as_ref().unwrap().contains("google.com") ||
@@ -293,30 +305,35 @@ fn test_preset_provenance() {
         // All presets should have disclaimers
         assert!(!preset.disclaimer.is_empty(), 
                 "Preset {} should have a disclaimer", name);
+        
+        // All presets should have proper disclaimers indicating their nature
+        if name.contains("youtube") {
+            assert!(preset.disclaimer.contains("community-maintained"));
+            assert!(preset.disclaimer.contains("not an official"));
+        }
+        
+        if preset.source == PresetSource::Community {
+            assert!(preset.disclaimer.contains("Generic industry-standard"));
+        }
     }
 }
 
 #[test]  
 fn test_validation_rule_types() {
-    let spotify_album = spotify::spotify_album();
+    let generic_album = generic::audio_album();
     let youtube_video = youtube::youtube_video();
     
-    // Test different validation rule types
-    for (field, rule) in &spotify_album.validation_rules {
+    // Test different validation rule types in generic presets
+    for (field, rule) in &generic_album.validation_rules {
         match rule {
             ValidationRule::Required => {
-                assert!(["ISRC", "UPC", "ReleaseDate", "Genre", "ExplicitContent"]
+                assert!(["ISRC", "ReleaseDate", "Genre", "AlbumTitle", "ArtistName", "TrackTitle"]
                         .contains(&field.as_str()));
             }
-            ValidationRule::AudioQuality { min_bit_depth, min_sample_rate } => {
-                assert_eq!(*min_bit_depth, 16);
-                assert_eq!(*min_sample_rate, 44100);
-            }
-            ValidationRule::TerritoryCode { allowed } => {
-                assert!(allowed.contains(&"Worldwide".to_string()));
-            }
-            ValidationRule::OneOf(options) => {
-                assert!(!options.is_empty());
+            ValidationRule::Pattern(pattern) => {
+                if field == "ISRC" {
+                    assert!(pattern.contains("[A-Z]{2}[A-Z0-9]{3}"));
+                }
             }
             _ => {} // Other rule types are valid
         }
@@ -328,4 +345,81 @@ fn test_validation_rule_types() {
         youtube_video.validation_rules.get("VideoQuality") {
         assert!(qualities.contains(&"HD1080".to_string()));
     }
+}
+
+#[test]
+fn test_generic_preset_baseline_compliance() {
+    let generic_presets = generic::all_generic_presets();
+    
+    for (name, preset) in generic_presets {
+        // All generic presets should be ERN 4.3
+        assert_eq!(preset.config.version, DdexVersion::Ern43);
+        
+        // All should have ISRC validation
+        assert!(preset.validation_rules.contains_key("ISRC"));
+        assert!(preset.required_fields.contains(&"ISRC".to_string()));
+        
+        // All should have basic required fields
+        assert!(preset.required_fields.contains(&"ReleaseDate".to_string()));
+        assert!(preset.required_fields.contains(&"Genre".to_string()));
+        assert!(preset.required_fields.contains(&"ArtistName".to_string()));
+        
+        // All should have proper DDEX baseline defaults
+        assert_eq!(
+            preset.config.default_values.get("MessageControlType").unwrap(),
+            "LiveMessage"
+        );
+        
+        // All should support worldwide territory
+        assert!(preset.config.territory_codes.contains(&"Worldwide".to_string()));
+        
+        println!("✅ Generic preset '{}' passes baseline DDEX compliance", name);
+    }
+}
+
+#[test]
+fn test_youtube_preset_public_doc_compliance() {
+    let youtube_presets = youtube::all_youtube_presets();
+    
+    for (name, preset) in youtube_presets {
+        // All YouTube presets should have PublicDocs source
+        assert_eq!(preset.source, PresetSource::PublicDocs);
+        
+        // All should have Content ID requirements
+        assert!(preset.required_fields.contains(&"ContentID".to_string()));
+        
+        // All should have proper disclaimer
+        assert!(preset.disclaimer.contains("publicly available YouTube Partner documentation"));
+        assert!(preset.disclaimer.contains("community-maintained"));
+        assert!(preset.disclaimer.contains("not an official YouTube specification"));
+        
+        // All should have YouTube-specific mappings
+        assert!(preset.custom_mappings.contains_key("ContentID"));
+        
+        // All should default to streaming channel
+        assert!(preset.config.distribution_channels.contains(&"02".to_string()));
+        
+        println!("✅ YouTube preset '{}' passes public documentation compliance", name);
+    }
+}
+
+#[test]
+fn test_no_speculative_platform_presets() {
+    let presets = all_presets();
+    
+    // Ensure no speculative platform presets remain
+    let speculative_names = [
+        "spotify", "apple", "amazon", "deezer", "tidal", "pandora", 
+        "universal", "sony", "warner", "distrokid", "tunecore"
+    ];
+    
+    for preset_name in presets.keys() {
+        for speculative in &speculative_names {
+            assert!(!preset_name.to_lowercase().contains(speculative),
+                    "Found speculative preset '{}' - only YouTube (public docs) and generic presets should exist", 
+                    preset_name);
+        }
+    }
+    
+    println!("✅ No speculative platform presets found - only YouTube + Generic");
 }

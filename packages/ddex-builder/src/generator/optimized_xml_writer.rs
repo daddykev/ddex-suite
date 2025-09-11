@@ -169,6 +169,12 @@ impl<'a> OptimizedXmlWriter<'a> {
                         }
                         Node::Comment(comment) => {
                             writer.push_str(&self.get_optimized_indent(depth + 1));
+                            let comment_xml = comment.to_xml();
+                            writer.push_str(&comment_xml);
+                            writer.push_str("\n");
+                        }
+                        Node::SimpleComment(comment) => {
+                            writer.push_str(&self.get_optimized_indent(depth + 1));
                             writer.push_str("<!-- ");
                             writer.push_str(comment);
                             writer.push_str(" -->\n");

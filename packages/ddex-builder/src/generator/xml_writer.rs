@@ -1,7 +1,8 @@
 //! XML serialization from AST
 
 use crate::ast::{AST, Element, Node};
-use crate::determinism::{DeterminismConfig, IndentChar};  // Fixed import
+use crate::determinism::{DeterminismConfig, IndentChar};
+use ddex_core::models::CommentPosition;  // Fixed import
 use crate::error::BuildError;
 use indexmap::IndexMap;
 use std::io::Write;
@@ -105,6 +106,9 @@ impl XmlWriter {
                             writeln!(writer, "{}{}", child_indent, self.escape_text(text))?;
                         }
                         Node::Comment(comment) => {
+                            self.write_comment(writer, comment, depth + 1)?;
+                        }
+                        Node::SimpleComment(comment) => {
                             let child_indent = self.get_indent(depth + 1);
                             writeln!(writer, "{}<!-- {} -->", child_indent, comment)?;
                         }
@@ -139,6 +143,35 @@ impl XmlWriter {
             .replace('>', "&gt;")
             .replace('"', "&quot;")
             .replace('\'', "&apos;")
+    }
+    
+    /// Write a structured comment with position-aware formatting
+    fn write_comment(
+        &self,
+        writer: &mut impl Write,
+        comment: &ddex_core::models::Comment,
+        depth: usize,
+    ) -> Result<(), BuildError> {
+        let indent = match comment.position {
+            CommentPosition::Before | CommentPosition::After => {
+                // Comments at element level use element indentation
+                self.get_indent(depth.saturating_sub(1))
+            }
+            CommentPosition::FirstChild | CommentPosition::LastChild => {
+                // Comments inside elements use child indentation
+                self.get_indent(depth)
+            }
+            CommentPosition::Inline => {
+                // Inline comments don't get indentation
+                String::new()
+            }
+        };
+        
+        // Use the comment's XML formatting which handles escaping
+        let comment_xml = comment.to_xml();
+        writeln!(writer, "{}{}", indent, comment_xml)?;
+        
+        Ok(())
     }
 }
 

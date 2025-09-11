@@ -1,27 +1,19 @@
-//! # Partner Presets and Configuration Templates
+//! # DDEX Configuration Presets
 //! 
-//! This module provides pre-configured settings for major music distribution
-//! platforms and industry partners. Presets ensure compliance with specific
-//! partner requirements and reduce configuration complexity.
+//! This module provides pre-configured settings for DDEX message generation.
+//! Presets are community-maintained configuration templates that help ensure
+//! DDEX compliance and reduce configuration complexity.
 //! 
 //! ## Available Presets
 //! 
-//! ### Streaming Platforms
-//! - **Spotify**: Audio releases (ERN 4.3)
-//! - **Apple Music**: Audio and video content
-//! - **YouTube Music**: Audio and video releases
-//! - **Amazon Music**: Audio distribution
-//! - **Deezer**: Audio releases
+//! ### Generic Industry-Standard Presets
+//! - **audio_album**: DDEX-compliant audio album configuration
+//! - **audio_single**: DDEX-compliant single track configuration  
+//! - **video_single**: DDEX-compliant video release configuration
+//! - **compilation**: DDEX-compliant compilation album configuration
 //! 
-//! ### Record Labels  
-//! - **Universal Music Group**: Label-specific requirements
-//! - **Sony Music Entertainment**: Enhanced metadata rules
-//! - **Warner Music Group**: Territory and rights management
-//! 
-//! ### Distributors
-//! - **DistroKid**: Independent artist distribution
-//! - **CD Baby**: Digital distribution standards
-//! - **TuneCore**: Multi-platform distribution
+//! ### Platform Presets (Based on Public Documentation)
+//! - **YouTube Music**: Audio and video releases (based on public Partner docs)
 //! 
 //! ## Architecture
 //! 
@@ -47,14 +39,17 @@
 //! use ddex_builder::presets::*;
 //! use ddex_builder::Builder;
 //! 
-//! // Use Spotify preset
+//! // Use generic audio album preset
 //! let mut builder = Builder::new();
-//! builder.apply_preset(&spotify_audio_43())?;
+//! builder.apply_preset(&generic::audio_album())?;
 //! 
-//! // Or load by name
+//! // Use YouTube preset for video content
+//! builder.apply_preset(&youtube::youtube_video())?;
+//! 
+//! // Load by name
 //! let presets = all_presets();
-//! let spotify = &presets["spotify_audio_43"];
-//! builder.apply_partner_preset(spotify)?;
+//! let audio_album = &presets["audio_album"];
+//! builder.apply_partner_preset(audio_album)?;
 //! 
 //! // List available presets
 //! for (name, preset) in all_presets() {
@@ -82,24 +77,19 @@
 //! use ddex_builder::presets::*;
 //! use indexmap::IndexMap;
 //! 
-//! let mut custom_rules = IndexMap::new();
-//! custom_rules.insert("ISRC".to_string(), ValidationRule::Required);
-//! custom_rules.insert("Genre".to_string(), ValidationRule::OneOf(
-//!     vec!["Rock".to_string(), "Pop".to_string()]
-//! ));
+//! // Start with a generic preset as base
+//! let mut custom_preset = generic::audio_album();
+//! custom_preset.name = "my_label_preset".to_string();
+//! custom_preset.description = "My Record Label Requirements".to_string();
 //! 
-//! let custom_preset = PartnerPreset {
-//!     name: "my_label_preset".to_string(),
-//!     description: "My Record Label Requirements".to_string(),
-//!     version: "1.0.0".to_string(),
-//!     config: PresetConfig {
-//!         version: DdexVersion::Ern43,
-//!         profile: MessageProfile::AudioAlbum,
-//!         validation_rules: custom_rules,
-//!         // ... other configuration
-//!     },
-//!     // ... other fields
-//! };
+//! // Add custom validation rules
+//! custom_preset.validation_rules.insert(
+//!     "Genre".to_string(), 
+//!     ValidationRule::OneOf(vec!["Rock".to_string(), "Pop".to_string()])
+//! );
+//! 
+//! // Add custom territory restrictions
+//! custom_preset.config.territory_codes = vec!["US".to_string(), "CA".to_string()];
 //! ```
 //! 
 //! ## Validation Rules
@@ -114,7 +104,7 @@
 //! - **TerritoryCode**: Allowed distribution territories
 //! - **Custom**: Partner-specific validation logic
 
-pub mod spotify;
+pub mod generic;
 pub mod youtube;
 
 use indexmap::IndexMap;
@@ -217,126 +207,20 @@ pub struct PresetDefaults {
     pub distribution_channel: Vec<String>,
 }
 
-/// Spotify Audio Album ERN 4.3 preset
-pub fn spotify_audio_43() -> PartnerPreset {
-    let mut validation_rules = IndexMap::new();
-    validation_rules.insert("ISRC".to_string(), ValidationRule::Required);
-    validation_rules.insert("UPC".to_string(), ValidationRule::Required);
-    validation_rules.insert("ReleaseDate".to_string(), ValidationRule::Required);
-    validation_rules.insert("Genre".to_string(), ValidationRule::Required);
-    validation_rules.insert("ExplicitContent".to_string(), ValidationRule::Required);
-    validation_rules.insert("AudioQuality".to_string(), ValidationRule::AudioQuality { 
-        min_bit_depth: 16, 
-        min_sample_rate: 44100 
-    });
-    
-    let mut default_values = IndexMap::new();
-    default_values.insert("MessageControlType".to_string(), "LiveMessage".to_string());
-    default_values.insert("TerritoryCode".to_string(), "Worldwide".to_string());
-    default_values.insert("DistributionChannel".to_string(), "01".to_string());
-    
-    let config = PresetConfig {
-        version: DdexVersion::Ern43,
-        profile: MessageProfile::AudioAlbum,
-        required_fields: vec![
-            "ISRC".to_string(),
-            "UPC".to_string(),
-            "ReleaseDate".to_string(),
-            "Genre".to_string(),
-            "ExplicitContent".to_string(),
-        ],
-        validation_rules: validation_rules.clone(),
-        default_values,
-        custom_mappings: IndexMap::new(),
-        territory_codes: vec!["Worldwide".to_string()],
-        distribution_channels: vec!["01".to_string()],
-        release_types: vec!["Album".to_string(), "Single".to_string(), "EP".to_string()],
-    };
 
-    PartnerPreset {
-        name: "spotify_audio_43".to_string(),
-        description: "Spotify Audio Album ERN 4.3 requirements".to_string(),
-        source: PresetSource::PublicDocs,
-        provenance_url: Some("https://support.spotify.com/artists/article/ddex-delivery-spec".to_string()),
-        version: "1.0.0".to_string(),
-        locked: false,
-        disclaimer: "Community-maintained config template. Not an official spec.".to_string(),
-        determinism: super::determinism::DeterminismConfig::default(),
-        defaults: PresetDefaults {
-            message_control_type: Some("LiveMessage".to_string()),
-            territory_code: vec!["Worldwide".to_string()],
-            distribution_channel: vec!["01".to_string()],
-        },
-        required_fields: config.required_fields.clone(),
-        format_overrides: IndexMap::new(),
-        config,
-        validation_rules,
-        custom_mappings: IndexMap::new(),
-    }
-}
-
-/// Apple Music ERN 4.3 preset (updated with new structure)
-pub fn apple_music_43() -> PartnerPreset {
-    let mut validation_rules = IndexMap::new();
-    validation_rules.insert("ISRC".to_string(), ValidationRule::Required);
-    validation_rules.insert("UPC".to_string(), ValidationRule::Required);
-    validation_rules.insert("ReleaseDate".to_string(), ValidationRule::Required);
-    
-    let mut default_values = IndexMap::new();
-    default_values.insert("MessageControlType".to_string(), "LiveMessage".to_string());
-    default_values.insert("TerritoryCode".to_string(), "Worldwide".to_string());
-    default_values.insert("DistributionChannel".to_string(), "01".to_string());
-    
-    let config = PresetConfig {
-        version: DdexVersion::Ern43,
-        profile: MessageProfile::AudioAlbum,
-        required_fields: vec![
-            "ISRC".to_string(),
-            "UPC".to_string(),
-            "ReleaseDate".to_string(),
-        ],
-        validation_rules: validation_rules.clone(),
-        default_values,
-        custom_mappings: IndexMap::new(),
-        territory_codes: vec!["Worldwide".to_string()],
-        distribution_channels: vec!["01".to_string()],
-        release_types: vec!["Album".to_string(), "Single".to_string()],
-    };
-
-    PartnerPreset {
-        name: "apple_music_43".to_string(),
-        description: "Apple Music ERN 4.3 requirements".to_string(),
-        source: PresetSource::PublicDocs,
-        provenance_url: Some("https://help.apple.com/itc/musicspec/".to_string()),
-        version: "1.0.0".to_string(),
-        locked: false,
-        disclaimer: "Community-maintained config template. Not an official spec.".to_string(),
-        determinism: super::determinism::DeterminismConfig::default(),
-        defaults: PresetDefaults {
-            message_control_type: Some("LiveMessage".to_string()),
-            territory_code: vec!["Worldwide".to_string()],
-            distribution_channel: vec!["01".to_string()],
-        },
-        required_fields: config.required_fields.clone(),
-        format_overrides: IndexMap::new(),
-        config,
-        validation_rules,
-        custom_mappings: IndexMap::new(),
-    }
-}
 
 /// Get all built-in presets
+/// 
+/// Returns a collection of community-maintained DDEX configuration presets.
+/// These presets provide baseline DDEX-compliant configurations and platform-specific
+/// templates based on publicly available documentation.
 pub fn all_presets() -> IndexMap<String, PartnerPreset> {
     let mut presets = IndexMap::new();
     
-    // Legacy presets
-    presets.insert("spotify_audio_43".to_string(), spotify_audio_43());
-    presets.insert("apple_music_43".to_string(), apple_music_43());
+    // Generic industry-standard presets
+    presets.extend(generic::all_generic_presets());
     
-    // Spotify presets
-    presets.extend(spotify::all_spotify_presets());
-    
-    // YouTube presets  
+    // Platform presets (based on public documentation)
     presets.extend(youtube::all_youtube_presets());
     
     presets

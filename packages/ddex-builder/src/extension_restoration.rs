@@ -4,7 +4,7 @@
 //! during parsing, ensuring perfect round-trip fidelity for documents containing
 //! proprietary extensions.
 
-use ddex_core::models::{Extensions, XmlFragment, ProcessingInstruction};
+use ddex_core::models::{Extensions, XmlFragment, ProcessingInstruction, Comment};
 use crate::error::BuildError;
 use indexmap::IndexMap;
 use std::io::Write;
@@ -81,7 +81,7 @@ impl ExtensionRestorationContext {
     }
 
     /// Get document-level comments
-    pub fn get_document_comments(&self) -> &[String] {
+    pub fn get_document_comments(&self) -> &[Comment] {
         &self.extensions.document_comments
     }
 
@@ -142,7 +142,7 @@ impl<W: Write> ExtensionAwareWriter<W> {
     /// Write document-level comments
     pub fn write_document_comments(&mut self) -> Result<(), BuildError> {
         for comment in self.context.get_document_comments() {
-            writeln!(self.writer, "<!--{}-->", comment)?;
+            writeln!(self.writer, "{}", comment.to_xml())?;
         }
         Ok(())
     }

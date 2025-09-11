@@ -73,7 +73,7 @@ pub fn youtube_album() -> PartnerPreset {
         provenance_url: Some("https://support.google.com/youtube/answer/1311402".to_string()),
         version: "1.0.0".to_string(),
         locked: false,
-        disclaimer: "Based on YouTube Partner documentation. Content ID requirements may vary.".to_string(),
+        disclaimer: "Based on publicly available YouTube Partner documentation. This preset is community-maintained and not an official YouTube specification. Verify current requirements with YouTube Partner support.".to_string(),
         determinism: super::super::determinism::DeterminismConfig::default(),
         defaults: PresetDefaults {
             message_control_type: Some("LiveMessage".to_string()),
@@ -157,7 +157,7 @@ pub fn youtube_video() -> PartnerPreset {
         provenance_url: Some("https://support.google.com/youtube/answer/1311402".to_string()),
         version: "1.0.0".to_string(),
         locked: false,
-        disclaimer: "Based on YouTube Partner documentation. Video encoding requirements may vary.".to_string(),
+        disclaimer: "Based on publicly available YouTube Partner documentation. This preset is community-maintained and not an official YouTube specification. Video encoding requirements may vary - verify current requirements with YouTube Partner support.".to_string(),
         determinism: super::super::determinism::DeterminismConfig::default(),
         defaults: PresetDefaults {
             message_control_type: Some("LiveMessage".to_string()),

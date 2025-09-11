@@ -336,16 +336,19 @@ for dsp, dsp_config in DSP_CONFIGS.items():
     # Filter releases for this DSP based on territory rights
     dsp_releases = filter_by_territory_rights(releases_df, dsp_config['territories'])
     
-    # Apply DSP-specific preset
-    builder.apply_preset(dsp_config['preset_name'])
     
-    # Build DDEX message with DSP-specific formatting
+    # Build DDEX message with generic configuration as base
+    if dsp == 'youtube':
+        builder.apply_preset('youtube_album')
+    else:
+        builder.apply_preset('audio_album')  # Generic baseline
+    
     result = builder.build({
         'header': {
             'message_sender': {'party_name': [{'text': 'XYZ Music Entertainment'}]},
             'message_recipient': {'party_name': [{'text': dsp_config['name']}]}
         },
-        'version': dsp_config['ern_version'],  # DSP-specific version
+        'version': dsp_config['ern_version'],
         'profile': 'AudioAlbum',
         'releases': dsp_releases.to_dict('records'),
         'deals': generate_deals_for_dsp(dsp_releases, dsp_config)
@@ -535,8 +538,8 @@ import * as fs from 'fs/promises';
 const parser = new DDEXParser();
 const builder = new DDEXBuilder();
 
-// Apply partner-specific configuration with lock
-builder.applyPreset('spotify_audio_43', { lock: true });
+// Apply generic baseline configuration
+builder.applyPreset('audio_album', { lock: true });
 
 // 1. PARSE an existing message
 const originalXml = await fs.readFile('path/to/original.xml');
@@ -947,15 +950,15 @@ Generated schemas include machine-readable canonicalization hints:
 }
 ```
 
-## Partner Presets System
+## Configuration Presets System
 
-Configuration templates with provenance tracking, versioning, and safety features:
+Community-maintained configuration templates that provide baseline DDEX compliance and platform-specific settings based on publicly available documentation:
 
 ```typescript
 interface PartnerPreset {
   name: string;
   description: string;
-  source: 'public_docs' | 'customer_feedback';
+  source: 'public_docs' | 'community';
   provenanceUrl?: string;
   version: string;
   locked?: boolean;
@@ -970,14 +973,14 @@ interface PartnerPreset {
   formatOverrides: Record<string, any>;
 }
 
-// Example preset from public documentation
-const SPOTIFY_AUDIO_43: PartnerPreset = {
-  name: 'spotify_audio_43',
-  description: 'Spotify Audio Album ERN 4.3 requirements (config template)',
-  source: 'public_docs',
-  provenanceUrl: 'https://support.spotify.com/artists/article/ddex-delivery-spec',
+// Example: Generic industry-standard preset
+const AUDIO_ALBUM_GENERIC: PartnerPreset = {
+  name: 'audio_album',
+  description: 'Generic Audio Album ERN 4.3 - DDEX-compliant baseline configuration',
+  source: 'community',
+  provenanceUrl: 'https://ddex.net/standards/',
   version: '1.0.0',
-  disclaimer: 'Presets are community-maintained config templates derived from public documentation and implementer feedback. They are not official specs and do not replace ingestion testing.',
+  disclaimer: 'Generic industry-standard preset based on DDEX ERN 4.3 specification. Customize for specific platform requirements.',
   determinism: {
     canonMode: 'db-c14n',
     sortStrategy: 'canonical',
@@ -989,10 +992,19 @@ const SPOTIFY_AUDIO_43: PartnerPreset = {
     messageControlType: 'LiveMessage',
     distributionChannel: ['01'] // Download
   },
-  requiredFields: ['ISRC', 'UPC', 'ReleaseDate', 'Genre'],
-  formatOverrides: {
-    'Duration': 'PT{minutes}M{seconds}S'
-  }
+  requiredFields: ['ISRC', 'ReleaseDate', 'Genre', 'AlbumTitle', 'ArtistName', 'TrackTitle'],
+  formatOverrides: {}
+};
+
+// Example: YouTube preset (based on public documentation)
+const YOUTUBE_ALBUM: PartnerPreset = {
+  name: 'youtube_album',
+  description: 'YouTube Music Album ERN 4.2/4.3 with Content ID requirements',
+  source: 'public_docs',
+  provenanceUrl: 'https://support.google.com/youtube/answer/1311402',
+  version: '1.0.0',
+  disclaimer: 'Based on publicly available YouTube Partner documentation. This preset is community-maintained and not an official YouTube specification. Verify current requirements with YouTube Partner support.',
+  // ... configuration details
 };
 ```
 
@@ -1018,8 +1030,11 @@ ddex-parser batch *.xml --parallel 4 --output-dir parsed/
 ### Builder CLI Commands
 
 ```bash
-# Build from JSON
-ddex-builder build --from-json request.json --ern 4.3 --preset spotify_audio_43 --preset-lock --db-c14n --id stable-hash:v1 --out out.xml
+# Build from JSON with generic preset
+ddex-builder build --from-json request.json --ern 4.3 --preset audio_album --preset-lock --db-c14n --id stable-hash:v1 --out out.xml
+
+# Build from JSON with YouTube preset
+ddex-builder build --from-json request.json --ern 4.3 --preset youtube_album --preset-lock --db-c14n --id stable-hash:v1 --out out.xml
 
 # Canonicalize existing XML
 ddex-builder canon in.xml > out.xml
@@ -1034,7 +1049,7 @@ ddex-builder ids --explain Release ./materials.json
 ddex-builder build --from-json request.json --verify-determinism 5
 
 # Show preset diff after upgrade
-ddex-builder preset-diff spotify_audio_43 --from-version 1.0.0 --to-version 1.1.0
+ddex-builder preset-diff audio_album --from-version 1.0.0 --to-version 1.1.0
 
 # Export JSON Schema for a profile
 ddex-builder build --from-json request.json --schema-out schema.json
@@ -1592,7 +1607,7 @@ ddex-suite/
   - [x] API consistency report generated
 
 #### 3.4 Advanced Builder Features
-- [x] Add partner presets (Spotify, YouTube)
+- [x] Add configuration presets (Generic industry-standard + YouTube)
 - [x] Implement streaming writer
 - [x] Add semantic diff engine
 - [x] Support UpdateReleaseMessage
@@ -1660,7 +1675,7 @@ ddex-suite/
 #### 4.3 Perfect Fidelity Engine
 - [x] Implement full DB-C14N/1.0 spec
 - [x] Create extension preservation system
-- [ ] Build comment retention engine
+- [x] Build comment retention engine
 - [ ] Add namespace management
 - [ ] Implement attribute preservation
 - [ ] Test with 100+ real-world files

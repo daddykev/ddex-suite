@@ -5,6 +5,27 @@ All notable changes to the DDEX Suite project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### 🔄 BREAKING: Partner Presets Refactor
+- **Removed speculative platform presets**: All presets without public DDEX specifications have been removed
+- **Generic industry-standard presets added**: New baseline DDEX-compliant presets (`audio_album`, `audio_single`, `video_single`, `compilation`)
+- **YouTube presets retained**: Only platform with publicly available DDEX documentation
+- **Enhanced custom preset framework**: New `CustomPresetBuilder` for creating organization-specific configurations
+- **Comprehensive migration guide**: Step-by-step guide for updating existing configurations
+
+### Added
+- **Comment retention engine**: Full XML comment preservation throughout parse → build round-trip
+- **Position-aware comments**: Comments track their relationship to parent elements (before/after/inside)
+- **Custom preset templates**: Well-documented templates for creating platform-specific presets
+- **Preset architecture documentation**: Complete guide to the new preset system philosophy and usage
+
+### Migration Required
+- Replace `spotify_album` → `audio_album` + custom configuration
+- Replace `apple_music_43` → `audio_album` + custom configuration  
+- Use `youtube_album`/`youtube_video` for YouTube (retained, based on public docs)
+- See `docs/PRESET_MIGRATION.md` for complete migration guide
+
 ## [0.2.5] - 2025-01-10
 
 ### Changed
