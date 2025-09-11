@@ -52,11 +52,8 @@ print(xml_output[:100] + '...')
 - Content-addressable resource IDs for reliable references
 
 ### 🏭 Industry Presets
-- **Spotify**: Optimized for streaming platform requirements
-- **Apple Music**: iTunes Store compliance and best practices  
-- **Amazon Music**: Prime Music and Unlimited specifications
 - **YouTube Music**: Content ID and monetization standards
-- **Universal**: Generic preset suitable for most distributors
+- **Generic**: Default preset suitable for most distributors
 
 ### 📊 DataFrame Integration
 - Build directly from pandas DataFrames
@@ -194,15 +191,15 @@ xml_result = asyncio.run(build_large_catalog())
 
 ### Industry Presets
 
-#### Spotify Preset
+#### Generic Preset
 
 ```python
-from ddex_builder import DDEXBuilder, SpotifyPreset
+from ddex_builder import DDEXBuilder, GenericPreset
 
-builder = DDEXBuilder(preset='spotify')
+builder = DDEXBuilder(preset='generic')
 
-# Spotify-specific optimizations:
-# - Spotify Artist ID
+# Generic optimizations:
+# - Standard DDEX compliance
 
 xml = builder.build_from_dict(catalog_data, version='4.3')
 ```

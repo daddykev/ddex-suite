@@ -105,7 +105,7 @@ interface ParsedRelease {
 - **Cross-Platform**: Native bindings for Node.js, Python, and browsers (WASM)
 
 ### 🔄 In Development
-- **Partner Presets**: Optimized configurations for Spotify, YouTube, Amazon (v1.1)
+- **Partner Presets**: Optimized configurations for YouTube (v1.1)
 - **Streaming**: Handle massive catalogs with backpressure and progress callbacks
 - **Semantic Diff**: Track changes between DDEX message versions
 - **Full Python Support**: Complete PyPI release for parser
@@ -164,7 +164,7 @@ builder = DDEXBuilder()
 xml = builder.build({
     'header': {
         'message_sender': {'party_name': [{'text': 'My Label'}]},
-        'message_recipient': {'party_name': [{'text': 'Spotify'}]}
+        'message_recipient': {'party_name': [{'text': 'YouTube'}]}
     },
     'version': '4.3',
     'releases': [{

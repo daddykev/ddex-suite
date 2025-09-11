@@ -4,10 +4,10 @@ This directory contains comprehensive, real-world examples demonstrating how to 
 
 ## 📚 Available Examples
 
-### 🎵 [Spotify Album Example](spotify_album_example.rs)
-**Complete album release for Spotify distribution**
+### 🎵 [Generic Album Example](generic_album_example.rs)
+**Complete album release using generic preset**
 
-Learn how to create a multi-track album optimized for Spotify's requirements:
+Learn how to create a multi-track album for broad distributor compatibility:
 - ERN 4.3 schema compliance
 - High-quality audio specifications (FLAC source)
 - Worldwide streaming licensing
@@ -15,11 +15,11 @@ Learn how to create a multi-track album optimized for Spotify's requirements:
 - Album artwork and metadata
 
 ```bash
-cargo run --example spotify_album_example
+cargo run --example generic_album_example
 ```
 
 **What you'll learn:**
-- Spotify preset configuration
+- Generic preset configuration
 - Album structure and track ordering
 - Audio quality requirements
 - Streaming deal configuration
@@ -107,7 +107,7 @@ Example Structure
 
 We recommend following the examples in this order:
 
-1. **Start with Spotify Album** - Learn basic DDEX concepts
+1. **Start with Generic Album** - Learn basic DDEX concepts
 2. **Explore YouTube Video** - Understand video content delivery  
 3. **Try Streaming Catalog** - Learn batch processing patterns
 4. **Finish with Diff Comparison** - Master version management
@@ -144,12 +144,12 @@ done
 Each example generates XML files and detailed console output:
 
 ```text
-🎵 DDEX Builder - Spotify Album Example
-Creating a complete album release optimized for Spotify...
+🎵 DDEX Builder - Generic Album Example
+Creating a complete album release for broad distribution...
 
-✅ Applied Spotify Audio 4.3 preset
+✅ Applied Generic Audio 4.3 preset
    • ERN 4.3 schema validation enabled
-   • Spotify-specific field requirements active
+   • Standard field requirements active
    • High-quality audio validation enabled
 
 📀 Album Information:
@@ -165,12 +165,12 @@ Creating a complete album release optimized for Spotify...
    📄 XML size: 45 KB
    ⏱️  Generation time: 12ms
 
-🔍 Validating Spotify compliance...
-✅ All Spotify compliance checks passed
+🔍 Validating DDEX compliance...
+✅ All standard compliance checks passed
 
-💾 Saved to: spotify_album_example.xml
+💾 Saved to: generic_album_example.xml
 
-🎯 Spotify Compliance Summary:
+🎯 DDEX Compliance Summary:
   📋 DDEX Version: ERN 4.3 ✅
   🎵 Message Profile: Audio Album ✅
   🌍 Territory: Worldwide ✅
@@ -182,7 +182,7 @@ Creating a complete album release optimized for Spotify...
   📡 Streaming Rights: Enabled ✅
   💳 Subscription Model: Enabled ✅
 
-🎉 Album is ready for Spotify distribution!
+🎉 Album is ready for distribution!
 ```
 
 ## 📖 Common Patterns
@@ -353,7 +353,7 @@ diff -u release1.xml release2.xml
 
 We welcome contributions to improve these examples:
 
-1. **Add new platform examples** (Apple Music, Amazon Music, etc.)
+1. **Add new platform examples** (YouTube Music, etc.)
 2. **Improve error messages** and user guidance
 3. **Add more real-world scenarios** (classical, podcasts, etc.)
 4. **Enhance validation** with additional checks

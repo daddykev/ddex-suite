@@ -27,7 +27,7 @@ Choose your preferred language and get started immediately:
 ```typescript
 import { DDEXBuilder } from 'ddex-builder';
 
-const builder = new DDEXBuilder({ validate: true, preset: 'universal' });
+const builder = new DDEXBuilder({ validate: true, preset: 'youtube' });
 
 const releaseData = {
   messageHeader: {
@@ -55,7 +55,7 @@ console.log('Generated deterministic DDEX XML:', xml.length, 'bytes');
 from ddex_builder import DDEXBuilder
 import pandas as pd
 
-builder = DDEXBuilder(validate=True, preset='universal')
+builder = DDEXBuilder(validate=True, preset='youtube')
 
 release_data = {
     'message_header': {
@@ -85,7 +85,7 @@ use ddex_builder_core::DDEXBuilder;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let builder = DDEXBuilder::new()
         .with_validation(true)
-        .with_preset("universal");
+        .with_preset("youtube");
     
     let release_data = serde_json::json!({
         "message_header": {
@@ -119,12 +119,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 - **Stable ordering** ensures identical output across all platforms
 
 ### 🏭 Industry Presets
-- **Spotify**: Streaming platform requirements and content flags
 - **YouTube Music**: Content ID and monetization standards
-- **Amazon Music**: Prime Music and Unlimited requirements
 - **Generic**: Default preset for broad distributor compatibility
 
-### 🌐 Universal Compatibility
+### 🌐 Cross-Platform Compatibility
 - **Node.js 16+** with native addon performance  
 - **Python 3.8+** with comprehensive type hints
 - **Browser support** via optimized WASM (<400KB)
@@ -220,26 +218,26 @@ xml = build_streaming_catalog('massive_catalog.csv')
 Pre-configured settings for major platforms:
 
 ```typescript
-// Apply Spotify preset for streaming optimization
-const spotifyBuilder = new DDEXBuilder({ preset: 'spotify' });
+// Apply YouTube preset for content ID optimization
+const youtubeBuilder = new DDEXBuilder({ preset: 'youtube' });
 
 // Automatically applies:
-// - Explicit content flagging requirements
-// - Territory-specific streaming rights  
-// - Preferred genre normalization
-// - Audio quality specifications
-// - Spotify-specific metadata fields
+// - Content ID requirements
+// - Territory-specific usage rights  
+// - Video content metadata
+// - Monetization compatibility
+// - YouTube-specific metadata fields
 ```
 
 ```python
-# Apply Apple Music preset for iTunes Store compliance
-builder = DDEXBuilder(preset='apple_music')
+# Apply YouTube Music preset for Content ID compliance
+builder = DDEXBuilder(preset='youtube_music')
 
 # Automatically applies:
-# - iTunes Store compliance rules
-# - Mastered for iTunes requirements
-# - Region-specific pricing tiers
-# - Album artwork specifications
+# - Content ID requirements
+# - Monetization compatibility
+# - Territory-specific rights
+# - Video content specifications
 ```
 
 ### Round-Trip Compatibility
@@ -305,18 +303,18 @@ Performance comparison across environments and languages:
 
 ## Industry Presets Reference
 
-### Spotify Preset
+### Generic Preset
 ```yaml
-name: "spotify"
-description: "Optimized for Spotify streaming platform"
+name: "generic"
+description: "Default preset for broad distributor compatibility"
 requirements:
-  - explicit_content_flag: required
-  - territory_restrictions: streaming_only
-  - artist_id: required
+  - explicit_content_flag: optional
+  - territory_restrictions: none
+  - artist_id: optional
 validation_rules:
   - isrc: required
   - duration: min_30_seconds
-  - territories: ["WorldWide", "US", "EU"]
+  - territories: ["WorldWide"]
 ```
 
 ### YouTube Music Preset
@@ -471,7 +469,7 @@ npm run test:determinism
 
 ### Current Status (v0.2.0)
 - ✅ Deterministic XML generation with DB-C14N/1.0
-- ✅ Industry preset system (Spotify, Apple, YouTube, Amazon)
+- ✅ Industry preset system (YouTube, Generic)
 - ✅ Comprehensive validation engine
 - ✅ JavaScript/TypeScript bindings (Node.js + Browser)
 - ✅ Python bindings with pandas integration

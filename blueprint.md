@@ -294,7 +294,7 @@ for await (const batch of catalogStream) {
   const { xml, warnings, canonicalHash } = await builder.build({
     header: {
       messageSender: { partyName: [{ text: 'XYZ Music Group' }] },
-      messageRecipient: { partyName: [{ text: 'Spotify' }] }
+      messageRecipient: { partyName: [{ text: 'YouTube' }] }
     },
     version: '4.3',
     profile: 'AudioAlbum',

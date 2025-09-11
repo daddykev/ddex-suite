@@ -102,7 +102,7 @@ const DDEXUploader: React.FC = () => {
 - Optimized WASM for browsers (<500KB gzipped)
 - Streaming support for large catalog files
 
-### 🌐 Universal Compatibility
+### 🌐 Cross-Platform Compatibility
 - **Node.js 16+** with native bindings
 - **Browser** support via optimized WASM
 - **TypeScript-first** with comprehensive type definitions

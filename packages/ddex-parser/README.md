@@ -90,7 +90,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 - **Flattened Model**: Developer-friendly denormalized data (easy to consume)
 - Full round-trip fidelity between both representations
 
-### 🌐 Universal Compatibility
+### 🌐 Cross-Platform Compatibility
 - **Node.js 16+** with native addon performance
 - **Browser support** via optimized WASM (<500KB)
 - **Python 3.8+** with comprehensive type hints

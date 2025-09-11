@@ -88,16 +88,14 @@ builder.buildFromObject(releaseData, { version: '4.3' })
 - Stable ordering ensures identical output across Node.js versions
 - Content-addressable resource IDs for reliable references
 
-### 🌐 Universal Compatibility
+### 🌐 Cross-Platform Compatibility
 - **Node.js 16+** with native addon performance
 - **Browser support** via optimized WASM bundle (<400KB)
 - **TypeScript-first** with comprehensive type definitions
 - **ESM and CommonJS** support for maximum compatibility
 
 ### 🏭 Industry Presets
-- **Spotify**: Streaming platform optimization with artist IDs
 - **YouTube Music**: Content ID and monetization settings
-- **Amazon Music**: Prime and Unlimited platform standards
 - **Generic**: Default preset for broad distributor compatibility
 
 ### 🚀 High Performance
@@ -198,17 +196,17 @@ const xml = await builder.buildStream(dataStream);
 
 ### Industry Presets
 
-#### Spotify Preset
+#### Generic Preset
 
 ```typescript
-import { DDEXBuilder, SpotifyPreset } from 'ddex-builder';
+import { DDEXBuilder, GenericPreset } from 'ddex-builder';
 
-const builder = new DDEXBuilder({ preset: 'spotify' });
+const builder = new DDEXBuilder({ preset: 'generic' });
 
 // Automatically applies:
-// - Explicit content flagging requirements
-// - Territory-specific streaming rights
-// - Artist ID
+// - Basic DDEX compliance
+// - Standard territory handling
+// - Default validation rules
 
 const xml = await builder.buildFromObject(catalogData, { version: '4.3' });
 ```
@@ -385,10 +383,10 @@ const builder = new DDEXBuilder({ validate: true });
 
 app.post('/api/ddex/build', async (req, res) => {
   try {
-    const { data, version = '4.3', preset = 'universal' } = req.body;
+    const { data, version = '4.3', preset = 'youtube' } = req.body;
     
     // Apply preset if specified
-    if (preset !== 'universal') {
+    if (preset !== 'youtube') {
       builder.applyPreset(preset);
     }
     
@@ -526,7 +524,7 @@ const worker = new Worker('/ddex-worker.js');
 worker.postMessage({
   type: 'BUILD_DDEX',
   data: releaseData,
-  options: { version: '4.3', preset: 'spotify' }
+  options: { version: '4.3', preset: 'youtube' }
 });
 
 worker.onmessage = (event) => {
