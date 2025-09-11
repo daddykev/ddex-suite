@@ -19,6 +19,8 @@
     "@docusaurus/plugin-google-gtag": "^3.8.1",
     "@docusaurus/preset-classic": "3.8.1",
     "@mdx-js/react": "^3.0.0",
+    "@monaco-editor/react": "^4.7.0",
+    "allotment": "^1.20.4",
     "clsx": "^2.0.0",
     "ddex-builder": "^0.2.5",
     "ddex-parser": "^0.2.5",
