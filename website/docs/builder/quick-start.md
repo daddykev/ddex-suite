@@ -193,28 +193,48 @@ const soundRecording = {
 
 ## Using Presets
 
-Presets configure the builder for specific platforms and use cases:
+Presets configure the builder using our transparent, maintainable approach:
 
-### Platform-Specific Builds
+### YouTube Presets (Public Specification)
 
 ```typescript
-// Spotify preset - streaming platform requirements
-const spotifyBuilder = new DdexBuilder();
-spotifyBuilder.applyPreset('spotify');
+// YouTube Album preset - based on public specification
+const youtubeAlbumBuilder = new DdexBuilder();
+youtubeAlbumBuilder.applyPreset('youtube_album');
 
-const spotifyXml = await spotifyBuilder.build(releaseData);
+const youtubeXml = await youtubeAlbumBuilder.build(releaseData);
 
-// YouTube Music preset - Content ID requirements  
-const youtubeBuilder = new DdexBuilder();
-youtubeBuilder.applyPreset('youtube_music');
+// YouTube Single preset - Content ID requirements  
+const youtubeSingleBuilder = new DdexBuilder();
+youtubeSingleBuilder.applyPreset('youtube_single');
 
-const youtubeXml = await youtubeBuilder.build(releaseData);
+const youtubeSingleXml = await youtubeSingleBuilder.build(releaseData);
+```
 
-// Apple Music preset - iTunes Store compliance
-const appleBuilder = new DdexBuilder();
-appleBuilder.applyPreset('apple_music');
+### Generic DDEX-Compliant Presets
 
-const appleXml = await appleBuilder.build(releaseData);
+```typescript
+// Generic Audio Album - DDEX-compliant baseline
+const genericAlbumBuilder = new DdexBuilder();
+genericAlbumBuilder.applyPreset('generic_audio_album');
+
+const genericAlbumXml = await genericAlbumBuilder.build(releaseData);
+
+// Generic Audio Single - Universal compatibility
+const genericSingleBuilder = new DdexBuilder();
+genericSingleBuilder.applyPreset('generic_audio_single');
+
+const genericSingleXml = await genericSingleBuilder.build(releaseData);
+```
+
+### Custom Presets
+
+```typescript
+// Load organization-specific preset
+const customBuilder = new DdexBuilder();
+customBuilder.loadCustomPreset('./my-label-preset.json');
+
+const customXml = await customBuilder.build(releaseData);
 ```
 
 ### Preset Comparison
@@ -222,12 +242,14 @@ const appleXml = await appleBuilder.build(releaseData);
 ```typescript
 // See what presets are available
 console.log('Available presets:', builder.getAvailablePresets());
+// Output: ['youtube_album', 'youtube_single', 'youtube_video', 'generic_audio_album', 'generic_audio_single', 'generic_video_single', 'generic_compilation']
 
 // Get detailed preset information
-const spotifyInfo = builder.getPresetInfo('spotify');
-console.log('Spotify preset:', spotifyInfo);
-console.log('Required fields:', spotifyInfo.requiredFields);
-console.log('Validation rules:', builder.getPresetValidationRules('spotify'));
+const youtubeInfo = builder.getPresetInfo('youtube_album');
+console.log('YouTube preset:', youtubeInfo);
+console.log('Required fields:', youtubeInfo.requiredFields);
+console.log('Validation rules:', builder.getPresetValidationRules('youtube_album'));
+console.log('Specification:', youtubeInfo.specification); // "Based on YouTube's publicly available DDEX Content ID specification"
 ```
 
 ## Building from Scratch
@@ -443,7 +465,7 @@ import { batchBuild } from 'ddex-builder';
 async function buildCatalogParallel(catalogData: any[]) {
   // Build multiple releases in parallel
   const results = await batchBuild(catalogData, {
-    preset: 'universal',
+    preset: 'generic_audio_album',
     parallel: true,
     maxConcurrency: 5
   });
@@ -633,11 +655,22 @@ async function buildWithRetry(releaseData: any, maxRetries: number = 3) {
 }
 ```
 
+## Benefits of This Approach
+
+Our refined preset system offers several advantages:
+
+1. **Transparency**: YouTube presets are based on publicly available specifications
+2. **Honesty**: No guessing about confidential platform requirements
+3. **Maintainability**: Fewer presets to maintain and update
+4. **Extensibility**: Custom framework allows organizations to build their own
+5. **Legal Safety**: No risk of misrepresenting proprietary specifications
+6. **DDEX Compliance**: Generic presets ensure baseline DDEX compliance
+
 ## Next Steps
 
 Now that you can build DDEX files, explore more advanced features:
 
 - **[API Reference](./api-reference)** - Complete method documentation  
 - **[Canonicalization](./canonicalization)** - Understanding deterministic output
-- **[Presets](./presets)** - Platform-specific configurations
+- **[Presets](./presets)** - Transparent preset configurations
 - **[Parser Integration](../parser/)** - Parse existing DDEX files for round-trip workflows

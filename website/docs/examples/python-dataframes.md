@@ -385,7 +385,7 @@ class DataFrameToDDEX:
     def __init__(self):
         self.builder = DDEXBuilder()
     
-    def df_to_ddex(self, df: pd.DataFrame, preset: str = 'spotify') -> str:
+    def df_to_ddex(self, df: pd.DataFrame, preset: 'youtube_album'') -> str:
         """Convert DataFrame back to DDEX XML"""
         
         # Group by release to reconstruct release structure

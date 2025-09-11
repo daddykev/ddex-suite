@@ -141,7 +141,7 @@ from ddex_builder import DdexBuilder
 
 async def build_catalog():
     builder = DdexBuilder()
-    builder.apply_preset('spotify')
+    builder.apply_preset('youtube_album')
     
     # Add releases and resources...
     builder.add_release(release)
@@ -178,7 +178,7 @@ Synchronously builds the DDEX XML message.
 **Example:**
 ```python
 builder = DdexBuilder()
-builder.apply_preset('spotify')
+builder.apply_preset('youtube_album')
 builder.add_release(release)
 
 # Synchronous build
@@ -290,7 +290,7 @@ Returns list of available platform presets.
 builder = DdexBuilder()
 presets = builder.get_available_presets()
 print('Available presets:', presets)
-# Output: ['spotify', 'apple_music', 'youtube_music', 'amazon_music', 'universal']
+# Output: ['youtube_album', 'generic_audio_album', 'youtube_music', 'generic_audio_single', 'generic_audio_album']
 ```
 
 #### get_preset_info()
@@ -309,7 +309,7 @@ Gets detailed information about a specific preset.
 **Example:**
 ```python
 builder = DdexBuilder()
-preset_info = builder.get_preset_info('spotify')
+preset_info = builder.get_preset_info('youtube_album')
 
 print(f'Name: {preset_info.name}')
 print(f'Description: {preset_info.description}')
@@ -338,7 +338,7 @@ builder = DdexBuilder()
 
 try:
     # Apply Spotify preset
-    builder.apply_preset('spotify')
+    builder.apply_preset('youtube_album')
     print('✓ Spotify preset applied')
     
     # The builder is now configured for Spotify requirements
@@ -366,7 +366,7 @@ Gets the validation rules for a specific preset.
 **Example:**
 ```python
 builder = DdexBuilder()
-rules = builder.get_preset_validation_rules('spotify')
+rules = builder.get_preset_validation_rules('youtube_album')
 
 for rule in rules:
     print(f'Field: {rule.field_name}')
@@ -430,7 +430,7 @@ df = pd.DataFrame(data)
 
 # Build DDEX from DataFrame
 builder = DdexBuilder()
-builder.apply_preset('spotify')
+builder.apply_preset('youtube_album')
 xml = builder.from_dataframe(df, version='4.3')
 
 print(f'Generated XML from DataFrame: {len(xml)} characters')
@@ -832,7 +832,7 @@ def build_from_csv(csv_file_path: str, output_file: str):
     
     # Build DDEX from DataFrame
     builder = DdexBuilder()
-    builder.apply_preset('spotify')
+    builder.apply_preset('youtube_album')
     
     xml = builder.from_dataframe(df, version='4.3')
     
@@ -854,7 +854,7 @@ import pandas as pd
 from ddex_builder import DdexBuilder
 
 class DataFrameDdexBuilder:
-    def __init__(self, preset: str = 'universal'):
+    def __init__(self, preset: str = 'generic_audio_album'):
         self.builder = DdexBuilder()
         self.builder.apply_preset(preset)
     
@@ -927,7 +927,7 @@ class DataFrameDdexBuilder:
         }
 
 # Usage
-builder = DataFrameDdexBuilder('spotify')
+builder = DataFrameDdexBuilder('youtube_album')
 
 # Load complex catalog data
 df = pd.read_csv('complex_catalog.csv')
@@ -950,7 +950,7 @@ async def safe_build_example():
     builder = DdexBuilder()
     
     try:
-        builder.apply_preset('spotify')
+        builder.apply_preset('youtube_album')
         builder.add_release(release_data)
         
         # Validate before building
@@ -1039,7 +1039,7 @@ async def process_multiple_catalogs(release_batches):
     async def process_batch(releases):
         async with semaphore:
             builder = DdexBuilder()
-            builder.apply_preset('spotify')
+            builder.apply_preset('youtube_album')
             
             for release in releases:
                 builder.add_release(release)
@@ -1070,7 +1070,7 @@ def process_large_catalog_efficiently(csv_path: str, output_dir: str):
     
     for chunk_df in pd.read_csv(csv_path, chunksize=chunk_size):
         builder = DdexBuilder()
-        builder.apply_preset('spotify')
+        builder.apply_preset('youtube_album')
         
         try:
             xml = builder.from_dataframe(chunk_df)

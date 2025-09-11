@@ -17,7 +17,7 @@ async function createSimpleRelease() {
   const builder = new DdexBuilder({
     validate: true,
     canonical: true,
-    preset: 'universal'
+    preset: 'generic_audio_album'
   });
 
   const releaseData = {
@@ -161,7 +161,7 @@ def create_simple_release():
     builder = DdexBuilder(
         validate=True,
         canonical=True,
-        preset='universal'
+        preset='generic_audio_album'
     )
     
     release_data = {
@@ -300,7 +300,7 @@ if __name__ == "__main__":
 ```typescript
 async function createSpotifyRelease() {
   const builder = new DdexBuilder();
-  builder.applyPreset('spotify');
+  builder.applyPreset('youtube_album');
 
   const spotifyRelease = {
     messageHeader: {
@@ -479,7 +479,7 @@ async function createComplexAlbum() {
   const builder = new DdexBuilder({
     validate: true,
     canonical: true,
-    preset: 'universal'
+    preset: 'generic_audio_album'
   });
 
   const albumData = {

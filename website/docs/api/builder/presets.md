@@ -4,17 +4,26 @@ Complete reference for industry platform presets in the DDEX Builder.
 
 ## Overview
 
-Platform presets provide pre-configured settings optimized for specific digital service providers (DSPs) and distribution platforms. Each preset includes validation rules, required fields, format preferences, and compliance requirements.
+The DDEX Builder now uses a simplified, transparent preset system that focuses on public specifications and extensible frameworks. This approach ensures honesty, maintainability, and legal safety while providing valuable preset functionality.
 
 ## Available Presets
 
-| Preset | Platform | Profile | DDEX Version | Last Updated |
-|--------|----------|---------|--------------|--------------|
-| `spotify` | Spotify | Streaming | ERN 4.3 | 2024-01 |
-| `apple_music` | Apple Music/iTunes | Download/Streaming | ERN 4.3 | 2024-01 |
-| `youtube_music` | YouTube Music | Content ID | ERN 4.3 | 2024-01 |
-| `amazon_music` | Amazon Music | Mixed | ERN 4.3 | 2024-01 |
-| `universal` | Generic Platform | Universal | ERN 4.3 | 2024-01 |
+### YouTube Presets (Public Specification)
+
+| Preset | Type | Profile | DDEX Version | Specification |
+|--------|------|---------|--------------|---------------|
+| `youtube_album` | Album | Content ID | ERN 4.3 | YouTube Public DDEX Spec |
+| `youtube_single` | Single | Content ID | ERN 4.3 | YouTube Public DDEX Spec |
+| `youtube_video` | Video | Content ID | ERN 4.3 | YouTube Public DDEX Spec |
+
+### Generic DDEX-Compliant Presets
+
+| Preset | Type | Profile | DDEX Version | Specification |
+|--------|------|---------|--------------|---------------|
+| `generic_audio_album` | Audio Album | Universal | ERN 4.3 | DDEX Standard |
+| `generic_audio_single` | Audio Single | Universal | ERN 4.3 | DDEX Standard |
+| `generic_video_single` | Video Single | Universal | ERN 4.3 | DDEX Standard |
+| `generic_compilation` | Compilation | Universal | ERN 4.3 | DDEX Standard |
 
 ## Spotify Preset
 

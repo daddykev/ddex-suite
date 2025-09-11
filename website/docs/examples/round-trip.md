@@ -737,7 +737,7 @@ class BatchRoundTripProcessor {
   private parser: DDEXParser;
   private builder: DdexBuilder;
   
-  constructor(preset: string = 'universal') {
+  constructor(preset: string = 'generic_audio_album') {
     this.parser = new DDEXParser({
       includeRawExtensions: true,
       validation: 'permissive' // More forgiving for batch processing

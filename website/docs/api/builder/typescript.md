@@ -136,7 +136,7 @@ Builds the DDEX XML message from added releases and resources.
 **Example:**
 ```typescript
 const builder = new DdexBuilder();
-builder.applyPreset('spotify');
+builder.applyPreset('youtube_album');
 
 // Add releases and resources...
 builder.addRelease(release);
@@ -245,7 +245,7 @@ Returns list of available platform presets.
 const builder = new DdexBuilder();
 const presets = builder.getAvailablePresets();
 console.log('Available presets:', presets);
-// Output: ['spotify', 'apple_music', 'youtube_music', 'amazon_music', 'universal']
+// Output: ['youtube_album', 'generic_audio_album', 'youtube_music', 'generic_audio_single', 'generic_audio_album']
 ```
 
 #### getPresetInfo()
@@ -264,7 +264,7 @@ Gets detailed information about a specific preset.
 **Example:**
 ```typescript
 const builder = new DdexBuilder();
-const presetInfo = builder.getPresetInfo('spotify');
+const presetInfo = builder.getPresetInfo('youtube_album');
 
 console.log(`Name: ${presetInfo.name}`);
 console.log(`Description: ${presetInfo.description}`);
@@ -290,7 +290,7 @@ Applies a platform-specific preset configuration.
 const builder = new DdexBuilder();
 
 // Apply Spotify preset
-builder.applyPreset('spotify');
+builder.applyPreset('youtube_album');
 
 // The builder is now configured for Spotify requirements
 // - Specific validation rules
@@ -314,7 +314,7 @@ Gets the validation rules for a specific preset.
 **Example:**
 ```typescript
 const builder = new DdexBuilder();
-const rules = builder.getPresetValidationRules('spotify');
+const rules = builder.getPresetValidationRules('youtube_album');
 
 rules.forEach(rule => {
   console.log(`Field: ${rule.fieldName}`);
@@ -731,7 +731,7 @@ for (const chunk of releaseChunks) {
 // Build multiple messages efficiently
 const buildRequests = releases.map(release => ({
   releases: [release],
-  preset: 'spotify',
+  preset: 'youtube_album',
   version: '4.3'
 }));
 
@@ -745,7 +745,7 @@ const xmlResults = await batchBuild(
 ```typescript
 // Skip validation during building for speed
 const builder = new DdexBuilder();
-builder.applyPreset('spotify');
+builder.applyPreset('youtube_album');
 
 // Add all data...
 releases.forEach(release => builder.addRelease(release));

@@ -183,7 +183,7 @@ ddex-parser analyze release.xml
 ddex-builder build release.json release.xml
 
 # Use presets for different platforms
-ddex-builder build --preset spotify release.json`;
+ddex-builder build --preset youtube_album release.json`;
 
   const rustExample = `use ddex_parser::DDEXParser;
 use ddex_builder::DDEXBuilder;

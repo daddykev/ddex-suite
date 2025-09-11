@@ -176,7 +176,7 @@ import pandas as pd
 catalog_df = pd.read_sql('SELECT * FROM releases', connection)
 
 # Build DDEX messages from DataFrame
-builder = DdexBuilder(preset='universal', validate=True)
+builder = DdexBuilder(preset='generic_audio_album', validate=True)
 xml = builder.from_dataframe(catalog_df, version='4.3')
 
 # Save for distribution
@@ -347,7 +347,7 @@ Deploy as a dedicated building service:
 app.post('/build', async (req, res) => {
   try {
     const builder = new DdexBuilder({ 
-      preset: req.body.preset || 'universal',
+      preset: 'generic_audio_album',
       validate: true 
     });
     
@@ -424,7 +424,7 @@ async function processCatalogBatch(catalogItems: any[]) {
   
   // Batch build with parallel processing
   const results = await batchBuild(buildRequests, {
-    preset: 'universal',
+    preset: 'generic_audio_album',
     parallel: true,
     maxConcurrency: 10
   });

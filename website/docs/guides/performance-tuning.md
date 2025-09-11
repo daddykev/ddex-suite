@@ -686,7 +686,7 @@ class OptimizedDDEXBuilder:
         print("Building optimized large catalog...")
         
         # Apply memory-efficient preset
-        self.builder.apply_preset('universal')  # Most permissive preset
+        self.builder.apply_preset('generic_audio_album')  # DDEX-compliant baseline
         
         start_time = time.time()
         initial_memory = psutil.Process().memory_info().rss / 1024 / 1024

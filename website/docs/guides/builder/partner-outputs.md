@@ -1,41 +1,43 @@
 # Partner-Specific Outputs
 
-Generate DDEX XML optimized for specific Digital Service Providers (DSPs) like Spotify, YouTube Music, and Amazon Music.
+Generate DDEX XML using our refined preset system with public specifications and extensible frameworks.
 
-## Platform Presets
+## Preset Strategy
 
-DDEX Suite provides built-in presets for major streaming platforms:
+DDEX Suite now uses a transparent, maintainable preset approach:
 
 ```typescript
 import { DDEXBuilder } from 'ddex-builder';
 
-// Spotify preset
-const spotifyBuilder = new DDEXBuilder();
-spotifyBuilder.applyPreset('spotify');
+// YouTube presets (based on public specification)
+const youtubeAlbumBuilder = new DDEXBuilder();
+youtubeAlbumBuilder.applyPreset('youtube_album');
 
-// YouTube Music preset  
-const youtubeBuilder = new DDEXBuilder();
-youtubeBuilder.applyPreset('youtube_music');
+const youtubeSingleBuilder = new DDEXBuilder();
+youtubeSingleBuilder.applyPreset('youtube_single');
 
-// Amazon Music preset
-const amazonBuilder = new DDEXBuilder();
-amazonBuilder.applyPreset('amazon_music');
+// Generic DDEX-compliant presets
+const genericAlbumBuilder = new DDEXBuilder();
+genericAlbumBuilder.applyPreset('generic_audio_album');
 
-// Universal preset (compatible with all platforms)
-const universalBuilder = new DDEXBuilder();
-universalBuilder.applyPreset('universal');
+const genericSingleBuilder = new DDEXBuilder();
+genericSingleBuilder.applyPreset('generic_audio_single');
+
+// Custom preset for organization-specific requirements
+const customBuilder = new DDEXBuilder();
+customBuilder.loadCustomPreset('./my-label-preset.json');
 ```
 
-## Spotify Integration
+## YouTube Music Integration
 
-### Spotify-Specific Requirements
+### YouTube-Specific Requirements (Public Specification)
 
 ```typescript
-class SpotifyIntegration {
+class YouTubeMusicIntegration {
   private builder = new DDEXBuilder();
   
   constructor() {
-    this.builder.applyPreset('spotify');
+    this.builder.applyPreset('youtube_album');
   }
   
   async createSpotifyRelease(releaseData: SpotifyReleaseData): Promise<string> {

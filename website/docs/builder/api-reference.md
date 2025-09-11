@@ -49,7 +49,7 @@ interface BuilderOptions {
   maxMemoryMB?: number;         // Memory limit in MB (default: 512)
   
   // Preset configuration
-  preset?: string;              // Apply preset ('spotify', 'apple_music', etc.)
+  preset?: string;              // Apply preset ('youtube_album', 'generic_audio_album', etc.)
   
   // Advanced options
   deterministicIds?: boolean;   // Generate content-based IDs (default: true)
@@ -338,7 +338,7 @@ const requests = [
 ];
 
 const results = await batchBuild(requests, {
-  preset: 'spotify',
+  preset: 'youtube_album',
   parallel: true,
   maxConcurrency: 10,
   progressCallback: (progress) => {
@@ -424,13 +424,14 @@ const presets = builder.getAvailablePresets();
 console.log('Available presets:', presets);
 
 // Get Spotify preset details
-const spotifyInfo = builder.getPresetInfo('spotify');
-console.log('Spotify preset:', spotifyInfo.description);
-console.log('Required fields:', spotifyInfo.requiredFields);
+const youtubeInfo = builder.getPresetInfo('youtube_album');
+console.log('YouTube preset:', youtubeInfo.description);
+console.log('Required fields:', youtubeInfo.requiredFields);
+console.log('Specification:', youtubeInfo.specification);
 
 // Apply preset and see rules
-builder.applyPreset('spotify');
-const rules = builder.getPresetValidationRules('spotify');
+builder.applyPreset('youtube_album');
+const rules = builder.getPresetValidationRules('youtube_album');
 rules.forEach(rule => {
   console.log(`${rule.fieldName}: ${rule.message}`);
 });

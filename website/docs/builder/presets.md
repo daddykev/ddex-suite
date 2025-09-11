@@ -4,42 +4,89 @@ sidebar_position: 6
 
 # Presets
 
-Platform-specific configurations for generating DDEX XML that meets partner requirements. Presets handle complex validation rules, metadata mappings, and compliance requirements automatically.
+Simplified preset system for generating DDEX XML with transparent, maintainable configurations. Our refined approach focuses on public specifications and extensible frameworks.
 
 ## What are Presets?
 
-Presets are pre-configured builder settings that ensure your DDEX messages comply with specific platform requirements. Rather than manually configuring validation rules, territory mappings, and metadata requirements for each partner, presets provide tested configurations that handle these complexities automatically.
+Presets are pre-configured builder settings that provide tested configurations for DDEX compliance. Our updated preset strategy emphasizes honesty, maintainability, and extensibility.
 
-### Why Use Presets?
+### Our Preset Philosophy
 
-Each music platform has unique requirements:
-- **Field requirements**: Some platforms require fields that others don't
-- **Validation rules**: Different business logic and constraints
-- **Metadata preferences**: Specific ways to handle genres, territories, and rights
-- **Technical specifications**: Format preferences and encoding requirements
-
-Presets eliminate the guesswork and ensure compliance.
+The new architecture follows these principles:
+- **Honesty**: Only provide presets for platforms with public specifications
+- **Flexibility**: Generic presets provide DDEX-compliant baselines
+- **Extensibility**: Custom framework allows organizations to build their own
+- **Maintainability**: Fewer presets to maintain and validate
+- **Legal Safety**: No risk of misrepresenting confidential specifications
 
 ## Available Presets
 
-### Universal Preset (`universal`)
+### YouTube Presets (Public Specification)
 
-The default preset for broad compatibility across platforms.
+Based on YouTube's publicly available DDEX specifications.
 
 ```typescript
 import { DdexBuilder } from 'ddex-builder';
 
-const builder = new DdexBuilder();
-builder.applyPreset('universal');
+// YouTube Album preset
+const albumBuilder = new DdexBuilder();
+albuMBuilder.applyPreset('youtube_album');
 
-const xml = await builder.build(releaseData);
+// YouTube Single preset
+const singleBuilder = new DdexBuilder();
+singleBuilder.applyPreset('youtube_single');
+
+// YouTube Video preset
+const videoBuilder = new DdexBuilder();
+videoBuilder.applyPreset('youtube_video');
+
+const xml = await albumBuilder.build(releaseData);
 ```
 
 **Features:**
-- Minimal field requirements for maximum compatibility
+- Based on YouTube's public DDEX specification
+- Content ID integration support
+- Territory mapping for YouTube's global reach
+- Video and audio content handling
+
+**Use cases:**
+- YouTube Music distribution
+- Content ID monetization
+- Video-first releases
+- Public specification compliance
+
+### Generic DDEX-Compliant Presets
+
+Baseline configurations for standard DDEX compliance across platforms.
+
+```typescript
+import { DdexBuilder } from 'ddex-builder';
+
+// Generic Audio Album
+const albumBuilder = new DdexBuilder();
+albumBuilder.applyPreset('generic_audio_album');
+
+// Generic Audio Single  
+const singleBuilder = new DdexBuilder();
+singleBuilder.applyPreset('generic_audio_single');
+
+// Generic Video Single
+const videoBuilder = new DdexBuilder();
+videoBuilder.applyPreset('generic_video_single');
+
+// Generic Compilation
+const compilationBuilder = new DdexBuilder();
+compilationBuilder.applyPreset('generic_compilation');
+
+const xml = await albumBuilder.build(releaseData);
+```
+
+**Features:**
+- DDEX-compliant baseline configurations
 - Standard territory handling (ISO 3166-1 codes)
 - Basic genre normalization
 - Conservative validation rules
+- Maximum platform compatibility
 
 **Use cases:**
 - Initial DDEX implementation
@@ -47,184 +94,48 @@ const xml = await builder.build(releaseData);
 - Testing and development
 - When platform requirements are unknown
 
-### Spotify Preset (`spotify`)
+### Custom Preset Framework
 
-Optimized for Spotify's streaming platform requirements.
+Extensible framework for creating organization-specific presets.
 
 ```typescript
-const spotifyBuilder = new DdexBuilder();
-spotifyBuilder.applyPreset('spotify');
+import { DdexBuilder, CustomPreset } from 'ddex-builder';
 
-const spotifyXml = await spotifyBuilder.build(releaseData);
-```
+// Load a custom preset template
+const customBuilder = new DdexBuilder();
+customBuilder.loadCustomPreset('./my-label-preset.json');
 
-**Key Requirements:**
-- **Explicit content flagging**: Required for all releases
-- **Territory restrictions**: Streaming-only territories supported
-- **Artist ID validation**: Spotify Artist ID required when available
-- **Genre normalization**: Maps to Spotify's genre taxonomy
-- **ISRC validation**: Strict format checking
-- **Duration requirements**: Minimum 30 seconds per track
-
-**Additional Features:**
-- Automatic canvas/video metadata inclusion
-- Podcast-specific handling for spoken word content
-- Pre-save campaign metadata support
-- Spotify Connect device compatibility flags
-
-**Example:**
-```typescript
-const spotifyData = {
-  messageHeader: {
-    messageSenderName: 'Independent Label',
-    messageRecipientName: 'Spotify'
+// Or define inline
+const myPreset: CustomPreset = {
+  name: 'my_label_preset',
+  basePreset: 'generic_audio_album',
+  validationRules: {
+    'releases.label': { required: true, value: 'My Record Label' },
+    'resources.duration': { minDuration: 'PT2M00S' }
   },
-  releases: [{
-    releaseId: 'REL_SPOTIFY_001',
-    title: 'Indie Rock Album',
-    artist: 'The Indie Band',
-    explicitContent: true,        // Required by Spotify preset
-    spotifyArtistId: 'spotify:artist:123', // Platform-specific ID
-    territories: ['US', 'CA', 'GB', 'DE'], // Streaming territories
-    genres: ['indie rock', 'alternative'] // Auto-normalized
-  }],
-  resources: [{
-    resourceId: 'SR_001',
-    title: 'Lead Single',
-    isrc: 'US-S1Z-99-00001',    // Validated format
-    duration: 'PT3M45S',         // Meets minimum duration
-    explicitContent: true        // Track-level flag
-  }]
+  defaults: {
+    territories: ['US', 'CA', 'GB'],
+    commercialModelType: 'Subscription'
+  }
 };
 
-const xml = await spotifyBuilder.build(spotifyData);
+customBuilder.applyCustomPreset(myPreset);
+const xml = await customBuilder.build(releaseData);
 ```
 
-### YouTube Music Preset (`youtube_music`)
+**Framework Features:**
+- Base preset inheritance
+- Custom validation rules
+- Default value injection
+- Business logic hooks
+- Field mapping support
 
-Configured for YouTube Music and Content ID requirements.
+**Use cases:**
+- Label-specific requirements
+- Internal compliance rules
+- Regional variations
+- Workflow optimizations
 
-```typescript
-const youtubeBuilder = new DdexBuilder();
-youtubeBuilder.applyPreset('youtube_music');
-
-const youtubeXml = await youtubeBuilder.build(releaseData);
-```
-
-**Key Requirements:**
-- **Content ID metadata**: Required for monetization
-- **Territory handling**: YouTube-specific territory mappings
-- **Usage rights**: Monetization-compatible rights only
-- **Reference file handling**: Audio fingerprinting support
-- **Channel linking**: YouTube channel association
-
-**Additional Features:**
-- Automatic Music Key (video topic) generation
-- Art Track creation for audio-only content
-- Short-form content (YouTube Shorts) metadata
-- Live streaming and premiere support
-
-**Example:**
-```typescript
-const youtubeData = {
-  messageHeader: {
-    messageSenderName: 'MCN Label',
-    messageRecipientName: 'YouTube Music'
-  },
-  releases: [{
-    releaseId: 'REL_YT_001', 
-    title: 'Viral Hits Collection',
-    artist: 'Various Artists',
-    youtubeChannelId: 'UCxxxxxxxxxxxxxxx', // Required for Content ID
-    contentIdEnabled: true,                 // Enable monetization
-    territories: ['WorldWide']              // YouTube global distribution
-  }],
-  resources: [{
-    resourceId: 'SR_001',
-    title: 'TikTok Viral Song',
-    referenceFile: '/path/to/reference.mp3', // For Content ID fingerprinting
-    usageRights: ['monetization', 'user_generated_content']
-  }]
-};
-
-const xml = await youtubeBuilder.build(youtubeData);
-```
-
-### Apple Music Preset (`apple_music`)
-
-Designed for iTunes Store and Apple Music compliance.
-
-```typescript
-const appleBuilder = new DdexBuilder();
-appleBuilder.applyPreset('apple_music');
-
-const appleXml = await appleBuilder.build(releaseData);
-```
-
-**Key Requirements:**
-- **iTunes Store compliance**: Strict metadata validation
-- **Mastered for iTunes**: Audio quality specifications
-- **Region-specific pricing**: Price tier mappings
-- **Album artwork**: High-resolution artwork requirements
-- **Pre-order support**: Release date handling for pre-orders
-
-**Additional Features:**
-- Dolby Atmos spatial audio metadata
-- Lossless audio quality indicators
-- Apple Digital Masters certification
-- Animated artwork support for iOS
-
-**Example:**
-```typescript
-const appleData = {
-  messageHeader: {
-    messageSenderName: 'Premium Label',
-    messageRecipientName: 'Apple Music'
-  },
-  releases: [{
-    releaseId: 'REL_APPLE_001',
-    title: 'Audiophile Album',
-    artist: 'Jazz Virtuoso',
-    masteredForItunes: true,        // Quality certification
-    priceTier: 'tier_2',           // Apple pricing tier
-    preOrderDate: '2024-02-01',     // Pre-order available
-    releaseDate: '2024-02-15',      // Official release
-    artworkResolution: '3000x3000'  // High-res artwork
-  }],
-  resources: [{
-    resourceId: 'SR_001', 
-    title: 'Jazz Standard',
-    audioQuality: 'lossless',       // Apple Lossless format
-    spatialAudio: 'dolby_atmos',    // Spatial audio mixing
-    appleCertified: true            // Apple Digital Masters
-  }]
-};
-
-const xml = await appleBuilder.build(appleData);
-```
-
-### Amazon Music Preset (`amazon_music`)
-
-Configured for Amazon Music and Prime Music distribution.
-
-```typescript
-const amazonBuilder = new DdexBuilder();
-amazonBuilder.applyPreset('amazon_music');
-
-const amazonXml = await amazonBuilder.build(releaseData);
-```
-
-**Key Requirements:**
-- **Prime eligibility**: Metadata for Prime Music inclusion
-- **Territory handling**: Amazon marketplace regions
-- **Family filtering**: Content appropriate for Amazon Kids
-- **Voice compatibility**: Alexa voice command optimization
-
-**Additional Features:**
-- Echo device optimization
-- Amazon Original content flagging
-- Prime Gaming soundtrack integration
-- Kindle reading music synchronization
 
 ## Exploring Presets
 
@@ -237,37 +148,37 @@ const builder = new DdexBuilder();
 const presets = builder.getAvailablePresets();
 
 console.log('Available presets:', presets);
-// Output: ['universal', 'spotify', 'youtube_music', 'apple_music', 'amazon_music']
+// Output: ['youtube_album', 'youtube_single', 'youtube_video', 'generic_audio_album', 'generic_audio_single', 'generic_video_single', 'generic_compilation']
 ```
 
 ### Get Preset Information
 
 ```typescript
 // Get detailed preset information
-const spotifyInfo = builder.getPresetInfo('spotify');
+const youtubeInfo = builder.getPresetInfo('youtube_album');
 
-console.log('Preset:', spotifyInfo.name);
-console.log('Description:', spotifyInfo.description);  
-console.log('Version:', spotifyInfo.version);
-console.log('Profile:', spotifyInfo.profile);
-console.log('Required fields:', spotifyInfo.requiredFields);
-console.log('Disclaimer:', spotifyInfo.disclaimer);
+console.log('Preset:', youtubeInfo.name);
+console.log('Description:', youtubeInfo.description);  
+console.log('Version:', youtubeInfo.version);
+console.log('Profile:', youtubeInfo.profile);
+console.log('Required fields:', youtubeInfo.requiredFields);
+console.log('Specification:', youtubeInfo.specification);
 ```
 
 **Sample Output:**
 ```json
 {
-  "name": "spotify",
-  "description": "Optimized for Spotify streaming platform with explicit content handling and territory restrictions",
+  "name": "youtube_album",
+  "description": "YouTube Music album preset based on public DDEX specification",
   "version": "2024.1",
-  "profile": "streaming",
+  "profile": "content_id",
   "requiredFields": [
-    "releases.explicitContent",
+    "releases.title",
     "releases.territories",
     "resources.isrc",
     "resources.duration"
   ],
-  "disclaimer": "This preset implements Spotify's current requirements as of 2024. Please verify latest requirements with Spotify partner documentation."
+  "specification": "Based on YouTube's publicly available DDEX Content ID specification"
 }
 ```
 
@@ -275,19 +186,19 @@ console.log('Disclaimer:', spotifyInfo.disclaimer);
 
 ```typescript
 // See what validation rules a preset applies
-const spotifyRules = builder.getPresetValidationRules('spotify');
+const youtubeRules = builder.getPresetValidationRules('youtube_album');
 
-spotifyRules.forEach(rule => {
+youtubeRules.forEach(rule => {
   console.log(`${rule.fieldName}: ${rule.message}`);
 });
 ```
 
 **Sample Output:**
 ```
-releases.explicitContent: Explicit content flag is required for Spotify
+releases.title: Album title is required for YouTube Music
 resources.isrc: ISRC must be valid format (XX-XXX-YY-NNNNN)
-resources.duration: Track duration must be at least PT0M30S
-territories: Must include at least one streaming territory
+resources.duration: Track duration must be specified
+territories: Must include at least one territory for Content ID
 ```
 
 ## Creating Custom Presets
@@ -655,11 +566,11 @@ builder.applyPreset('spotify');
 builder.applyPreset('apple_music'); // Overwrites Spotify rules
 
 // ✅ Use separate builders for different presets
-const spotifyBuilder = new DdexBuilder();
-spotifyBuilder.applyPreset('spotify');
+const youtubeBuilder = new DdexBuilder();
+youtubeBuilder.applyPreset('youtube_album');
 
-const appleBuilder = new DdexBuilder(); 
-appleBuilder.applyPreset('apple_music');
+const genericBuilder = new DdexBuilder(); 
+genericBuilder.applyPreset('generic_audio_album');
 ```
 
 ### Preset Version Compatibility
@@ -667,12 +578,25 @@ appleBuilder.applyPreset('apple_music');
 Check preset versions for compatibility:
 
 ```typescript
-const presetInfo = builder.getPresetInfo('spotify');
-console.log(`Using Spotify preset v${presetInfo.version}`);
+const presetInfo = builder.getPresetInfo('youtube_album');
+console.log(`Using YouTube preset v${presetInfo.version}`);
 
 if (presetInfo.version < '2024.1') {
-  console.warn('⚠️ Spotify preset may be outdated');
+  console.warn('⚠️ YouTube preset may be outdated');
 }
 ```
 
-Presets make it easy to generate compliant DDEX XML for specific platforms while handling the complexity of different requirements automatically. For complete workflows combining presets with parsing, see the [Parser Integration Guide](../parser/).
+## Why This Approach?
+
+Our refined preset strategy offers several key benefits:
+
+1. **Transparency**: Only YouTube presets are based on publicly available specifications
+2. **Honesty**: No guessing about confidential platform requirements
+3. **Maintainability**: Fewer presets to maintain and update
+4. **Extensibility**: Custom framework allows organizations to build their own
+5. **Legal Safety**: No risk of misrepresenting proprietary specifications
+6. **DDEX Compliance**: Generic presets ensure baseline DDEX compliance
+
+This approach makes DDEX Suite more credible and sustainable while still providing valuable preset functionality through transparent, publicly available specifications and extensible custom frameworks.
+
+For complete workflows combining presets with parsing, see the [Parser Integration Guide](../parser/).

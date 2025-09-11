@@ -145,7 +145,7 @@ class BatchBuilder {
 
   constructor() {
     this.builder = new DDEXBuilder({
-      preset: 'spotify',
+      preset: 'youtube_album'',
       validateOutput: true
     });
   }

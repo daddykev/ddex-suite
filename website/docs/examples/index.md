@@ -42,7 +42,7 @@ import glob from 'glob';
 async function processBatch(pattern: string) {
   const files = glob.sync(pattern);
   const parser = new DDEXParser();
-  const builder = new DDEXBuilder({ preset: 'spotify' });
+  const builder = new DDEXBuilder({ preset: 'youtube_album' });
   
   const results = [];
   
@@ -135,7 +135,7 @@ def analyze_territory_coverage(ddex_files):
 ```typescript
 class LabelProcessor {
   private parser = new DDEXParser();
-  private builder = new DDEXBuilder({ preset: 'generic' });
+  private builder = new DDEXBuilder({ preset: 'generic_audio_album' });
   
   async processRelease(xmlContent: string, labelRules: LabelRules) {
     // Parse the DDEX
@@ -172,12 +172,12 @@ class LabelProcessor {
   }
   
   private async generatePartnerOutputs(result: ParseResult) {
-    const partners = ['spotify', 'apple', 'youtube'] as const;
+    const presets = ['youtube_album', 'generic_audio_album', 'generic_audio_single'] as const;
     const outputs: Record<string, string> = {};
     
-    for (const partner of partners) {
-      const partnerBuilder = new DDEXBuilder({ preset: partner });
-      outputs[partner] = await partnerBuilder.build(result.toBuildRequest());
+    for (const preset of presets) {
+      const partnerBuilder = new DDEXBuilder({ preset });
+      outputs[preset] = await partnerBuilder.build(result.toBuildRequest());
     }
     
     return outputs;
