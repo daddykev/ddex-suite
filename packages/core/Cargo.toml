@@ -6,6 +6,12 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 description = "Shared DDEX data models and utilities"
+keywords = ["ddex", "xml", "music", "metadata", "core"]
+categories = ["data-structures", "multimedia::audio"]
+documentation = "https://docs.rs/ddex-core"
+readme = "README.md"
+homepage = "https://github.com/daddykev/ddex-suite"
+exclude = ["*.bak", "*.log", "*.tmp"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }

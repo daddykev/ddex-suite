@@ -9,10 +9,14 @@ authors.workspace = true
 description = "High-performance DDEX XML parser"
 keywords = ["ddex", "xml", "parser", "music", "metadata"]
 categories = ["parser-implementations", "multimedia::audio"]
+documentation = "https://docs.rs/ddex-parser"
+readme = "README.md"
+homepage = "https://github.com/daddykev/ddex-suite"
+exclude = ["*.bak", "*.backup", "*.log", "*.tmp", "tests/integration/*.ts"]
 
 [dependencies]
 # Core dependency
-ddex-core = { path = "../core" }
+ddex-core = { version = "0.2.5", path = "../core" }
 
 # Use workspace dependencies
 quick-xml = { workspace = true }

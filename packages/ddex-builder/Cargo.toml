@@ -8,10 +8,20 @@ repository.workspace = true
 description = "Deterministic DDEX XML builder with DB-C14N/1.0 canonicalization"
 keywords = ["ddex", "xml", "builder", "deterministic", "music"]
 categories = ["encoding", "multimedia::audio"]
+documentation = "https://docs.rs/ddex-builder"
+readme = "README.md"
+homepage = "https://github.com/daddykev/ddex-suite"
+exclude = [
+    "*.bak", "*.backup", "*.log", "*.tmp",
+    "bindings/**/*",
+    "fuzz/**/*", 
+    "tests/integration/**/*",
+    "*.profdata", "*.profraw"
+]
 
 [dependencies]
 # Core dependency
-ddex-core = { path = "../core" }
+ddex-core = { version = "0.2.5", path = "../core" }
 
 # Deterministic collections (CRITICAL for determinism)
 indexmap = { version = "2.5", features = ["serde"] }

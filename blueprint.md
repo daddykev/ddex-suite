@@ -37,8 +37,8 @@ Deliver a unified suite of DDEX tools through a monorepo architecture, providing
 ├─────────────────────────────────────────────────────────┤
 │                     Applications                        │
 ├──────────────┬──────────────┬───────────────────────────┤
-│  JavaScript  │    Python    │            Rust           │
-│   (npm)      │   (PyPI)     │        (crates.io)        │
+│  JavaScript  │    Python    │         Rust ✅           │
+│   (npm)      │   (PyPI)     │      (crates.io)          │
 ├──────────────┴──────────────┴───────────────────────────┤
 │                   Language Bindings                     │
 │  ┌────────────────────────────────────────────────────┐ │
@@ -1486,7 +1486,7 @@ ddex-suite/
 - [x] Complete WASM browser build (<500KB)
 - [x] Optimize with wasm-opt  
 - [x] Unify npm package (native + WASM)
-- [x] Publish to npm ✅ (v0.1.0 published!)
+- [x] **Published to npm as `ddex-parser` v0.1.0** ✅
 
 #### 2.3 Python Bindings ✅ COMPLETED
 - [x] Complete PyO3/maturin setup
@@ -1496,7 +1496,7 @@ ddex-suite/
 - [x] Generate type stubs
 - [x] Test on macOS/ARM (working!)
 - [x] Fix PyO3 0.21 compatibility issues ✅ (All compatibility issues resolved)
-- [x] Publish to PyPI as `ddex-parser`
+- [x] **Published to PyPI as `ddex-parser` v0.1.0** ✅
 
 **Python Integration Status Summary:**
 - ✅ **PyO3 0.21 Compatibility**: All deprecated APIs updated, proper Bound type usage
@@ -1599,7 +1599,7 @@ ddex-suite/
 - [x] Add JSON Schema generation
 - [x] Multi-version support (3.8.2, 4.2, 4.3)
 
-#### 3.5 Builder Polish ✅ COMPLETED & PUBLISHED v0.1.0!
+#### 3.5 Builder Polish ✅ COMPLETED
 - [x] Complete CLI with all commands
 - [x] Add `--verify-determinism` flag
 - [x] Performance optimization
@@ -1641,6 +1641,12 @@ ddex-suite/
 - [x] Complete workspace version management
 - [x] Comprehensive CHANGELOG.md documentation
 - [x] **Suite v0.2.5 Published** to npm and PyPI
+- [x] **Published to crates.io** ✅ **NEW MILESTONE!**
+  - [ddex-core v0.2.5](https://crates.io/crates/ddex-core) - 57.2KiB (34 files)
+  - [ddex-parser v0.2.5](https://crates.io/crates/ddex-parser) - 197.9KiB (43 files)  
+  - [ddex-builder v0.2.5](https://crates.io/crates/ddex-builder) - 1.1MiB (81 files)
+  - All crates searchable with `cargo search ddex-*`
+  - Documentation auto-generating at https://docs.rs/
 
 #### 4.2 Documentation 🔄 **IN PROGRESS**
 - [x] Create unified Docusaurus site in React
@@ -1766,8 +1772,16 @@ interface DeterminismConfig {
   - Full API consistency across platforms
 
 ### Distribution Channels
-- **NPM**: https://www.npmjs.com/package/ddex-builder
-- **PyPI**: https://pypi.org/project/ddex-builder/0.1.0/
+- **NPM**: 
+  - https://www.npmjs.com/package/ddex-parser
+  - https://www.npmjs.com/package/ddex-builder
+- **PyPI**: 
+  - https://pypi.org/project/ddex-parser/
+  - https://pypi.org/project/ddex-builder/
+- **Crates.io**: ✅ **NEW!**
+  - https://crates.io/crates/ddex-core
+  - https://crates.io/crates/ddex-parser  
+  - https://crates.io/crates/ddex-builder
 - **GitHub**: https://github.com/daddykev/ddex-suite
 
 ## Current Status (January 2025)
@@ -1778,6 +1792,11 @@ interface DeterminismConfig {
 - DDEX Parser with full language bindings (v0.2.5 published)
 - DDEX Builder with deterministic output (v0.2.5 published)
 - **Complete Suite Integration**: v0.2.5 published to npm and PyPI
+- **Rust Native Distribution**: ✅ **All crates published to crates.io!**
+  - Complete Rust ecosystem integration
+  - Native cargo install support
+  - Auto-generated documentation at docs.rs
+  - Searchable with `cargo search ddex-*`
 - Enhanced Python bindings with PyO3 0.21 compatibility
 - Advanced CLI features for both parser and builder
 - Full DataFrame integration for data analysis

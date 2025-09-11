@@ -9,6 +9,9 @@
 [![npm ddex-parser](https://img.shields.io/npm/v/ddex-parser?label=npm%20ddex-parser)](https://www.npmjs.com/package/ddex-parser)
 [![PyPI ddex-builder](https://img.shields.io/pypi/v/ddex-builder?label=PyPI%20ddex-builder)](https://pypi.org/project/ddex-builder/)
 [![PyPI ddex-parser](https://img.shields.io/pypi/v/ddex-parser?label=PyPI%20ddex-parser)](https://pypi.org/project/ddex-parser/)
+[![crates.io ddex-core](https://img.shields.io/crates/v/ddex-core?label=crates.io%20ddex-core)](https://crates.io/crates/ddex-core)
+[![crates.io ddex-parser](https://img.shields.io/crates/v/ddex-parser?label=crates.io%20ddex-parser)](https://crates.io/crates/ddex-parser)
+[![crates.io ddex-builder](https://img.shields.io/crates/v/ddex-builder?label=crates.io%20ddex-builder)](https://crates.io/crates/ddex-builder)
 
 > High-performance DDEX XML builder and parser with native bindings for TypeScript/JavaScript and Python. Built on a single Rust core for consistent behavior across all platforms.
 
@@ -38,17 +41,19 @@ Beyond the core implementation, this is a showcase of **software craftsmanship a
 
 ### 📦 Available Packages
 
-Both parser and builder are now published and ready for use!
+All packages published across npm, PyPI, and **crates.io**! ✅
 
-| Package | npm | PyPI | Version |
-|---------|-----|------|---------|
-| **ddex-parser** | ✅ [Published](https://www.npmjs.com/package/ddex-parser) | ✅ [Published](https://pypi.org/project/ddex-parser/) | v0.2.5 |
-| **ddex-builder** | ✅ [Published](https://www.npmjs.com/package/ddex-builder) | ✅ [Published](https://pypi.org/project/ddex-builder/) | v0.2.5 |
+| Package | npm | PyPI | crates.io | Version |
+|---------|-----|------|-----------|---------|
+| **ddex-core** | - | - | ✅ [Published](https://crates.io/crates/ddex-core) | v0.2.5 |
+| **ddex-parser** | ✅ [Published](https://www.npmjs.com/package/ddex-parser) | ✅ [Published](https://pypi.org/project/ddex-parser/) | ✅ [Published](https://crates.io/crates/ddex-parser) | v0.2.5 |
+| **ddex-builder** | ✅ [Published](https://www.npmjs.com/package/ddex-builder) | ✅ [Published](https://pypi.org/project/ddex-builder/) | ✅ [Published](https://crates.io/crates/ddex-builder) | v0.2.5 |
 
 ### Progress Overview
 
 ✅ **Phase 1-3: Complete** - Core foundation, parser, and builder are fully implemented  
 ✅ **Phase 4.1: Integration Testing** - Round-trip functionality validated with 94 tests passing  
+✅ **crates.io Publishing** - **NEW!** All Rust crates published to the official registry  
 🔄 **Phase 4.2: Documentation & Launch** - Creating unified docs and tutorials  
 
 For detailed development progress and technical implementation details, see [blueprint.md](./blueprint.md).
@@ -115,9 +120,10 @@ npm install ddex-builder # ✅ Latest: v0.2.5
 pip install ddex-parser  # ✅ Latest: v0.2.5
 pip install ddex-builder # ✅ Latest: v0.2.5
 
-# Rust (coming soon)
-cargo add ddex-parser-core
-cargo add ddex-builder-core
+# Rust ✅ NEW!
+cargo add ddex-core       # ✅ Latest: v0.2.5
+cargo add ddex-parser     # ✅ Latest: v0.2.5 
+cargo add ddex-builder    # ✅ Latest: v0.2.5
 ```
 
 ## 💻 Usage Examples
@@ -171,6 +177,28 @@ xml = builder.build({
 })
 ```
 
+### Rust ✅ NEW!
+```rust
+use ddex_parser::DDEXParser;
+use ddex_builder::DDEXBuilder;
+
+// Parse DDEX message
+let parser = DDEXParser::new();
+let result = parser.parse(&xml_content)?;
+
+// Modify the parsed data
+let mut build_request = result.to_build_request();
+build_request.releases[0].title = "Updated Title".to_string();
+
+// Build deterministic XML
+let builder = DDEXBuilder::new();
+let xml = builder.build(&build_request)?;
+
+// Perfect round-trip with Rust's type safety
+let reparsed = parser.parse(&xml)?;
+assert_eq!(reparsed.graph, result.graph); // ✅ Identical
+```
+
 ## 🏗️ Architecture
 
 Built as a monorepo with shared core components:
@@ -222,6 +250,10 @@ Built as a monorepo with shared core components:
 | Node.js (npm) | 347KB | <1MB | ✅ Excellent |
 | Python wheel | 235KB | <1MB | ✅ Compact |
 | WASM bundle | 114KB | <500KB | ✅ 77% under target! |
+| **crates.io** ✅ **NEW!** | | | |
+| ddex-core | 57.2KiB (34 files) | <10MB | ✅ Compact |
+| ddex-parser | 197.9KiB (43 files) | <10MB | ✅ Efficient |
+| ddex-builder | 1.1MiB (81 files) | <10MB | ✅ Under limit |
 
 ## 📚 Documentation
 
@@ -231,6 +263,10 @@ Built as a monorepo with shared core components:
 - [Round-Trip Guide](./docs/ROUND_TRIP.md) - Parse → Modify → Build guide
 - [DB-C14N Spec](./packages/ddex-builder/docs/DB_C14N_SPEC.md) - Canonicalization specification
 - [Error Handbook](./docs/ERROR_HANDBOOK.md) - Understanding and handling errors
+- **Rust Documentation** ✅ **NEW!**
+  - [ddex-core](https://docs.rs/ddex-core) - Core data models and utilities
+  - [ddex-parser](https://docs.rs/ddex-parser) - Parser API reference
+  - [ddex-builder](https://docs.rs/ddex-builder) - Builder API reference
 
 ## 🤝 Contributing
 
