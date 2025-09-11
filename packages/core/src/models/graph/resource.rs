@@ -2,7 +2,7 @@
 //! Resource types
 
 use serde::{Deserialize, Serialize};
-use crate::models::common::{Identifier, Copyright, LocalizedString};
+use crate::models::{Extensions, common::{Identifier, Copyright, LocalizedString}};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Resource {
@@ -15,6 +15,8 @@ pub struct Resource {
     pub rights_controller: Vec<String>,
     pub p_line: Vec<Copyright>,
     pub c_line: Vec<Copyright>,
+    /// Extensions for resource
+    pub extensions: Option<Extensions>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -34,4 +36,6 @@ pub struct TechnicalDetails {
     pub sample_rate: Option<i32>,
     pub file_format: Option<String>,
     pub file_size: Option<u64>,
+    /// Extensions for technical details
+    pub extensions: Option<Extensions>,
 }

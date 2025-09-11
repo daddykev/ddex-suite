@@ -48,6 +48,7 @@ pub fn parse_dom<R: BufRead>(
     Ok(ParsedERNMessage {
         graph,
         flat,
+        extensions: None,
     })
 }
 

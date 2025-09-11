@@ -37,10 +37,12 @@ impl Flattener {
             sender: Organization {
                 name: Self::get_primary_name(&graph.message_header.message_sender.party_name),
                 id: Self::get_primary_id(&graph.message_header.message_sender.party_id),
+                extensions: None,
             },
             recipient: Organization {
                 name: Self::get_primary_name(&graph.message_header.message_recipient.party_name),
                 id: Self::get_primary_id(&graph.message_header.message_recipient.party_id),
+                extensions: None,
             },
             releases,
             resources,
@@ -49,6 +51,7 @@ impl Flattener {
             version: format!("{:?}", graph.version),
             profile: graph.profile.map(|p| format!("{:?}", p)),
             stats,
+            extensions: None,
         }
     }
     
@@ -83,6 +86,7 @@ impl Flattener {
                 c_line: None,
                 parent_release: None,
                 child_releases: Vec::new(),
+                extensions: None,
             }
         }).collect()
     }

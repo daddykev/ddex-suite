@@ -1,0 +1,14 @@
+---
+source: packages/ddex-builder/src/canonical/tests.rs
+assertion_line: 325
+expression: result
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<ern:NewReleaseMessage xmlns:avs="http://ddex.net/xml/avs" xmlns:ern="http://ddex.net/xml/ern/43" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <MessageSender/>
+  <MessageRecipient/>
+  <MessageId/>
+  <MessageType/>
+  <MessageCreatedDateTime/>
+  <MessageControlType/>
+</ern:NewReleaseMessage>

@@ -32,14 +32,17 @@ impl VersionAdapter {
                 party_id: Vec::new(),
                 party_name: Vec::new(),
                 trading_name: None,
+                extensions: None,
             },
             message_recipient: MessageRecipient {
                 party_id: Vec::new(),
                 party_name: Vec::new(),
                 trading_name: None,
+                extensions: None,
             },
             message_control_type: None,
             message_thread_id: None,
+            extensions: None,
         })
     }
     
@@ -82,6 +85,7 @@ impl VersionMigrator {
         if migrated.message_audit_trail.is_none() {
             migrated.message_audit_trail = Some(ddex_core::models::graph::MessageAuditTrail {
                 audit_trail_events: Vec::new(),
+                extensions: None,
             });
         }
         

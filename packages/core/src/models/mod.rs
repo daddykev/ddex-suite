@@ -9,4 +9,4 @@ pub mod versions;  // Add this line to export the versions module
 pub use common::{Identifier, IdentifierType, LocalizedString};
 
 pub mod extensions;
-pub use extensions::Extensions;
+pub use extensions::{Extensions, XmlFragment, ProcessingInstruction};

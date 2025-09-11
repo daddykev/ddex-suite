@@ -32,6 +32,7 @@ memchr = "2.7"
 ahash = "0.8"
 parking_lot = "0.12"
 bytes = "1.5"
+indexmap = "2.5"
 
 # Optional workspace dependencies
 tokio = { workspace = true, optional = true }

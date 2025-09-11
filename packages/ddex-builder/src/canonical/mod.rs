@@ -74,42 +74,53 @@
 
 use indexmap::IndexMap;
 use sha2::{Sha256, Digest};
+use quick_xml::{Reader, events::Event};
+use std::io::Cursor;
+use std::collections::BTreeMap;
 
 /// DB-C14N/1.0 canonicalizer
 #[allow(non_camel_case_types)]  // Allow non-standard naming for DB-C14N
 pub struct DB_C14N {
     config: super::determinism::DeterminismConfig,
+    version: String,
 }
 
 impl DB_C14N {
     /// Create a new canonicalizer
     pub fn new(config: super::determinism::DeterminismConfig) -> Self {
-        Self { config }
+        Self { 
+            config,
+            version: "4.3".to_string(), // Default to latest
+        }
+    }
+    
+    /// Create a new canonicalizer with specific ERN version
+    pub fn with_version(config: super::determinism::DeterminismConfig, version: String) -> Self {
+        Self { config, version }
+    }
+    
+    /// Detect ERN version from XML content
+    fn detect_version(&self, xml: &str) -> String {
+        if xml.contains("http://ddex.net/xml/ern/382") {
+            "3.8.2".to_string()
+        } else if xml.contains("http://ddex.net/xml/ern/42") {
+            "4.2".to_string()
+        } else if xml.contains("http://ddex.net/xml/ern/43") {
+            "4.3".to_string()
+        } else {
+            self.version.clone() // Use configured version as fallback
+        }
     }
     
     /// Canonicalize XML according to DB-C14N/1.0 spec
     pub fn canonicalize(&self, xml: &str) -> Result<String, super::error::BuildError> {
-        // For now, just normalize whitespace and apply consistent formatting
-        // Full DB-C14N implementation would be more complex
+        // Detect ERN version from content
+        let detected_version = self.detect_version(xml);
         
-        let mut canonical = String::new();
-        
-        // XML Declaration
-        canonical.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        
-        // Simple normalization: remove extra whitespace, normalize line endings
-        let normalized = xml
-            .lines()
-            .skip(1) // Skip XML declaration if present
-            .map(|line| line.trim_end())
-            .filter(|line| !line.is_empty())
-            .collect::<Vec<_>>()
-            .join("\n");
-        
-        canonical.push_str(&normalized);
-        canonical.push('\n');
-        
-        Ok(canonical)
+        // Full DB-C14N/1.0 implementation
+        let doc = self.parse_xml(xml)?;
+        let canonical_doc = self.canonicalize_document(doc, &detected_version)?;
+        self.serialize_canonical(canonical_doc)
     }
     
     /// Calculate canonical hash
@@ -121,19 +132,290 @@ impl DB_C14N {
         Ok(format!("{:x}", result))
     }
     
-    fn parse_xml(&self, _xml: &str) -> Result<XmlDocument, super::error::BuildError> {
-        // Parse XML into internal representation
-        todo!("Parse XML")
+    fn parse_xml(&self, xml: &str) -> Result<XmlDocument, super::error::BuildError> {
+        let mut reader = Reader::from_str(xml);
+        reader.config_mut().trim_text(true);
+        
+        let mut buf = Vec::new();
+        let mut element_stack: Vec<XmlElement> = Vec::new();
+        let mut text_content = String::new();
+        
+        loop {
+            match reader.read_event_into(&mut buf) {
+                Ok(Event::Start(ref e)) | Ok(Event::Empty(ref e)) => {
+                    // Save any accumulated text
+                    if !text_content.trim().is_empty() {
+                        if let Some(parent) = element_stack.last_mut() {
+                            parent.children.push(XmlNode::Text(text_content.trim().to_string()));
+                        }
+                        text_content.clear();
+                    }
+                    
+                    let name = String::from_utf8_lossy(e.name().as_ref()).to_string();
+                    let mut attributes = IndexMap::new();
+                    
+                    for attr in e.attributes() {
+                        let attr = attr.map_err(|e| super::error::BuildError::XmlGeneration(format!("Attribute error: {}", e)))?;
+                        let key = String::from_utf8_lossy(attr.key.as_ref()).to_string();
+                        let value = String::from_utf8_lossy(&attr.value).to_string();
+                        attributes.insert(key, value);
+                    }
+                    
+                    let element = XmlElement {
+                        name,
+                        attributes,
+                        children: Vec::new(),
+                    };
+                    
+                    if matches!(reader.read_event_into(&mut buf), Ok(Event::Empty(_))) {
+                        // Self-closing element
+                        if let Some(parent) = element_stack.last_mut() {
+                            parent.children.push(XmlNode::Element(element));
+                        } else {
+                            // Root element
+                            return Ok(XmlDocument { root: element });
+                        }
+                    } else {
+                        // Opening element, push to stack
+                        element_stack.push(element);
+                    }
+                },
+                Ok(Event::End(_)) => {
+                    // Save any accumulated text
+                    if !text_content.trim().is_empty() {
+                        if let Some(parent) = element_stack.last_mut() {
+                            parent.children.push(XmlNode::Text(text_content.trim().to_string()));
+                        }
+                        text_content.clear();
+                    }
+                    
+                    // Pop the completed element
+                    if let Some(completed_element) = element_stack.pop() {
+                        if let Some(parent) = element_stack.last_mut() {
+                            parent.children.push(XmlNode::Element(completed_element));
+                        } else {
+                            // This was the root element
+                            return Ok(XmlDocument { root: completed_element });
+                        }
+                    }
+                },
+                Ok(Event::Text(e)) => {
+                    text_content.push_str(&e.unescape().map_err(|e| {
+                        super::error::BuildError::XmlGeneration(format!("Text unescape error: {}", e))
+                    })?);
+                },
+                Ok(Event::Comment(e)) => {
+                    let comment = String::from_utf8_lossy(&e).to_string();
+                    if let Some(parent) = element_stack.last_mut() {
+                        parent.children.push(XmlNode::Comment(comment));
+                    }
+                },
+                Ok(Event::Eof) => break,
+                Err(e) => return Err(super::error::BuildError::XmlGeneration(format!("XML parse error: {}", e))),
+                _ => {} // Ignore other events
+            }
+            buf.clear();
+        }
+        
+        Err(super::error::BuildError::XmlGeneration("No root element found".to_string()))
     }
     
-    fn canonicalize_document(&self, _doc: XmlDocument) -> Result<XmlDocument, super::error::BuildError> {
-        // Apply canonicalization rules
-        todo!("Canonicalize document")
+    fn canonicalize_document(&self, mut doc: XmlDocument, version: &str) -> Result<XmlDocument, super::error::BuildError> {
+        // Apply canonicalization rules to the entire document
+        self.canonicalize_element(&mut doc.root, version)?;
+        Ok(doc)
     }
     
-    fn serialize_canonical(&self, _doc: XmlDocument) -> Result<String, super::error::BuildError> {
-        // Serialize with canonical formatting
-        todo!("Serialize canonical")
+    fn canonicalize_element(&self, element: &mut XmlElement, version: &str) -> Result<(), super::error::BuildError> {
+        // 1. Sort attributes alphabetically by qualified name
+        let sorted_attributes: BTreeMap<String, String> = element.attributes.clone().into_iter().collect();
+        element.attributes = sorted_attributes.into_iter().collect();
+        
+        // 2. Apply namespace prefix locking
+        self.apply_namespace_prefix_locking(&mut element.attributes, version)?;
+        
+        // 3. Sort child elements according to schema-defined order
+        self.sort_child_elements(&mut element.children, &element.name, version)?;
+        
+        // 4. Recursively canonicalize child elements
+        for child in &mut element.children {
+            match child {
+                XmlNode::Element(ref mut child_element) => {
+                    self.canonicalize_element(child_element, version)?;
+                },
+                XmlNode::Text(ref mut text) => {
+                    // Normalize whitespace in text content
+                    *text = self.normalize_whitespace(text);
+                },
+                XmlNode::Comment(_) => {
+                    // Comments are preserved as-is
+                }
+            }
+        }
+        
+        Ok(())
+    }
+    
+    fn apply_namespace_prefix_locking(&self, attributes: &mut IndexMap<String, String>, version: &str) -> Result<(), super::error::BuildError> {
+        let prefix_table = rules::get_namespace_prefixes(version);
+        
+        // Update xmlns attributes to use locked prefixes
+        let mut updated_attrs = IndexMap::new();
+        for (key, value) in attributes.iter() {
+            if key.starts_with("xmlns:") || key == "xmlns" {
+                if let Some(locked_prefix) = prefix_table.get(value) {
+                    let new_key = if key == "xmlns" {
+                        key.clone()
+                    } else {
+                        format!("xmlns:{}", locked_prefix)
+                    };
+                    updated_attrs.insert(new_key, value.clone());
+                } else {
+                    updated_attrs.insert(key.clone(), value.clone());
+                }
+            } else {
+                updated_attrs.insert(key.clone(), value.clone());
+            }
+        }
+        *attributes = updated_attrs;
+        
+        Ok(())
+    }
+    
+    fn sort_child_elements(&self, children: &mut Vec<XmlNode>, parent_name: &str, version: &str) -> Result<(), super::error::BuildError> {
+        let element_order = rules::get_element_order(version);
+        
+        if let Some(order) = element_order.get(parent_name) {
+            // Create a map for quick lookup of element order
+            let order_map: IndexMap<String, usize> = order.iter().enumerate()
+                .map(|(i, name)| (name.clone(), i))
+                .collect();
+                
+            children.sort_by(|a, b| {
+                match (a, b) {
+                    (XmlNode::Element(elem_a), XmlNode::Element(elem_b)) => {
+                        let order_a = order_map.get(&elem_a.name).unwrap_or(&usize::MAX);
+                        let order_b = order_map.get(&elem_b.name).unwrap_or(&usize::MAX);
+                        order_a.cmp(order_b).then_with(|| elem_a.name.cmp(&elem_b.name))
+                    },
+                    (XmlNode::Element(_), _) => std::cmp::Ordering::Less,
+                    (_, XmlNode::Element(_)) => std::cmp::Ordering::Greater,
+                    _ => std::cmp::Ordering::Equal,
+                }
+            });
+        }
+        
+        Ok(())
+    }
+    
+    fn normalize_whitespace(&self, text: &str) -> String {
+        // Normalize line endings to LF and trim whitespace
+        text.replace("\r\n", "\n")
+            .replace("\r", "\n")
+            .lines()
+            .map(|line| line.trim())
+            .filter(|line| !line.is_empty())
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+    
+    fn serialize_canonical(&self, doc: XmlDocument) -> Result<String, super::error::BuildError> {
+        let mut output = Vec::new();
+        // XML writer no longer used since we build the output manually
+        
+        // Write XML declaration
+        output.clear();
+        output.extend_from_slice(rules::XML_DECLARATION.as_bytes());
+        output.push(b'\n');
+        
+        // Serialize the root element with 2-space indentation
+        self.serialize_element(&doc.root, &mut output, 0)?;
+        
+        // Ensure no trailing whitespace and final newline
+        let result = String::from_utf8(output)
+            .map_err(|e| super::error::BuildError::XmlGeneration(format!("UTF-8 conversion error: {}", e)))?;
+            
+        let canonical = result.lines()
+            .map(|line| line.trim_end()) // Remove trailing whitespace
+            .collect::<Vec<_>>()
+            .join("\n");
+            
+        Ok(format!("{}\n", canonical))
+    }
+    
+    fn serialize_element(&self, element: &XmlElement, output: &mut Vec<u8>, indent_level: usize) -> Result<(), super::error::BuildError> {
+        let indent = "  ".repeat(indent_level);
+        
+        // Start tag
+        output.extend_from_slice(indent.as_bytes());
+        output.push(b'<');
+        output.extend_from_slice(element.name.as_bytes());
+        
+        // Attributes (already sorted)
+        for (key, value) in &element.attributes {
+            output.push(b' ');
+            output.extend_from_slice(key.as_bytes());
+            output.extend_from_slice(b"=\"");
+            output.extend_from_slice(html_escape::encode_double_quoted_attribute(&value).as_bytes());
+            output.push(b'"');
+        }
+        
+        if element.children.is_empty() {
+            // Self-closing tag
+            output.extend_from_slice(b"/>");
+            output.push(b'\n');
+        } else {
+            output.push(b'>');
+            
+            // Check if we have only text content (no child elements)
+            let has_only_text = element.children.iter().all(|child| matches!(child, XmlNode::Text(_)));
+            
+            if has_only_text {
+                // Inline text content
+                for child in &element.children {
+                    if let XmlNode::Text(text) = child {
+                        output.extend_from_slice(html_escape::encode_text(text).as_bytes());
+                    }
+                }
+            } else {
+                output.push(b'\n');
+                
+                // Child elements with proper indentation
+                for child in &element.children {
+                    match child {
+                        XmlNode::Element(child_element) => {
+                            self.serialize_element(child_element, output, indent_level + 1)?;
+                        },
+                        XmlNode::Text(text) => {
+                            if !text.trim().is_empty() {
+                                let child_indent = "  ".repeat(indent_level + 1);
+                                output.extend_from_slice(child_indent.as_bytes());
+                                output.extend_from_slice(html_escape::encode_text(text.trim()).as_bytes());
+                                output.push(b'\n');
+                            }
+                        },
+                        XmlNode::Comment(comment) => {
+                            let child_indent = "  ".repeat(indent_level + 1);
+                            output.extend_from_slice(child_indent.as_bytes());
+                            output.extend_from_slice(b"<!--");
+                            output.extend_from_slice(comment.as_bytes());
+                            output.extend_from_slice(b"-->");
+                            output.push(b'\n');
+                        }
+                    }
+                }
+                
+                output.extend_from_slice(indent.as_bytes());
+            }
+            
+            // End tag
+            output.extend_from_slice(b"</");
+            output.extend_from_slice(element.name.as_bytes());
+            output.push(b'>');
+            output.push(b'\n');
+        }
+        
+        Ok(())
     }
 }
 
@@ -163,6 +445,24 @@ pub mod rules {
     /// Fixed XML declaration
     pub const XML_DECLARATION: &str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
     
+    /// Namespace prefix lock table for ERN 3.8.2
+    pub fn ern_382_prefixes() -> IndexMap<String, String> {
+        let mut prefixes = IndexMap::new();
+        prefixes.insert("http://ddex.net/xml/ern/382".to_string(), "ern".to_string());
+        prefixes.insert("http://ddex.net/xml/avs".to_string(), "avs".to_string());
+        prefixes.insert("http://www.w3.org/2001/XMLSchema-instance".to_string(), "xsi".to_string());
+        prefixes
+    }
+    
+    /// Namespace prefix lock table for ERN 4.2
+    pub fn ern_42_prefixes() -> IndexMap<String, String> {
+        let mut prefixes = IndexMap::new();
+        prefixes.insert("http://ddex.net/xml/ern/42".to_string(), "ern".to_string());
+        prefixes.insert("http://ddex.net/xml/avs".to_string(), "avs".to_string());
+        prefixes.insert("http://www.w3.org/2001/XMLSchema-instance".to_string(), "xsi".to_string());
+        prefixes
+    }
+    
     /// Namespace prefix lock table for ERN 4.3
     pub fn ern_43_prefixes() -> IndexMap<String, String> {
         let mut prefixes = IndexMap::new();
@@ -170,6 +470,83 @@ pub mod rules {
         prefixes.insert("http://ddex.net/xml/avs".to_string(), "avs".to_string());
         prefixes.insert("http://www.w3.org/2001/XMLSchema-instance".to_string(), "xsi".to_string());
         prefixes
+    }
+    
+    /// Get namespace prefix table for a specific ERN version
+    pub fn get_namespace_prefixes(version: &str) -> IndexMap<String, String> {
+        match version {
+            "3.8.2" | "382" => ern_382_prefixes(),
+            "4.2" | "42" => ern_42_prefixes(),
+            "4.3" | "43" => ern_43_prefixes(),
+            _ => ern_43_prefixes(), // Default to latest
+        }
+    }
+    
+    /// Canonical element order for ERN 3.8.2
+    pub fn ern_382_element_order() -> IndexMap<String, Vec<String>> {
+        let mut order = IndexMap::new();
+        
+        // Message header order for 3.8.2
+        order.insert("MessageHeader".to_string(), vec![
+            "MessageId".to_string(),
+            "MessageType".to_string(),
+            "MessageCreatedDateTime".to_string(),
+            "MessageSender".to_string(),
+            "MessageRecipient".to_string(),
+            "MessageControlType".to_string(),
+        ]);
+        
+        // Release order for 3.8.2
+        order.insert("Release".to_string(), vec![
+            "ReleaseReference".to_string(),
+            "ReleaseId".to_string(),
+            "ReferenceTitle".to_string(),
+            "ReleaseResourceReferenceList".to_string(),
+            "ReleaseDetailsByTerritory".to_string(),
+        ]);
+        
+        // Deal order for 3.8.2
+        order.insert("Deal".to_string(), vec![
+            "DealReference".to_string(),
+            "DealTerms".to_string(),
+            "DealReleaseReference".to_string(),
+        ]);
+        
+        order
+    }
+    
+    /// Canonical element order for ERN 4.2
+    pub fn ern_42_element_order() -> IndexMap<String, Vec<String>> {
+        let mut order = IndexMap::new();
+        
+        // Message header order for 4.2
+        order.insert("MessageHeader".to_string(), vec![
+            "MessageId".to_string(),
+            "MessageType".to_string(),
+            "MessageCreatedDateTime".to_string(),
+            "MessageSender".to_string(),
+            "MessageRecipient".to_string(),
+            "MessageControlType".to_string(),
+            "MessageAuditTrail".to_string(),
+        ]);
+        
+        // Release order for 4.2
+        order.insert("Release".to_string(), vec![
+            "ReleaseReference".to_string(),
+            "ReleaseId".to_string(),
+            "ReferenceTitle".to_string(),
+            "ReleaseResourceReferenceList".to_string(),
+            "ReleaseDetailsByTerritory".to_string(),
+        ]);
+        
+        // Deal order for 4.2
+        order.insert("Deal".to_string(), vec![
+            "DealReference".to_string(),
+            "DealTerms".to_string(),
+            "DealReleaseReference".to_string(),
+        ]);
+        
+        order
     }
     
     /// Canonical element order for ERN 4.3
@@ -196,6 +573,53 @@ pub mod rules {
             "ReleaseDetailsByTerritory".to_string(),
         ]);
         
+        // Deal order
+        order.insert("Deal".to_string(), vec![
+            "DealReference".to_string(),
+            "DealTerms".to_string(),
+            "DealReleaseReference".to_string(),
+        ]);
+        
+        // Track order
+        order.insert("SoundRecording".to_string(), vec![
+            "SoundRecordingType".to_string(),
+            "SoundRecordingId".to_string(),
+            "ReferenceTitle".to_string(),
+            "DisplayTitle".to_string(),
+            "DisplayTitleText".to_string(),
+            "Duration".to_string(),
+            "CreationDate".to_string(),
+            "MasteredDate".to_string(),
+            "OriginalResourceReleaseDate".to_string(),
+            "SoundRecordingDetailsByTerritory".to_string(),
+        ]);
+        
         order
     }
+    
+    /// Get element order for a specific ERN version
+    pub fn get_element_order(version: &str) -> IndexMap<String, Vec<String>> {
+        match version {
+            "3.8.2" | "382" => ern_382_element_order(),
+            "4.2" | "42" => ern_42_element_order(), 
+            "4.3" | "43" => ern_43_element_order(),
+            _ => ern_43_element_order(), // Default to latest
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests;
+
+/// Test helper functions
+#[cfg(test)]
+pub fn create_test_canonicalizer() -> DB_C14N {
+    let config = super::determinism::DeterminismConfig::default();
+    DB_C14N::new(config)
+}
+
+#[cfg(test)]
+pub fn create_test_canonicalizer_with_version(version: &str) -> DB_C14N {
+    let config = super::determinism::DeterminismConfig::default();
+    DB_C14N::with_version(config, version.to_string())
 }

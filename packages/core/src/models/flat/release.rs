@@ -3,7 +3,7 @@
 
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
-use crate::models::common::{LocalizedString, Copyright};
+use crate::models::{Extensions, common::{LocalizedString, Copyright}};
 use super::{ParsedTrack, ParsedImage, ParsedVideo, TerritoryInfo};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -28,6 +28,8 @@ pub struct ParsedRelease {
     pub release_date: Option<DateTime<Utc>>,
     pub original_release_date: Option<DateTime<Utc>>,
     pub territories: Vec<TerritoryInfo>,
+    /// Extensions for parsed release
+    pub extensions: Option<Extensions>,
     pub p_line: Option<Copyright>,
     pub c_line: Option<Copyright>,
     pub parent_release: Option<String>,

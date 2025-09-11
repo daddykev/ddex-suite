@@ -66,6 +66,7 @@ impl GraphBuilder {
             profile: None,
             message_audit_trail: None,
             extensions: None,
+            legacy_extensions: None,
             comments: None,
         })
     }
@@ -82,14 +83,17 @@ impl GraphBuilder {
                 party_id: Vec::new(),
                 party_name: Vec::new(),
                 trading_name: None,
+                extensions: None,
             },
             message_recipient: MessageRecipient {
                 party_id: Vec::new(),
                 party_name: Vec::new(),
                 trading_name: None,
+                extensions: None,
             },
             message_control_type: None,
             message_thread_id: Some("THREAD_001".to_string()),
+            extensions: None,
         })
     }
     
@@ -109,6 +113,7 @@ impl GraphBuilder {
             release_date: Vec::new(),
             territory_code: Vec::new(),
             excluded_territory_code: Vec::new(),
+            extensions: None,
         };
         
         // Skip to the end of the Release element

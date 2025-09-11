@@ -135,11 +135,13 @@ impl<R: BufRead> StreamingParser<R> {
             party_id: Vec::new(),
             party_name: Vec::new(),
             trading_name: None,
+            extensions: None,
         };
         let mut recipient = MessageRecipient {
             party_id: Vec::new(),
             party_name: Vec::new(),
             trading_name: None,
+            extensions: None,
         };
         
         self.buffer.clear();
@@ -195,6 +197,7 @@ impl<R: BufRead> StreamingParser<R> {
             message_recipient: recipient,
             message_control_type: None,
             message_thread_id: None,
+            extensions: None,
         })
     }
     
@@ -205,6 +208,7 @@ impl<R: BufRead> StreamingParser<R> {
             party_id: Vec::new(),
             party_name: Vec::new(),
             trading_name: None,
+            extensions: None,
         };
         
         self.buffer.clear();
@@ -248,6 +252,7 @@ impl<R: BufRead> StreamingParser<R> {
             party_id: Vec::new(),
             party_name: Vec::new(),
             trading_name: None,
+            extensions: None,
         };
         
         self.buffer.clear();
@@ -454,6 +459,7 @@ impl<'a, R: BufRead> ReleaseIterator<'a, R> {
             release_date: Vec::new(),
             territory_code: Vec::new(),
             excluded_territory_code: Vec::new(),
+            extensions: None,
         };
         
         self.parser.buffer.clear();
@@ -642,11 +648,12 @@ pub fn parse_streaming<R: BufRead>(
         profile: None,
         message_audit_trail: None,
         extensions: None,
+        legacy_extensions: None,
         comments: None,
     };
     
     // Flatten to developer-friendly model
     let flat = Flattener::flatten(graph.clone());
     
-    Ok(ParsedERNMessage { graph, flat })
+    Ok(ParsedERNMessage { graph, flat, extensions: None })
 }

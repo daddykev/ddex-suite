@@ -35,7 +35,7 @@ Beyond the core implementation, this is a showcase of **software craftsmanship a
 
 ## 🚧 Development Status
 
-**Current Phase**: Phase 4.2 - Documentation & Launch Prep  
+**Current Phase**: Phase 4.3 - Perfect Fidelity Engine  
 **Latest Release**: Suite v0.2.5 🎉  
 **Target Release**: Suite v1.0.0 in Q4 2025
 
@@ -54,7 +54,8 @@ All packages published across npm, PyPI, and **crates.io**! ✅
 ✅ **Phase 1-3: Complete** - Core foundation, parser, and builder are fully implemented  
 ✅ **Phase 4.1: Integration Testing** - Round-trip functionality validated with 94 tests passing  
 ✅ **crates.io Publishing** - **NEW!** All Rust crates published to the official registry  
-🔄 **Phase 4.2: Documentation & Launch** - Creating unified docs and tutorials  
+✅ **Phase 4.2: Documentation** - [Docusaurus](https://ddex-suite.org) site in React  
+🔄 **Phase 4.3: Perfect Fidelity Engine** - Round-trip, deterministic output  
 
 For detailed development progress and technical implementation details, see [blueprint.md](./blueprint.md).
 
@@ -83,9 +84,9 @@ interface ParsedRelease {
   releaseId: string;
   title: string;
   displayArtist: string;
-  tracks: ParsedTrack[];         // Fully resolved with resources merged
+  tracks: ParsedTrack[];          // Fully resolved with resources merged
   coverArt?: ParsedImage;
-  _graph?: Release;              // Reference to original for full fidelity
+  _graph?: Release;               // Reference to original for full fidelity
   extensions?: Map<string, XmlFragment>; // Extensions preserved
 }
 ```
@@ -121,9 +122,9 @@ pip install ddex-parser  # ✅ Latest: v0.2.5
 pip install ddex-builder # ✅ Latest: v0.2.5
 
 # Rust ✅ NEW!
-cargo add ddex-core       # ✅ Latest: v0.2.5
-cargo add ddex-parser     # ✅ Latest: v0.2.5 
-cargo add ddex-builder    # ✅ Latest: v0.2.5
+cargo add ddex-core      # ✅ Latest: v0.2.5
+cargo add ddex-parser    # ✅ Latest: v0.2.5 
+cargo add ddex-builder   # ✅ Latest: v0.2.5
 ```
 
 ## 💻 Usage Examples
@@ -283,8 +284,8 @@ DDEX Suite is designed to complement [DDEX Workbench](https://ddex-workbench.org
 ---
 
 **Repository**: https://github.com/daddykev/ddex-suite  
-**Status**: Phase 4.2 - Documentation & Launch Prep  
+**Status**: Phase 4.3 - Perfect Fidelity Engine  
 **Parser**: v0.2.5 on [npm](https://www.npmjs.com/package/ddex-parser) and [PyPI](https://pypi.org/project/ddex-parser/)  
 **Builder**: v0.2.5 on [npm](https://www.npmjs.com/package/ddex-builder) and [PyPI](https://pypi.org/project/ddex-builder/)  
 **Suite Target**: v1.0.0 in Q4 2025  
-**Last Updated**: September 10, 2025
+**Last Updated**: September 11, 2025

@@ -6,6 +6,7 @@ pub mod security;
 pub mod stream;
 pub mod mode;
 pub mod dom;
+pub mod extension_capture;
 
 #[cfg(test)]
 mod tests;
@@ -73,7 +74,9 @@ pub fn parse<R: BufRead + std::io::Seek>(
         }
         mode::ParseMode::Auto => unreachable!(), // Already resolved
     }
-}pub mod version_ext;
+}
+
+pub mod version_ext;
 
 impl ParseOptions {
     pub fn with_extensions() -> Self {

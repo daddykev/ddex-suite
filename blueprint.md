@@ -1649,7 +1649,7 @@ ddex-suite/
   - Documentation auto-generating at https://docs.rs/
 
 #### 4.2 Documentation 🔄 **IN PROGRESS**
-- [x] Create unified Docusaurus site in React
+- [x] Create unified [Docusaurus](https://ddex-suite.org) site in React
 - [x] Build tutorials
 - [x] Expanded ddex-builder section
 - [x] Expanded ddex-parser section
@@ -1658,8 +1658,8 @@ ddex-suite/
 - [x] Landing page enhancement
 
 #### 4.3 Perfect Fidelity Engine
-- [ ] Implement full DB-C14N/1.0 spec
-- [ ] Create extension preservation system
+- [x] Implement full DB-C14N/1.0 spec
+- [x] Create extension preservation system
 - [ ] Build comment retention engine
 - [ ] Add namespace management
 - [ ] Implement attribute preservation
@@ -1784,7 +1784,7 @@ interface DeterminismConfig {
   - https://crates.io/crates/ddex-builder
 - **GitHub**: https://github.com/daddykev/ddex-suite
 
-## Current Status (January 2025)
+## Current Status (September 2025)
 
 ### Completed ✅
 - Monorepo structure established
@@ -1804,16 +1804,17 @@ interface DeterminismConfig {
 - Comprehensive CHANGELOG.md documentation
 
 ### In Progress 🔄
+- v0.3.0 with Perfect Fidelity Engine
 - Documentation site creation
 - Interactive tutorials
 - Marketing materials preparation
 
 ### Next Steps 🎯
-1. Create unified documentation site
-2. Build interactive tutorials and demo videos
+1. Optimized v0.5.0 release
+2. Fuzz testing
 3. Setup community channels
-4. Official v1.0.0 release
-5. Advanced features (DB-C14N/1.0 full spec, enterprise features)
+4. Advanced features (enterprise handling)
+5. Official v1.0.0 release
 
 ## Contributing
 

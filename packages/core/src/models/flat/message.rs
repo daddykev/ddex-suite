@@ -5,12 +5,14 @@ use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 use super::{ParsedRelease, ParsedResource, ParsedDeal};
-use crate::models::graph::{Party, ERNMessage};
+use crate::models::{Extensions, graph::{Party, ERNMessage}};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ParsedERNMessage {
     pub graph: ERNMessage,
     pub flat: FlattenedMessage,
+    /// Extensions from the original XML that need preservation
+    pub extensions: Option<Extensions>,
 }
 
 impl ParsedERNMessage {
@@ -45,12 +47,16 @@ pub struct FlattenedMessage {
     pub version: String,
     pub profile: Option<String>,
     pub stats: MessageStats,
+    /// Extensions for flattened message
+    pub extensions: Option<Extensions>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Organization {
     pub name: String,
     pub id: String,
+    /// Extensions for organization
+    pub extensions: Option<Extensions>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
