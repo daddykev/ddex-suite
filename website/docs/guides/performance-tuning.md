@@ -23,10 +23,10 @@ The DDEX Suite provides multiple optimization strategies including streaming par
 
 | Catalog Size | Target Processing Time | Memory Usage | Throughput |
 |--------------|----------------------|--------------|------------|
-| 10MB | <5 seconds | <50MB | 2MB/s |
-| 100MB | <30 seconds | <200MB | 3MB/s |
-| 1GB | <5 minutes | <500MB | 3.5MB/s |
-| 10GB+ | <30 minutes | <1GB | 6MB/s |
+| 10MB | &lt;5 seconds | &lt;50MB | 2MB/s |
+| 100MB | &lt;30 seconds | &lt;200MB | 3MB/s |
+| 1GB | &lt;5 minutes | &lt;500MB | 3.5MB/s |
+| 10GB+ | &lt;30 minutes | &lt;1GB | 6MB/s |
 
 ## Memory Optimization
 

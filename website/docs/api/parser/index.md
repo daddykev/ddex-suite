@@ -35,10 +35,10 @@ The DDEX Parser provides high-performance parsing of DDEX XML files with native 
 
 | File Size | Parse Time | Memory Usage |
 |-----------|------------|--------------|
-| 10KB | <5ms | <1MB |
-| 100KB | <10ms | <5MB |
-| 1MB | <50ms | <20MB |
-| 100MB | <5s | <100MB |
+| 10KB | &lt;5ms | &lt;1MB |
+| 100KB | &lt;10ms | &lt;5MB |
+| 1MB | &lt;50ms | &lt;20MB |
+| 100MB | &lt;5s | &lt;100MB |
 
 ## Common Usage Patterns
 

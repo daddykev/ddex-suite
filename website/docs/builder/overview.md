@@ -28,7 +28,7 @@ Pre-configured settings for major music platforms:
 
 ### 🚀 High Performance
 - **Native Rust core** with optimized language bindings
-- **Sub-millisecond** builds for typical releases (<15ms average)
+- **Sub-millisecond** builds for typical releases (&lt;15ms average)
 - **Streaming generation** for massive catalogs (>100,000 tracks)
 - **Memory-efficient** processing with configurable limits
 
@@ -41,7 +41,7 @@ Pre-configured settings for major music platforms:
 ### 🌐 Universal Language Support
 - **JavaScript/TypeScript**: Native Node.js performance with full type safety
 - **Python**: PyO3 bindings with pandas DataFrame integration
-- **WebAssembly**: Browser-ready bundle optimized at <400KB
+- **WebAssembly**: Browser-ready bundle optimized at &lt;400KB
 - **Rust**: Direct access to the core building engine
 
 ## Core Concepts

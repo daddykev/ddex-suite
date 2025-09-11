@@ -125,7 +125,490 @@
   margin-bottom: 0.5rem;
 }
 
+/* Workflow Animation */
+.workflowAnimation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2rem 0 3rem 0;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.workflowStep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  min-width: 200px;
+  opacity: 0.6;
+}
+
+.workflowStepActive {
+  opacity: 1;
+  transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.workflowStepIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.workflowStepContent h3 {
+  margin-bottom: 0.5rem;
+  color: white;
+  font-weight: 600;
+}
+
+.workflowStepContent p {
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.workflowArrow {
+  font-size: 2rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: bold;
+}
+
+/* Performance Benchmarks */
+.performanceBenchmarks {
+  padding: 4rem 0;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+.performanceBenchmarks h2 {
+  text-align: center;
+  margin-bottom: 3rem;
+  font-size: 2.5rem;
+}
+
+.benchmarkCard {
+  text-align: center;
+  padding: 2rem 1rem;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease;
+  height: 100%;
+}
+
+.benchmarkCard:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+}
+
+.benchmarkIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.benchmarkValue {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--ifm-color-primary);
+  margin-bottom: 0.5rem;
+}
+
+.benchmarkLabel {
+  color: var(--ifm-color-secondary);
+  font-weight: 500;
+}
+
+.chartContainer {
+  margin-top: 4rem;
+  display: flex;
+  justify-content: center;
+}
+
+.performanceChart {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  max-width: 600px;
+  width: 100%;
+}
+
+.performanceChart h3 {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: var(--ifm-color-primary);
+}
+
+.chartBars {
+  display: flex;
+  align-items: end;
+  justify-content: space-around;
+  height: 200px;
+  gap: 1rem;
+}
+
+.chartBar {
+  background: linear-gradient(to top, var(--ifm-color-primary), var(--ifm-color-primary-light));
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  padding: 0.5rem;
+  color: white;
+  font-weight: bold;
+  font-size: 0.8rem;
+  text-align: center;
+  line-height: 1.2;
+  flex: 1;
+  min-height: 20px;
+}
+
+/* Code Examples */
+.codeExamples {
+  padding: 4rem 0;
+  background-color: var(--ifm-background-surface-color);
+}
+
+.codeExamples h2 {
+  text-align: center;
+  margin-bottom: 3rem;
+  font-size: 2.5rem;
+}
+
+/* Enhanced Feature Comparison */
+.featureComparison {
+  padding: 4rem 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.featureComparison h2 {
+  text-align: center;
+  margin-bottom: 3rem;
+  color: white;
+  font-size: 2.5rem;
+}
+
+.featureCard {
+  border: none;
+  border-radius: 16px;
+  padding: 2rem;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  color: var(--ifm-color-emphasis-900);
+}
+
+.featureCard:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.featureCardDesc {
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.featureGrid {
+  margin: 2rem 0;
+}
+
+.featureItem {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.featureItemIcon {
+  font-size: 1.5rem;
+  width: 40px;
+  text-align: center;
+}
+
+/* Testimonials */
+.testimonials {
+  padding: 4rem 0;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.testimonials h2 {
+  text-align: center;
+  margin-bottom: 3rem;
+  color: white;
+  font-size: 2.5rem;
+}
+
+.testimonialCard {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 2rem;
+  height: 100%;
+  transition: transform 0.3s ease;
+}
+
+.testimonialCard:hover {
+  transform: translateY(-4px);
+}
+
+.testimonialQuote {
+  font-style: italic;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.testimonialAuthor {
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  padding-top: 1rem;
+}
+
+/* Why DDEX Suite */
+.whyDDEXSuite {
+  padding: 4rem 0;
+  background-color: var(--ifm-background-surface-color);
+}
+
+.whyDDEXSuite h2 {
+  text-align: center;
+  margin-bottom: 1rem;
+  font-size: 2.5rem;
+}
+
+.sectionSubtitle {
+  text-align: center;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 1.2rem;
+  margin-bottom: 3rem;
+}
+
+.comparisonTable {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.comparisonRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+  align-items: center;
+}
+
+.comparisonRow:last-child {
+  border-bottom: none;
+}
+
+.comparisonRow:nth-child(even) {
+  background: var(--ifm-color-emphasis-100);
+}
+
+.comparisonFeature {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-weight: 600;
+}
+
+.comparisonIcon {
+  font-size: 1.5rem;
+}
+
+.comparisonDDEX {
+  color: var(--ifm-color-success);
+  font-weight: 500;
+}
+
+.comparisonAlts {
+  color: var(--ifm-color-danger);
+  font-weight: 500;
+}
+
+/* Roadmap */
+.roadmap {
+  padding: 4rem 0;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+}
+
+.roadmap h2 {
+  text-align: center;
+  margin-bottom: 3rem;
+  color: white;
+  font-size: 2.5rem;
+}
+
+.roadmapTimeline {
+  position: relative;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.roadmapItem {
+  display: flex;
+  margin-bottom: 2rem;
+  gap: 2rem;
+  align-items: start;
+}
+
+.roadmapQuarter {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 1rem;
+  border-radius: 12px;
+  font-weight: bold;
+  min-width: 100px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+.roadmapContent {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 2rem;
+  border-radius: 16px;
+  flex: 1;
+}
+
+.roadmapContent h3 {
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.roadmapContent ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.roadmapContent li {
+  margin-bottom: 0.5rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.roadmapCompleted {
+  opacity: 0.8;
+}
+
+.roadmapCompleted .roadmapQuarter {
+  background: rgba(76, 175, 80, 0.3);
+}
+
+.roadmapInprogress .roadmapQuarter {
+  background: rgba(255, 193, 7, 0.3);
+}
+
+.roadmapPlanned .roadmapQuarter {
+  background: rgba(33, 150, 243, 0.3);
+}
+
+/* Community */
+.community {
+  padding: 4rem 0;
+  background-color: var(--ifm-background-surface-color);
+}
+
+.community h2 {
+  text-align: center;
+  margin-bottom: 3rem;
+  font-size: 2.5rem;
+}
+
+.communityCard {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  height: 100%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.communityCard:hover {
+  transform: translateY(-4px);
+}
+
+.communityCard h3 {
+  color: var(--ifm-color-primary);
+  margin-bottom: 1.5rem;
+}
+
+.githubStats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  align-items: center;
+}
+
+.packageStats {
+  margin-bottom: 1.5rem;
+}
+
+.packageStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.packageStat span {
+  font-size: 0.9rem;
+  color: var(--ifm-color-emphasis-600);
+}
+
 @media screen and (max-width: 996px) {
+  .heroBanner {
+    padding: 2rem;
+  }
+  
+  .workflowAnimation {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .workflowStep {
+    min-width: auto;
+    width: 100%;
+    max-width: 300px;
+  }
+  
+  .workflowArrow {
+    transform: rotate(90deg);
+  }
+  
+  .chartBars {
+    height: 150px;
+  }
+  
+  .chartBar {
+    font-size: 0.7rem;
+  }
+  
+  .comparisonRow {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .roadmapItem {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .roadmapQuarter {
+    align-self: center;
+  }
+  
   .performanceMetrics {
     flex-direction: column;
     gap: 1rem;

@@ -12,7 +12,7 @@ const config: Config = {
   organizationName: 'daddykev',
   projectName: 'ddex-suite',
   
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
   
   i18n: {

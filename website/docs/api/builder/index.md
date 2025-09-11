@@ -35,10 +35,10 @@ The DDEX Builder provides deterministic XML generation with DB-C14N/1.0 canonica
 
 | Catalog Size | Build Time | Memory Usage | Output Size |
 |--------------|------------|--------------|-------------|
-| 100 releases | <50ms | <10MB | ~500KB |
-| 1K releases | <200ms | <50MB | ~5MB |
-| 10K releases | <2s | <200MB | ~50MB |
-| 100K releases* | <20s | <500MB | ~500MB |
+| 100 releases | &lt;50ms | &lt;10MB | ~500KB |
+| 1K releases | &lt;200ms | &lt;50MB | ~5MB |
+| 10K releases | &lt;2s | &lt;200MB | ~50MB |
+| 100K releases* | &lt;20s | &lt;500MB | ~500MB |
 
 _*Using streaming builder for large catalogs_
 

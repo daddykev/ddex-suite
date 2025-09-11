@@ -246,7 +246,7 @@ Canonicalization uses constant additional memory:
 - Attribute sorting buffers: ~1KB per element
 - Namespace normalization: ~512 bytes per document
 
-Total overhead is typically <1% of the base XML size.
+Total overhead is typically &lt;1% of the base XML size.
 
 ## Debugging Canonicalization
 

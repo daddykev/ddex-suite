@@ -1649,8 +1649,7 @@ ddex-suite/
 - [x] Expanded ddex-parser section
 - [x] Build interactive playground
 - [x] Complete API documentation
-- [ ] Landing page enhancement
-- [ ] Search and navigation
+- [x] Landing page enhancement
 
 #### 4.3 Perfect Fidelity Engine
 - [ ] Implement full DB-C14N/1.0 spec

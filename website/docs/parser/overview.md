@@ -14,7 +14,7 @@ DDEX Parser transforms complex DDEX XML messages into clean, structured data tha
 
 ### 🚀 Blazing Performance
 - **15x faster** than traditional XML parsers
-- Parse 10KB files in <5ms, 100MB files in <5s
+- Parse 10KB files in &lt;5ms, 100MB files in &lt;5s
 - Memory-efficient streaming for large catalogs
 - Native Rust core with optimized language bindings
 
@@ -32,7 +32,7 @@ DDEX Parser transforms complex DDEX XML messages into clean, structured data tha
 ### 🌐 Universal Language Support
 - **JavaScript/TypeScript**: Native Node.js bindings with full type definitions
 - **Python**: PyO3 bindings with pandas DataFrame integration
-- **WebAssembly**: Browser-ready bundle optimized at <500KB
+- **WebAssembly**: Browser-ready bundle optimized at &lt;500KB
 - **Rust**: Direct access to the core parsing engine
 
 ## Use Cases
@@ -157,7 +157,7 @@ console.log(`Detected DDEX version: ${version}`);
 ### Memory Efficiency
 
 - **70% less memory** than traditional parsers for small files
-- **Streaming support** maintains <100MB memory usage for files of any size
+- **Streaming support** maintains &lt;100MB memory usage for files of any size
 - **Configurable limits** prevent memory exhaustion attacks
 
 ## Security Features
