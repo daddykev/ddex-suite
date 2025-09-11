@@ -35,7 +35,16 @@ conda install -c conda-forge ddex-builder  # Coming soon
 ### Rust
 
 ```bash
-cargo add ddex-builder-core
+# Add to your Cargo.toml dependencies
+cargo add ddex-builder ddex-core
+
+# Or manually edit Cargo.toml
+[dependencies]
+ddex-builder = "0.2.5"
+ddex-core = "0.2.5"
+
+# Install CLI tool
+cargo install ddex-builder
 ```
 
 ## System Requirements
@@ -73,6 +82,22 @@ pip install "ddex-builder[async]"
 
 # Install all optional features
 pip install "ddex-builder[all]"
+```
+
+### Rust Requirements
+
+- **Rust**: `1.70.0` or higher (2021 edition)
+- **Architecture**: x64, arm64
+- **Platforms**: Linux, macOS, Windows
+- **Memory**: Depends on build size (typically \<100MB)
+- **Optional Dependencies**: tokio (for async features)
+
+```toml
+[dependencies]
+ddex-builder = { version = "0.2.5", features = ["async"] }
+ddex-core = "0.2.5"
+tokio = { version = "1.0", features = ["full"] }
+serde_json = "1.0"  # For JSON input/output
 ```
 
 ### WebAssembly Requirements (Browser)
@@ -232,6 +257,54 @@ try:
     print("✅ Pandas integration available")
 except ImportError:
     print("ℹ️ Pandas not installed (DataFrame features unavailable)")
+```
+
+### Rust Verification
+
+```rust
+use ddex_builder::DdexBuilder;
+use ddex_core::models::BuildRequest;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Check basic functionality
+    let builder = DdexBuilder::new();
+    println!("✅ DDEX Builder loaded successfully");
+    
+    // Test building with minimal data
+    let build_request = BuildRequest {
+        message_header: ddex_core::models::MessageHeader {
+            message_id: "TEST_001".to_string(),
+            message_sender_name: "Test Sender".to_string(),
+            message_recipient_name: "Test Recipient".to_string(),
+            ..Default::default()
+        },
+        releases: vec![ddex_core::models::Release {
+            release_id: "REL001".to_string(),
+            title: vec![ddex_core::models::LocalizedString {
+                text: "Test Release".to_string(),
+                language_code: Some("en".to_string()),
+                ..Default::default()
+            }],
+            display_artist: "Test Artist".to_string(),
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+
+    match builder.build(&build_request) {
+        Ok(xml) => {
+            println!("✅ Builder working correctly");
+            println!("Generated XML: {} bytes", xml.len());
+        }
+        Err(e) => println!("❌ Builder test failed: {}", e),
+    }
+
+    // Test presets
+    let presets = builder.get_available_presets();
+    println!("Available presets: {:?}", presets);
+
+    Ok(())
+}
 ```
 
 ## Development Installation

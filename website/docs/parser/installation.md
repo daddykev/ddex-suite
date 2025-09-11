@@ -35,7 +35,16 @@ conda install -c conda-forge ddex-parser  # Coming soon
 ### Rust
 
 ```bash
-cargo add ddex-parser-core
+# Add to your Cargo.toml dependencies
+cargo add ddex-parser ddex-core
+
+# Or manually edit Cargo.toml
+[dependencies]
+ddex-parser = "0.2.5"
+ddex-core = "0.2.5"
+
+# Install CLI tool
+cargo install ddex-parser
 ```
 
 ## System Requirements
@@ -71,6 +80,20 @@ pip install "ddex-parser[async]"
 
 # Install all optional features
 pip install "ddex-parser[all]"
+```
+
+### Rust Requirements
+
+- **Rust**: `1.70.0` or higher
+- **Architecture**: x64, arm64
+- **Platforms**: Linux, macOS, Windows
+- **Memory**: Depends on DDEX file size (typically \<50MB)
+- **Optional Dependencies**: tokio (for async features)
+
+```toml
+[dependencies]
+ddex-parser = { version = "0.2.5", features = ["async"] }
+tokio = { version = "1.0", features = ["full"] }
 ```
 
 ### Browser Requirements (WebAssembly)
@@ -185,6 +208,38 @@ try:
     print("✅ Pandas integration available")
 except ImportError:
     print("ℹ️ Pandas not installed (DataFrame features unavailable)")
+```
+
+### Rust Verification
+
+```rust
+use ddex_parser::DDEXParser;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Check version and capabilities
+    let parser = DDEXParser::new();
+    println!("✅ DDEX Parser loaded successfully");
+    
+    // Test basic functionality
+    let test_xml = r#"<?xml version="1.0"?>
+<NewReleaseMessage xmlns="http://ddex.net/xml/ern/43">
+  <MessageHeader>
+    <MessageId>TEST001</MessageId>
+  </MessageHeader>
+</NewReleaseMessage>"#;
+
+    match parser.parse(test_xml) {
+        Ok(result) => {
+            println!("✅ Parser working correctly");
+            if let Some(message_id) = &result.graph.message_header.message_id {
+                println!("Message ID: {}", message_id);
+            }
+        }
+        Err(e) => println!("❌ Parser test failed: {}", e),
+    }
+
+    Ok(())
+}
 ```
 
 ## Development Installation

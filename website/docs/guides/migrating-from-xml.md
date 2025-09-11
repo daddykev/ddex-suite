@@ -783,11 +783,11 @@ version = parser.detect_version(xml_content)  # Reliable and complete
 
 ## Links to API Documentation
 
-- [Parser TypeScript API](/api/parser/typescript)
-- [Parser Python API](/api/parser/python)
-- [Error Handling Patterns](/api/parser/types#error-handling)
-- [Performance Optimization](/guides/performance-tuning)
-- [Streaming Large Files](/guides/streaming-large-files)
+- [Parser TypeScript API](../api/parser/typescript)
+- [Parser Python API](../api/parser/python)
+- [Error Handling Patterns](../api/parser/types)
+- [Performance Optimization](./performance-tuning)
+- [Streaming Large Files](./streaming-large-files)
 
 ## Conclusion
 

@@ -65,7 +65,7 @@ const result = await parser.parse(xmlContent, {
 console.log(`Parsed ${result.flat.releases.length} releases`);
 ```
 
-#### stream()
+#### stream() {#streaming}
 
 ```typescript
 stream(source: ReadableStream | NodeJS.ReadableStream, options?: DDEXParserOptions): Promise<ParseResult>

@@ -4,7 +4,7 @@ Common type definitions used across TypeScript and Python APIs for the DDEX Pars
 
 ## Core Configuration Types
 
-### DDEXParserOptions / ParseOptions
+### DDEXParserOptions / ParseOptions {#parseoptions}
 
 Parser configuration interface with language-specific variations.
 
@@ -42,7 +42,7 @@ class ParseOptions:
 
 ## Result Types
 
-### ParseResult Structure
+### ParseResult Structure {#parseresult}
 
 The main result object returned by both TypeScript and Python parsers.
 

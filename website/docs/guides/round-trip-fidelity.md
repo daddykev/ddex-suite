@@ -779,10 +779,10 @@ const xml = await builder.build(buildRequest, {
 
 ## Links to API Documentation
 
-- [Parser Fidelity Options](/api/parser/typescript#fidelity-options)
-- [Builder Extension Handling](/api/builder/typescript#extension-preservation)
-- [Graph vs Flattened Models](/api/models/graph-vs-flattened)
-- [Python DataFrame Integration](/api/parser/python#dataframe-fidelity)
-- [Version Migration API](/api/builder/version-migration)
+- [Parser TypeScript API](../api/parser/typescript)
+- [Builder TypeScript API](../api/builder/typescript)
+- [Data Models Overview](../api/models/message)
+- [Python Parser API](../api/parser/python)
+- [Builder Types Reference](../api/builder/types)
 
 This comprehensive guide ensures perfect round-trip fidelity for all DDEX processing workflows, maintaining data integrity across complex modification cycles.

@@ -10,6 +10,7 @@ Get up and running with DDEX Suite in minutes. This guide will walk you through 
 
 - **Node.js**: Version 16 or higher (for JavaScript/TypeScript)
 - **Python**: Version 3.8 or higher (for Python bindings)
+- **Rust**: Version 1.70 or higher (for native Rust development)
 - Basic understanding of DDEX metadata (helpful but not required)
 
 ## Installation
@@ -36,6 +37,20 @@ pip install ddex-parser ddex-builder
 # Or install individually  
 pip install ddex-parser
 pip install ddex-builder
+```
+
+### Rust
+
+```bash
+# Add to your Cargo.toml
+cargo add ddex-parser ddex-builder
+
+# Or add both individually
+cargo add ddex-parser
+cargo add ddex-builder
+
+# Or install CLI tools
+cargo install ddex-parser ddex-builder
 ```
 
 ### Browser (WebAssembly)
@@ -126,6 +141,38 @@ new_xml = builder.build(result.to_build_request())
 # Save the result
 with open('output/modified-ddex.xml', 'w') as f:
     f.write(new_xml)
+```
+
+## Rust Example
+
+Here's the same workflow in Rust with full type safety and zero-cost abstractions:
+
+```rust
+use ddex_parser::DDEXParser;
+use ddex_builder::DDEXBuilder;
+use std::fs;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Parse DDEX XML
+    let parser = DDEXParser::new();
+    let xml_content = fs::read_to_string("path/to/your/ddex-file.xml")?;
+    let mut result = parser.parse(&xml_content)?;
+
+    // Access structured data with full type safety
+    println!("Release title: {}", result.flat.releases[0].title);
+    println!("Artist: {}", result.flat.sound_recordings[0].display_artist);
+
+    // Modify the data
+    result.flat.releases[0].title = "My Updated Release Title".to_string();
+
+    // Build back to XML with deterministic output
+    let builder = DDEXBuilder::new();
+    let new_xml = builder.build(&result.to_build_request())?;
+
+    // Save the result
+    fs::write("output/modified-ddex.xml", new_xml)?;
+    Ok(())
+}
 ```
 
 ## Working with DataFrames (Python)

@@ -1293,10 +1293,10 @@ for (const file of files) {
 
 ## Links to API Documentation
 
-- [Streaming Parser API](/api/parser/typescript#streaming) - Streaming methods and configuration
-- [Builder Performance](/api/builder/typescript#streaming) - High-performance building
-- [Memory Management](/api/parser/types#performance) - Memory optimization options
-- [Error Handling](/guides/error-handling) - Performance-aware error handling
-- [Streaming Large Files](/guides/streaming-large-files) - Specialized streaming techniques
+- [Streaming Parser API](../api/parser/typescript) - Streaming methods and configuration
+- [Builder Performance](../api/builder/typescript) - High-performance building
+- [Memory Management](../api/parser/types) - Memory optimization options
+- [Error Handling](./error-handling) - Performance-aware error handling
+- [Streaming Large Files](./streaming-large-files) - Specialized streaming techniques
 
 This guide provides comprehensive optimization strategies for processing DDEX catalogs at scale while maintaining memory efficiency and maximizing throughput.

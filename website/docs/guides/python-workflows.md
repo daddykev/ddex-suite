@@ -1025,10 +1025,10 @@ else:
 
 ## Links to API Documentation
 
-- [Python Parser API](/api/parser/python)
-- [Python Builder API](/api/builder/python)
-- [DataFrame Integration](/api/parser/python#dataframe-integration)
-- [Polars Support](/api/parser/python#polars-support)
-- [Analytics Extensions](/api/analytics/python)
+- [Python Parser API](../api/parser/python)
+- [Python Builder API](../api/builder/python)
+- [DataFrame Integration](../api/parser/python#dataframe-integration)
+- [Data Models Reference](../api/models/message)
+- [TypeScript API Reference](../api/typedoc)
 
 This comprehensive guide provides everything needed for advanced DDEX data analysis workflows using Python, from basic DataFrame operations to high-performance analytics with modern data science tools.

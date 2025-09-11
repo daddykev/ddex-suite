@@ -1,6 +1,6 @@
 # DDEX Builder API Reference
 
-Complete TypeScript and Python API documentation for the DDEX Builder with deterministic XML generation.
+Complete API documentation for the DDEX Builder across all supported languages with deterministic XML generation.
 
 ## Overview
 
@@ -17,6 +17,7 @@ The DDEX Builder provides deterministic XML generation with DB-C14N/1.0 canonica
 
 ## Language Bindings
 
+- [**Rust API**](./rust) - Native Rust API with deterministic builds and full type safety
 - [**JavaScript/TypeScript API**](./typescript) - Complete Node.js API reference
 - [**Python API**](./python) - Python bindings with pandas integration
 - [**Core Types**](./types) - Shared type definitions and interfaces
@@ -74,6 +75,26 @@ xml = await builder.build()
 result = await builder.validate()
 if not result.is_valid:
     print("Validation errors:", result.errors)
+```
+
+```rust
+use ddex_builder::{DDEXBuilder, BuildRequest};
+use ddex_core::models::*;
+
+// Deterministic building with presets
+let mut builder = DDEXBuilder::new();
+builder.apply_preset("spotify_audio_43")?;
+
+let request = BuildRequest {
+    message_header: MessageHeader { /* ... */ },
+    releases: vec![Release { /* ... */ }],
+    ..Default::default()
+};
+
+// Generate deterministic XML
+let result = builder.build_detailed(&request)?;
+println!("Generated XML: {} bytes", result.xml.len());
+println!("Canonical hash: {:?}", result.canonical_hash);
 ```
 
 ## Deterministic Guarantees

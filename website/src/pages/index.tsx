@@ -185,10 +185,31 @@ ddex-builder build release.json release.xml
 # Use presets for different platforms
 ddex-builder build --preset spotify release.json`;
 
+  const rustExample = `use ddex_parser::DDEXParser;
+use ddex_builder::DDEXBuilder;
+use std::fs;
+
+// Parse DDEX XML to structured data
+let parser = DDEXParser::new();
+let xml_content = fs::read_to_string("release.xml")?;
+let result = parser.parse(&xml_content)?;
+
+// Access clean, typed data
+println!("Release title: {}", result.flat.releases[0].title);
+println!("Artist name: {}", result.flat.sound_recordings[0].artist);
+
+// Modify the data
+result.flat.releases[0].title = "Remastered Edition".to_string();
+result.flat.deals[0].territories.extend_from_slice(&["US", "CA", "GB"]);
+
+// Build back to deterministic XML
+let builder = DDEXBuilder::new();
+let new_xml = builder.build(&result.to_build_request())?;`;
+
   return (
     <section className={styles.codeExamples}>
       <div className="container">
-        <h2>Parse → Modify → Build in Three Languages</h2>
+        <h2>Parse → Modify → Build in Four Languages</h2>
         <Tabs>
           <TabItem value="typescript" label="TypeScript" default>
             <CodeBlock language="typescript">{typeScriptExample}</CodeBlock>
@@ -205,7 +226,13 @@ ddex-builder build --preset spotify release.json`;
           <TabItem value="cli" label="CLI">
             <CodeBlock language="bash">{cliExample}</CodeBlock>
             <div className={styles.installCommand}>
-              <CodeBlock language="bash">cargo install ddex-suite-cli</CodeBlock>
+              <CodeBlock language="bash">cargo install ddex-parser ddex-builder</CodeBlock>
+            </div>
+          </TabItem>
+          <TabItem value="rust" label="Rust">
+            <CodeBlock language="rust">{rustExample}</CodeBlock>
+            <div className={styles.installCommand}>
+              <CodeBlock language="bash">cargo add ddex-parser ddex-builder</CodeBlock>
             </div>
           </TabItem>
         </Tabs>
@@ -284,54 +311,6 @@ function FeatureComparison() {
   );
 }
 
-function Testimonials() {
-  const testimonials = [
-    {
-      quote: "DDEX Suite reduced our metadata processing pipeline from 2 hours to 5 minutes. The TypeScript support made integration seamless.",
-      author: "Senior Developer at Major Label",
-      company: "Fortune 500 Music Company",
-      useCase: "Processing 50,000+ releases monthly"
-    },
-    {
-      quote: "The Python DataFrame integration is a game-changer for our analytics team. We can now analyze DDEX metadata like any other dataset.",
-      author: "Data Scientist",
-      company: "Music Analytics Startup",
-      useCase: "Market trend analysis from DDEX data"
-    },
-    {
-      quote: "Perfect round-trip fidelity means we never lose data. The deterministic output ensures our CI/CD pipeline is predictable.",
-      author: "DevOps Engineer",
-      company: "Digital Distribution Platform",
-      useCase: "Automated DDEX validation and transformation"
-    }
-  ];
-
-  return (
-    <section className={styles.testimonials}>
-      <div className="container">
-        <h2>Trusted by Industry Leaders</h2>
-        <div className="row">
-          {testimonials.map((testimonial, index) => (
-            <div key={index} className="col col--4">
-              <div className={styles.testimonialCard}>
-                <div className={styles.testimonialQuote}>
-                  "{testimonial.quote}"
-                </div>
-                <div className={styles.testimonialAuthor}>
-                  <strong>{testimonial.author}</strong>
-                  <br />
-                  <em>{testimonial.company}</em>
-                  <br />
-                  <small>{testimonial.useCase}</small>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 function WhyDDEXSuite() {
   const comparisons = [
@@ -515,7 +494,6 @@ export default function Home() {
         <PerformanceBenchmarks />
         <CodeExamples />
         <FeatureComparison />
-        <Testimonials />
         <WhyDDEXSuite />
         <Roadmap />
         <Community />

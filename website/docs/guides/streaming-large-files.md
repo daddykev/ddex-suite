@@ -1144,10 +1144,10 @@ stream.on('data', (chunk) => {
 
 ## Links to API Documentation
 
-- [Streaming Parser API](/api/parser/streaming)
-- [Memory Management](/api/parser/memory-management)
-- [Python Async Streaming](/api/parser/python#async-streaming)
-- [Performance Monitoring](/api/monitoring/performance)
-- [Error Recovery](/api/error-handling/streaming)
+- [Streaming Parser API](../api/parser/streaming)
+- [Memory Management](../api/parser/memory-management)
+- [Python Parser API](../api/parser/python)
+- [Performance Tuning Guide](./performance-tuning)
+- [Error Handling Guide](./error-handling)
 
 This comprehensive guide enables efficient processing of gigabyte-sized DDEX files using advanced streaming techniques, ensuring scalability and reliability for enterprise music catalog operations.

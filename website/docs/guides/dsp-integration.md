@@ -1147,9 +1147,9 @@ interface TestResults {
 
 ## Links to API Documentation
 
-- [Builder Presets](/api/builder/presets) - Platform-specific preset configurations
-- [Validation API](/api/builder/typescript#validate) - Validation methods and error handling
-- [Error Handling Guide](/guides/error-handling) - Comprehensive error handling patterns
-- [Performance Tuning](/guides/performance-tuning) - Optimization for high-volume processing
+- [Builder Presets](../api/builder/presets) - Platform-specific preset configurations
+- [Validation API](../api/builder/typescript#validate) - Validation methods and error handling
+- [Error Handling Guide](./error-handling) - Comprehensive error handling patterns
+- [Performance Tuning](./performance-tuning) - Optimization for high-volume processing
 
 This guide provides a complete framework for integrating with major DSPs using the DDEX Suite, ensuring compliance while maintaining development efficiency.

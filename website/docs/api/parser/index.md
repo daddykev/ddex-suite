@@ -1,6 +1,6 @@
 # DDEX Parser API Reference
 
-Complete TypeScript and Python API documentation for the DDEX Parser.
+Complete API documentation for the DDEX Parser across all supported languages.
 
 ## Overview
 
@@ -8,6 +8,7 @@ The DDEX Parser provides high-performance parsing of DDEX XML files with native 
 
 ## Language Bindings
 
+- [**Rust API**](./rust) - Native Rust API with full type safety and zero-cost abstractions
 - [**JavaScript/TypeScript API**](./typescript) - Complete Node.js and browser API reference
 - [**Python API**](./python) - Python bindings with pandas integration
 - [**Core Types**](./types) - Shared type definitions and interfaces
@@ -65,4 +66,20 @@ result = parser.parse(xml_content)
 
 # Convert to DataFrame
 df = parser.to_dataframe(xml_content)
+```
+
+```rust
+use ddex_parser::DDEXParser;
+
+// Basic parsing with full type safety
+let parser = DDEXParser::new();
+let result = parser.parse(&xml_content)?;
+
+// Stream large files efficiently
+let mut stream = parser.stream_file("large-catalog.xml").await?;
+while let Some(batch) = stream.next().await {
+    for release in batch? {
+        println!("Processing: {}", release.title);
+    }
+}
 ```

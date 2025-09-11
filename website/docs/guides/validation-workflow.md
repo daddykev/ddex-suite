@@ -1184,9 +1184,9 @@ const result = await exec(workbenchCommand, { timeout: 30000 });
 
 ## Links to API Documentation
 
-- [Builder Validation API](/api/builder/typescript#validate) - Built-in validation methods
-- [Parser Error Handling](/api/parser/typescript#error-handling) - Parser-specific error handling
-- [Error Handling Guide](/guides/error-handling) - Comprehensive error handling patterns
-- [Performance Tuning](/guides/performance-tuning) - Optimization strategies
+- [Builder TypeScript API](../api/builder/typescript) - Built-in validation methods
+- [Parser TypeScript API](../api/parser/typescript) - Parser-specific error handling
+- [Error Handling Guide](./error-handling) - Comprehensive error handling patterns
+- [Performance Tuning](./performance-tuning) - Optimization strategies
 
 This comprehensive validation workflow ensures high-quality DDEX messages through multiple validation layers, automated workflows, and detailed error analysis.

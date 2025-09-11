@@ -993,10 +993,10 @@ async function goodRetry(operation: () => Promise<any>) {
 
 ## Links to API Documentation
 
-- [Parser API Reference](/api/parser/typescript)
-- [Builder API Reference](/api/builder/typescript)
-- [Error Types Documentation](/api/models/errors)
-- [Python Error Handling](/api/parser/python#error-handling)
-- [Validation API](/api/builder/validation)
+- [Parser API Reference](../api/parser/typescript)
+- [Builder API Reference](../api/builder/typescript)
+- [Error Types Documentation](../api/models/errors)
+- [Python Error Handling](../api/parser/python#error-handling)
+- [Validation API](../api/builder/validation)
 
 This comprehensive error handling guide ensures robust DDEX processing with proper error recovery, monitoring, and debugging capabilities across all supported platforms.
