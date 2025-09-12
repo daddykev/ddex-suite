@@ -1,7 +1,7 @@
 # packages/ddex-parser/bindings/python/Cargo.toml
 [package]
 name = "ddex-parser-python"
-version = "0.3.0"
+version = "0.3.5"
 edition = "2021"
 authors = ["Kevin Marques Moo"]
 license = "MIT"

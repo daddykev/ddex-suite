@@ -14,7 +14,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.3.0"
+version = "0.3.5"
 edition = "2021"
 authors = ["Kevin Marques Moo <daddykev.com>"]
 license = "MIT"
@@ -28,7 +28,8 @@ serde_json = "1.0"
 thiserror = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 tracing = "0.1"
-uuid = { version = "1.5", features = ["v4", "serde"] }
+getrandom = { version = "0.2.16", features = ["js"] }
+uuid = { version = "1.5", features = ["v4", "serde", "js"] }
 
 # Optional/feature-gated dependencies
 tokio = { version = "1.35", features = ["full"] }
@@ -76,3 +77,4 @@ opt-level = "z"
 lto = "fat"
 strip = true
 panic = "abort"
+

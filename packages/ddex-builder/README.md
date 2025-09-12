@@ -1,14 +1,14 @@
 # DDEX Builder
 
-[![Crates.io](https://img.shields.io/crates/v/ddex-builder-core.svg)](https://crates.io/crates/ddex-builder-core)
+[![Crates.io](https://img.shields.io/crates/v/ddex-builder)](https://crates.io/crates/ddex-builder)
 [![npm version](https://img.shields.io/npm/v/ddex-builder.svg)](https://www.npmjs.com/package/ddex-builder)
 [![PyPI version](https://img.shields.io/pypi/v/ddex-builder.svg)](https://pypi.org/project/ddex-builder/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub](https://img.shields.io/badge/GitHub-ddex--suite-blue)](https://github.com/ddex-suite/ddex-suite)
+[![GitHub](https://img.shields.io/badge/GitHub-ddex--suite-blue)](https://github.com/daddykev/ddex-suite)
 
 Generate deterministic, industry-compliant DDEX XML files with byte-perfect reproducibility. Build DDEX messages from structured data with comprehensive validation, partner-specific presets, and perfect round-trip compatibility with ddex-parser.
 
-Part of the [DDEX Suite](https://github.com/ddex-suite/ddex-suite) - a comprehensive toolkit for working with DDEX metadata in the music industry.
+Part of the [DDEX Suite](https://github.com/daddykev/ddex-suite) - a comprehensive toolkit for working with DDEX metadata in the music industry.
 
 ## 🚀 Language Support
 
@@ -19,7 +19,7 @@ Choose your preferred language and get started immediately:
 | **JavaScript/TypeScript** | [ddex-builder (npm)](https://www.npmjs.com/package/ddex-builder) | `npm install ddex-builder` |
 | **Python** | [ddex-builder (PyPI)](https://pypi.org/project/ddex-builder/) | `pip install ddex-builder` |
 | **WebAssembly** | [Browser/WASM](./bindings/wasm/) | CDN or local build |
-| **Rust** | [ddex-builder-core (crates.io)](https://crates.io/crates/ddex-builder-core) | `cargo add ddex-builder-core` |
+| **Rust** | [ddex-builder (crates.io)](https://crates.io/crates/ddex-builder) | `cargo add ddex-builder` |
 
 ## Quick Start
 
@@ -110,7 +110,7 @@ async function generateDDEX() {
 ### Rust
 
 ```rust
-use ddex_builder_core::DDEXBuilder;
+use ddex_builder::DDEXBuilder;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let builder = DDEXBuilder::new()
@@ -170,105 +170,44 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 - **Memory-efficient processing** with configurable limits
 - **Parallel resource processing** for maximum throughput
 
-## API Overview
+## Performance Benchmarks
 
-All language bindings provide consistent APIs with language-specific optimizations:
+Performance comparison across environments and languages:
 
-### Common Operations
+### Build Performance
+| Dataset Size | Node.js | Python | Rust | Browser (WASM) |
+|--------------|---------|---------|----- |----------------|
+| Single release (10 tracks) | 3ms | 5ms | 0.8ms | 8ms |
+| Album catalog (100 releases) | 25ms | 40ms | 12ms | 85ms |
+| Label catalog (1000 releases) | 180ms | 280ms | 95ms | 650ms |
+| Large catalog (10000 releases) | 1.8s | 2.8s | 950ms | 6.5s |
 
-| Operation | JavaScript | Python | Rust |
-|-----------|------------|--------|------|
-| Build from object | `builder.buildFromObject(data)` | `builder.build_from_dict(data)` | `builder.build_from_json(data)` |
-| Build from JSON | `builder.buildFromJSON(json)` | `builder.build_from_json(json)` | `builder.build_from_json_str(json)` |
-| Validate | `builder.validate(data)` | `builder.validate(data)` | `builder.validate(data)` |
-| Apply preset | `builder.applyPreset(name)` | `builder.apply_preset(name)` | `builder.with_preset(name)` |
+### Memory Usage
+| Dataset Size | Traditional XML | ddex-builder | Improvement |
+|--------------|-----------------|--------------|-------------|
+| 1000 releases | 450MB | 120MB | 73% less |
+| 10000 releases | 4.2GB | 300MB | 93% less |
+| 100000 releases | >16GB | 500MB* | >97% less |
 
-### Deterministic Generation
+*With streaming mode enabled
 
-All language bindings guarantee identical output:
+## Security
 
-```javascript
-// JavaScript
-const xml1 = await builder.buildFromObject(data, { version: '4.3' });
-const xml2 = await builder.buildFromObject(data, { version: '4.3' });
-console.assert(xml1 === xml2); // ✅ Byte-perfect reproducibility
-```
+v0.3.5 includes comprehensive security enhancements:
+- Zero vulnerabilities, forbids unsafe code
+- Supply chain security with cargo-deny and SBOM
+- Memory-bounded processing with configurable limits
+- Built-in validation prevents malformed output
+- Deterministic generation prevents injection attacks
 
-```python
-# Python
-xml1 = builder.build_from_dict(data, version='4.3')
-xml2 = builder.build_from_dict(data, version='4.3')  
-assert xml1 == xml2  # ✅ Byte-perfect reproducibility
-```
+## Getting Started
 
-```rust
-// Rust
-let xml1 = builder.build_from_json(&data, "4.3")?;
-let xml2 = builder.build_from_json(&data, "4.3")?;
-assert_eq!(xml1, xml2); // ✅ Byte-perfect reproducibility
-```
+### Installation Guides
 
-## Advanced Features
-
-### Streaming for Large Catalogs
-
-Process massive datasets with constant memory usage:
-
-```typescript
-// JavaScript/TypeScript - Stream from Node.js readable
-import { createReadStream } from 'fs';
-
-const fileStream = createReadStream('huge-catalog.json');
-const xml = await builder.buildFromStream(fileStream, {
-  version: '4.3',
-  batchSize: 1000,
-  progressCallback: (progress) => {
-    console.log(`Progress: ${progress.percentage}% (${progress.itemsProcessed} items)`);
-  }
-});
-```
-
-```python
-# Python - Stream from CSV with pandas
-import pandas as pd
-
-def build_streaming_catalog(csv_file: str) -> str:
-    builder = DDEXBuilder(streaming=True)
-    
-    for chunk in pd.read_csv(csv_file, chunksize=1000):
-        builder.process_chunk(chunk)
-    
-    return builder.finalize()
-
-xml = build_streaming_catalog('massive_catalog.csv')
-```
-
-### Industry Preset System
-
-Pre-configured settings for major platforms:
-
-```typescript
-// Apply YouTube preset for content ID optimization
-const youtubeBuilder = new DDEXBuilder({ preset: 'youtube' });
-
-// Automatically applies:
-// - Content ID requirements
-// - Territory-specific usage rights  
-// - Video content metadata
-// - Monetization compatibility
-// - YouTube-specific metadata fields
-```
-
-```python
-# Apply YouTube Music preset for Content ID compliance
-builder = DDEXBuilder(preset='youtube_music')
-
-# Automatically applies:
-# - Content ID requirements
-# - Monetization compatibility
-# - Territory-specific rights
-# - Video content specifications
-```
+- **[JavaScript/TypeScript →](./bindings/node/README.md)** - npm package with Node.js and browser support
+- **[Python →](./bindings/python/README.md)** - PyPI package with pandas integration
+- **[WebAssembly →](./bindings/wasm/README.md)** - Browser-ready WASM bundle with examples
+- **[Rust →](../../README.md#rust)** - Crates.io package documentation
 
 ### Round-Trip Compatibility
 
@@ -295,240 +234,15 @@ const reparsed = await parser.parseString(newXml);
 console.assert(reparsed.releases[0].title === 'Remastered Edition');
 ```
 
-## Performance Benchmarks
-
-Performance comparison across environments and languages:
-
-### Build Performance
-| Dataset Size | Node.js | Python | Rust | Browser (WASM) |
-|--------------|---------|---------|------|----------------|
-| Single release (10 tracks) | 3ms | 5ms | 0.8ms | 8ms |
-| Album catalog (100 releases) | 25ms | 40ms | 12ms | 85ms |
-| Label catalog (1000 releases) | 180ms | 280ms | 95ms | 650ms |
-| Large catalog (10000 releases) | 1.8s | 2.8s | 950ms | 6.5s |
-
-### Memory Usage
-| Dataset Size | Traditional XML | ddex-builder | Improvement |
-|--------------|-----------------|--------------|-------------|
-| 1000 releases | 450MB | 120MB | 73% less |
-| 10000 releases | 4.2GB | 300MB | 93% less |
-| 100000 releases | >16GB | 500MB* | >97% less |
-
-*With streaming mode enabled
-
-## Getting Started
-
-### Installation Guides
-
-- **[JavaScript/TypeScript →](./bindings/node/README.md)** - npm package with Node.js and browser support
-- **[Python →](./bindings/python/README.md)** - PyPI package with pandas integration
-- **[WebAssembly →](./bindings/wasm/README.md)** - Browser-ready WASM bundle with examples
-- **[Rust →](./README-rust.md)** - Crates.io package documentation
-
-### Example Projects
-
-- [Express.js API](./examples/express-api) - REST API for DDEX generation
-- [Python Analytics](./examples/python-analytics) - Catalog generation from analytics data
-- [React WASM App](./bindings/wasm/examples/react-app/) - Interactive browser-based DDEX builder
-- [WASM Performance Tests](./bindings/wasm/tests/) - Browser compatibility and performance benchmarks
-- [Rust CLI](./examples/rust-cli) - Command-line DDEX builder
-
-## Industry Presets Reference
-
-### Generic Preset
-```yaml
-name: "generic"
-description: "Default preset for broad distributor compatibility"
-requirements:
-  - explicit_content_flag: optional
-  - territory_restrictions: none
-  - artist_id: optional
-validation_rules:
-  - isrc: required
-  - duration: min_30_seconds
-  - territories: ["WorldWide"]
-```
-
-### YouTube Music Preset
-```yaml
-name: "youtube_music"
-description: "Content ID and monetization requirements"
-requirements:
-  - content_id: enabled
-  - monetization: standard_policies
-  - territory_handling: youtube_specific
-validation_rules:
-  - track_references: required
-  - usage_rights: monetization_compatible
-```
-
-### Custom Preset Creation
-
-```typescript
-import { DDEXBuilder, type CustomPreset } from 'ddex-builder';
-
-const myLabelPreset: CustomPreset = {
-  name: 'my_label',
-  defaultTerritories: ['US', 'CA', 'GB'],
-  requiredFields: {
-    release: ['title', 'mainArtist', 'labelName', 'releaseDate'],
-    track: ['title', 'duration', 'isrc', 'position']
-  },
-  validationRules: {
-    maxTrackDuration: 600, // 10 minutes
-    requireExplicitFlag: true,
-    genreNormalization: ['Pop', 'Rock', 'Electronic', 'Hip-Hop']
-  },
-  businessRules: {
-    enforceISRC: true,
-    validateTerritoryRights: true,
-    requireUPCForAlbums: true
-  }
-};
-
-const builder = new DDEXBuilder({ preset: myLabelPreset });
-```
-
-## Migration Guides
-
-### From v0.1.0 to v0.2.0
-
-The v0.2.0 release introduced significant improvements:
-
-```javascript
-// v0.1.0 (deprecated)
-import buildDdex from 'ddex-builder';
-const xml = buildDdex(data, { version: '4.3' });
-
-// v0.2.0+ (current)
-import { DDEXBuilder } from 'ddex-builder';
-const builder = new DDEXBuilder();
-const xml = await builder.buildFromObject(data, { version: '4.3' });
-```
-
-**New in v0.2.0:**
-- Deterministic output with DB-C14N/1.0
-- Industry preset system
-- Enhanced validation engine
-- Streaming support for large datasets
-- Round-trip compatibility with ddex-parser
-- Full TypeScript support across all bindings
-
-### From Other DDEX Tools
-
-Migration helpers for common scenarios:
-
-```python
-# From manual XML generation
-template = """<?xml version="1.0"?>
-<ernm:NewReleaseMessage>
-  <!-- Manual template approach -->
-</ernm:NewReleaseMessage>"""
-
-# To ddex-builder
-from ddex_builder import DDEXBuilder
-builder = DDEXBuilder(validate=True)
-xml = builder.build_from_dict(structured_data, version='4.3')
-```
-
-## Error Handling
-
-Comprehensive error types with detailed information:
-
-```typescript
-import { DDEXBuilder, ValidationError, BuilderError } from 'ddex-builder';
-
-try {
-  const xml = await builder.buildFromObject(data, { version: '4.3' });
-} catch (error) {
-  if (error instanceof ValidationError) {
-    console.error('Validation failed:', error.details);
-    error.fieldErrors.forEach(fieldError => {
-      console.error(`${fieldError.field}: ${fieldError.message}`);
-      if (fieldError.suggestions) {
-        console.log('Suggestions:', fieldError.suggestions.join(', '));
-      }
-    });
-  } else if (error instanceof BuilderError) {
-    console.error('Build failed:', error.message);
-  }
-}
-```
-
-## Testing
-
-Run comprehensive tests across all language bindings:
-
-```bash
-# Test all languages
-npm test
-
-# Test specific binding
-cd bindings/node && npm test
-cd bindings/python && python -m pytest
-cargo test -p ddex-builder-core
-
-# Run determinism tests
-npm run test:determinism
-
-# Run round-trip tests  
-npm run test:round-trip
-```
-
-## Contributing
-
-We welcome contributions! Please read our [Contributing Guide](./CONTRIBUTING.md) before submitting PRs.
-
-### Development Setup
-
-```bash
-git clone https://github.com/ddex-suite/ddex-suite.git
-cd ddex-suite/packages/ddex-builder
-
-# Install dependencies
-npm install
-pip install -r requirements-dev.txt
-cargo build
-
-# Run tests
-npm run test:all
-
-# Test deterministic output
-npm run test:determinism
-```
-
-## Roadmap
-
-### Current Status (v0.2.0)
-- ✅ Deterministic XML generation with DB-C14N/1.0
-- ✅ Industry preset system (YouTube, Generic)
-- ✅ Comprehensive validation engine
-- ✅ JavaScript/TypeScript bindings (Node.js + Browser)
-- ✅ Python bindings with pandas integration
-- ✅ Round-trip compatibility with ddex-parser
-
-### Upcoming Features
-
-#### v1.0.0 (Q3 2025)
-- **Production Grade**: Enterprise-ready stability and performance
-- **Complete Documentation**: Comprehensive guides and tutorials
-
-## Support
-
-- 📖 [Full Documentation](https://ddex-suite.github.io/docs/)
-- 🐛 [Report Issues](https://github.com/ddex-suite/ddex-suite/issues)
-- 💬 [GitHub Discussions](https://github.com/ddex-suite/ddex-suite/discussions)
-- 📧 Email: support@ddex-suite.com
-
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/daddykev/ddex-suite/blob/main/LICENSE) file for details.
 
 ## Related Projects
 
-- **[ddex-parser](https://github.com/ddex-suite/ddex-suite/tree/main/packages/ddex-parser)** - Parse DDEX XML files to structured data
-- **[DDEX Suite](https://github.com/ddex-suite/ddex-suite)** - Complete DDEX processing toolkit
-- **[DDEX Workbench](https://github.com/ddex/ddex-workbench)** - Official DDEX validation tools
+- **[ddex-parser](https://crates.io/crates/ddex-parser)** - Parse DDEX XML files to structured data
+- **[DDEX Suite](https://ddex-suite.org)** - Complete DDEX processing toolkit
+- **[DDEX Workbench](https://ddex-workbench.org)** - Official DDEX validation tools
 
 ---
 

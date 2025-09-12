@@ -146,7 +146,7 @@ fn demonstrate_error_contexts() {
     
     for (name, context) in contexts {
         // Clone the error since it's consumed by sanitize
-        let error = Error::new(base_error.kind(), &base_error.to_string());
+        let error = Error::new(base_error.kind(), base_error.to_string());
         let sanitized = sanitizer.sanitize(error, context);
         println!("  {} Context: {}", name, sanitized.message);
     }

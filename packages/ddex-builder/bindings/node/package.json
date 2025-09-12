@@ -1,6 +1,6 @@
 {
   "name": "ddex-builder",
-  "version": "0.3.0",
+  "version": "0.3.5",
   "description": "DDEX XML builder with deterministic output and DB-C14N/1.0 canonicalization",
   "keywords": [
     "ddex",
@@ -60,14 +60,14 @@
     "typescript": "^5.3.0"
   },
   "optionalDependencies": {
-    "ddex-builder-win32-x64-msvc": "0.3.0",
-    "ddex-builder-darwin-x64": "0.3.0",
-    "ddex-builder-linux-x64-gnu": "0.3.0",
-    "ddex-builder-linux-x64-musl": "0.3.0",
-    "ddex-builder-linux-arm64-gnu": "0.3.0",
-    "ddex-builder-darwin-arm64": "0.3.0",
-    "ddex-builder-android-arm64": "0.3.0",
-    "ddex-builder-android-arm-eabi": "0.3.0",
-    "ddex-builder-linux-arm-gnueabihf": "0.3.0"
+    "ddex-builder-win32-x64-msvc": "0.3.5",
+    "ddex-builder-darwin-x64": "0.3.5",
+    "ddex-builder-linux-x64-gnu": "0.3.5",
+    "ddex-builder-linux-x64-musl": "0.3.5",
+    "ddex-builder-linux-arm64-gnu": "0.3.5",
+    "ddex-builder-darwin-arm64": "0.3.5",
+    "ddex-builder-android-arm64": "0.3.5",
+    "ddex-builder-android-arm-eabi": "0.3.5",
+    "ddex-builder-linux-arm-gnueabihf": "0.3.5"
   }
 }

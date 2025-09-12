@@ -53,7 +53,11 @@ impl SecurityConfig {
     pub fn relaxed() -> Self {
         Self {
             max_element_depth: 200,
-            max_file_size: 5 * 1024 * 1024 * 1024, // 5GB
+            max_file_size: if cfg!(target_arch = "wasm32") { 
+                100 * 1024 * 1024 // 100MB for WASM 
+            } else { 
+                5 * 1024 * 1024 * 1024 // 5GB for native
+            },
             parse_timeout: Duration::from_secs(120),
             stream_timeout: Duration::from_secs(600),
             ..Self::strict()

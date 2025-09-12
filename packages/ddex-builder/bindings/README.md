@@ -8,7 +8,7 @@ The DDEX Builder bindings offer consistent APIs across different platforms while
 
 - **Node.js** - Native performance using napi-rs
 - **Python** - Full integration with pandas DataFrames using PyO3  
-- **WASM** - Browser-compatible with <500KB bundle size
+- **WASM** - Browser-compatible with 420KB bundle (complete XML generation)
 
 All bindings support the same core functionality:
 - Building deterministic DDEX XML with DB-C14N/1.0 canonicalization

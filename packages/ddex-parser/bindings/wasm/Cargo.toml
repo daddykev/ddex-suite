@@ -1,7 +1,7 @@
 # packages/ddex-parser/bindings/wasm/Cargo.toml
 [package]
 name = "ddex-parser-wasm"
-version = "0.2.5"
+version = "0.3.5"
 edition = "2021"
 authors = ["DDEX Parser Contributors"]
 license = "MIT"
@@ -11,7 +11,7 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-ddex-parser = { path = "../../", features = ["wasm"] }
+ddex-parser = { path = "../../", default-features = false, features = ["wasm"] }
 ddex-core = { path = "../../../core", features = ["typescript"] }
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
@@ -24,6 +24,11 @@ web-sys = { version = "0.3", features = [
 ]}
 serde-wasm-bindgen = "0.6"
 console_error_panic_hook = "0.1"
+getrandom = { version = "0.3", features = ["wasm_js"] }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+

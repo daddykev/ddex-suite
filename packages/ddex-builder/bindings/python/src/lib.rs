@@ -807,9 +807,9 @@ impl DdexBuilder {
     /// Returns:
     ///     str: Generated DDEX XML
     #[pyo3(signature = (df, schema = None))]
-    pub fn from_dataframe(&mut self, df: &PyAny, schema: Option<&str>) -> PyResult<String> {
+    pub fn from_dataframe(&mut self, df: Bound<'_, PyAny>, schema: Option<&str>) -> PyResult<String> {
         // Import pandas functionality through PyO3
-        let pandas = df.py().import_bound("pandas")?;
+        let pandas = df.py().import("pandas")?;
         let pd_dataframe = pandas.getattr("DataFrame")?;
         
         // Check if the input is a pandas DataFrame
@@ -852,16 +852,16 @@ impl DdexBuilder {
         }
     }
 
-    fn build_from_flat_df(&self, df: &PyAny) -> PyResult<String> {
+    fn build_from_flat_df(&self, df: Bound<'_, PyAny>) -> PyResult<String> {
         // Convert DataFrame to records
         let records = df.call_method1("to_dict", ("records",))?;
-        let records_list: &PyList = records.downcast()?;
+        let records_list = records.downcast::<PyList>()?;
         
         // Separate message and release rows
         let mut releases = Vec::new();
         
         for item in records_list.iter() {
-            let record: &PyDict = item.downcast()?;
+            let record = item.downcast::<PyDict>()?;
             
             if let Ok(Some(row_type)) = record.get_item("type") {
                 if let Ok(type_str) = row_type.extract::<String>() {
@@ -888,14 +888,14 @@ impl DdexBuilder {
         self.build_xml_from_releases(releases)
     }
     
-    fn build_from_releases_df(&self, df: &PyAny) -> PyResult<String> {
+    fn build_from_releases_df(&self, df: Bound<'_, PyAny>) -> PyResult<String> {
         // Each row is a complete release
         let records = df.call_method1("to_dict", ("records",))?;
-        let records_list: &PyList = records.downcast()?;
+        let records_list = records.downcast::<PyList>()?;
         
         let mut releases = Vec::new();
         for item in records_list.iter() {
-            let record: &PyDict = item.downcast()?;
+            let record = item.downcast::<PyDict>()?;
             
             if let (Ok(Some(release_id)), Ok(Some(title))) = (
                 record.get_item("release_id"),
@@ -918,15 +918,15 @@ impl DdexBuilder {
         self.build_xml_from_releases(releases)
     }
     
-    fn build_from_tracks_df(&self, df: &PyAny) -> PyResult<String> {
+    fn build_from_tracks_df(&self, df: Bound<'_, PyAny>) -> PyResult<String> {
         // Group tracks by release_id
         let records = df.call_method1("to_dict", ("records",))?;
-        let records_list: &PyList = records.downcast()?;
+        let records_list = records.downcast::<PyList>()?;
         
         let mut tracks_by_release: std::collections::HashMap<String, Vec<Resource>> = std::collections::HashMap::new();
         
         for item in records_list.iter() {
-            let record: &PyDict = item.downcast()?;
+            let record = item.downcast::<PyDict>()?;
             
             if let (Ok(Some(release_id)), Ok(Some(track_index)), Ok(Some(track_title))) = (
                 record.get_item("release_id"),
@@ -964,7 +964,7 @@ impl DdexBuilder {
         for (release_id, tracks) in tracks_by_release {
             let release_title = records_list.iter()
                 .filter_map(|item| {
-                    let record: &PyDict = item.downcast().ok()?;
+                    let record = item.downcast::<PyDict>().ok()?;
                     let rid = record.get_item("release_id").ok()??.extract::<String>().ok()?;
                     if rid == release_id {
                         record.get_item("release_title").ok()??.extract().ok()
@@ -1109,7 +1109,7 @@ impl DdexBuilder {
         Ok(xml)
     }
 
-    fn dict_to_release(&self, record: &PyDict) -> PyResult<Release> {
+    fn dict_to_release(&self, record: &Bound<'_, PyDict>) -> PyResult<Release> {
         let release_id: String = record.get_item("release_id")?
             .ok_or_else(|| PyErr::new::<pyo3::exceptions::PyKeyError, _>("release_id is required"))?
             .extract()?;
@@ -1157,7 +1157,7 @@ impl DdexBuilder {
         ))
     }
 
-    fn dict_to_resource(&self, record: &PyDict) -> PyResult<Resource> {
+    fn dict_to_resource(&self, record: &Bound<'_, PyDict>) -> PyResult<Resource> {
         let resource_id: String = record.get_item("resource_id")?
             .ok_or_else(|| PyErr::new::<pyo3::exceptions::PyKeyError, _>("resource_id is required"))?
             .extract()?;
@@ -1202,7 +1202,7 @@ impl DdexBuilder {
 }
 
 #[pyfunction]
-pub fn batch_build(requests: Vec<&PyAny>) -> PyResult<Vec<String>> {
+pub fn batch_build(requests: Vec<Bound<'_, PyAny>>) -> PyResult<Vec<String>> {
     let mut results = Vec::new();
     
     for _request in requests {

@@ -6,10 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 DDEX Suite is a high-performance DDEX XML processing toolkit built in Rust with bindings for JavaScript/TypeScript, Python, and WASM. It consists of two main components: `ddex-parser` (for parsing DDEX XML) and `ddex-builder` (for generating deterministic DDEX XML), both sharing a common core library.
 
-**Current Status**: v0.2.5 Published - Complete Suite Integration ✅
-- **Parser**: v0.2.5 published to npm and PyPI with full language bindings
-- **Builder**: v0.2.5 published with deterministic output and Python bindings working
-- **Python Bindings**: ✅ Fully functional for both ddex-parser and ddex-builder
+**Current Status**: v0.3.5 Published - Security & Stability Release ✅
+- **Parser**: v0.3.5 published to npm and PyPI with PyO3 0.24 compatibility
+- **Builder**: v0.3.5 published with security enhancements and PyO3 0.24 compatibility
+- **Python Bindings**: ✅ Fully functional with PyO3 0.24 (fixes RUSTSEC-2025-0020)
 - **Node.js Bindings**: ✅ Native binaries with TypeScript definitions
 - **WASM**: ✅ Browser-ready bundle at 114KB (77% under target)
 - **Round-trip**: ✅ Complete capability with 94 core tests passing
@@ -29,7 +29,7 @@ The project provides both "graph" (faithful DDEX structure) and "flattened" (dev
 ## Distribution Channels
 
 - **NPM**: https://www.npmjs.com/package/ddex-builder
-- **PyPI**: https://pypi.org/project/ddex-builder/0.2.5/
+- **PyPI**: https://pypi.org/project/ddex-builder/0.3.5/
 - **GitHub**: https://github.com/daddykev/ddex-suite
 - **Website**: https://ddex-suite.web.app (Enhanced landing page with benchmarks, testimonials, roadmap)
 

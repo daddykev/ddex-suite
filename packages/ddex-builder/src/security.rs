@@ -716,6 +716,7 @@ impl SecureTempFile {
     /// Create a secure temporary file
     pub fn new() -> Result<Self, BuildError> {
         use std::fs::OpenOptions;
+        #[cfg(unix)]
         use std::os::unix::fs::OpenOptionsExt;
         
         let temp_dir = std::env::temp_dir();
@@ -723,11 +724,20 @@ impl SecureTempFile {
         let path = temp_dir.join(file_name);
         
         // Create file with restricted permissions (owner read/write only)
+        #[cfg(unix)]
         let file = OpenOptions::new()
             .create_new(true)
             .write(true)
             .read(true)
             .mode(0o600) // Only owner can read/write
+            .open(&path)
+            .map_err(|e| BuildError::Io(format!("Failed to create secure temp file: {}", e)))?;
+            
+        #[cfg(not(unix))]
+        let file = OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .read(true)
             .open(&path)
             .map_err(|e| BuildError::Io(format!("Failed to create secure temp file: {}", e)))?;
         

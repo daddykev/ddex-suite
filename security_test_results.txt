@@ -1,0 +1,5303 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /Users/kevinmoo/Desktop/localrepo/ddex-suite/packages/ddex-builder/bindings/node/Cargo.toml
+workspace: /Users/kevinmoo/Desktop/localrepo/ddex-suite/Cargo.toml
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /Users/kevinmoo/Desktop/localrepo/ddex-suite/packages/ddex-builder/bindings/wasm/Cargo.toml
+workspace: /Users/kevinmoo/Desktop/localrepo/ddex-suite/Cargo.toml
+warning: unused import: `std::fmt::Write as FmtWrite`
+  --> packages/ddex-builder/src/generator/optimized_xml_writer.rs:12:5
+   |
+12 | use std::fmt::Write as FmtWrite;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `super::*`
+   --> packages/ddex-builder/src/versions/ern_382.rs:254:9
+    |
+254 |     use super::*;
+    |         ^^^^^^^^
+
+warning: unused import: `Node`
+   --> packages/ddex-builder/src/versions/ern_382.rs:255:31
+    |
+255 |     use crate::ast::{Element, Node};
+    |                               ^^^^
+
+warning: unused import: `super::*`
+   --> packages/ddex-builder/src/versions/ern_382.rs:491:9
+    |
+491 |     use super::*;
+    |         ^^^^^^^^
+
+warning: unused import: `super::*`
+   --> packages/ddex-builder/src/versions/ern_42.rs:209:9
+    |
+209 |     use super::*;
+    |         ^^^^^^^^
+
+warning: unused import: `Node`
+   --> packages/ddex-builder/src/versions/ern_42.rs:210:31
+    |
+210 |     use crate::ast::{Element, Node};
+    |                               ^^^^
+
+warning: unused import: `super::*`
+   --> packages/ddex-builder/src/versions/ern_42.rs:520:9
+    |
+520 |     use super::*;
+    |         ^^^^^^^^
+
+warning: unused import: `super::*`
+   --> packages/ddex-builder/src/versions/ern_43.rs:249:9
+    |
+249 |     use super::*;
+    |         ^^^^^^^^
+
+warning: unused import: `Node`
+   --> packages/ddex-builder/src/versions/ern_43.rs:250:31
+    |
+250 |     use crate::ast::{Element, Node};
+    |                               ^^^^
+
+warning: unused import: `super::*`
+   --> packages/ddex-builder/src/versions/ern_43.rs:512:9
+    |
+512 |     use super::*;
+    |         ^^^^^^^^
+
+warning: unused import: `BytesText`
+ --> packages/ddex-builder/src/versions/converter.rs:4:54
+  |
+4 | use quick_xml::events::{Event, BytesStart, BytesEnd, BytesText};
+  |                                                      ^^^^^^^^^
+
+warning: ambiguous glob re-exports
+  --> packages/ddex-builder/src/versions/mod.rs:37:9
+   |
+37 | pub use ern_382::*;
+   |         ^^^^^^^^^^ the name `get_version_spec` in the value namespace is first re-exported here
+38 | pub use ern_42::*;
+39 | pub use ern_43::*;
+   |         --------- but the name `get_version_spec` in the value namespace is also re-exported here
+   |
+   = note: `#[warn(ambiguous_glob_reexports)]` on by default
+
+warning: ambiguous glob re-exports
+  --> packages/ddex-builder/src/versions/mod.rs:37:9
+   |
+37 | pub use ern_382::*;
+   |         ^^^^^^^^^^ the name `get_namespace_mappings` in the value namespace is first re-exported here
+38 | pub use ern_42::*;
+39 | pub use ern_43::*;
+   |         --------- but the name `get_namespace_mappings` in the value namespace is also re-exported here
+
+warning: ambiguous glob re-exports
+  --> packages/ddex-builder/src/versions/mod.rs:37:9
+   |
+37 | pub use ern_382::*;
+   |         ^^^^^^^^^^ the name `get_xml_template` in the value namespace is first re-exported here
+38 | pub use ern_42::*;
+39 | pub use ern_43::*;
+   |         --------- but the name `get_xml_template` in the value namespace is also re-exported here
+
+warning: ambiguous glob re-exports
+  --> packages/ddex-builder/src/versions/mod.rs:37:9
+   |
+37 | pub use ern_382::*;
+   |         ^^^^^^^^^^ the name `builders` in the type namespace is first re-exported here
+38 | pub use ern_42::*;
+39 | pub use ern_43::*;
+   |         --------- but the name `builders` in the type namespace is also re-exported here
+
+warning: ambiguous glob re-exports
+  --> packages/ddex-builder/src/versions/mod.rs:37:9
+   |
+37 | pub use ern_382::*;
+   |         ^^^^^^^^^^ the name `validation` in the type namespace is first re-exported here
+38 | pub use ern_42::*;
+39 | pub use ern_43::*;
+   |         --------- but the name `validation` in the type namespace is also re-exported here
+
+warning: unused import: `Atom`
+  --> packages/ddex-builder/src/optimized_strings.rs:11:33
+   |
+11 | use string_cache::{DefaultAtom, Atom};
+   |                                 ^^^^
+
+warning: unused import: `indexmap::IndexMap`
+  --> packages/ddex-builder/src/parallel_processing.rs:11:5
+   |
+11 | use indexmap::IndexMap;
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::error::BuildError`
+  --> packages/ddex-builder/src/security/entity_classifier.rs:16:5
+   |
+16 | use crate::error::BuildError;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `IndexMap`
+  --> packages/ddex-builder/src/security/entity_classifier.rs:17:16
+   |
+17 | use indexmap::{IndexMap, IndexSet};
+   |                ^^^^^^^^
+
+warning: unused imports: `debug` and `warn`
+  --> packages/ddex-builder/src/security/error_sanitizer.rs:11:22
+   |
+11 | use tracing::{error, warn, debug};
+   |                      ^^^^  ^^^^^
+
+warning: unused import: `NamespaceScope`
+ --> packages/ddex-builder/src/namespace_minimizer.rs:6:47
+  |
+6 | use ddex_core::namespace::{NamespaceRegistry, NamespaceScope, ConflictResolution};
+  |                                               ^^^^^^^^^^^^^^
+
+warning: unused import: `warn`
+  --> packages/ddex-builder/src/namespace_minimizer.rs:12:22
+   |
+12 | use tracing::{debug, warn};
+   |                      ^^^^
+
+warning: use of deprecated method `indexmap::IndexMap::<K, V, S>::remove`: `remove` disrupts the map order -- use `swap_remove` or `shift_remove` for explicit behavior.
+   --> packages/ddex-builder/src/streaming/reference_manager.rs:375:44
+    |
+375 |                     self.resource_metadata.remove(&reference_id);
+    |                                            ^^^^^^
+    |
+    = note: `#[warn(deprecated)]` on by default
+
+warning: use of deprecated method `indexmap::IndexSet::<T, S>::remove`: `remove` disrupts the set order -- use `swap_remove` or `shift_remove` for explicit behavior.
+   --> packages/ddex-builder/src/streaming/reference_manager.rs:376:42
+    |
+376 |                     self.used_references.remove(&reference_id);
+    |                                          ^^^^^^
+
+warning: use of deprecated method `indexmap::IndexMap::<K, V, S>::remove`: `remove` disrupts the map order -- use `swap_remove` or `shift_remove` for explicit behavior.
+   --> packages/ddex-builder/src/streaming/reference_manager.rs:384:43
+    |
+384 |                     self.release_metadata.remove(&reference_id);
+    |                                           ^^^^^^
+
+warning: use of deprecated method `indexmap::IndexSet::<T, S>::remove`: `remove` disrupts the set order -- use `swap_remove` or `shift_remove` for explicit behavior.
+   --> packages/ddex-builder/src/streaming/reference_manager.rs:385:42
+    |
+385 |                     self.used_references.remove(&reference_id);
+    |                                          ^^^^^^
+
+warning: use of deprecated method `indexmap::IndexMap::<K, V, S>::remove`: `remove` disrupts the map order -- use `swap_remove` or `shift_remove` for explicit behavior.
+   --> packages/ddex-builder/src/caching.rs:246:30
+    |
+246 |                 self.results.remove(content_hash);
+    |                              ^^^^^^
+
+warning: use of deprecated method `indexmap::IndexMap::<K, V, S>::remove`: `remove` disrupts the map order -- use `swap_remove` or `shift_remove` for explicit behavior.
+   --> packages/ddex-builder/src/caching.rs:279:26
+    |
+279 |             self.results.remove(&key);
+    |                          ^^^^^^
+
+warning: use of deprecated method `indexmap::IndexMap::<K, V, S>::remove`: `remove` disrupts the map order -- use `swap_remove` or `shift_remove` for explicit behavior.
+   --> packages/ddex-builder/src/caching.rs:376:29
+    |
+376 |                 self.hashes.remove(key);
+    |                             ^^^^^^
+
+warning: use of deprecated method `indexmap::IndexMap::<K, V, S>::remove`: `remove` disrupts the map order -- use `swap_remove` or `shift_remove` for explicit behavior.
+   --> packages/ddex-builder/src/caching.rs:400:25
+    |
+400 |             self.hashes.remove(&key);
+    |                         ^^^^^^
+
+warning: use of deprecated method `indexmap::IndexMap::<K, V, S>::remove`: `remove` disrupts the map order -- use `swap_remove` or `shift_remove` for explicit behavior.
+   --> packages/ddex-builder/src/caching.rs:501:28
+    |
+501 |             self.templates.remove(&key);
+    |                            ^^^^^^
+
+warning: use of deprecated method `indexmap::IndexMap::<K, V, S>::remove`: `remove` disrupts the map order -- use `swap_remove` or `shift_remove` for explicit behavior.
+   --> packages/ddex-builder/src/namespace_minimizer.rs:306:40
+    |
+306 |                     element.attributes.remove(&xmlns_key);
+    |                                        ^^^^^^
+
+warning: unused import: `std::io::Write`
+  --> packages/ddex-builder/src/generator/optimized_xml_writer.rs:11:5
+   |
+11 | use std::io::Write;
+   |     ^^^^^^^^^^^^^^
+
+warning: unused variable: `element_count`
+  --> packages/ddex-builder/src/generator/optimized_xml_writer.rs:50:13
+   |
+50 |         let element_count = self.count_elements(&ast.root);
+   |             ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_element_count`
+   |
+   = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `prefix`
+   --> packages/ddex-builder/src/namespace_minimizer.rs:102:14
+    |
+102 |         for (prefix, uri) in &ast.namespaces {
+    |              ^^^^^^ help: if this is intentional, prefix it with an underscore: `_prefix`
+
+warning: unused variable: `xml_output`
+   --> packages/ddex-builder/src/verification.rs:146:9
+    |
+146 |         xml_output: &str,
+    |         ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_xml_output`
+
+warning: unused variable: `fidelity_options`
+   --> packages/ddex-builder/src/verification.rs:147:9
+    |
+147 |         fidelity_options: &FidelityOptions,
+    |         ^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_fidelity_options`
+
+warning: field `inner` is never read
+   --> packages/ddex-builder/src/builder.rs:190:5
+    |
+189 | pub struct DDEXBuilder {
+    |            ----------- field in this struct
+190 |     inner: super::Builder,
+    |     ^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: method `preflight` is never used
+   --> packages/ddex-builder/src/builder.rs:494:8
+    |
+193 | impl DDEXBuilder {
+    | ---------------- method in this implementation
+...
+494 |     fn preflight(&self, request: &BuildRequest, level: super::preflight::PreflightLevel) -> Result<Vec<BuildWarning>, super::error::Build...
+    |        ^^^^^^^^^
+
+warning: field `config` is never read
+  --> packages/ddex-builder/src/canonical/mod.rs:85:5
+   |
+84 | pub struct DB_C14N {
+   |            ------- field in this struct
+85 |     config: super::determinism::DeterminismConfig,
+   |     ^^^^^^
+
+warning: field `registry` is never read
+  --> packages/ddex-builder/src/canonical/rules.rs:17:5
+   |
+15 | pub struct NamespacePrefixLock {
+   |            ------------------- field in this struct
+16 |     /// Registry for namespace management
+17 |     registry: NamespaceRegistry,
+   |     ^^^^^^^^
+
+warning: method `generate_deal_list` is never used
+   --> packages/ddex-builder/src/generator/mod.rs:299:8
+    |
+86  | impl ASTGenerator {
+    | ----------------- method in this implementation
+...
+299 |     fn generate_deal_list(&self, deals: &[crate::builder::DealRequest]) -> Result<Element, BuildError> {
+    |        ^^^^^^^^^^^^^^^^^^
+
+warning: field `hash_generator` is never read
+  --> packages/ddex-builder/src/streaming/reference_manager.rs:62:5
+   |
+60 | pub struct StreamingReferenceManager {
+   |            ------------------------- field in this struct
+61 |     config: ReferenceConfig,
+62 |     hash_generator: StableHashGenerator,
+   |     ^^^^^^^^^^^^^^
+
+warning: field `config` is never read
+  --> packages/ddex-builder/src/linker/mod.rs:32:5
+   |
+21 | pub struct ReferenceLinker {
+   |            --------------- field in this struct
+...
+32 |     config: LinkerConfig,
+   |     ^^^^^^
+   |
+   = note: `ReferenceLinker` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: static `ISWC_PATTERN` is never used
+  --> packages/ddex-builder/src/preflight.rs:17:8
+   |
+17 | static ISWC_PATTERN: Lazy<Regex> = Lazy::new(|| {
+   |        ^^^^^^^^^^^^
+
+warning: static `ISNI_PATTERN` is never used
+  --> packages/ddex-builder/src/preflight.rs:21:8
+   |
+21 | static ISNI_PATTERN: Lazy<Regex> = Lazy::new(|| {
+   |        ^^^^^^^^^^^^
+
+warning: field `preset` is never read
+   --> packages/ddex-builder/src/schema/mod.rs:159:5
+    |
+153 | pub struct SchemaGenerator {
+    |            --------------- field in this struct
+...
+159 |     preset: Option<PartnerPreset>,
+    |     ^^^^^^
+    |
+    = note: `SchemaGenerator` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `default_options` is never read
+   --> packages/ddex-builder/src/versions/mod.rs:339:5
+    |
+333 | pub struct VersionManager {
+    |            -------------- field in this struct
+...
+339 |     default_options: ConversionOptions,
+    |     ^^^^^^^^^^^^^^^
+    |
+    = note: `VersionManager` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: function `get_namespace_mappings` is never used
+   --> packages/ddex-builder/src/versions/ern_382.rs:211:8
+    |
+211 | pub fn get_namespace_mappings() -> IndexMap<String, String> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `get_xml_template` is never used
+   --> packages/ddex-builder/src/versions/ern_382.rs:222:8
+    |
+222 | pub fn get_xml_template() -> &'static str {
+    |        ^^^^^^^^^^^^^^^^
+
+warning: function `build_message_header` is never used
+   --> packages/ddex-builder/src/versions/ern_382.rs:258:12
+    |
+258 |     pub fn build_message_header(
+    |            ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_sound_recording` is never used
+   --> packages/ddex-builder/src/versions/ern_382.rs:294:12
+    |
+294 |     pub fn build_sound_recording(
+    |            ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_release` is never used
+   --> packages/ddex-builder/src/versions/ern_382.rs:343:12
+    |
+343 |     pub fn build_release(
+    |            ^^^^^^^^^^^^^
+
+warning: function `build_simple_deal` is never used
+   --> packages/ddex-builder/src/versions/ern_382.rs:422:12
+    |
+422 |     pub fn build_simple_deal(
+    |            ^^^^^^^^^^^^^^^^^
+
+warning: static `ISRC_PATTERN_382` is never used
+   --> packages/ddex-builder/src/versions/ern_382.rs:496:12
+    |
+496 |     static ISRC_PATTERN_382: Lazy<Regex> = Lazy::new(|| {
+    |            ^^^^^^^^^^^^^^^^
+
+warning: static `UPC_PATTERN_382` is never used
+   --> packages/ddex-builder/src/versions/ern_382.rs:500:12
+    |
+500 |     static UPC_PATTERN_382: Lazy<Regex> = Lazy::new(|| {
+    |            ^^^^^^^^^^^^^^^
+
+warning: static `DURATION_PATTERN_382` is never used
+   --> packages/ddex-builder/src/versions/ern_382.rs:504:12
+    |
+504 |     static DURATION_PATTERN_382: Lazy<Regex> = Lazy::new(|| {
+    |            ^^^^^^^^^^^^^^^^^^^^
+
+warning: static `DATE_PATTERN_382` is never used
+   --> packages/ddex-builder/src/versions/ern_382.rs:508:12
+    |
+508 |     static DATE_PATTERN_382: Lazy<Regex> = Lazy::new(|| {
+    |            ^^^^^^^^^^^^^^^^
+
+warning: function `validate_isrc` is never used
+   --> packages/ddex-builder/src/versions/ern_382.rs:513:12
+    |
+513 |     pub fn validate_isrc(isrc: &str) -> bool {
+    |            ^^^^^^^^^^^^^
+
+warning: function `validate_upc` is never used
+   --> packages/ddex-builder/src/versions/ern_382.rs:518:12
+    |
+518 |     pub fn validate_upc(upc: &str) -> bool {
+    |            ^^^^^^^^^^^^
+
+warning: function `validate_duration` is never used
+   --> packages/ddex-builder/src/versions/ern_382.rs:523:12
+    |
+523 |     pub fn validate_duration(duration: &str) -> bool {
+    |            ^^^^^^^^^^^^^^^^^
+
+warning: function `validate_date` is never used
+   --> packages/ddex-builder/src/versions/ern_382.rs:528:12
+    |
+528 |     pub fn validate_date(date: &str) -> bool {
+    |            ^^^^^^^^^^^^^
+
+warning: function `validate_territory_code` is never used
+   --> packages/ddex-builder/src/versions/ern_382.rs:533:12
+    |
+533 |     pub fn validate_territory_code(territory: &str) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `validate_commercial_model` is never used
+   --> packages/ddex-builder/src/versions/ern_382.rs:538:12
+    |
+538 |     pub fn validate_commercial_model(model: &str) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `validate_ern_382_message` is never used
+   --> packages/ddex-builder/src/versions/ern_382.rs:548:12
+    |
+548 |     pub fn validate_ern_382_message(xml_content: &str) -> Vec<String> {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `get_namespace_mappings` is never used
+   --> packages/ddex-builder/src/versions/ern_42.rs:162:8
+    |
+162 | pub fn get_namespace_mappings() -> IndexMap<String, String> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `get_xml_template` is never used
+   --> packages/ddex-builder/src/versions/ern_42.rs:174:8
+    |
+174 | pub fn get_xml_template() -> &'static str {
+    |        ^^^^^^^^^^^^^^^^
+
+warning: function `build_enhanced_message_header` is never used
+   --> packages/ddex-builder/src/versions/ern_42.rs:213:12
+    |
+213 |     pub fn build_enhanced_message_header(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_enhanced_sound_recording` is never used
+   --> packages/ddex-builder/src/versions/ern_42.rs:271:12
+    |
+271 |     pub fn build_enhanced_sound_recording(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_enhanced_release` is never used
+   --> packages/ddex-builder/src/versions/ern_42.rs:348:12
+    |
+348 |     pub fn build_enhanced_release(
+    |            ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_enhanced_deal` is never used
+   --> packages/ddex-builder/src/versions/ern_42.rs:428:12
+    |
+428 |     pub fn build_enhanced_deal(
+    |            ^^^^^^^^^^^^^^^^^^^
+
+warning: static `ISRC_PATTERN_42` is never used
+   --> packages/ddex-builder/src/versions/ern_42.rs:525:12
+    |
+525 |     static ISRC_PATTERN_42: Lazy<Regex> = Lazy::new(|| {
+    |            ^^^^^^^^^^^^^^^
+
+warning: static `UPC_PATTERN_42` is never used
+   --> packages/ddex-builder/src/versions/ern_42.rs:529:12
+    |
+529 |     static UPC_PATTERN_42: Lazy<Regex> = Lazy::new(|| {
+    |            ^^^^^^^^^^^^^^
+
+warning: static `DURATION_PATTERN_42` is never used
+   --> packages/ddex-builder/src/versions/ern_42.rs:533:12
+    |
+533 |     static DURATION_PATTERN_42: Lazy<Regex> = Lazy::new(|| {
+    |            ^^^^^^^^^^^^^^^^^^^
+
+warning: static `DATE_PATTERN_42` is never used
+   --> packages/ddex-builder/src/versions/ern_42.rs:537:12
+    |
+537 |     static DATE_PATTERN_42: Lazy<Regex> = Lazy::new(|| {
+    |            ^^^^^^^^^^^^^^^
+
+warning: static `DATETIME_PATTERN_42` is never used
+   --> packages/ddex-builder/src/versions/ern_42.rs:541:12
+    |
+541 |     static DATETIME_PATTERN_42: Lazy<Regex> = Lazy::new(|| {
+    |            ^^^^^^^^^^^^^^^^^^^
+
+warning: function `validate_isrc` is never used
+   --> packages/ddex-builder/src/versions/ern_42.rs:546:12
+    |
+546 |     pub fn validate_isrc(isrc: &str) -> bool {
+    |            ^^^^^^^^^^^^^
+
+warning: function `validate_upc` is never used
+   --> packages/ddex-builder/src/versions/ern_42.rs:551:12
+    |
+551 |     pub fn validate_upc(upc: &str) -> bool {
+    |            ^^^^^^^^^^^^
+
+warning: function `validate_duration` is never used
+   --> packages/ddex-builder/src/versions/ern_42.rs:556:12
+    |
+556 |     pub fn validate_duration(duration: &str) -> bool {
+    |            ^^^^^^^^^^^^^^^^^
+
+warning: function `validate_date` is never used
+   --> packages/ddex-builder/src/versions/ern_42.rs:561:12
+    |
+561 |     pub fn validate_date(date: &str) -> bool {
+    |            ^^^^^^^^^^^^^
+
+warning: function `validate_datetime` is never used
+   --> packages/ddex-builder/src/versions/ern_42.rs:566:12
+    |
+566 |     pub fn validate_datetime(datetime: &str) -> bool {
+    |            ^^^^^^^^^^^^^^^^^
+
+warning: function `validate_territory_code` is never used
+   --> packages/ddex-builder/src/versions/ern_42.rs:571:12
+    |
+571 |     pub fn validate_territory_code(territory: &str) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `validate_commercial_model` is never used
+   --> packages/ddex-builder/src/versions/ern_42.rs:581:12
+    |
+581 |     pub fn validate_commercial_model(model: &str) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `validate_audio_codec` is never used
+   --> packages/ddex-builder/src/versions/ern_42.rs:593:12
+    |
+593 |     pub fn validate_audio_codec(codec: &str) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `validate_usage_type` is never used
+   --> packages/ddex-builder/src/versions/ern_42.rs:600:12
+    |
+600 |     pub fn validate_usage_type(usage: &str) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^
+
+warning: function `validate_ern_42_message` is never used
+   --> packages/ddex-builder/src/versions/ern_42.rs:608:12
+    |
+608 |     pub fn validate_ern_42_message(xml_content: &str) -> Vec<String> {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `get_namespace_mappings` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:198:8
+    |
+198 | pub fn get_namespace_mappings() -> IndexMap<String, String> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `get_xml_template` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:211:8
+    |
+211 | pub fn get_xml_template() -> &'static str {
+    |        ^^^^^^^^^^^^^^^^
+
+warning: function `build_advanced_message_header` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:253:12
+    |
+253 |     pub fn build_advanced_message_header(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_advanced_sound_recording` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:325:12
+    |
+325 |     pub fn build_advanced_sound_recording(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_video_resource` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:424:12
+    |
+424 |     pub fn build_video_resource(
+    |            ^^^^^^^^^^^^^^^^^^^^
+
+warning: static `ISRC_PATTERN_43` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:517:12
+    |
+517 |     static ISRC_PATTERN_43: Lazy<Regex> = Lazy::new(|| {
+    |            ^^^^^^^^^^^^^^^
+
+warning: static `UPC_PATTERN_43` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:521:12
+    |
+521 |     static UPC_PATTERN_43: Lazy<Regex> = Lazy::new(|| {
+    |            ^^^^^^^^^^^^^^
+
+warning: static `EAN_PATTERN_43` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:525:12
+    |
+525 |     static EAN_PATTERN_43: Lazy<Regex> = Lazy::new(|| {
+    |            ^^^^^^^^^^^^^^
+
+warning: static `DURATION_PATTERN_43` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:529:12
+    |
+529 |     static DURATION_PATTERN_43: Lazy<Regex> = Lazy::new(|| {
+    |            ^^^^^^^^^^^^^^^^^^^
+
+warning: static `DATE_PATTERN_43` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:533:12
+    |
+533 |     static DATE_PATTERN_43: Lazy<Regex> = Lazy::new(|| {
+    |            ^^^^^^^^^^^^^^^
+
+warning: static `DATETIME_PATTERN_43` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:537:12
+    |
+537 |     static DATETIME_PATTERN_43: Lazy<Regex> = Lazy::new(|| {
+    |            ^^^^^^^^^^^^^^^^^^^
+
+warning: static `HASH_PATTERN_43` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:541:12
+    |
+541 |     static HASH_PATTERN_43: Lazy<Regex> = Lazy::new(|| {
+    |            ^^^^^^^^^^^^^^^
+
+warning: function `validate_isrc` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:546:12
+    |
+546 |     pub fn validate_isrc(isrc: &str) -> bool {
+    |            ^^^^^^^^^^^^^
+
+warning: function `validate_upc` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:551:12
+    |
+551 |     pub fn validate_upc(upc: &str) -> bool {
+    |            ^^^^^^^^^^^^
+
+warning: function `validate_ean` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:556:12
+    |
+556 |     pub fn validate_ean(ean: &str) -> bool {
+    |            ^^^^^^^^^^^^
+
+warning: function `validate_duration` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:561:12
+    |
+561 |     pub fn validate_duration(duration: &str) -> bool {
+    |            ^^^^^^^^^^^^^^^^^
+
+warning: function `validate_date` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:566:12
+    |
+566 |     pub fn validate_date(date: &str) -> bool {
+    |            ^^^^^^^^^^^^^
+
+warning: function `validate_datetime` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:571:12
+    |
+571 |     pub fn validate_datetime(datetime: &str) -> bool {
+    |            ^^^^^^^^^^^^^^^^^
+
+warning: function `validate_hash_sum` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:576:12
+    |
+576 |     pub fn validate_hash_sum(hash: &str) -> bool {
+    |            ^^^^^^^^^^^^^^^^^
+
+warning: function `validate_territory_code` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:581:12
+    |
+581 |     pub fn validate_territory_code(territory: &str) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `validate_commercial_model` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:595:12
+    |
+595 |     pub fn validate_commercial_model(model: &str) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `validate_audio_codec` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:605:12
+    |
+605 |     pub fn validate_audio_codec(codec: &str) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `validate_video_codec` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:613:12
+    |
+613 |     pub fn validate_video_codec(codec: &str) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `validate_usage_type` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:621:12
+    |
+621 |     pub fn validate_usage_type(usage: &str) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^
+
+warning: function `validate_hash_algorithm` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:630:12
+    |
+630 |     pub fn validate_hash_algorithm(algorithm: &str) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `validate_ern_43_message` is never used
+   --> packages/ddex-builder/src/versions/ern_43.rs:637:12
+    |
+637 |     pub fn validate_ern_43_message(xml_content: &str) -> Vec<String> {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `field_migrations` and `validation_changes` are never read
+  --> packages/ddex-builder/src/versions/converter.rs:55:5
+   |
+52 | struct ConversionRules {
+   |        --------------- fields in this struct
+...
+55 |     field_migrations: Vec<FieldMigration>,
+   |     ^^^^^^^^^^^^^^^^
+56 |     validation_changes: Vec<ValidationChange>,
+   |     ^^^^^^^^^^^^^^^^^^
+   |
+   = note: `ConversionRules` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `replacement` is never read
+  --> packages/ddex-builder/src/versions/converter.rs:65:18
+   |
+65 |     Deprecated { replacement: Option<String>, warning: String },
+   |     ----------   ^^^^^^^^^^^
+   |     |
+   |     field in this variant
+   |
+   = note: `ElementMapping` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `default_value` is never read
+  --> packages/ddex-builder/src/versions/converter.rs:66:11
+   |
+66 |     New { default_value: Option<String> },
+   |     ---   ^^^^^^^^^^^^^
+   |     |
+   |     field in this variant
+   |
+   = note: `ElementMapping` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: variants `Split` and `Merge` are never constructed
+  --> packages/ddex-builder/src/versions/converter.rs:63:5
+   |
+60 | enum ElementMapping {
+   |      -------------- variants in this enum
+...
+63 |     Split { into: Vec<String>, splitter: fn(&str) -> Vec<String> },
+   |     ^^^^^
+64 |     Merge { from: Vec<String>, merger: fn(Vec<&str>) -> String },
+   |     ^^^^^
+   |
+   = note: `ElementMapping` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: fields `schema_version_from` and `schema_version_to` are never read
+  --> packages/ddex-builder/src/versions/converter.rs:73:5
+   |
+70 | struct NamespaceMapping {
+   |        ---------------- fields in this struct
+...
+73 |     schema_version_from: String,
+   |     ^^^^^^^^^^^^^^^^^^^
+74 |     schema_version_to: String,
+   |     ^^^^^^^^^^^^^^^^^
+   |
+   = note: `NamespaceMapping` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: fields `element`, `field`, and `migration_type` are never read
+  --> packages/ddex-builder/src/versions/converter.rs:79:5
+   |
+78 | struct FieldMigration {
+   |        -------------- fields in this struct
+79 |     element: String,
+   |     ^^^^^^^
+80 |     field: String,
+   |     ^^^^^
+81 |     migration_type: MigrationType,
+   |     ^^^^^^^^^^^^^^
+   |
+   = note: `FieldMigration` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: fields `from_pattern` and `to_pattern` are never read
+  --> packages/ddex-builder/src/versions/converter.rs:86:20
+   |
+86 |     FormatChange { from_pattern: String, to_pattern: String },
+   |     ------------   ^^^^^^^^^^^^          ^^^^^^^^^^
+   |     |
+   |     fields in this variant
+   |
+   = note: `MigrationType` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: fields `old_rules` and `new_rules` are never read
+  --> packages/ddex-builder/src/versions/converter.rs:88:24
+   |
+88 |     ValidationChange { old_rules: Vec<String>, new_rules: Vec<String> },
+   |     ----------------   ^^^^^^^^^               ^^^^^^^^^
+   |     |
+   |     fields in this variant
+   |
+   = note: `MigrationType` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: variant `ValueMapping` is never constructed
+  --> packages/ddex-builder/src/versions/converter.rs:87:5
+   |
+85 | enum MigrationType {
+   |      ------------- variant in this enum
+86 |     FormatChange { from_pattern: String, to_pattern: String },
+87 |     ValueMapping(IndexMap<String, String>),
+   |     ^^^^^^^^^^^^
+   |
+   = note: `MigrationType` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: fields `element` and `change_type` are never read
+  --> packages/ddex-builder/src/versions/converter.rs:93:5
+   |
+92 | struct ValidationChange {
+   |        ---------------- fields in this struct
+93 |     element: String,
+   |     ^^^^^^^
+94 |     change_type: ValidationChangeType,
+   |     ^^^^^^^^^^^
+   |
+   = note: `ValidationChange` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `0` is never read
+  --> packages/ddex-builder/src/versions/converter.rs:99:19
+   |
+99 |     RequiredAdded(String),
+   |     ------------- ^^^^^^
+   |     |
+   |     field in this variant
+   |
+   = note: `ValidationChangeType` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+   |
+99 -     RequiredAdded(String),
+99 +     RequiredAdded(()),
+   |
+
+warning: field `0` is never read
+   --> packages/ddex-builder/src/versions/converter.rs:100:21
+    |
+100 |     RequiredRemoved(String),
+    |     --------------- ^^^^^^
+    |     |
+    |     field in this variant
+    |
+    = note: `ValidationChangeType` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+    |
+100 -     RequiredRemoved(String),
+100 +     RequiredRemoved(()),
+    |
+
+warning: field `0` is never read
+   --> packages/ddex-builder/src/versions/converter.rs:101:19
+    |
+101 |     OptionalAdded(String),
+    |     ------------- ^^^^^^
+    |     |
+    |     field in this variant
+    |
+    = note: `ValidationChangeType` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+    |
+101 -     OptionalAdded(String),
+101 +     OptionalAdded(()),
+    |
+
+warning: field `0` is never read
+   --> packages/ddex-builder/src/versions/converter.rs:102:21
+    |
+102 |     OptionalRemoved(String),
+    |     --------------- ^^^^^^
+    |     |
+    |     field in this variant
+    |
+    = note: `ValidationChangeType` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+    |
+102 -     OptionalRemoved(String),
+102 +     OptionalRemoved(()),
+    |
+
+warning: variant `FormatChanged` is never constructed
+   --> packages/ddex-builder/src/versions/converter.rs:103:5
+    |
+98  | enum ValidationChangeType {
+    |      -------------------- variant in this enum
+...
+103 |     FormatChanged { field: String, old_format: String, new_format: String },
+    |     ^^^^^^^^^^^^^
+    |
+    = note: `ValidationChangeType` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: fields `name_idx`, `namespace_idx`, `attributes`, and `children` are never read
+   --> packages/ddex-builder/src/memory_optimization.rs:172:5
+    |
+170 | pub struct CompactElement {
+    |            -------------- fields in this struct
+171 |     /// Name index in string table
+172 |     name_idx: u32,
+    |     ^^^^^^^^
+173 |     /// Namespace index (optional)
+174 |     namespace_idx: Option<u32>,
+    |     ^^^^^^^^^^^^^
+175 |     /// Attributes (packed)
+176 |     attributes: CompactAttributes,
+    |     ^^^^^^^^^^
+177 |     /// Children indices
+178 |     children: Vec<CompactNodeRef>,
+    |     ^^^^^^^^
+    |
+    = note: `CompactElement` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: fields `track_id`, `isrc`, `title`, `duration`, and `artist` are never read
+   --> packages/ddex-builder/src/parallel_processing.rs:436:9
+    |
+435 | struct ValidatedTrack {
+    |        -------------- fields in this struct
+436 |     pub track_id: String,
+    |         ^^^^^^^^
+437 |     pub isrc: String,
+    |         ^^^^
+438 |     pub title: String,
+    |         ^^^^^
+439 |     pub duration: String,
+    |         ^^^^^^^^
+440 |     pub artist: String,
+    |         ^^^^^^
+    |
+    = note: `ValidatedTrack` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: field `created_at` is never read
+   --> packages/ddex-builder/src/caching.rs:159:5
+    |
+157 | struct CachedSchema {
+    |        ------------ field in this struct
+158 |     schema: CompiledSchema,
+159 |     created_at: Instant,
+    |     ^^^^^^^^^^
+    |
+    = note: `CachedSchema` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: field `compile_time` is never read
+   --> packages/ddex-builder/src/caching.rs:165:5
+    |
+164 | struct SchemaMetadata {
+    |        -------------- field in this struct
+165 |     compile_time: Duration,
+    |     ^^^^^^^^^^^^
+    |
+    = note: `SchemaMetadata` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: static `DANGEROUS_PATH_REGEX` is never used
+  --> packages/ddex-builder/src/security.rs:93:8
+   |
+93 | static DANGEROUS_PATH_REGEX: Lazy<Regex> = Lazy::new(|| {
+   |        ^^^^^^^^^^^^^^^^^^^^
+
+warning: field `config` is never read
+   --> packages/ddex-builder/src/security.rs:573:5
+    |
+572 | pub struct OutputSanitizer {
+    |            --------------- field in this struct
+573 |     config: SecurityConfig,
+    |     ^^^^^^
+    |
+    = note: `OutputSanitizer` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: field `resource_usage` is never read
+   --> packages/ddex-builder/src/api_security.rs:122:5
+    |
+119 | struct OperationRecord {
+    |        --------------- field in this struct
+...
+122 |     resource_usage: usize,
+    |     ^^^^^^^^^^^^^^
+    |
+    = note: `OperationRecord` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/ast.rs:10:5
+    |
+10  |     pub root: Element,
+    |     ^^^^^^^^^^^^^^^^^
+    |
+note: the lint level is defined here
+   --> packages/ddex-builder/src/lib.rs:124:9
+    |
+124 | #![warn(missing_docs)]
+    |         ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/ast.rs:11:5
+   |
+11 |     pub namespaces: IndexMap<String, String>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/ast.rs:12:5
+   |
+12 |     pub schema_location: Option<String>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/ast.rs:18:5
+   |
+18 |     pub name: String,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/ast.rs:19:5
+   |
+19 |     pub namespace: Option<String>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/ast.rs:20:5
+   |
+20 |     pub attributes: IndexMap<String, String>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/ast.rs:21:5
+   |
+21 |     pub children: Vec<Node>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/ast.rs:27:5
+   |
+27 |     Element(Element),
+   |     ^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/ast.rs:28:5
+   |
+28 |     Text(String),
+   |     ^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/ast.rs:29:5
+   |
+29 |     Comment(Comment),
+   |     ^^^^^^^
+
+warning: missing documentation for an associated function
+  --> packages/ddex-builder/src/ast.rs:35:5
+   |
+35 |     pub fn new(name: impl Into<String>) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> packages/ddex-builder/src/ast.rs:44:5
+   |
+44 |     pub fn with_namespace(mut self, ns: impl Into<String>) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> packages/ddex-builder/src/ast.rs:49:5
+   |
+49 |     pub fn with_attr(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> packages/ddex-builder/src/ast.rs:54:5
+   |
+54 |     pub fn with_text(mut self, text: impl Into<String>) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> packages/ddex-builder/src/ast.rs:59:5
+   |
+59 |     pub fn add_child(&mut self, child: Element) {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> packages/ddex-builder/src/ast.rs:63:5
+   |
+63 |     pub fn add_text(&mut self, text: impl Into<String>) {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:33:5
+   |
+33 |     pub message_id: Option<String>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:34:5
+   |
+34 |     pub message_sender: PartyRequest,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:35:5
+   |
+35 |     pub message_recipient: PartyRequest,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:36:5
+   |
+36 |     pub message_control_type: Option<String>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:37:5
+   |
+37 |     pub message_created_date_time: Option<String>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:43:5
+   |
+43 |     pub party_name: Vec<LocalizedStringRequest>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:44:5
+   |
+44 |     pub party_id: Option<String>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:45:5
+   |
+45 |     pub party_reference: Option<String>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:51:5
+   |
+51 |     pub text: String,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:52:5
+   |
+52 |     pub language_code: Option<String>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:58:5
+   |
+58 |     pub release_id: String,
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:59:5
+   |
+59 |     pub release_reference: Option<String>,  // Added for linker
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:60:5
+   |
+60 |     pub title: Vec<LocalizedStringRequest>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:61:5
+   |
+61 |     pub artist: String,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:62:5
+   |
+62 |     pub label: Option<String>,              // Added for metadata
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:63:5
+   |
+63 |     pub release_date: Option<String>,       // Added for metadata
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:64:5
+   |
+64 |     pub upc: Option<String>,                // Added for validation
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:65:5
+   |
+65 |     pub tracks: Vec<TrackRequest>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:66:5
+   |
+66 |     pub resource_references: Option<Vec<String>>,  // Added for linker
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:72:5
+   |
+72 |     pub track_id: String,                     // Added for linker
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:73:5
+   |
+73 |     pub resource_reference: Option<String>,   // Added for linker
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:74:5
+   |
+74 |     pub isrc: String,                        // Changed from Option<String>
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:75:5
+   |
+75 |     pub title: String,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:76:5
+   |
+76 |     pub duration: String,                    // Keep as String for ISO 8601 format
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:77:5
+   |
+77 |     pub artist: String,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:83:5
+   |
+83 |     pub deal_reference: Option<String>,       // Added for linker
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:84:5
+   |
+84 |     pub deal_terms: DealTerms,               // Define this
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:85:5
+   |
+85 |     pub release_references: Vec<String>,      // Added for linker
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:91:5
+   |
+91 |     pub commercial_model_type: String,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:92:5
+   |
+92 |     pub territory_code: Vec<String>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/builder.rs:93:5
+   |
+93 |     pub start_date: Option<String>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/builder.rs:161:5
+    |
+161 |     pub code: String,
+    |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/builder.rs:162:5
+    |
+162 |     pub message: String,
+    |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/builder.rs:163:5
+    |
+163 |     pub location: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/builder.rs:169:5
+    |
+169 |     pub releases: usize,
+    |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/builder.rs:170:5
+    |
+170 |     pub tracks: usize,
+    |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/builder.rs:171:5
+    |
+171 |     pub deals: usize,
+    |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/builder.rs:172:5
+    |
+172 |     pub generation_time_ms: u64,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/builder.rs:173:5
+    |
+173 |     pub xml_size_bytes: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:135:5
+    |
+135 |     pub line_ending: LineEnding,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:136:5
+    |
+136 |     pub indent_char: IndentChar,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:137:5
+    |
+137 |     pub indent_width: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:141:5
+    |
+141 |     pub xml_character_policy: XmlCharacterPolicy,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:142:5
+    |
+142 |     pub quote_style: QuoteStyle,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:146:5
+    |
+146 |     pub date_time_format: DateTimeFormat,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:150:5
+    |
+150 |     pub verify_determinism: Option<usize>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:306:5
+    |
+306 |     pub is_deterministic: bool,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:307:5
+    |
+307 |     pub iterations: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:308:5
+    |
+308 |     pub outputs: Vec<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:309:5
+    |
+309 |     pub hashes: Vec<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:310:5
+    |
+310 |     pub differences: Vec<DeterminismDifference>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:311:5
+    |
+311 |     pub runtime_stats: DeterminismStats,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:317:5
+    |
+317 |     pub iteration1: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:318:5
+    |
+318 |     pub iteration2: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:319:5
+    |
+319 |     pub first_difference_byte: Option<usize>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:320:5
+    |
+320 |     pub hash_difference: HashDifference,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:321:5
+    |
+321 |     pub length_difference: LengthDifference,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:322:5
+    |
+322 |     pub context: Option<DifferenceContext>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:328:5
+    |
+328 |     pub sha256_1: String,
+    |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:329:5
+    |
+329 |     pub sha256_2: String,
+    |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:330:5
+    |
+330 |     pub blake3_1: String,
+    |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:331:5
+    |
+331 |     pub blake3_2: String,
+    |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:337:5
+    |
+337 |     pub length_1: usize,
+    |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:338:5
+    |
+338 |     pub length_2: usize,
+    |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:339:5
+    |
+339 |     pub diff: i64,
+    |     ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:345:5
+    |
+345 |     pub position: usize,
+    |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:346:5
+    |
+346 |     pub before: String,
+    |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:347:5
+    |
+347 |     pub after_1: String,
+    |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:348:5
+    |
+348 |     pub after_2: String,
+    |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:349:5
+    |
+349 |     pub line_number: Option<usize>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:350:5
+    |
+350 |     pub column_number: Option<usize>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:356:5
+    |
+356 |     pub total_time_ms: u64,
+    |     ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:357:5
+    |
+357 |     pub avg_build_time_ms: u64,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:358:5
+    |
+358 |     pub min_build_time_ms: u64,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:359:5
+    |
+359 |     pub max_build_time_ms: u64,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/determinism.rs:360:5
+    |
+360 |     pub overhead_percentage: f64,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/error.rs:12:9
+   |
+12 |         field: String,
+   |         ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/error.rs:13:9
+   |
+13 |         message: String,
+   |         ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/error.rs:19:9
+   |
+19 |         field: String,
+   |         ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/error.rs:25:9
+   |
+25 |         reference: String,
+   |         ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/error.rs:31:9
+   |
+31 |         errors: Vec<String>,
+   |         ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/error.rs:49:9
+   |
+49 |         message: String,
+   |         ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/error.rs:55:9
+   |
+55 |         guarantee: String,
+   |         ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/error.rs:56:9
+   |
+56 |         details: String,
+   |         ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/error.rs:101:5
+    |
+101 |     pub code: String,
+    |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/error.rs:102:5
+    |
+102 |     pub message: String,
+    |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/error.rs:103:5
+    |
+103 |     pub location: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/guarantees.rs:130:5
+    |
+130 |     Critical,
+    |     ^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/guarantees.rs:131:5
+    |
+131 |     High,
+    |     ^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/guarantees.rs:132:5
+    |
+132 |     Medium,
+    |     ^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/guarantees.rs:133:5
+    |
+133 |     Low,
+    |     ^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/guarantees.rs:139:5
+    |
+139 |     pub guarantee: DeterminismGuarantee,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/guarantees.rs:140:5
+    |
+140 |     pub passed: bool,
+    |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/guarantees.rs:141:5
+    |
+141 |     pub details: String,
+    |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/guarantees.rs:142:5
+    |
+142 |     pub evidence: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/guarantees.rs:143:5
+    |
+143 |     pub timestamp: chrono::DateTime<chrono::Utc>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/guarantees.rs:545:5
+    |
+545 |     pub timestamp: chrono::DateTime<chrono::Utc>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/guarantees.rs:546:5
+    |
+546 |     pub total_guarantees: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/guarantees.rs:547:5
+    |
+547 |     pub passed_guarantees: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/guarantees.rs:548:5
+    |
+548 |     pub success_rate: f64,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/guarantees.rs:549:5
+    |
+549 |     pub results: Vec<GuaranteeValidationResult>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/guarantees.rs:550:5
+    |
+550 |     pub overall_pass: bool,
+    |     ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> packages/ddex-builder/src/generator/mod.rs:82:1
+   |
+82 | pub struct ASTGenerator {
+   | ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> packages/ddex-builder/src/generator/mod.rs:87:5
+   |
+87 |     pub fn new(version: String) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> packages/ddex-builder/src/generator/mod.rs:91:5
+   |
+91 |     pub fn generate(&mut self, request: &BuildRequest) -> Result<AST, BuildError> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/presets/mod.rs:117:5
+    |
+117 |     Ern382,
+    |     ^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/presets/mod.rs:119:5
+    |
+119 |     Ern42,
+    |     ^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/presets/mod.rs:121:5
+    |
+121 |     Ern43,
+    |     ^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/presets/mod.rs:123:5
+    |
+123 |     Ern41,
+    |     ^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/presets/mod.rs:140:5
+    |
+140 |     AudioAlbum,
+    |     ^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/presets/mod.rs:141:5
+    |
+141 |     AudioSingle,
+    |     ^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/presets/mod.rs:142:5
+    |
+142 |     VideoAlbum,
+    |     ^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/presets/mod.rs:143:5
+    |
+143 |     VideoSingle,
+    |     ^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/presets/mod.rs:144:5
+    |
+144 |     Mixed,
+    |     ^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/presets/mod.rs:150:5
+    |
+150 |     Required,
+    |     ^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/presets/mod.rs:151:5
+    |
+151 |     MinLength(usize),
+    |     ^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/presets/mod.rs:152:5
+    |
+152 |     MaxLength(usize),
+    |     ^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/presets/mod.rs:153:5
+    |
+153 |     Pattern(String),
+    |     ^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/presets/mod.rs:154:5
+    |
+154 |     OneOf(Vec<String>),
+    |     ^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/presets/mod.rs:155:5
+    |
+155 |     AudioQuality { min_bit_depth: u8, min_sample_rate: u32 },
+    |     ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:155:20
+    |
+155 |     AudioQuality { min_bit_depth: u8, min_sample_rate: u32 },
+    |                    ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:155:39
+    |
+155 |     AudioQuality { min_bit_depth: u8, min_sample_rate: u32 },
+    |                                       ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/presets/mod.rs:156:5
+    |
+156 |     TerritoryCode { allowed: Vec<String> },
+    |     ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:156:21
+    |
+156 |     TerritoryCode { allowed: Vec<String> },
+    |                     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/presets/mod.rs:157:5
+    |
+157 |     Custom(String),
+    |     ^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:163:5
+    |
+163 |     pub version: DdexVersion,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:164:5
+    |
+164 |     pub profile: MessageProfile,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:165:5
+    |
+165 |     pub required_fields: Vec<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:166:5
+    |
+166 |     pub validation_rules: IndexMap<String, ValidationRule>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:167:5
+    |
+167 |     pub default_values: IndexMap<String, String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:168:5
+    |
+168 |     pub custom_mappings: IndexMap<String, String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:169:5
+    |
+169 |     pub territory_codes: Vec<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:170:5
+    |
+170 |     pub distribution_channels: Vec<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:171:5
+    |
+171 |     pub release_types: Vec<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:177:5
+    |
+177 |     pub name: String,
+    |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:178:5
+    |
+178 |     pub description: String,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:179:5
+    |
+179 |     pub source: PresetSource,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:180:5
+    |
+180 |     pub provenance_url: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:181:5
+    |
+181 |     pub version: String,
+    |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:182:5
+    |
+182 |     pub locked: bool,
+    |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:183:5
+    |
+183 |     pub disclaimer: String,
+    |     ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:184:5
+    |
+184 |     pub determinism: super::determinism::DeterminismConfig,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:185:5
+    |
+185 |     pub defaults: PresetDefaults,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:186:5
+    |
+186 |     pub required_fields: Vec<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:187:5
+    |
+187 |     pub format_overrides: IndexMap<String, String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:189:5
+    |
+189 |     pub config: PresetConfig,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:190:5
+    |
+190 |     pub validation_rules: IndexMap<String, ValidationRule>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:191:5
+    |
+191 |     pub custom_mappings: IndexMap<String, String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/presets/mod.rs:197:5
+    |
+197 |     PublicDocs,
+    |     ^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/presets/mod.rs:198:5
+    |
+198 |     CustomerFeedback,
+    |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/presets/mod.rs:199:5
+    |
+199 |     Community,
+    |     ^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:205:5
+    |
+205 |     pub message_control_type: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:206:5
+    |
+206 |     pub territory_code: Vec<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/presets/mod.rs:207:5
+    |
+207 |     pub distribution_channel: Vec<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/streaming/mod.rs:48:5
+   |
+48 |     pub releases_written: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/streaming/mod.rs:49:5
+   |
+49 |     pub resources_written: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/streaming/mod.rs:50:5
+   |
+50 |     pub bytes_written: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/streaming/mod.rs:51:5
+   |
+51 |     pub current_memory_usage: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/streaming/mod.rs:52:5
+   |
+52 |     pub estimated_completion_percent: Option<f64>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/mod.rs:390:5
+    |
+390 |     pub releases_written: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/mod.rs:391:5
+    |
+391 |     pub resources_written: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/mod.rs:392:5
+    |
+392 |     pub deals_written: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/mod.rs:393:5
+    |
+393 |     pub bytes_written: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/mod.rs:394:5
+    |
+394 |     pub warnings: Vec<BuildWarning>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/mod.rs:395:5
+    |
+395 |     pub peak_memory_usage: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/streaming/mod.rs:402:5
+    |
+402 |     InvalidState { message: String },
+    |     ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/mod.rs:402:20
+    |
+402 |     InvalidState { message: String },
+    |                    ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/streaming/mod.rs:405:5
+    |
+405 |     IoError(#[from] std::io::Error),
+    |     ^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/streaming/mod.rs:408:5
+    |
+408 |     XmlError(#[from] quick_xml::Error),
+    |     ^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/streaming/mod.rs:411:5
+    |
+411 |     BuildError(#[from] BuildError),
+    |     ^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/buffer_manager.rs:242:5
+    |
+242 |     pub current_memory_usage: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/buffer_manager.rs:243:5
+    |
+243 |     pub peak_memory_usage: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/buffer_manager.rs:244:5
+    |
+244 |     pub total_bytes_written: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/buffer_manager.rs:245:5
+    |
+245 |     pub total_flushes: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/buffer_manager.rs:246:5
+    |
+246 |     pub queued_buffers: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/buffer_manager.rs:247:5
+    |
+247 |     pub current_buffer_size: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/buffer_manager.rs:248:5
+    |
+248 |     pub is_near_capacity: bool,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/streaming/reference_manager.rs:40:5
+   |
+40 |     pub reference_id: String,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/streaming/reference_manager.rs:41:5
+   |
+41 |     pub resource_id: String,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/streaming/reference_manager.rs:42:5
+   |
+42 |     pub title: String,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/streaming/reference_manager.rs:43:5
+   |
+43 |     pub artist: String,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/streaming/reference_manager.rs:44:5
+   |
+44 |     pub resource_type: String,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/streaming/reference_manager.rs:45:5
+   |
+45 |     pub sequence_number: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/streaming/reference_manager.rs:51:5
+   |
+51 |     pub reference_id: String,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/streaming/reference_manager.rs:52:5
+   |
+52 |     pub release_id: String,
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/streaming/reference_manager.rs:53:5
+   |
+53 |     pub title: String,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/streaming/reference_manager.rs:54:5
+   |
+54 |     pub artist: String,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/streaming/reference_manager.rs:55:5
+   |
+55 |     pub resource_references: Vec<String>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/streaming/reference_manager.rs:56:5
+   |
+56 |     pub sequence_number: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/reference_manager.rs:411:5
+    |
+411 |     pub is_valid: bool,
+    |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/reference_manager.rs:412:5
+    |
+412 |     pub errors: Vec<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/reference_manager.rs:413:5
+    |
+413 |     pub warnings: Vec<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/reference_manager.rs:414:5
+    |
+414 |     pub total_references: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/reference_manager.rs:415:5
+    |
+415 |     pub resource_count: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/reference_manager.rs:416:5
+    |
+416 |     pub release_count: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/reference_manager.rs:417:5
+    |
+417 |     pub deal_count: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/reference_manager.rs:423:5
+    |
+423 |     pub total_references_generated: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/reference_manager.rs:424:5
+    |
+424 |     pub resource_references: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/reference_manager.rs:425:5
+    |
+425 |     pub release_references: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/reference_manager.rs:426:5
+    |
+426 |     pub deal_references: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/reference_manager.rs:427:5
+    |
+427 |     pub cache_size: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/reference_manager.rs:428:5
+    |
+428 |     pub duplicate_resource_ids: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/reference_manager.rs:429:5
+    |
+429 |     pub duplicate_release_ids: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/streaming/reference_manager.rs:430:5
+    |
+430 |     pub orphaned_references: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/diff/types.rs:19:13
+   |
+19 |     Moved { from: DiffPath, to: DiffPath },
+   |             ^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/diff/types.rs:19:29
+   |
+19 |     Moved { from: DiffPath, to: DiffPath },
+   |                             ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:168:5
+    |
+168 |     pub resource_type: String,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:169:5
+    |
+169 |     pub title: String,
+    |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:170:5
+    |
+170 |     pub artist: String,
+    |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:171:5
+    |
+171 |     pub isrc: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:172:5
+    |
+172 |     pub duration: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:173:5
+    |
+173 |     pub file_path: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:174:5
+    |
+174 |     pub technical_details: Option<TechnicalDetails>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:180:5
+    |
+180 |     pub release_type: String,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:181:5
+    |
+181 |     pub title: String,
+    |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:182:5
+    |
+182 |     pub artist: String,
+    |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:183:5
+    |
+183 |     pub label: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:184:5
+    |
+184 |     pub upc: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:185:5
+    |
+185 |     pub release_date: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:186:5
+    |
+186 |     pub genre: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:187:5
+    |
+187 |     pub resource_references: Vec<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:193:5
+    |
+193 |     pub commercial_model_type: String,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:194:5
+    |
+194 |     pub territory_codes: Vec<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:195:5
+    |
+195 |     pub start_date: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:196:5
+    |
+196 |     pub end_date: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:197:5
+    |
+197 |     pub price: Option<PriceData>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:203:5
+    |
+203 |     pub field_name: String,
+    |     ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:204:5
+    |
+204 |     pub old_value: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:205:5
+    |
+205 |     pub new_value: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:206:5
+    |
+206 |     pub update_action: UpdateAction,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:212:5
+    |
+212 |     pub track_id: String,
+    |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:213:5
+    |
+213 |     pub action: UpdateAction,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:214:5
+    |
+214 |     pub old_resource_reference: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:215:5
+    |
+215 |     pub new_resource_reference: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:216:5
+    |
+216 |     pub position_change: Option<PositionChange>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:222:5
+    |
+222 |     pub old_reference: String,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:223:5
+    |
+223 |     pub new_reference: String,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:224:5
+    |
+224 |     pub reference_type: String,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:225:5
+    |
+225 |     pub update_reason: String,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:231:5
+    |
+231 |     pub field_name: String,
+    |     ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:232:5
+    |
+232 |     pub old_value: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:233:5
+    |
+233 |     pub new_value: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:234:5
+    |
+234 |     pub effective_date: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:240:5
+    |
+240 |     pub old_position: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:241:5
+    |
+241 |     pub new_position: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:247:5
+    |
+247 |     pub file_name: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:248:5
+    |
+248 |     pub codec_type: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:249:5
+    |
+249 |     pub bit_rate: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:250:5
+    |
+250 |     pub sample_rate: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:256:5
+    |
+256 |     pub amount: String,
+    |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:257:5
+    |
+257 |     pub currency_code: String,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/messages/update_release.rs:258:5
+    |
+258 |     pub price_type: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+ --> packages/ddex-builder/src/linker/types.rs:9:5
+  |
+9 |     Release,
+  |     ^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/linker/types.rs:10:5
+   |
+10 |     Resource,
+   |     ^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/linker/types.rs:11:5
+   |
+11 |     Party,
+   |     ^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/linker/types.rs:12:5
+   |
+12 |     Deal,
+   |     ^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/linker/types.rs:13:5
+   |
+13 |     TechnicalDetails,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/linker/types.rs:14:5
+   |
+14 |     RightsController,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/linker/types.rs:37:16
+   |
+37 |     Prefixed { separator: String },
+   |                ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/linker/types.rs:79:5
+   |
+79 |     pub release_reference: String,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/linker/types.rs:80:5
+   |
+80 |     pub resource_reference: String,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/linker/types.rs:81:5
+   |
+81 |     pub sequence_number: u32,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/linker/types.rs:87:5
+   |
+87 |     pub generated_refs: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/linker/types.rs:88:5
+   |
+88 |     pub linked_resources: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/linker/types.rs:89:5
+   |
+89 |     pub linked_deals: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/linker/types.rs:90:5
+   |
+90 |     pub linked_parties: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/linker/types.rs:91:5
+   |
+91 |     pub validation_passed: bool,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/linker/types.rs:92:5
+   |
+92 |     pub warnings: Vec<String>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/linker/types.rs:99:5
+   |
+99 |     UnknownResource(String),
+   |     ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/linker/types.rs:102:5
+    |
+102 |     UnknownRelease(String),
+    |     ^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/linker/types.rs:105:5
+    |
+105 |     OrphanedReference(String),
+    |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/linker/types.rs:108:5
+    |
+108 |     BrokenReference { from: String, to: String },
+    |     ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/linker/types.rs:108:23
+    |
+108 |     BrokenReference { from: String, to: String },
+    |                       ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/linker/types.rs:108:37
+    |
+108 |     BrokenReference { from: String, to: String },
+    |                                     ^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/linker/types.rs:111:5
+    |
+111 |     DuplicateReference(String),
+    |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/linker/types.rs:114:5
+    |
+114 |     CircularReference(String),
+    |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/linker/types.rs:117:5
+    |
+117 |     InvalidEntityType(String),
+    |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/linker/types.rs:120:5
+    |
+120 |     ValidationFailed(String),
+    |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an enum
+  --> packages/ddex-builder/src/id_generator.rs:73:1
+   |
+73 | pub enum UnicodeForm {
+   | ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/id_generator.rs:74:5
+   |
+74 |     NFC,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/id_generator.rs:75:5
+   |
+75 |     NFD,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/id_generator.rs:76:5
+   |
+76 |     NFKC,
+   |     ^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/id_generator.rs:77:5
+   |
+77 |     NFKD,
+   |     ^^^^
+
+warning: missing documentation for an enum
+  --> packages/ddex-builder/src/id_generator.rs:81:1
+   |
+81 | pub enum CaseNormalization {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/id_generator.rs:82:5
+   |
+82 |     AsIs,
+   |     ^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/id_generator.rs:83:5
+   |
+83 |     Lower,
+   |     ^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/id_generator.rs:84:5
+   |
+84 |     Upper,
+   |     ^^^^^
+
+warning: missing documentation for an enum
+  --> packages/ddex-builder/src/preflight.rs:70:1
+   |
+70 | pub enum PreflightLevel {
+   | ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/preflight.rs:82:5
+   |
+82 |     pub errors: Vec<ValidationError>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/preflight.rs:83:5
+   |
+83 |     pub warnings: Vec<ValidationWarning>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/preflight.rs:84:5
+   |
+84 |     pub info: Vec<ValidationInfo>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/preflight.rs:85:5
+   |
+85 |     pub passed: bool,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> packages/ddex-builder/src/preflight.rs:89:1
+   |
+89 | pub struct ValidationError {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/preflight.rs:90:5
+   |
+90 |     pub code: String,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/preflight.rs:91:5
+   |
+91 |     pub field: String,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/preflight.rs:92:5
+   |
+92 |     pub message: String,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/preflight.rs:93:5
+   |
+93 |     pub location: String,
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> packages/ddex-builder/src/preflight.rs:97:1
+   |
+97 | pub struct ValidationWarning {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/preflight.rs:98:5
+   |
+98 |     pub code: String,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/preflight.rs:99:5
+   |
+99 |     pub field: String,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/preflight.rs:100:5
+    |
+100 |     pub message: String,
+    |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/preflight.rs:101:5
+    |
+101 |     pub location: String,
+    |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/preflight.rs:102:5
+    |
+102 |     pub suggestion: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+   --> packages/ddex-builder/src/preflight.rs:106:1
+    |
+106 | pub struct ValidationInfo {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/preflight.rs:107:5
+    |
+107 |     pub code: String,
+    |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/preflight.rs:108:5
+    |
+108 |     pub message: String,
+    |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/versions/mod.rs:118:15
+    |
+118 |     Renamed { old_name: String, new_name: String },
+    |               ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/versions/mod.rs:118:33
+    |
+118 |     Renamed { old_name: String, new_name: String },
+    |                                 ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/versions/mod.rs:120:20
+    |
+120 |     Restructured { description: String },
+    |                    ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/versions/mod.rs:122:13
+    |
+122 |     Added { default_value: Option<String> },
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/versions/mod.rs:124:15
+    |
+124 |     Removed { reason: String },
+    |               ^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/versions/mod.rs:126:13
+    |
+126 |     Moved { old_path: String, new_path: String },
+    |             ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/versions/mod.rs:126:31
+    |
+126 |     Moved { old_path: String, new_path: String },
+    |                               ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/versions/mod.rs:128:19
+    |
+128 |     Transformed { description: String },
+    |                   ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/versions/ern_382.rs:205:14
+    |
+205 |     Length { min: Option<usize>, max: Option<usize> },
+    |              ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/versions/ern_382.rs:205:34
+    |
+205 |     Length { min: Option<usize>, max: Option<usize> },
+    |                                  ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an enum
+ --> packages/ddex-builder/src/versions/converter.rs:9:1
+  |
+9 | pub enum ConversionResult {
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/versions/converter.rs:10:5
+   |
+10 |     Success {
+   |     ^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/versions/converter.rs:11:9
+   |
+11 |         xml: String,
+   |         ^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/versions/converter.rs:12:9
+   |
+12 |         report: ConversionReport,
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/versions/converter.rs:14:5
+   |
+14 |     Failure {
+   |     ^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/versions/converter.rs:15:9
+   |
+15 |         error: String,
+   |         ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/versions/converter.rs:16:9
+   |
+16 |         report: ConversionReport,
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> packages/ddex-builder/src/versions/converter.rs:21:1
+   |
+21 | pub struct ConversionReport {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/versions/converter.rs:22:5
+   |
+22 |     pub from_version: DdexVersion,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/versions/converter.rs:23:5
+   |
+23 |     pub to_version: DdexVersion,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/versions/converter.rs:24:5
+   |
+24 |     pub warnings: Vec<ConversionWarning>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/versions/converter.rs:25:5
+   |
+25 |     pub elements_converted: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/versions/converter.rs:26:5
+   |
+26 |     pub elements_dropped: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/versions/converter.rs:27:5
+   |
+27 |     pub elements_added: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an enum
+  --> packages/ddex-builder/src/versions/converter.rs:31:1
+   |
+31 | pub enum ConversionWarningType {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/versions/converter.rs:32:5
+   |
+32 |     ElementRenamed,
+   |     ^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/versions/converter.rs:33:5
+   |
+33 |     ElementDropped,
+   |     ^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/versions/converter.rs:34:5
+   |
+34 |     ElementAdded,
+   |     ^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/versions/converter.rs:35:5
+   |
+35 |     ValidationChanged,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/versions/converter.rs:36:5
+   |
+36 |     NamespaceChanged,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/versions/converter.rs:37:5
+   |
+37 |     FormatMigrated,
+   |     ^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> packages/ddex-builder/src/versions/converter.rs:41:1
+   |
+41 | pub struct ConversionWarning {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/versions/converter.rs:42:5
+   |
+42 |     pub warning_type: ConversionWarningType,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/versions/converter.rs:43:5
+   |
+43 |     pub message: String,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/versions/converter.rs:44:5
+   |
+44 |     pub element: Option<String>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> packages/ddex-builder/src/versions/converter.rs:47:1
+   |
+47 | pub struct VersionConverter {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+   --> packages/ddex-builder/src/versions/converter.rs:107:5
+    |
+107 |     pub fn new() -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> packages/ddex-builder/src/versions/converter.rs:311:5
+    |
+311 |     pub fn convert(&self, xml_content: &str, from_version: DdexVersion, to_version: DdexVersion, options: Option<ConversionOptions>) -> ConversionResult {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> packages/ddex-builder/src/versions/converter.rs:564:5
+    |
+564 |     pub fn get_supported_conversions(&self) -> Vec<(DdexVersion, DdexVersion)> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> packages/ddex-builder/src/versions/converter.rs:568:5
+    |
+568 |     pub fn can_convert(&self, from: DdexVersion, to: DdexVersion) -> bool {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/optimized_strings.rs:239:5
+    |
+239 |     pub text: OptimizedString,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/optimized_strings.rs:240:5
+    |
+240 |     pub language_code: Option<OptimizedString>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/optimized_strings.rs:394:5
+    |
+394 |     pub strings_processed: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/optimized_strings.rs:395:5
+    |
+395 |     pub static_cache_hits: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/optimized_strings.rs:396:5
+    |
+396 |     pub interned_strings: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/optimized_strings.rs:397:5
+    |
+397 |     pub buffers_requested: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/optimized_strings.rs:403:5
+    |
+403 |     pub interner_bytes: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/optimized_strings.rs:404:5
+    |
+404 |     pub buffer_pool_bytes: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/optimized_strings.rs:405:5
+    |
+405 |     pub total_bytes: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a constant
+   --> packages/ddex-builder/src/optimized_strings.rs:412:5
+    |
+412 |     pub const ALBUM_12_TRACKS_XML: usize = 65_536;  // ~64KB  
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a constant
+   --> packages/ddex-builder/src/optimized_strings.rs:413:5
+    |
+413 |     pub const COMPILATION_100_TRACKS_XML: usize = 524_288; // ~512KB
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> packages/ddex-builder/src/memory_optimization.rs:111:16
+    |
+111 |     pub fn get(&self) -> PooledObject<T> {
+    |                ^^^^^     --------------- the same lifetime is hidden here
+    |                |
+    |                the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+    |
+111 |     pub fn get(&self) -> PooledObject<'_, T> {
+    |                                       +++
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/memory_optimization.rs:184:5
+    |
+184 |     Element(u32), // Index in element table
+    |     ^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/memory_optimization.rs:185:5
+    |
+185 |     Text(u32),    // Index in string table
+    |     ^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/memory_optimization.rs:186:5
+    |
+186 |     Comment(u32), // Index in string table
+    |     ^^^^^^^
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> packages/ddex-builder/src/memory_optimization.rs:369:16
+    |
+369 |     pub fn get(&self) -> std::cell::Ref<T> {
+    |                ^^^^^     ----------------- the same lifetime is hidden here
+    |                |
+    |                the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+    |
+369 |     pub fn get(&self) -> std::cell::Ref<'_, T> {
+    |                                         +++
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/memory_optimization.rs:455:5
+    |
+455 |     pub arena_allocated: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/memory_optimization.rs:456:5
+    |
+456 |     pub arena_capacity: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/memory_optimization.rs:457:5
+    |
+457 |     pub element_pool_size: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/memory_optimization.rs:458:5
+    |
+458 |     pub string_pool_size: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/memory_optimization.rs:459:5
+    |
+459 |     pub buffer_pool_size: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/parallel_processing.rs:396:5
+    |
+396 |     pub elements: Vec<ProcessedElement>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/parallel_processing.rs:397:5
+    |
+397 |     pub processing_time: std::time::Duration,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/parallel_processing.rs:398:5
+    |
+398 |     pub used_parallel: bool,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/parallel_processing.rs:399:5
+    |
+399 |     pub thread_count: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/parallel_processing.rs:400:5
+    |
+400 |     pub total_tracks: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/parallel_processing.rs:428:5
+    |
+428 |     pub name: String,
+    |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/parallel_processing.rs:429:5
+    |
+429 |     pub processing_time: std::time::Duration,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/parallel_processing.rs:430:5
+    |
+430 |     pub element_count: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/parallel_processing.rs:446:5
+    |
+446 |     pub success: bool,
+    |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/parallel_processing.rs:447:5
+    |
+447 |     pub error: Option<BuildError>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/parallel_processing.rs:448:5
+    |
+448 |     pub processing_time: std::time::Duration,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/parallel_processing.rs:532:5
+    |
+532 |     pub total_releases: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/parallel_processing.rs:533:5
+    |
+533 |     pub total_tracks: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/parallel_processing.rs:534:5
+    |
+534 |     pub max_tracks_per_release: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/parallel_processing.rs:535:5
+    |
+535 |     pub complexity_score: f32,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/parallel_processing.rs:536:5
+    |
+536 |     pub recommended_config: ParallelConfig,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:200:5
+    |
+200 |     pub element_path: String,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:201:5
+    |
+201 |     pub rule_type: RuleType,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:202:5
+    |
+202 |     pub parameters: Vec<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/caching.rs:208:5
+    |
+208 |     Required,
+    |     ^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/caching.rs:209:5
+    |
+209 |     Pattern(String),
+    |     ^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/caching.rs:210:5
+    |
+210 |     Range(f64, f64),
+    |     ^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/caching.rs:211:5
+    |
+211 |     Length(usize, usize),
+    |     ^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/caching.rs:212:5
+    |
+212 |     Custom(String),
+    |     ^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:218:5
+    |
+218 |     pub min_occurs: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:219:5
+    |
+219 |     pub max_occurs: Option<usize>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:220:5
+    |
+220 |     pub data_type: String,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:339:5
+    |
+339 |     pub is_valid: bool,
+    |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:340:5
+    |
+340 |     pub errors: Vec<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:341:5
+    |
+341 |     pub warnings: Vec<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:342:5
+    |
+342 |     pub validation_time: Duration,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:419:5
+    |
+419 |     pub algorithm: String,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:420:5
+    |
+420 |     pub content_type: String,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:421:5
+    |
+421 |     pub content_id: String,
+    |     ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:520:5
+    |
+520 |     pub element_type: String,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:521:5
+    |
+521 |     pub version: String,
+    |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:522:5
+    |
+522 |     pub variant: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/caching.rs:548:5
+    |
+548 |     Static(OptimizedString),
+    |     ^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/caching.rs:549:5
+    |
+549 |     Placeholder(String), // Field name
+    |     ^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:571:5
+    |
+571 |     pub schema_hits: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:572:5
+    |
+572 |     pub schema_misses: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:573:5
+    |
+573 |     pub validation_hits: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:574:5
+    |
+574 |     pub validation_misses: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:575:5
+    |
+575 |     pub hash_hits: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:576:5
+    |
+576 |     pub hash_misses: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:577:5
+    |
+577 |     pub template_hits: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/caching.rs:578:5
+    |
+578 |     pub template_misses: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/security/entity_classifier.rs:79:9
+   |
+79 |         reason: String,
+   |         ^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/security/entity_classifier.rs:80:9
+   |
+80 |         confidence: f64,
+   |         ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/security/entity_classifier.rs:84:9
+   |
+84 |         attack_type: AttackType,
+   |         ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> packages/ddex-builder/src/security/entity_classifier.rs:85:9
+   |
+85 |         reason: String,
+   |         ^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/security/error_sanitizer.rs:41:5
+   |
+41 |     FileOpen,
+   |     ^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/security/error_sanitizer.rs:42:5
+   |
+42 |     FileRead,
+   |     ^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/security/error_sanitizer.rs:43:5
+   |
+43 |     FileWrite,
+   |     ^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/security/error_sanitizer.rs:44:5
+   |
+44 |     NetworkRequest,
+   |     ^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/security/error_sanitizer.rs:45:5
+   |
+45 |     XmlParsing,
+   |     ^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/security/error_sanitizer.rs:46:5
+   |
+46 |     XmlBuilding,
+   |     ^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/security/error_sanitizer.rs:47:5
+   |
+47 |     SecurityValidation,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/security/error_sanitizer.rs:48:5
+   |
+48 |     EntityClassification,
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/security/error_sanitizer.rs:49:5
+   |
+49 |     PathValidation,
+   |     ^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/security/error_sanitizer.rs:50:5
+   |
+50 |     MemoryAllocation,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/security/error_sanitizer.rs:51:5
+   |
+51 |     DatabaseConnection,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/security/error_sanitizer.rs:52:5
+   |
+52 |     Authentication,
+   |     ^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> packages/ddex-builder/src/security/error_sanitizer.rs:53:5
+   |
+53 |     Authorization,
+   |     ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/security/error_sanitizer.rs:527:5
+    |
+527 |     pub mode: ErrorMode,
+    |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/security/error_sanitizer.rs:528:5
+    |
+528 |     pub active_rules: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/security/error_sanitizer.rs:529:5
+    |
+529 |     pub stored_errors: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a function
+   --> packages/ddex-builder/src/security/error_sanitizer.rs:601:1
+    |
+601 | / pub fn sanitize_io_error<E>(error: E, context: ErrorContext) -> SanitizedError
+602 | | where
+603 | |     E: std::error::Error + fmt::Display + fmt::Debug,
+    | |_____________________________________________________^
+
+warning: missing documentation for a function
+   --> packages/ddex-builder/src/security/error_sanitizer.rs:608:1
+    |
+608 | / pub fn sanitize_parse_error<E>(error: E) -> SanitizedError
+609 | | where
+610 | |     E: std::error::Error + fmt::Display + fmt::Debug,
+    | |_____________________________________________________^
+
+warning: missing documentation for a function
+   --> packages/ddex-builder/src/security/error_sanitizer.rs:615:1
+    |
+615 | / pub fn sanitize_build_error<E>(error: E) -> SanitizedError
+616 | | where
+617 | |     E: std::error::Error + fmt::Display + fmt::Debug,
+    | |_____________________________________________________^
+
+warning: missing documentation for a function
+   --> packages/ddex-builder/src/security/error_sanitizer.rs:622:1
+    |
+622 | / pub fn sanitize_security_error<E>(error: E) -> SanitizedError
+623 | | where
+624 | |     E: std::error::Error + fmt::Display + fmt::Debug,
+    | |_____________________________________________________^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/api_security.rs:184:5
+    |
+184 |     pub total_operations: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/api_security.rs:185:5
+    |
+185 |     pub unique_operations: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> packages/ddex-builder/src/api_security.rs:186:5
+    |
+186 |     pub time_window_seconds: u64,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/api_security.rs:198:5
+    |
+198 |     Xml,
+    |     ^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/api_security.rs:199:5
+    |
+199 |     Json,
+    |     ^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/api_security.rs:200:5
+    |
+200 |     Binary,
+    |     ^^^^^^
+
+warning: missing documentation for a variant
+   --> packages/ddex-builder/src/api_security.rs:201:5
+    |
+201 |     Utf8String,
+    |     ^^^^^^^^^^
+
+warning: missing documentation for an associated function
+   --> packages/ddex-builder/src/namespace_minimizer.rs:339:5
+    |
+339 |     pub fn new(version: ERNVersion, strategy: OptimizationStrategy) -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> packages/ddex-builder/src/namespace_minimizer.rs:346:5
+    |
+346 |     pub fn minimize(&self, ast: AST) -> Result<MinimizationResult, String> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `ddex-builder` (lib) generated 598 warnings (run `cargo fix --lib -p ddex-builder` to apply 18 suggestions)
+warning: `ddex-builder` (lib) generated 598 warnings (598 duplicates)
+warning: variable `has_namespace_declarations` is assigned to, but never used
+   --> packages/ddex-parser/src/parser/namespace_detector.rs:103:17
+    |
+103 |         let mut has_namespace_declarations = false;
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: consider using `_has_namespace_declarations` instead
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: value assigned to `has_namespace_declarations` is never read
+   --> packages/ddex-parser/src/parser/namespace_detector.rs:120:17
+    |
+120 |                 has_namespace_declarations = true;
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+    = note: `#[warn(unused_assignments)]` on by default
+
+warning: value assigned to `has_namespace_declarations` is never read
+   --> packages/ddex-parser/src/parser/namespace_detector.rs:136:17
+    |
+136 |                 has_namespace_declarations = true;
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+
+warning: field `version` is never read
+  --> packages/ddex-parser/src/parser/stream.rs:28:5
+   |
+26 | pub struct StreamingParser<R: BufRead> {
+   |            --------------- field in this struct
+27 |     reader: Reader<R>,
+28 |     version: ERNVersion,
+   |     ^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: fields `parser`, `done`, and `in_resource_list` are never read
+   --> packages/ddex-parser/src/parser/stream.rs:541:5
+    |
+540 | pub struct ResourceIterator<'a, R: BufRead> {
+    |            ---------------- fields in this struct
+541 |     parser: &'a mut StreamingParser<R>,
+    |     ^^^^^^
+542 |     done: bool,
+    |     ^^^^
+543 |     in_resource_list: bool,
+    |     ^^^^^^^^^^^^^^^^
+
+warning: fields `parser` and `done` are never read
+   --> packages/ddex-parser/src/parser/stream.rs:566:5
+    |
+565 | pub struct PartyIterator<'a, R: BufRead> {
+    |            ------------- fields in this struct
+566 |     parser: &'a mut StreamingParser<R>,
+    |     ^^^^^^
+567 |     done: bool,
+    |     ^^^^
+
+warning: fields `parser` and `done` are never read
+   --> packages/ddex-parser/src/parser/stream.rs:588:5
+    |
+587 | pub struct DealIterator<'a, R: BufRead> {
+    |            ------------ fields in this struct
+588 |     parser: &'a mut StreamingParser<R>,
+    |     ^^^^^^
+589 |     done: bool,
+    |     ^^^^
+
+warning: associated functions `count_tracks` and `calculate_total_duration` are never used
+   --> packages/ddex-parser/src/transform/flatten.rs:173:8
+    |
+19  | impl Flattener {
+    | -------------- associated functions in this implementation
+...
+173 |     fn count_tracks(releases: &[ParsedRelease]) -> usize {
+    |        ^^^^^^^^^^^^
+...
+177 |     fn calculate_total_duration(resources: &HashMap<String, ParsedResource>) -> u64 {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `version` and `differences` are never read
+  --> packages/ddex-parser/src/transform/version_adapter.rs:10:5
+   |
+9  | pub struct VersionAdapter {
+   |            -------------- fields in this struct
+10 |     version: ERNVersion,
+   |     ^^^^^^^
+11 |     differences: VersionDifferences,
+   |     ^^^^^^^^^^^
+
+warning: `ddex-parser` (lib) generated 9 warnings
+warning: `ddex-parser` (lib) generated 9 warnings (9 duplicates)
+warning: unused variable: `deal`
+  --> packages/ddex-parser/tests/version_parsing.rs:37:17
+   |
+37 |     if let Some(deal) = result.graph.deals.first() {
+   |                 ^^^^ help: if this is intentional, prefix it with an underscore: `_deal`
+   |
+   = note: `#[warn(unused_variables)]` on by default
+
+warning: `ddex-parser` (test "version_parsing") generated 1 warning
+warning: unused variable: `parser`
+  --> packages/ddex-parser/tests/version_summary.rs:21:9
+   |
+21 |     let parser = DDEXParser::new();
+   |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_parser`
+   |
+   = note: `#[warn(unused_variables)]` on by default
+
+warning: unused import: `ddex_parser::DDEXParser`
+   --> packages/ddex-parser/src/cli.rs:488:9
+    |
+488 |     use ddex_parser::DDEXParser;
+    |         ^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `ddex_parser::DDEXParser`
+   --> packages/ddex-parser/src/cli.rs:571:9
+    |
+571 |     use ddex_parser::DDEXParser;
+    |         ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `count_elements` is never used
+    --> packages/ddex-parser/src/cli.rs:1031:4
+     |
+1031 | fn count_elements(data: &JsonValue) -> usize {
+     |    ^^^^^^^^^^^^^^
+     |
+     = note: `#[warn(dead_code)]` on by default
+
+warning: type alias `Result` is never used
+  --> packages/ddex-parser/src/error.rs:11:10
+   |
+11 | pub type Result<T> = std::result::Result<T, ParseError>;
+   |          ^^^^^^
+
+warning: struct `ParseOptions` is never constructed
+  --> packages/ddex-parser/src/parser/mod.rs:22:12
+   |
+22 | pub struct ParseOptions {
+   |            ^^^^^^^^^^^^
+
+warning: function `parse` is never used
+  --> packages/ddex-parser/src/parser/mod.rs:55:8
+   |
+55 | pub fn parse<R: BufRead + std::io::Seek>(
+   |        ^^^^^
+
+warning: associated functions `with_extensions` and `for_round_trip` are never used
+  --> packages/ddex-parser/src/parser/mod.rs:84:12
+   |
+83 | impl ParseOptions {
+   | ----------------- associated functions in this implementation
+84 |     pub fn with_extensions() -> Self {
+   |            ^^^^^^^^^^^^^^^
+...
+93 |     pub fn for_round_trip() -> Self {
+   |            ^^^^^^^^^^^^^^
+
+warning: struct `VersionDetector` is never constructed
+ --> packages/ddex-parser/src/parser/detector.rs:5:12
+  |
+5 | pub struct VersionDetector;
+  |            ^^^^^^^^^^^^^^^
+
+warning: associated function `detect` is never used
+ --> packages/ddex-parser/src/parser/detector.rs:8:12
+  |
+7 | impl VersionDetector {
+  | -------------------- associated function in this implementation
+8 |     pub fn detect<R: std::io::Read>(reader: R) -> crate::error::Result<ERNVersion> {
+  |            ^^^^^^
+
+warning: struct `SecurityConfig` is never constructed
+ --> packages/ddex-parser/src/parser/security.rs:5:12
+  |
+5 | pub struct SecurityConfig {
+  |            ^^^^^^^^^^^^^^
+
+warning: associated functions `strict` and `relaxed` are never used
+  --> packages/ddex-parser/src/parser/security.rs:35:12
+   |
+33 | impl SecurityConfig {
+   | ------------------- associated functions in this implementation
+34 |     /// Strict security configuration (default)
+35 |     pub fn strict() -> Self {
+   |            ^^^^^^
+...
+53 |     pub fn relaxed() -> Self {
+   |            ^^^^^^^
+
+warning: struct `ParseProgress` is never constructed
+  --> packages/ddex-parser/src/parser/stream.rs:17:12
+   |
+17 | pub struct ParseProgress {
+   |            ^^^^^^^^^^^^^
+
+warning: struct `StreamingParser` is never constructed
+  --> packages/ddex-parser/src/parser/stream.rs:26:12
+   |
+26 | pub struct StreamingParser<R: BufRead> {
+   |            ^^^^^^^^^^^^^^^
+
+warning: multiple associated items are never used
+   --> packages/ddex-parser/src/parser/stream.rs:40:12
+    |
+39  | impl<R: BufRead> StreamingParser<R> {
+    | ----------------------------------- associated items in this implementation
+40  |     pub fn new(reader: R, version: ERNVersion) -> Self {
+    |            ^^^
+...
+60  |     pub fn with_progress_callback<F>(mut self, callback: F) -> Self 
+    |            ^^^^^^^^^^^^^^^^^^^^^^
+...
+68  |     pub fn with_chunk_size(mut self, size: usize) -> Self {
+    |            ^^^^^^^^^^^^^^^
+...
+73  |     pub fn with_max_memory(mut self, max: usize) -> Self {
+    |            ^^^^^^^^^^^^^^^
+...
+78  |     fn update_progress(&mut self) {
+    |        ^^^^^^^^^^^^^^^
+...
+91  |     fn update_byte_position(&mut self) {
+    |        ^^^^^^^^^^^^^^^^^^^^
+...
+96  |     pub fn parse_header(&mut self) -> Result<MessageHeader, ParseError> {
+    |            ^^^^^^^^^^^^
+...
+128 |     fn parse_message_header_element(&mut self) -> Result<MessageHeader, ParseError> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+210 |     fn parse_message_sender(&mut self) -> Result<ddex_core::models::graph::MessageSender, ParseError> {
+    |        ^^^^^^^^^^^^^^^^^^^^
+...
+255 |     fn parse_message_recipient(&mut self) -> Result<ddex_core::models::graph::MessageRecipient, ParseError> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^
+...
+302 |     pub fn stream_releases(&mut self) -> ReleaseIterator<'_, R> {
+    |            ^^^^^^^^^^^^^^^
+...
+307 |     pub fn stream_resources(&mut self) -> ResourceIterator<'_, R> {
+    |            ^^^^^^^^^^^^^^^^
+...
+312 |     pub fn stream_parties(&mut self) -> PartyIterator<'_, R> {
+    |            ^^^^^^^^^^^^^^
+...
+317 |     pub fn stream_deals(&mut self) -> DealIterator<'_, R> {
+    |            ^^^^^^^^^^^^
+...
+322 |     fn read_text_element(&mut self) -> Result<String, ParseError> {
+    |        ^^^^^^^^^^^^^^^^^
+...
+371 |     fn skip_element(&mut self) -> Result<(), ParseError> {
+    |        ^^^^^^^^^^^^
+...
+394 |     fn get_current_location(&self) -> ErrorLocation {
+    |        ^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `ReleaseIterator` is never constructed
+   --> packages/ddex-parser/src/parser/stream.rs:405:12
+    |
+405 | pub struct ReleaseIterator<'a, R: BufRead> {
+    |            ^^^^^^^^^^^^^^^
+
+warning: associated items `new`, `find_next_release`, and `parse_release_element` are never used
+   --> packages/ddex-parser/src/parser/stream.rs:412:8
+    |
+411 | impl<'a, R: BufRead> ReleaseIterator<'a, R> {
+    | ------------------------------------------- associated items in this implementation
+412 |     fn new(parser: &'a mut StreamingParser<R>) -> Self {
+    |        ^^^
+...
+420 |     fn find_next_release(&mut self) -> Result<Option<Release>, ParseError> {
+    |        ^^^^^^^^^^^^^^^^^
+...
+456 |     fn parse_release_element(&mut self) -> Result<Option<Release>, ParseError> {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `ResourceIterator` is never constructed
+   --> packages/ddex-parser/src/parser/stream.rs:540:12
+    |
+540 | pub struct ResourceIterator<'a, R: BufRead> {
+    |            ^^^^^^^^^^^^^^^^
+
+warning: associated function `new` is never used
+   --> packages/ddex-parser/src/parser/stream.rs:547:8
+    |
+546 | impl<'a, R: BufRead> ResourceIterator<'a, R> {
+    | -------------------------------------------- associated function in this implementation
+547 |     fn new(parser: &'a mut StreamingParser<R>) -> Self {
+    |        ^^^
+
+warning: struct `PartyIterator` is never constructed
+   --> packages/ddex-parser/src/parser/stream.rs:565:12
+    |
+565 | pub struct PartyIterator<'a, R: BufRead> {
+    |            ^^^^^^^^^^^^^
+
+warning: associated function `new` is never used
+   --> packages/ddex-parser/src/parser/stream.rs:571:8
+    |
+570 | impl<'a, R: BufRead> PartyIterator<'a, R> {
+    | ----------------------------------------- associated function in this implementation
+571 |     fn new(parser: &'a mut StreamingParser<R>) -> Self {
+    |        ^^^
+
+warning: struct `DealIterator` is never constructed
+   --> packages/ddex-parser/src/parser/stream.rs:587:12
+    |
+587 | pub struct DealIterator<'a, R: BufRead> {
+    |            ^^^^^^^^^^^^
+
+warning: associated function `new` is never used
+   --> packages/ddex-parser/src/parser/stream.rs:593:8
+    |
+592 | impl<'a, R: BufRead> DealIterator<'a, R> {
+    | ---------------------------------------- associated function in this implementation
+593 |     fn new(parser: &'a mut StreamingParser<R>) -> Self {
+    |        ^^^
+
+warning: function `parse_streaming` is never used
+   --> packages/ddex-parser/src/parser/stream.rs:610:8
+    |
+610 | pub fn parse_streaming<R: BufRead>(
+    |        ^^^^^^^^^^^^^^^
+
+warning: enum `ParseMode` is never used
+ --> packages/ddex-parser/src/parser/mode.rs:8:10
+  |
+8 | pub enum ParseMode {
+  |          ^^^^^^^^^
+
+warning: struct `ModeSelector` is never constructed
+  --> packages/ddex-parser/src/parser/mode.rs:24:12
+   |
+24 | pub struct ModeSelector {
+   |            ^^^^^^^^^^^^
+
+warning: associated items `new`, `select_mode`, and `select_mode_hint` are never used
+  --> packages/ddex-parser/src/parser/mode.rs:37:12
+   |
+36 | impl ModeSelector {
+   | ----------------- associated items in this implementation
+37 |     pub fn new(threshold: u64) -> Self {
+   |            ^^^
+...
+42 |     pub fn select_mode<R: BufRead + Seek>(&self, reader: &mut R, mode: ParseMode) -> Result<ParseMode, std::io::Error> {
+   |            ^^^^^^^^^^^
+...
+61 |     pub fn select_mode_hint(&self, size_hint: Option<u64>, mode: ParseMode) -> ParseMode {
+   |            ^^^^^^^^^^^^^^^^
+
+warning: function `parse_dom` is never used
+  --> packages/ddex-parser/src/parser/dom.rs:15:8
+   |
+15 | pub fn parse_dom<R: BufRead + Seek>(
+   |        ^^^^^^^^^
+
+warning: function `resolve_references` is never used
+  --> packages/ddex-parser/src/parser/dom.rs:64:4
+   |
+64 | fn resolve_references(message: ERNMessage) -> Result<ERNMessage, ParseError> {
+   |    ^^^^^^^^^^^^^^^^^^
+
+warning: struct `ExtensionCaptureContext` is never constructed
+  --> packages/ddex-parser/src/parser/extension_capture.rs:13:12
+   |
+13 | pub struct ExtensionCaptureContext {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: multiple associated items are never used
+   --> packages/ddex-parser/src/parser/extension_capture.rs:44:12
+    |
+42  | impl ExtensionCaptureContext {
+    | ---------------------------- associated items in this implementation
+43  |     /// Create a new extension capture context
+44  |     pub fn new() -> Self {
+    |            ^^^
+...
+59  |     pub fn enter_element(&mut self, element_name: &str) {
+    |            ^^^^^^^^^^^^^
+...
+64  |     pub fn exit_element(&mut self) -> Option<String> {
+    |            ^^^^^^^^^^^^
+...
+69  |     pub fn current_path(&self) -> String {
+    |            ^^^^^^^^^^^^
+...
+74  |     pub fn add_namespace_declaration(&mut self, prefix: String, uri: String) {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+84  |     pub fn should_capture_element(&self, _element_name: &str, namespace_uri: Option<&str>) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^^^^
+...
+101 |     pub fn start_extension_capture(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^
+...
+120 |     pub fn add_extension_content(&mut self, content: &str) {
+    |            ^^^^^^^^^^^^^^^^^^^^^
+...
+127 |     pub fn process_extension_start_tag(&mut self, event: &BytesStart) {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+158 |     pub fn process_extension_end_tag(&mut self, event: &BytesEnd) {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+176 |     pub fn process_extension_text(&mut self, event: &BytesText) {
+    |            ^^^^^^^^^^^^^^^^^^^^^^
+...
+193 |     pub fn finish_extension_capture(&mut self) {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+214 |     pub fn add_processing_instruction(&mut self, target: String, data: Option<String>) {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+220 |     pub fn add_comment(&mut self, comment: String) {
+    |            ^^^^^^^^^^^
+...
+225 |     pub fn add_comment_with_position(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+261 |     pub fn into_extensions(self) -> Extensions {
+    |            ^^^^^^^^^^^^^^^
+
+warning: struct `ExtensionAwareParser` is never constructed
+   --> packages/ddex-parser/src/parser/extension_capture.rs:267:12
+    |
+267 | pub struct ExtensionAwareParser {
+    |            ^^^^^^^^^^^^^^^^^^^^
+
+warning: associated items `new`, `parse_with_extensions`, and `extract_namespace_info` are never used
+   --> packages/ddex-parser/src/parser/extension_capture.rs:277:12
+    |
+275 | impl ExtensionAwareParser {
+    | ------------------------- associated items in this implementation
+276 |     /// Create a new extension-aware parser
+277 |     pub fn new(capture_extensions: bool) -> Self {
+    |            ^^^
+...
+285 |     pub fn parse_with_extensions(&mut self, xml_content: &str) -> Result<Extensions, Box<dyn std::error::Error>> {
+    |            ^^^^^^^^^^^^^^^^^^^^^
+...
+392 |     fn extract_namespace_info(&self, event: &BytesStart) -> (Option<String>, Option<String>) {
+    |        ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `extract_extensions` is never used
+   --> packages/ddex-parser/src/parser/extension_capture.rs:413:12
+    |
+413 |     pub fn extract_extensions(xml_content: &str) -> Result<Extensions, Box<dyn std::error::Error>> {
+    |            ^^^^^^^^^^^^^^^^^^
+
+warning: function `has_extensions` is never used
+   --> packages/ddex-parser/src/parser/extension_capture.rs:419:12
+    |
+419 |     pub fn has_extensions(xml_content: &str) -> bool {
+    |            ^^^^^^^^^^^^^^
+
+warning: function `get_extension_stats` is never used
+   --> packages/ddex-parser/src/parser/extension_capture.rs:427:12
+    |
+427 |     pub fn get_extension_stats(xml_content: &str) -> ExtensionStats {
+    |            ^^^^^^^^^^^^^^^^^^^
+
+warning: struct `ExtensionStats` is never constructed
+   --> packages/ddex-parser/src/parser/extension_capture.rs:436:16
+    |
+436 |     pub struct ExtensionStats {
+    |                ^^^^^^^^^^^^^^
+
+warning: associated function `from_extensions` is never used
+   --> packages/ddex-parser/src/parser/extension_capture.rs:445:12
+    |
+444 |     impl ExtensionStats {
+    |     ------------------- associated function in this implementation
+445 |         fn from_extensions(extensions: &Extensions) -> Self {
+    |            ^^^^^^^^^^^^^^^
+
+warning: struct `NamespaceDetector` is never constructed
+  --> packages/ddex-parser/src/parser/namespace_detector.rs:17:12
+   |
+17 | pub struct NamespaceDetector {
+   |            ^^^^^^^^^^^^^^^^^
+
+warning: struct `NamespaceDetectionResult` is never constructed
+  --> packages/ddex-parser/src/parser/namespace_detector.rs:36:12
+   |
+36 | pub struct NamespaceDetectionResult {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: multiple associated items are never used
+   --> packages/ddex-parser/src/parser/namespace_detector.rs:53:12
+    |
+51  | impl NamespaceDetector {
+    | ---------------------- associated items in this implementation
+52  |     /// Create new namespace detector
+53  |     pub fn new() -> Self {
+    |            ^^^
+...
+66  |     pub fn detect_from_xml<R: BufRead>(&mut self, reader: R) -> Result<NamespaceDetectionResult, ParseError> {
+    |            ^^^^^^^^^^^^^^^
+...
+97  |     fn process_start_element(&mut self, element: &BytesStart) -> Result<(), ParseError> {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+...
+162 |     fn pop_namespace_scope(&mut self) {
+    |        ^^^^^^^^^^^^^^^^^^^
+...
+172 |     fn validate_namespaces(&mut self) {
+    |        ^^^^^^^^^^^^^^^^^^^
+...
+178 |     fn build_result(&self) -> NamespaceDetectionResult {
+    |        ^^^^^^^^^^^^
+...
+212 |     pub fn current_scope(&self) -> &NamespaceScope {
+    |            ^^^^^^^^^^^^^
+...
+217 |     pub fn resolve_prefix(&self, prefix: &str) -> Option<String> {
+    |            ^^^^^^^^^^^^^^
+...
+222 |     pub fn get_default_namespace(&self) -> Option<&String> {
+    |            ^^^^^^^^^^^^^^^^^^^^^
+...
+227 |     pub fn is_namespace_declared(&self, uri: &str) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^^^
+...
+232 |     pub fn find_prefix_for_uri(&self, uri: &str) -> Option<String> {
+    |            ^^^^^^^^^^^^^^^^^^^
+...
+237 |     pub fn add_warning(&mut self, warning: NamespaceWarning) {
+    |            ^^^^^^^^^^^
+...
+243 |     pub fn get_detected_version(&self) -> Option<ERNVersion> {
+    |            ^^^^^^^^^^^^^^^^^^^^
+...
+248 |     pub fn get_detected_namespaces(&self) -> &IndexMap<String, String> {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^
+...
+253 |     pub fn get_namespace_aliases(&self) -> &IndexMap<String, Vec<String>> {
+    |            ^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `NamespaceContext` is never constructed
+   --> packages/ddex-parser/src/parser/namespace_detector.rs:260:12
+    |
+260 | pub struct NamespaceContext {
+    |            ^^^^^^^^^^^^^^^^
+
+warning: associated items `from_detection_result`, `create_child`, `declare_namespace`, and `resolve_element_name` are never used
+   --> packages/ddex-parser/src/parser/namespace_detector.rs:273:12
+    |
+271 | impl NamespaceContext {
+    | --------------------- associated items in this implementation
+272 |     /// Create new namespace context from detection result
+273 |     pub fn from_detection_result(result: NamespaceDetectionResult) -> Self {
+    |            ^^^^^^^^^^^^^^^^^^^^^
+...
+283 |     pub fn create_child(&self) -> Self {
+    |            ^^^^^^^^^^^^
+...
+293 |     pub fn declare_namespace(&mut self, prefix: String, uri: String) {
+    |            ^^^^^^^^^^^^^^^^^
+...
+298 |     pub fn resolve_element_name(&self, local_name: &str, prefix: Option<&str>) -> ResolvedName {
+    |            ^^^^^^^^^^^^^^^^^^^^
+
+warning: enum `ResolvedName` is never used
+   --> packages/ddex-parser/src/parser/namespace_detector.rs:334:10
+    |
+334 | pub enum ResolvedName {
+    |          ^^^^^^^^^^^^
+
+warning: struct `AttributeExtractor` is never constructed
+  --> packages/ddex-parser/src/parser/attribute_extractor.rs:17:12
+   |
+17 | pub struct AttributeExtractor {
+   |            ^^^^^^^^^^^^^^^^^^
+
+warning: enum `SpecialAttributeHandler` is never used
+  --> packages/ddex-parser/src/parser/attribute_extractor.rs:26:10
+   |
+26 | pub enum SpecialAttributeHandler {
+   |          ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `AttributeExtractionResult` is never constructed
+  --> packages/ddex-parser/src/parser/attribute_extractor.rs:47:12
+   |
+47 | pub struct AttributeExtractionResult {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: enum `SpecialAttributeValue` is never used
+  --> packages/ddex-parser/src/parser/attribute_extractor.rs:64:10
+   |
+64 | pub enum SpecialAttributeValue {
+   |          ^^^^^^^^^^^^^^^^^^^^^
+
+warning: multiple associated items are never used
+   --> packages/ddex-parser/src/parser/attribute_extractor.rs:95:12
+    |
+93  | impl AttributeExtractor {
+    | ----------------------- associated items in this implementation
+94  |     /// Create a new attribute extractor with DDEX knowledge
+95  |     pub fn new() -> Self {
+    |            ^^^
+...
+107 |     fn initialize_ddex_attributes(&mut self) {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+130 |     fn initialize_special_handlers(&mut self) {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+152 |     pub fn extract_attributes(
+    |            ^^^^^^^^^^^^^^^^^^
+...
+211 |     fn process_attribute(
+    |        ^^^^^^^^^^^^^^^^^
+...
+240 |     fn resolve_attribute_qname(&self, attr_name: &str, namespace_context: &NamespaceContext) -> QName {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^
+...
+266 |     fn get_attribute_type(&self, qname: &QName) -> Option<AttributeType> {
+    |        ^^^^^^^^^^^^^^^^^^
+...
+277 |     fn process_special_attribute(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+319 |     fn process_xsi_type(
+    |        ^^^^^^^^^^^^^^^^
+...
+345 |     fn process_schema_location(&self, value: &AttributeValue) -> Result<Option<SpecialAttributeValue>, ParseError> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^
+...
+361 |     fn process_xsi_nil(&self, value: &AttributeValue) -> Result<Option<SpecialAttributeValue>, ParseError> {
+    |        ^^^^^^^^^^^^^^^
+...
+373 |     fn process_language_territory(&self, value: &AttributeValue) -> Result<Option<SpecialAttributeValue>, ParseError> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+407 |     fn process_sequence_number(&self, value: &AttributeValue) -> Result<Option<SpecialAttributeValue>, ParseError> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^
+...
+421 |     fn process_boolean_flag(&self, value: &AttributeValue) -> Result<Option<SpecialAttributeValue>, ParseError> {
+    |        ^^^^^^^^^^^^^^^^^^^^
+...
+433 |     pub fn apply_inheritance(
+    |            ^^^^^^^^^^^^^^^^^
+...
+443 |     pub fn validate_attributes(&self, attributes: &AttributeMap) -> Vec<String> {
+    |            ^^^^^^^^^^^^^^^^^^^
+
+warning: trait `ERNVersionExt` is never used
+ --> packages/ddex-parser/src/parser/version_ext.rs:3:11
+  |
+3 | pub trait ERNVersionExt {
+  |           ^^^^^^^^^^^^^
+
+warning: struct `GraphBuilder` is never constructed
+  --> packages/ddex-parser/src/transform/graph.rs:14:12
+   |
+14 | pub struct GraphBuilder {
+   |            ^^^^^^^^^^^^
+
+warning: associated items `new`, `build_from_xml`, `build_from_xml_with_context`, `parse_header`, and `parse_minimal_release` are never used
+   --> packages/ddex-parser/src/transform/graph.rs:19:12
+    |
+18  | impl GraphBuilder {
+    | ----------------- associated items in this implementation
+19  |     pub fn new(version: ERNVersion) -> Self {
+    |            ^^^
+...
+23  |     pub fn build_from_xml<R: BufRead>(&self, reader: R) -> Result<ERNMessage, ParseError> {
+    |            ^^^^^^^^^^^^^^
+...
+77  |     pub fn build_from_xml_with_context<R: BufRead>(&self, reader: R, _context: NamespaceContext) -> Result<ERNMessage, ParseError> {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+83  |     fn parse_header<R: BufRead>(&self, _reader: &mut Reader<R>) -> Result<MessageHeader, ParseError> {
+    |        ^^^^^^^^^^^^
+...
+115 |     fn parse_minimal_release<R: BufRead>(&self, reader: &mut Reader<R>) -> Result<Release, ParseError> {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `Flattener` is never constructed
+  --> packages/ddex-parser/src/transform/flatten.rs:17:12
+   |
+17 | pub struct Flattener;
+   |            ^^^^^^^^^
+
+warning: multiple associated functions are never used
+   --> packages/ddex-parser/src/transform/flatten.rs:20:12
+    |
+19  | impl Flattener {
+    | -------------- associated functions in this implementation
+20  |     pub fn flatten(graph: ERNMessage) -> FlattenedMessage {
+    |            ^^^^^^^
+...
+58  |     fn flatten_releases(releases: &[Release], resources: &[Resource]) -> Vec<ParsedRelease> {
+    |        ^^^^^^^^^^^^^^^^
+...
+94  |     fn flatten_resources(resources: &[Resource]) -> HashMap<String, ParsedResource> {
+    |        ^^^^^^^^^^^^^^^^^
+...
+116 |     fn flatten_deals(deals: &[Deal]) -> Vec<ParsedDeal> {
+    |        ^^^^^^^^^^^^^
+...
+147 |     fn flatten_parties(parties: &[Party]) -> HashMap<String, Party> {
+    |        ^^^^^^^^^^^^^^^
+...
+155 |     fn get_primary_name(names: &[LocalizedString]) -> String {
+    |        ^^^^^^^^^^^^^^^^
+...
+161 |     fn get_primary_title(titles: &[LocalizedString]) -> String {
+    |        ^^^^^^^^^^^^^^^^^
+...
+167 |     fn get_primary_id(ids: &[Identifier]) -> String {
+    |        ^^^^^^^^^^^^^^
+...
+173 |     fn count_tracks(releases: &[ParsedRelease]) -> usize {
+    |        ^^^^^^^^^^^^
+...
+177 |     fn calculate_total_duration(resources: &HashMap<String, ParsedResource>) -> u64 {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+184 |     fn extract_identifiers(ids: &[Identifier]) -> ReleaseIdentifiers {
+    |        ^^^^^^^^^^^^^^^^^^^
+...
+213 |     fn format_display_artist(artists: &[Artist]) -> String {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+...
+220 |     fn extract_artists(artists: &[Artist]) -> Vec<ArtistInfo> {
+    |        ^^^^^^^^^^^^^^^
+...
+232 |     fn build_tracks(refs: &[ReleaseResourceReference], resources: &[Resource]) -> Vec<ParsedTrack> {
+    |        ^^^^^^^^^^^^
+...
+270 |     fn count_discs(refs: &[ReleaseResourceReference]) -> Option<usize> {
+    |        ^^^^^^^^^^^
+...
+277 |     fn build_territories(included: &[String], excluded: &[String]) -> Vec<TerritoryInfo> {
+    |        ^^^^^^^^^^^^^^^^^
+...
+303 |     fn build_price_tiers(terms: &DealTerms) -> Vec<PriceTier> {
+    |        ^^^^^^^^^^^^^^^^^
+
+warning: struct `ReferenceResolver` is never constructed
+ --> packages/ddex-parser/src/transform/resolve.rs:7:12
+  |
+7 | pub struct ReferenceResolver {
+  |            ^^^^^^^^^^^^^^^^^
+
+warning: associated items `new`, `build_maps`, `resolve_party_reference`, `resolve_resource_reference`, `resolve_release_reference`, and `validate_references` are never used
+  --> packages/ddex-parser/src/transform/resolve.rs:15:12
+   |
+14 | impl ReferenceResolver {
+   | ---------------------- associated items in this implementation
+15 |     pub fn new() -> Self {
+   |            ^^^
+...
+24 |     pub fn build_maps(&mut self, message: &ERNMessage) {
+   |            ^^^^^^^^^^
+...
+50 |     pub fn resolve_party_reference(&self, reference: &str) -> Option<&Party> {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^
+...
+54 |     pub fn resolve_resource_reference(&self, reference: &str) -> Option<&Resource> {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+58 |     pub fn resolve_release_reference(&self, reference: &str) -> Option<&Release> {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+62 |     pub fn validate_references(&self, message: &ERNMessage) -> Vec<UnresolvedReference> {
+   |            ^^^^^^^^^^^^^^^^^^^
+
+warning: struct `UnresolvedReference` is never constructed
+  --> packages/ddex-parser/src/transform/resolve.rs:96:12
+   |
+96 | pub struct UnresolvedReference {
+   |            ^^^^^^^^^^^^^^^^^^^
+
+warning: struct `VersionAdapter` is never constructed
+ --> packages/ddex-parser/src/transform/version_adapter.rs:9:12
+  |
+9 | pub struct VersionAdapter {
+  |            ^^^^^^^^^^^^^^
+
+warning: associated items `new`, `adapt_message_header`, and `adapt_deal_terms` are never used
+  --> packages/ddex-parser/src/transform/version_adapter.rs:15:12
+   |
+14 | impl VersionAdapter {
+   | ------------------- associated items in this implementation
+15 |     pub fn new(version: ERNVersion) -> Self {
+   |            ^^^
+...
+23 |     pub fn adapt_message_header(&self, _xml_data: &[u8]) -> Result<ddex_core::models::graph::MessageHeader, ParseError> {
+   |            ^^^^^^^^^^^^^^^^^^^^
+...
+56 |     pub fn adapt_deal_terms(&self, _xml_data: &[u8]) -> Result<ddex_core::models::graph::DealTerms, ParseError> {
+   |            ^^^^^^^^^^^^^^^^
+
+warning: struct `VersionMigrator` is never constructed
+  --> packages/ddex-parser/src/transform/version_adapter.rs:82:12
+   |
+82 | pub struct VersionMigrator;
+   |            ^^^^^^^^^^^^^^^
+
+warning: associated functions `migrate_382_to_42`, `migrate_42_to_43`, and `downgrade_43_to_42` are never used
+   --> packages/ddex-parser/src/transform/version_adapter.rs:86:12
+    |
+84  | impl VersionMigrator {
+    | -------------------- associated functions in this implementation
+85  |     /// Migrate from 3.8.2 to 4.2
+86  |     pub fn migrate_382_to_42(message: &ERNMessage) -> Result<ERNMessage, ParseError> {
+    |            ^^^^^^^^^^^^^^^^^
+...
+104 |     pub fn migrate_42_to_43(message: &ERNMessage) -> Result<ERNMessage, ParseError> {
+    |            ^^^^^^^^^^^^^^^^
+...
+111 |     pub fn downgrade_43_to_42(message: &ERNMessage) -> Result<(ERNMessage, Vec<String>), ParseError> {
+    |            ^^^^^^^^^^^^^^^^^^
+
+warning: `ddex-parser` (test "version_summary") generated 1 warning
+warning: `ddex-parser` (bin "ddex-parser") generated 63 warnings (3 duplicates) (run `cargo fix --bin "ddex-parser"` to apply 2 suggestions)
+warning: unused import: `Write`
+ --> packages/ddex-builder/bindings/node/src/lib.rs:5:15
+  |
+5 | use std::io::{Write, Cursor};
+  |               ^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused variable: `original_xml`
+   --> packages/ddex-builder/bindings/node/src/lib.rs:282:61
+    |
+282 | ...ip_fidelity(&mut self, original_xml: String, fidelity_options: Option<FidelityOptions>) -> Result<VerificationResult> {
+    |                           ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_original_xml`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `fidelity_options`
+   --> packages/ddex-builder/bindings/node/src/lib.rs:282:83
+    |
+282 | ...ginal_xml: String, fidelity_options: Option<FidelityOptions>) -> Result<VerificationResult> {
+    |                       ^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_fidelity_options`
+
+warning: method `generate_placeholder_xml` is never used
+   --> packages/ddex-builder/bindings/node/src/lib.rs:620:8
+    |
+151 | impl DdexBuilder {
+    | ---------------- method in this implementation
+...
+620 |     fn generate_placeholder_xml(&self) -> Result<String> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: multiple fields are never read
+  --> packages/ddex-parser/src/parser/security.rs:9:9
+   |
+5  | pub struct SecurityConfig {
+   |            -------------- fields in this struct
+...
+9  |     pub max_entity_expansions: usize,
+   |         ^^^^^^^^^^^^^^^^^^^^^
+10 |     pub max_entity_depth: usize,
+   |         ^^^^^^^^^^^^^^^^
+...
+14 |     pub max_attribute_size: usize,
+   |         ^^^^^^^^^^^^^^^^^^
+15 |     pub max_text_size: usize,
+   |         ^^^^^^^^^^^^^
+16 |     pub max_file_size: usize,
+   |         ^^^^^^^^^^^^^
+...
+19 |     pub parse_timeout: Duration,
+   |         ^^^^^^^^^^^^^
+20 |     pub stream_timeout: Duration,
+   |         ^^^^^^^^^^^^^^
+...
+23 |     pub allow_network: bool,
+   |         ^^^^^^^^^^^^^
+24 |     pub allowed_schemas: Vec<String>,
+   |         ^^^^^^^^^^^^^^^
+   |
+   = note: `SecurityConfig` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: methods `add_comment` and `into_extensions` are never used
+   --> packages/ddex-parser/src/parser/extension_capture.rs:220:12
+    |
+42  | impl ExtensionCaptureContext {
+    | ---------------------------- methods in this implementation
+...
+220 |     pub fn add_comment(&mut self, comment: String) {
+    |            ^^^^^^^^^^^
+...
+261 |     pub fn into_extensions(self) -> Extensions {
+    |            ^^^^^^^^^^^^^^^
+
+warning: field `warnings` is never read
+  --> packages/ddex-parser/src/parser/namespace_detector.rs:44:9
+   |
+36 | pub struct NamespaceDetectionResult {
+   |            ------------------------ field in this struct
+...
+44 |     pub warnings: Vec<NamespaceWarning>,
+   |         ^^^^^^^^
+   |
+   = note: `NamespaceDetectionResult` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: multiple methods are never used
+   --> packages/ddex-parser/src/parser/namespace_detector.rs:212:12
+    |
+51  | impl NamespaceDetector {
+    | ---------------------- methods in this implementation
+...
+212 |     pub fn current_scope(&self) -> &NamespaceScope {
+    |            ^^^^^^^^^^^^^
+...
+217 |     pub fn resolve_prefix(&self, prefix: &str) -> Option<String> {
+    |            ^^^^^^^^^^^^^^
+...
+222 |     pub fn get_default_namespace(&self) -> Option<&String> {
+    |            ^^^^^^^^^^^^^^^^^^^^^
+...
+227 |     pub fn is_namespace_declared(&self, uri: &str) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^^^
+...
+232 |     pub fn find_prefix_for_uri(&self, uri: &str) -> Option<String> {
+    |            ^^^^^^^^^^^^^^^^^^^
+...
+237 |     pub fn add_warning(&mut self, warning: NamespaceWarning) {
+    |            ^^^^^^^^^^^
+...
+243 |     pub fn get_detected_version(&self) -> Option<ERNVersion> {
+    |            ^^^^^^^^^^^^^^^^^^^^
+...
+248 |     pub fn get_detected_namespaces(&self) -> &IndexMap<String, String> {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^
+...
+253 |     pub fn get_namespace_aliases(&self) -> &IndexMap<String, Vec<String>> {
+    |            ^^^^^^^^^^^^^^^^^^^^^
+
+warning: field `ern_version` is never read
+   --> packages/ddex-parser/src/parser/namespace_detector.rs:268:9
+    |
+260 | pub struct NamespaceContext {
+    |            ---------------- field in this struct
+...
+268 |     pub ern_version: Option<ERNVersion>,
+    |         ^^^^^^^^^^^
+    |
+    = note: `NamespaceContext` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: methods `create_child` and `declare_namespace` are never used
+   --> packages/ddex-parser/src/parser/namespace_detector.rs:283:12
+    |
+271 | impl NamespaceContext {
+    | --------------------- methods in this implementation
+...
+283 |     pub fn create_child(&self) -> Self {
+    |            ^^^^^^^^^^^^
+...
+293 |     pub fn declare_namespace(&mut self, prefix: String, uri: String) {
+    |            ^^^^^^^^^^^^^^^^^
+
+warning: fields `standard_attributes`, `extension_attributes`, and `warnings` are never read
+  --> packages/ddex-parser/src/parser/attribute_extractor.rs:51:9
+   |
+47 | pub struct AttributeExtractionResult {
+   |            ------------------------- fields in this struct
+...
+51 |     pub standard_attributes: IndexMap<QName, AttributeValue>,
+   |         ^^^^^^^^^^^^^^^^^^^
+52 |     /// Extension/custom attributes
+53 |     pub extension_attributes: IndexMap<QName, AttributeValue>,
+   |         ^^^^^^^^^^^^^^^^^^^^
+...
+59 |     pub warnings: Vec<String>,
+   |         ^^^^^^^^
+   |
+   = note: `AttributeExtractionResult` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: method `validate_attributes` is never used
+   --> packages/ddex-parser/src/parser/attribute_extractor.rs:443:12
+    |
+93  | impl AttributeExtractor {
+    | ----------------------- method in this implementation
+...
+443 |     pub fn validate_attributes(&self, attributes: &AttributeMap) -> Vec<String> {
+    |            ^^^^^^^^^^^^^^^^^^^
+
+warning: `ddex-builder-node` (lib test) generated 4 warnings (run `cargo fix --lib -p ddex-builder-node --tests` to apply 1 suggestion)
+warning: `ddex-parser` (bin "ddex-parser" test) generated 50 warnings (42 duplicates)
+warning: field `stress_mode` is never read
+  --> packages/ddex-builder/tests/fidelity/mod.rs:32:9
+   |
+22 | pub struct FidelityTestConfig {
+   |            ------------------ field in this struct
+...
+32 |     pub stress_mode: bool,
+   |         ^^^^^^^^^^^
+   |
+   = note: `FidelityTestConfig` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` on by default
+
+warning: field `version` is never read
+  --> packages/ddex-builder/tests/fidelity/mod.rs:51:9
+   |
+49 | pub struct FidelityTestResult {
+   |            ------------------ field in this struct
+50 |     pub file_path: PathBuf,
+51 |     pub version: String,
+   |         ^^^^^^^
+   |
+   = note: `FidelityTestResult` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `content` is never read
+   --> packages/ddex-builder/tests/fidelity/mod.rs:407:9
+    |
+405 | pub struct ParsedMessage {
+    |            ------------- field in this struct
+406 |     pub version: String,
+407 |     pub content: String,
+    |         ^^^^^^^
+    |
+    = note: `ParsedMessage` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: multiple fields are never read
+   --> packages/ddex-builder/tests/fidelity/round_trip.rs:500:9
+    |
+498 | pub struct RoundTripTestCase {
+    |            ----------------- fields in this struct
+499 |     pub name: String,
+500 |     pub version: String,
+    |         ^^^^^^^
+501 |     pub success: bool,
+502 |     pub original_size: usize,
+    |         ^^^^^^^^^^^^^
+503 |     pub intermediate_size: usize,
+    |         ^^^^^^^^^^^^^^^^^
+504 |     pub final_size: usize,
+    |         ^^^^^^^^^^
+505 |     pub parse1_time_ms: u64,
+    |         ^^^^^^^^^^^^^^
+506 |     pub build_time_ms: u64,
+    |         ^^^^^^^^^^^^^
+507 |     pub parse2_time_ms: u64,
+    |         ^^^^^^^^^^^^^^
+508 |     pub error: Option<String>,
+509 |     pub data_preserved: bool,
+    |         ^^^^^^^^^^^^^^
+510 |     pub structure_preserved: bool,
+    |         ^^^^^^^^^^^^^^^^^^^
+511 |     pub metadata_preserved: bool,
+    |         ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `RoundTripTestCase` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: unused import: `Generator`
+ --> packages/ddex-builder/src/bin/ddex-builder.rs:7:31
+  |
+7 | use clap_complete::{generate, Generator, Shell};
+  |                               ^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `std::sync::mpsc`
+    --> packages/ddex-builder/src/bin/ddex-builder.rs:1139:9
+     |
+1139 |     use std::sync::mpsc;
+     |         ^^^^^^^^^^^^^^^
+
+warning: unused import: `std::time::Duration`
+    --> packages/ddex-builder/src/bin/ddex-builder.rs:1140:9
+     |
+1140 |     use std::time::Duration;
+     |         ^^^^^^^^^^^^^^^^^^^
+
+warning: fields `output_file`, `preset`, `version`, and `validate` are never read
+    --> packages/ddex-builder/src/bin/ddex-builder.rs:1587:5
+     |
+1585 | struct BatchTask {
+     |        --------- fields in this struct
+1586 |     input_file: PathBuf,
+1587 |     output_file: PathBuf,
+     |     ^^^^^^^^^^^
+1588 |     preset: Option<String>,
+     |     ^^^^^^
+1589 |     version: Option<String>,
+     |     ^^^^^^^
+1590 |     validate: Option<bool>,
+     |     ^^^^^^^^
+     |
+     = note: `#[warn(dead_code)]` on by default
+
+warning: unused imports: `PartnerPreset` and `PresetConfig`
+ --> packages/ddex-builder/tests/presets_test.rs:4:81
+  |
+4 |     all_presets, generic, youtube, DdexVersion, MessageProfile, ValidationRule, PartnerPreset, PresetConfig, PresetSource
+  |                                                                                 ^^^^^^^^^^^^^  ^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `error::BuildError`
+ --> packages/ddex-builder/tests/presets_test.rs:6:29
+  |
+6 | use ddex_builder::{Builder, error::BuildError};
+  |                             ^^^^^^^^^^^^^^^^^
+
+warning: unused import: `indexmap::IndexMap`
+ --> packages/ddex-builder/tests/presets_test.rs:7:5
+  |
+7 | use indexmap::IndexMap;
+  |     ^^^^^^^^^^^^^^^^^^
+
+warning: `ddex-parser` (lib test) generated 9 warnings (9 duplicates)
+warning: `ddex-builder` (test "fidelity_tests") generated 4 warnings
+warning: `ddex-builder` (bin "ddex-builder") generated 4 warnings (run `cargo fix --bin "ddex-builder"` to apply 3 suggestions)
+warning: `ddex-builder` (test "presets_test") generated 3 warnings (run `cargo fix --test "presets_test"` to apply 3 suggestions)
+warning: unused variable: `original_xml`
+   --> packages/ddex-builder/bindings/wasm/src/lib.rs:577:54
+    |
+577 | ...ip_fidelity(&mut self, original_xml: String, fidelity_options: Option<FidelityOptions>) -> Result<VerificationResult, JsValue> {
+    |                           ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_original_xml`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `i`
+   --> packages/ddex-builder/bindings/wasm/src/lib.rs:889:9
+    |
+889 |     for i in 0..length {
+    |         ^ help: if this is intentional, prefix it with an underscore: `_i`
+
+warning: unused import: `from_value`
+ --> packages/ddex-parser/bindings/wasm/src/lib.rs:3:26
+  |
+3 | use serde_wasm_bindgen::{from_value, to_value};
+  |                          ^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `ddex_core::models::flat::ParsedERNMessage`
+ --> packages/ddex-parser/bindings/wasm/src/lib.rs:5:5
+  |
+5 | use ddex_core::models::flat::ParsedERNMessage;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `ClassifierConfig`, `PathValidationConfig`, `sanitize_io_error`, and `sanitize_security_error`
+  --> packages/ddex-builder/tests/security_fixes_integration.rs:11:20
+   |
+11 |     PathValidator, PathValidationConfig, ErrorSanitizer, SanitizerConfig, 
+   |                    ^^^^^^^^^^^^^^^^^^^^
+12 |     ErrorMode, ErrorContext, EntityClassifier, ClassifierConfig,
+   |                                                ^^^^^^^^^^^^^^^^
+13 |     create_entity, create_external_entity, create_parameter_entity,
+14 |     sanitize_io_error, sanitize_security_error
+   |     ^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: `ddex-builder-wasm` (lib test) generated 2 warnings
+warning: `ddex-parser-wasm` (lib test) generated 2 warnings (run `cargo fix --lib -p ddex-parser-wasm --tests` to apply 2 suggestions)
+warning: `ddex-builder` (test "security_fixes_integration") generated 1 warning (run `cargo fix --test "security_fixes_integration"` to apply 1 suggestion)
+warning: unused import: `serde_json::json`
+  --> packages/ddex-builder/tests/determinism_tests.rs:13:5
+   |
+13 | use serde_json::json;
+   |     ^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `crate::diff::test_data::*`
+ --> packages/ddex-builder/src/diff/diff_tests.rs:4:5
+  |
+4 | use crate::diff::test_data::*;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Node`
+   --> packages/ddex-builder/src/diff/mod.rs:510:31
+    |
+510 |     use crate::ast::{Element, Node};
+    |                               ^^^^
+
+warning: unused import: `Node`
+   --> packages/ddex-builder/src/namespace_minimizer.rs:370:31
+    |
+370 |     use crate::ast::{Element, Node};
+    |                               ^^^^
+
+warning: unused import: `crate::FidelityOptions`
+   --> packages/ddex-builder/src/verification.rs:542:9
+    |
+542 |     use crate::FidelityOptions;
+    |         ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused variable: `release_ref`
+   --> packages/ddex-builder/src/streaming/reference_manager.rs:483:13
+    |
+483 |         let release_ref = manager.generate_release_reference("release1").unwrap();
+    |             ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_release_ref`
+
+warning: unused variable: `release_ref`
+   --> packages/ddex-builder/src/streaming/reference_manager.rs:499:13
+    |
+499 |         let release_ref = manager.generate_release_reference("release1").unwrap();
+    |             ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_release_ref`
+
+warning: variable does not need to be mutable
+  --> packages/ddex-builder/src/diff/diff_tests.rs:70:9
+   |
+70 |     let mut ast1 = AST {
+   |         ----^^^^
+   |         |
+   |         help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` on by default
+
+warning: variable does not need to be mutable
+   --> packages/ddex-builder/src/diff/diff_tests.rs:339:9
+    |
+339 |     let mut engine = DiffEngine::new();
+    |         ----^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: unused variable: `obj2`
+   --> packages/ddex-builder/src/memory_optimization.rs:499:21
+    |
+499 |                 let obj2 = pool.get();
+    |                     ^^^^ help: if this is intentional, prefix it with an underscore: `_obj2`
+
+warning: variable does not need to be mutable
+   --> packages/ddex-builder/src/namespace_minimizer.rs:388:13
+    |
+388 |         let mut ast = AST {
+    |             ----^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: missing documentation for a function
+   --> packages/ddex-builder/src/canonical/mod.rs:495:1
+    |
+495 | pub fn create_test_canonicalizer_with_version(version: &str) -> DB_C14N {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `ddex-builder` (test "determinism_tests") generated 1 warning (run `cargo fix --test "determinism_tests"` to apply 1 suggestion)
+warning: `ddex-builder` (lib test) generated 608 warnings (597 duplicates) (run `cargo fix --lib -p ddex-builder --tests` to apply 7 suggestions)
+warning: `ddex-builder` (bin "ddex-builder" test) generated 4 warnings (4 duplicates)
+    Finished `release` profile [optimized] target(s) in 0.64s
+     Running unittests src/lib.rs (target/release/deps/ddex_builder-7becbb5958f6888e)
+
+running 42 tests
+test api_security::tests::test_api_security_manager ... ok
+test api_security::tests::test_ffi_validator ... ok
+test api_security::tests::test_batch_operation_monitor ... ok
+test api_security::tests::test_wasm_security_headers ... ok
+test api_security::tests::test_secure_error_response ... ok
+test security::entity_classifier::tests::test_builtin_entity_classification ... ok
+test security::entity_classifier::tests::test_ddex_entity_classification ... ok
+test security::error_sanitizer::tests::test_api_key_redaction ... ok
+test security::entity_classifier::tests::test_malicious_entity_detection ... ok
+test security::entity_classifier::tests::test_expansion_ratio_detection ... ok
+test security::entity_classifier::tests::test_entity_chain_validation ... ok
+test security::entity_classifier::tests::test_safe_entity_chain ... ok
+test security::error_sanitizer::tests::test_memory_address_redaction ... ok
+test security::error_sanitizer::tests::test_error_codes ... ok
+test security::error_sanitizer::tests::test_global_sanitizer ... ok
+test security::error_sanitizer::tests::test_error_sanitizer_development_mode ... ok
+test security::error_sanitizer::tests::test_context_specific_sanitization ... ok
+test security::error_sanitizer::tests::test_error_sanitizer_production_mode ... ok
+test security::error_sanitizer::tests::test_message_length_truncation ... ok
+test security::error_sanitizer::tests::test_correlation_id_generation ... ok
+test security::error_sanitizer::tests::test_secure_error_trait ... ok
+test security::error_sanitizer::tests::test_path_redaction ... ok
+test security::error_sanitizer::tests::test_redaction_rules ... ok
+test security::path_validator::tests::test_url_encoding_attacks ... ok
+test security::error_sanitizer::tests::test_ip_address_redaction ... ok
+test security::path_validator::tests::test_dangerous_patterns ... ok
+test security::path_validator::tests::test_windows_reserved_names ... ok
+test security::path_validator::tests::test_length_limits ... ok
+test security::path_validator::tests::test_path_normalization ... ok
+test security::path_validator::tests::test_unicode_normalization ... ok
+test security::tests::test_path_validation ... ok
+test security::path_validator::tests::test_file_extensions ... ok
+test security::tests::test_rate_limiter ... ok
+test security::path_validator::tests::test_whitelist_validation ... ok
+test security::tests::test_secure_xml_reader ... ok
+test security::tests::test_security_utils ... ok
+test security::path_validator::tests::test_basic_path_validation ... ok
+test security::tests::test_url_validation ... ok
+test security::tests::test_input_validation ... ok
+test security::tests::test_secure_logging ... ok
+test security::tests::test_output_sanitizer ... ok
+test security::tests::test_xml_security ... ok
+
+test result: ok. 42 passed; 0 failed; 0 ignored; 0 measured; 133 filtered out; finished in 0.00s
+
+     Running unittests src/bin/ddex-builder.rs (target/release/deps/ddex_builder-8499e5fd58c57580)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/basic_test.rs (target/release/deps/basic_test-25d8d0419155b541)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/canonical_debug.rs (target/release/deps/canonical_debug-442b112df54241d1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests/comprehensive_test_suite.rs (target/release/deps/comprehensive_test_suite-0b19aa9c28584b1b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/cross_platform_determinism.rs (target/release/deps/cross_platform_determinism-233cbcca63e44bb6)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/determinism_tests.rs (target/release/deps/determinism_tests-b9b8bd2f4b7205f6)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.00s
+
+     Running tests/entity_classification_test.rs (target/release/deps/entity_classification_test-acd822396bb96710)
+
+running 1 test
+test test_security_config_integration ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.00s
+
+     Running tests/error_sanitizer_test.rs (target/release/deps/error_sanitizer_test-881b7d7cf53b9989)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/fidelity_tests.rs (target/release/deps/fidelity_tests-20ac93f991353a55)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.00s
+
+     Running tests/golden_files.rs (target/release/deps/golden_files-c85f26325acb22df)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/linker_test.rs (target/release/deps/linker_test-91e86bca7217b702)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/linker_xml_integration_test.rs (target/release/deps/linker_xml_integration_test-65b43f6f9e452a06)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/performance_regression.rs (target/release/deps/performance_regression-d8971287e2fa262c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+     Running tests/presets_test.rs (target/release/deps/presets_test-c08bf1f3c5e53ad7)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.00s
+
+     Running tests/security_fixes_integration.rs (target/release/deps/security_fixes_integration-2f1a9768ad20b440)
+
+running 10 tests
+test security_integration_tests::test_security_edge_cases ... FAILED
+test security_integration_tests::test_entity_classification_xxe_defense ... ok
+test security_integration_tests::test_path_validation_comprehensive ... FAILED
+test security_integration_tests::test_cross_platform_path_validation ... FAILED
+test security_integration_tests::test_error_sanitization_no_leakage ... ok
+test security_integration_tests::test_integrated_security_workflow ... ok
+test test_security_malformed_input_handling ... FAILED
+test test_security_concurrent_access ... FAILED
+test test_security_memory_safety ... ok
+test security_integration_tests::test_performance_impact_benchmark ... FAILED
+
+failures:
+
+---- security_integration_tests::test_security_edge_cases stdout ----
+🔍 Testing security edge cases...
+
+thread 'security_integration_tests::test_security_edge_cases' panicked at packages/ddex-builder/tests/security_fixes_integration.rs:351:9:
+Empty path should be blocked
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- security_integration_tests::test_path_validation_comprehensive stdout ----
+🛡️  Testing comprehensive path validation...
+
+thread 'security_integration_tests::test_path_validation_comprehensive' panicked at packages/ddex-builder/tests/security_fixes_integration.rs:69:13:
+Path 'settings.json' should be blocked but was allowed
+
+---- security_integration_tests::test_cross_platform_path_validation stdout ----
+🛡️  Testing cross-platform path validation...
+
+thread 'security_integration_tests::test_cross_platform_path_validation' panicked at packages/ddex-builder/tests/security_fixes_integration.rs:257:13:
+Platform attack 'Unicode homograph' with path 'file⁄name.txt' should be blocked
+
+---- test_security_malformed_input_handling stdout ----
+💥 Testing malformed input handling...
+
+thread 'test_security_malformed_input_handling' panicked at packages/ddex-builder/tests/security_fixes_integration.rs:575:9:
+Malformed path should be rejected
+
+---- test_security_concurrent_access stdout ----
+🔄 Testing concurrent access to security components...
+
+thread 'test_security_concurrent_access' panicked at packages/ddex-builder/tests/security_fixes_integration.rs:530:13:
+Valid path should pass validation
+
+thread 'test_security_concurrent_access' panicked at packages/ddex-builder/tests/security_fixes_integration.rs:530:13:
+Valid path should pass validation
+
+thread 'test_security_concurrent_access' panicked at packages/ddex-builder/tests/security_fixes_integration.rs:530:13:
+Valid path should pass validation
+
+thread 'test_security_concurrent_access' panicked at packages/ddex-builder/tests/security_fixes_integration.rs:530:13:
+Valid path should pass validation
+
+thread 'test_security_concurrent_access' panicked at packages/ddex-builder/tests/security_fixes_integration.rs:530:13:
+Valid path should pass validation
+
+thread 'test_security_concurrent_access' panicked at packages/ddex-builder/tests/security_fixes_integration.rs:530:13:
+Valid path should pass validation
+
+thread 'test_security_concurrent_access' panicked at packages/ddex-builder/tests/security_fixes_integration.rs:530:13:
+Valid path should pass validation
+
+thread 'test_security_concurrent_access' panicked at packages/ddex-builder/tests/security_fixes_integration.rs:530:13:
+Valid path should pass validation
+
+thread 'test_security_concurrent_access' panicked at packages/ddex-builder/tests/security_fixes_integration.rs:530:13:
+Valid path should pass validation
+
+thread 'test_security_concurrent_access' panicked at packages/ddex-builder/tests/security_fixes_integration.rs:530:13:
+Valid path should pass validation
+
+thread 'test_security_concurrent_access' panicked at packages/ddex-builder/tests/security_fixes_integration.rs:548:22:
+Task should complete successfully: JoinError::Panic(Id(1), "Valid path should pass validation", ...)
+
+---- security_integration_tests::test_performance_impact_benchmark stdout ----
+⚡ Testing performance impact of security improvements...
+
+thread 'security_integration_tests::test_performance_impact_benchmark' panicked at packages/ddex-builder/tests/security_fixes_integration.rs:273:9:
+Path validation overhead too high: 9467.41%
+
+
+failures:
+    security_integration_tests::test_cross_platform_path_validation
+    security_integration_tests::test_path_validation_comprehensive
+    security_integration_tests::test_performance_impact_benchmark
+    security_integration_tests::test_security_edge_cases
+    test_security_concurrent_access
+    test_security_malformed_input_handling
+
+test result: FAILED. 4 passed; 6 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.87s
+
+error: test failed, to rerun pass `-p ddex-builder --test security_fixes_integration`
+=== Security Test Results ===
+Security tests executed successfully

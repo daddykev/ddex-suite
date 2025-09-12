@@ -35,7 +35,7 @@ Beyond the core implementation, this is a showcase of **software craftsmanship a
 
 ## 🚧 Development Status
 
-**Latest Release**: Suite v0.3.0 🎉  
+**Latest Release**: Suite v0.3.5 🎉  
 **Current Development Phase**: 4.3.5 - Core Stabilization  
 **Target Release**: Suite v1.0.0 in Q1 2026
 
@@ -45,9 +45,9 @@ All packages published across npm, PyPI, and **crates.io**! ✅
 
 | Package | npm | PyPI | crates.io | Version |
 |---------|-----|------|-----------|---------|
-| **ddex-core** | - | - | ✅ [Published](https://crates.io/crates/ddex-core) | v0.3.0 |
-| **ddex-parser** | ✅ [Published](https://www.npmjs.com/package/ddex-parser) | ✅ [Published](https://pypi.org/project/ddex-parser/) | ✅ [Published](https://crates.io/crates/ddex-parser) | v0.3.0 |
-| **ddex-builder** | ✅ [Published](https://www.npmjs.com/package/ddex-builder) | ✅ [Published](https://pypi.org/project/ddex-builder/) | ✅ [Published](https://crates.io/crates/ddex-builder) | v0.3.0 |
+| **ddex-core** | - | - | ✅ [Published](https://crates.io/crates/ddex-core) | v0.3.5 |
+| **ddex-parser** | ✅ [Published](https://www.npmjs.com/package/ddex-parser) | ✅ [Published](https://pypi.org/project/ddex-parser/) | ✅ [Published](https://crates.io/crates/ddex-parser) | v0.3.5 |
+| **ddex-builder** | ✅ [Published](https://www.npmjs.com/package/ddex-builder) | ✅ [Published](https://pypi.org/project/ddex-builder/) | ✅ [Published](https://crates.io/crates/ddex-builder) | v0.3.5 |
 
 ### Progress Overview
 
@@ -94,7 +94,7 @@ interface ParsedRelease {
 
 ## 🎯 Perfect Fidelity Engine
 
-**New in v0.3.0**: The Perfect Fidelity Engine ensures 100% round-trip preservation of DDEX XML with mathematical guarantees.
+**New in v0.3.5**: The Perfect Fidelity Engine ensures 100% round-trip preservation of DDEX XML with mathematical guarantees.
 
 ### 🔒 Fidelity Guarantees
 
@@ -155,7 +155,7 @@ console.log(`🔍 Round-trip: ${result.verification.round_trip_success ? 'PASSED
 
 ## 🚀 Features
 
-### ✅ Perfect Fidelity Engine (v0.3.0)
+### ✅ Perfect Fidelity Engine (v0.3.5)
 - **🔒 Mathematical Guarantees**: Verifiable round-trip fidelity with formal proofs
 - **📐 DB-C14N/1.0 Canonicalization**: DDEX-specific canonicalization for byte-perfect output
 - **🔌 Extension Preservation**: 100% preservation of Spotify, Apple, YouTube, Amazon extensions
@@ -164,7 +164,7 @@ console.log(`🔍 Round-trip: ${result.verification.round_trip_success ? 'PASSED
 - **✅ Automatic Verification**: Built-in round-trip verification with detailed reporting
 - **📊 Fidelity Statistics**: Comprehensive metrics and performance monitoring
 
-### ✅ Native Python Bindings (v0.3.0)
+### ✅ Native Python Bindings (v0.3.5)
 - **🐍 Production-Ready Python**: Native PyO3 bindings with full DataFrame integration
 - **📊 DataFrame Support**: Three schema options (flat, releases, tracks) for pandas integration
 - **⚡ Native Performance**: <50ms parsing for 10MB files with Python
@@ -190,18 +190,32 @@ console.log(`🔍 Round-trip: ${result.verification.round_trip_success ? 'PASSED
 
 ```bash
 # JavaScript/TypeScript
-npm install ddex-parser  # ✅ Latest: v0.3.0
-npm install ddex-builder # ✅ Latest: v0.3.0
+npm install ddex-parser  # ✅ Latest: v0.3.5
+npm install ddex-builder # ✅ Latest: v0.3.5
 
 # Python
-pip install ddex-parser  # ✅ Latest: v0.3.0
-pip install ddex-builder # ✅ Latest: v0.3.0
+pip install ddex-parser  # ✅ Latest: v0.3.5
+pip install ddex-builder # ✅ Latest: v0.3.5
 
 # Rust
-cargo add ddex-core      # ✅ Latest: v0.3.0
-cargo add ddex-parser    # ✅ Latest: v0.3.0
-cargo add ddex-builder   # ✅ Latest: v0.3.0
+cargo add ddex-core      # ✅ Latest: v0.3.5
+cargo add ddex-parser    # ✅ Latest: v0.3.5
+cargo add ddex-builder   # ✅ Latest: v0.3.5
 ```
+
+### Browser/WASM
+```html
+<script type="module">
+import init, { DDEXParser, DdexBuilder } from '@ddex/wasm';
+await init();
+const parser = new DDEXParser();
+const builder = new DdexBuilder();
+</script>
+```
+
+Bundle sizes (v0.3.5):
+- Parser: 37KB (gzipped: ~12KB)
+- Builder: 420KB (gzipped: ~140KB)
 
 ## 💻 Usage Examples
 
@@ -226,7 +240,7 @@ const reparsed = await parser.parse(xml);
 assert.deepEqual(reparsed.graph, result.graph); // ✅ Identical
 ```
 
-### Python (v0.3.0 - Native Implementation)
+### Python (v0.3.5 - Native Implementation)
 ```python
 from ddex_parser import DDEXParser
 from ddex_builder import DDEXBuilder
@@ -317,7 +331,7 @@ Built as a monorepo with shared core components:
 
 ## 📊 Performance Metrics
 
-### Perfect Fidelity Engine Performance (v0.3.0)
+### Perfect Fidelity Engine Performance (v0.3.5)
 
 | Operation | Target | Achieved | Fidelity Level |
 |-----------|--------|----------|----------------|
@@ -397,7 +411,7 @@ DDEX Suite is designed to complement [DDEX Workbench](https://ddex-workbench.org
 
 **Repository**: https://github.com/daddykev/ddex-suite  
 **Status**: Phase 4.4 - Additional Bindings  
-**Parser**: v0.3.0 on [npm](https://www.npmjs.com/package/ddex-parser) and [PyPI](https://pypi.org/project/ddex-parser/)  
-**Builder**: v0.3.0 on [npm](https://www.npmjs.com/package/ddex-builder) and [PyPI](https://pypi.org/project/ddex-builder/)  
+**Parser**: v0.3.5 on [npm](https://www.npmjs.com/package/ddex-parser) and [PyPI](https://pypi.org/project/ddex-parser/)  
+**Builder**: v0.3.5 on [npm](https://www.npmjs.com/package/ddex-builder) and [PyPI](https://pypi.org/project/ddex-builder/)  
 **Suite Target**: v1.0.0 in Q1 2026  
 **Last Updated**: September 12, 2025
