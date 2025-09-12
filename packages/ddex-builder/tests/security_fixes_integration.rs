@@ -181,15 +181,15 @@ mod security_integration_tests {
             ),
             (
                 "Database connection leakage",
-                Error::new(ErrorKind::ConnectionRefused, "Failed to connect to postgres://admin:secret123@db.internal.com:5432/prod"),
+                Error::new(ErrorKind::ConnectionRefused, "Failed to connect to postgres://admin:FAKE_PASSWORD_123@db.internal.com:5432/prod"),
                 ErrorContext::DatabaseConnection,
-                vec!["admin", "secret123", "db.internal.com", "5432", "prod"],
+                vec!["admin", "FAKE_PASSWORD_123", "db.internal.com", "5432", "prod"],
             ),
             (
                 "API key leakage",
-                Error::new(ErrorKind::PermissionDenied, "Authentication failed: api_key=FAKE_API_KEY_LIVE"),
+                Error::new(ErrorKind::PermissionDenied, "Authentication failed: api_key=FAKE_API_KEY_FOR_TESTING_ONLY"),
                 ErrorContext::Authentication,
-                vec!["FAKE_API_KEY_LIVE"],
+                vec!["FAKE_API_KEY_FOR_TESTING_ONLY"],
             ),
         ];
         
