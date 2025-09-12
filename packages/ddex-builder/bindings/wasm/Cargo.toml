@@ -23,6 +23,7 @@ serde_json = "1.0"
 html-escape = "0.2"
 uuid = { version = "1.0", features = ["v4", "js"] }
 chrono = { version = "0.4", features = ["serde", "wasm-bindgen"] }
+indexmap = "2.5"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"

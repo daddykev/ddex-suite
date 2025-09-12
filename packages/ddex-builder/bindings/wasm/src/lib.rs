@@ -839,7 +839,7 @@ impl WasmDdexBuilder {
     fn apply_db_c14n_canonicalization(&self, xml: String) -> Result<String, JsValue> {
         // Basic DB-C14N implementation for browser environment
         // This is a simplified version - full implementation would require XML parser
-        let mut canonical = xml;
+        let mut canonical = xml.clone();
         
         // Remove unnecessary whitespace between elements
         canonical = canonical
@@ -863,7 +863,7 @@ impl WasmDdexBuilder {
 
     fn apply_c14n_canonicalization(&self, xml: String) -> Result<String, JsValue> {
         // Basic C14N implementation for browser environment
-        let mut canonical = xml;
+        let mut canonical = xml.clone();
         
         // Remove XML declaration if it's the default
         if canonical.starts_with(r#"<?xml version="1.0" encoding="UTF-8"?>"#) {

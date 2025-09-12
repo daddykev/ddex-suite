@@ -75,7 +75,6 @@
 use indexmap::IndexMap;
 use sha2::{Sha256, Digest};
 use quick_xml::{Reader, events::Event};
-use std::io::Cursor;
 use std::collections::BTreeMap;
 
 pub mod rules;
@@ -144,7 +143,7 @@ impl DB_C14N {
         
         loop {
             match reader.read_event_into(&mut buf) {
-                Ok(Event::Start(ref e)) | Ok(Event::Empty(ref e)) => {
+                Ok(Event::Start(ref e)) => {
                     // Save any accumulated text
                     if !text_content.trim().is_empty() {
                         if let Some(parent) = element_stack.last_mut() {
@@ -169,17 +168,40 @@ impl DB_C14N {
                         children: Vec::new(),
                     };
                     
-                    if matches!(reader.read_event_into(&mut buf), Ok(Event::Empty(_))) {
-                        // Self-closing element
+                    // Opening element, push to stack
+                    element_stack.push(element);
+                },
+                Ok(Event::Empty(ref e)) => {
+                    // Save any accumulated text
+                    if !text_content.trim().is_empty() {
                         if let Some(parent) = element_stack.last_mut() {
-                            parent.children.push(XmlNode::Element(element));
-                        } else {
-                            // Root element
-                            return Ok(XmlDocument { root: element });
+                            parent.children.push(XmlNode::Text(text_content.trim().to_string()));
                         }
+                        text_content.clear();
+                    }
+                    
+                    let name = String::from_utf8_lossy(e.name().as_ref()).to_string();
+                    let mut attributes = IndexMap::new();
+                    
+                    for attr in e.attributes() {
+                        let attr = attr.map_err(|e| super::error::BuildError::XmlGeneration(format!("Attribute error: {}", e)))?;
+                        let key = String::from_utf8_lossy(attr.key.as_ref()).to_string();
+                        let value = String::from_utf8_lossy(&attr.value).to_string();
+                        attributes.insert(key, value);
+                    }
+                    
+                    let element = XmlElement {
+                        name,
+                        attributes,
+                        children: Vec::new(),
+                    };
+                    
+                    // Self-closing element
+                    if let Some(parent) = element_stack.last_mut() {
+                        parent.children.push(XmlNode::Element(element));
                     } else {
-                        // Opening element, push to stack
-                        element_stack.push(element);
+                        // Root element
+                        return Ok(XmlDocument { root: element });
                     }
                 },
                 Ok(Event::End(_)) => {

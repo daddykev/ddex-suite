@@ -235,7 +235,9 @@ impl DiffEngine {
         // Compare text content
         let old_text = self.extract_text_content(old);
         let new_text = self.extract_text_content(new);
-        if old_text != new_text && !old_text.trim().is_empty() || !new_text.trim().is_empty() {
+        
+        // Only report text changes if the content actually differs after applying normalization
+        if old_text != new_text && (!old_text.trim().is_empty() || !new_text.trim().is_empty()) {
             changeset.add_change(SemanticChange {
                 path: path.with_text(),
                 change_type: ChangeType::TextModified,

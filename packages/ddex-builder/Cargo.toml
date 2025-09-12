@@ -54,6 +54,7 @@ smartstring = { version = "1.0", features = ["serde"] }
 # Validation
 url = "2.5"
 mime = "0.3"
+urlencoding = "2.1"
 
 # CLI dependencies
 clap = { version = "4.4", features = ["derive", "env", "color"] }
@@ -97,6 +98,7 @@ futures = { workspace = true }
 num_cpus = "1.16"
 rand = "0.8"
 regex = "1.11"
+tokio-test = "0.4"
 
 # Performance profiling
 pprof = { version = "0.15", features = ["flamegraph", "criterion"] }

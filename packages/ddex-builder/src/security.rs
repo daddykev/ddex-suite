@@ -3,9 +3,31 @@
 //! This module provides comprehensive security measures including:
 //! - XXE (XML External Entity) attack prevention
 //! - Input validation and sanitization
-//! - Path traversal prevention
+//! - Cross-platform path traversal prevention
 //! - Size limits and rate limiting
 //! - Safe XML parsing configuration
+
+pub mod path_validator;
+pub mod entity_classifier;
+pub mod error_sanitizer;
+
+// Re-export entity classifier types for public use
+pub use self::entity_classifier::{
+    EntityClassifier, EntityClass, Entity, EntityMetrics, AttackType, 
+    ClassifierConfig, ValidationResult, create_entity, create_parameter_entity, 
+    create_external_entity
+};
+
+// Re-export path validator types
+pub use self::path_validator::{PathValidator, PathValidationConfig, ValidatedPath};
+
+// Re-export error sanitizer types
+pub use self::error_sanitizer::{
+    ErrorSanitizer, SanitizedError, ErrorMode, ErrorLevel, ErrorContext,
+    SecureError, RedactionRule, SanitizerConfig, SanitizerStatistics,
+    sanitize_error, sanitize_io_error, sanitize_parse_error, 
+    sanitize_build_error, sanitize_security_error
+};
 
 use crate::error::BuildError;
 use quick_xml::events::Event;
@@ -16,6 +38,7 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 use url::Url;
 use once_cell::sync::Lazy;
+use tracing::{debug, warn};
 
 /// Maximum allowed size for XML input (100MB)
 const MAX_XML_SIZE: usize = 100 * 1024 * 1024;
@@ -39,10 +62,27 @@ const MAX_CHILD_ELEMENTS: usize = 10000;
 const MAX_REQUESTS_PER_MINUTE: u32 = 100;
 const RATE_LIMIT_WINDOW: Duration = Duration::from_secs(60);
 
-/// Dangerous XML entity patterns
+/// Dangerous XML entity patterns (ENTITY declarations only - let standard entities pass)
 static DANGEROUS_ENTITY_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"<!ENTITY\s+[^>]*>|&[a-zA-Z_][a-zA-Z0-9._-]*;").unwrap()
+    // Only match ENTITY declarations, not entity references (which are checked separately)
+    Regex::new(r"<!ENTITY\s+[^>]*>").unwrap()
 });
+
+/// Check if string contains only safe standard XML entities
+fn contains_only_safe_entities(input: &str) -> bool {
+    // Find all entity references
+    let re = Regex::new(r"&([a-zA-Z_][a-zA-Z0-9._-]*|#[0-9]+|#x[0-9a-fA-F]+);").unwrap();
+    for cap in re.captures_iter(input) {
+        let entity = &cap[1];
+        // Check if it's one of the standard safe entities
+        match entity {
+            "lt" | "gt" | "amp" | "quot" | "apos" => continue,
+            _ if entity.starts_with('#') => continue, // Numeric character references are safe
+            _ => return false, // Custom entity found
+        }
+    }
+    true
+}
 
 /// External reference patterns
 static EXTERNAL_REF_REGEX: Lazy<Regex> = Lazy::new(|| {
@@ -87,6 +127,12 @@ pub struct SecurityConfig {
     pub rate_limiting_enabled: bool,
     /// Maximum requests per minute
     pub max_requests_per_minute: u32,
+    /// Enable advanced entity classification
+    pub enable_entity_classification: bool,
+    /// Maximum allowed entity expansion ratio
+    pub max_entity_expansion_ratio: f64,
+    /// Maximum entity recursion depth
+    pub max_entity_depth: usize,
 }
 
 impl Default for SecurityConfig {
@@ -102,6 +148,9 @@ impl Default for SecurityConfig {
             allow_dtd: false, // CRITICAL: Never allow DTD processing
             rate_limiting_enabled: true,
             max_requests_per_minute: MAX_REQUESTS_PER_MINUTE,
+            enable_entity_classification: true, // Enable advanced entity analysis
+            max_entity_expansion_ratio: 10.0, // Max 10x expansion
+            max_entity_depth: 3, // Max 3 levels deep
         }
     }
 }
@@ -206,12 +255,26 @@ impl<R: BufRead> SecureXmlReader<R> {
 /// Input validator for various data types
 pub struct InputValidator {
     config: SecurityConfig,
+    entity_classifier: Option<EntityClassifier>,
 }
 
 impl InputValidator {
     /// Create a new input validator
     pub fn new(config: SecurityConfig) -> Self {
-        Self { config }
+        let entity_classifier = if config.enable_entity_classification {
+            let mut classifier_config = entity_classifier::ClassifierConfig::default();
+            classifier_config.max_expansion_ratio = config.max_entity_expansion_ratio;
+            classifier_config.max_depth = config.max_entity_depth;
+            classifier_config.allow_external_entities = config.allow_external_entities;
+            Some(EntityClassifier::with_config(classifier_config))
+        } else {
+            None
+        };
+        
+        Self { 
+            config,
+            entity_classifier,
+        }
     }
     
     /// Validate and sanitize a string input
@@ -240,10 +303,17 @@ impl InputValidator {
             ));
         }
         
-        // Check for dangerous entity references
-        if DANGEROUS_ENTITY_REGEX.is_match(input) {
+        // Check for dangerous entity references (custom entities only, not standard ones)
+        if !contains_only_safe_entities(input) {
             return Err(BuildError::InputSanitization(
                 format!("Dangerous entity reference detected in field '{}'", field_name)
+            ));
+        }
+        
+        // Check for path traversal patterns
+        if input.contains("../") || input.contains("..\\") || input.contains("/etc/") || input.contains("C:\\") {
+            return Err(BuildError::InputSanitization(
+                format!("Path traversal pattern detected in field '{}'", field_name)
             ));
         }
         
@@ -258,43 +328,35 @@ impl InputValidator {
         Ok(sanitized)
     }
     
-    /// Validate a file path for safety
+    /// Validate a file path for safety using the comprehensive cross-platform path validator
     pub fn validate_path(&self, path: &str) -> Result<PathBuf, BuildError> {
-        // Check for dangerous path patterns
-        if DANGEROUS_PATH_REGEX.is_match(path) {
-            return Err(BuildError::InputSanitization(
-                format!("Dangerous path pattern detected: {}", path)
-            ));
+        // Create a configuration that allows relative paths but still blocks dangerous patterns
+        let mut config = PathValidationConfig::default();
+        config.allow_relative_outside_base = true; // Allow relative paths for flexibility
+        config.check_existence = false; // Don't require files to exist for validation
+        
+        let path_validator = PathValidator::with_config(config);
+        let validated_path = path_validator.validate(path)?;
+        
+        // Log warnings if any
+        if !validated_path.warnings.is_empty() {
+            tracing::debug!("Path validation warnings for '{}': {:?}", path, validated_path.warnings);
         }
         
-        // Convert to PathBuf and canonicalize
-        let path_buf = PathBuf::from(path);
+        Ok(validated_path.normalized)
+    }
+    
+    /// Validate a file path with custom configuration
+    pub fn validate_path_with_config(&self, path: &str, config: PathValidationConfig) -> Result<PathBuf, BuildError> {
+        let path_validator = PathValidator::with_config(config);
+        let validated_path = path_validator.validate(path)?;
         
-        // Reject absolute paths
-        if path_buf.is_absolute() {
-            return Err(BuildError::InputSanitization(
-                "Absolute paths not allowed".to_string()
-            ));
+        // Log warnings if any
+        if !validated_path.warnings.is_empty() {
+            tracing::debug!("Path validation warnings for '{}': {:?}", path, validated_path.warnings);
         }
         
-        // Check for path traversal
-        for component in path_buf.components() {
-            match component {
-                std::path::Component::ParentDir => {
-                    return Err(BuildError::InputSanitization(
-                        "Path traversal attempt detected".to_string()
-                    ));
-                }
-                std::path::Component::RootDir => {
-                    return Err(BuildError::InputSanitization(
-                        "Root directory access not allowed".to_string()
-                    ));
-                }
-                _ => {}
-            }
-        }
-        
-        Ok(path_buf)
+        Ok(validated_path.normalized)
     }
     
     /// Validate a URL for safety
@@ -340,9 +402,14 @@ impl InputValidator {
             ));
         }
         
-        // Check for XXE patterns
+        // Check for XXE patterns - ENTITY declarations and custom entities
         if DANGEROUS_ENTITY_REGEX.is_match(xml) {
-            return Err(BuildError::Security("Potential XXE attack detected".to_string()));
+            return Err(BuildError::Security("XML entity declaration detected".to_string()));
+        }
+        
+        // Check for custom (non-standard) entity references
+        if !contains_only_safe_entities(xml) {
+            return Err(BuildError::Security("Custom entity reference detected".to_string()));
         }
         
         if EXTERNAL_REF_REGEX.is_match(xml) {
@@ -360,6 +427,59 @@ impl InputValidator {
         }
         
         Ok(())
+    }
+    
+    /// Validate entities using advanced classification system
+    pub fn validate_entities(&mut self, entities: &[Entity]) -> Result<(), BuildError> {
+        if let Some(ref mut classifier) = self.entity_classifier {
+            let result = classifier.validate_entity_chain(entities);
+            
+            if !result.is_safe {
+                let error_msg = if !result.errors.is_empty() {
+                    result.errors.join("; ")
+                } else {
+                    format!("Entity validation failed: {:?}", result.classification)
+                };
+                
+                return Err(BuildError::Security(error_msg));
+            }
+            
+            // Log warnings if any
+            if !result.warnings.is_empty() {
+                warn!("Entity validation warnings: {}", result.warnings.join("; "));
+            }
+            
+            // Log metrics for monitoring
+            debug!(
+                "Entity validation metrics: {} entities, {:.2}x expansion, {}ms processing", 
+                result.metrics.entity_count,
+                result.metrics.expansion_ratio,
+                result.metrics.processing_time_ms
+            );
+        }
+        
+        Ok(())
+    }
+    
+    /// Classify a single entity
+    pub fn classify_entity(&mut self, name: &str, value: &str) -> EntityClass {
+        if let Some(ref mut classifier) = self.entity_classifier {
+            classifier.classify_entity(name, value)
+        } else {
+            // Fall back to basic classification
+            if contains_only_safe_entities(&format!("&{};", name)) {
+                EntityClass::SafeBuiltin
+            } else {
+                EntityClass::CustomLocal
+            }
+        }
+    }
+    
+    /// Get entity classification metrics
+    pub fn get_entity_metrics(&self) -> Option<Vec<EntityMetrics>> {
+        self.entity_classifier
+            .as_ref()
+            .map(|classifier| classifier.get_metrics_history().iter().cloned().collect())
     }
     
     /// Validate JSON content for security

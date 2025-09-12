@@ -343,4 +343,80 @@ mod integration_tests {
         
         assert_eq!(bytes1, bytes2, "Canonicalization must be deterministic at byte level");
     }
+
+    /// Regression test for text content preservation bug
+    /// This test ensures that text content is not lost during canonicalization
+    #[test]
+    fn test_text_content_preservation_regression() {
+        let canonicalizer = create_test_canonicalizer();
+        
+        // Test various text content scenarios
+        let test_cases = vec![
+            // Simple text content
+            (
+                r#"<?xml version="1.0"?><root>Hello World</root>"#,
+                "Hello World"
+            ),
+            // Text with whitespace that should be normalized but preserved
+            (
+                r#"<?xml version="1.0"?><root>  Multiple   spaces  </root>"#,
+                "Multiple   spaces"
+            ),
+            // Text with newlines that should be normalized
+            (
+                r#"<?xml version="1.0"?>
+<root>
+  Line 1
+  Line 2
+</root>"#,
+                "Line 1 Line 2"
+            ),
+        ];
+        
+        for (input, expected_text) in test_cases {
+            let result = canonicalizer.canonicalize(input).unwrap();
+            
+            // Parse the result to check that text content is preserved
+            assert!(result.contains(expected_text), 
+                "Text content '{}' not found in canonicalized output: {}", 
+                expected_text, result);
+        }
+        
+        // Special test for mixed content - check that text nodes exist separately
+        let mixed_input = r#"<?xml version="1.0"?><root>Before<child>nested</child>After</root>"#;
+        let mixed_result = canonicalizer.canonicalize(mixed_input).unwrap();
+        
+        // For mixed content, we should find both text portions and the nested element
+        assert!(mixed_result.contains("Before"), "Mixed content 'Before' text not preserved");
+        assert!(mixed_result.contains("After"), "Mixed content 'After' text not preserved");
+        assert!(mixed_result.contains("<child>nested</child>"), "Mixed content child element not preserved");
+    }
+
+    /// Regression test for mixed content preservation
+    #[test]
+    fn test_mixed_content_preservation_regression() {
+        let canonicalizer = create_test_canonicalizer();
+        
+        let input = r#"<?xml version="1.0" encoding="UTF-8"?>
+<root>
+  <!-- Comment before -->
+  <element1>Text 1</element1>
+  Some text between elements
+  <!-- Comment middle -->  
+  <element2>Text 2</element2>
+  More text after
+  <!-- Comment after -->
+</root>"#;
+        
+        let result = canonicalizer.canonicalize(input).unwrap();
+        
+        // Verify all components are preserved
+        assert!(result.contains("<!-- Comment before -->"), "Comment before not preserved");
+        assert!(result.contains("<!-- Comment middle -->"), "Comment middle not preserved"); 
+        assert!(result.contains("<!-- Comment after -->"), "Comment after not preserved");
+        assert!(result.contains("Text 1"), "Element text 1 not preserved");
+        assert!(result.contains("Text 2"), "Element text 2 not preserved");
+        assert!(result.contains("Some text between elements"), "Interstitial text not preserved");
+        assert!(result.contains("More text after"), "Trailing text not preserved");
+    }
 }

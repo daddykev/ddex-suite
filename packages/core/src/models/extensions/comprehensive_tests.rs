@@ -228,12 +228,12 @@ mod extension_tests {
     fn test_xml_fragment_with_comments_and_processing_instructions() {
         let mut fragment = XmlFragment::new("test".to_string(), String::new());
         
-        fragment.comments.push("This is a comment".to_string());
+        fragment.comments.push(Comment::new("This is a comment".to_string(), CommentPosition::Before));
         fragment.processing_instructions.push(ProcessingInstruction::new("test".to_string(), Some("data".to_string())));
 
         assert_eq!(fragment.comments.len(), 1);
         assert_eq!(fragment.processing_instructions.len(), 1);
-        assert_eq!(fragment.comments[0], "This is a comment");
+        assert_eq!(fragment.comments[0].content, "This is a comment");
         assert_eq!(fragment.processing_instructions[0].target, "test");
     }
 
@@ -255,7 +255,7 @@ mod extension_tests {
         fragment.add_attribute("alpha".to_string(), "first".to_string());
 
         // Add comments and processing instructions
-        fragment.comments.push("Element comment".to_string());
+        fragment.comments.push(Comment::new("Element comment".to_string(), CommentPosition::Before));
         fragment.processing_instructions.push(ProcessingInstruction::new("element-pi".to_string(), None));
 
         let canonical = fragment.to_canonical_xml(0);

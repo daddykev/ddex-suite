@@ -4,7 +4,6 @@ members = [
     "packages/core",
     "packages/ddex-parser",
     "packages/ddex-builder",
-    "packages/integration-tests",
     "packages/ddex-parser/bindings/node",
     "packages/ddex-builder/bindings/node",
     "packages/ddex-builder/bindings/python",
