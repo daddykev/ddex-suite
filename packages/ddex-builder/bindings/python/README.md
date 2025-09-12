@@ -82,7 +82,7 @@ from ddex_builder import DDEXBuilder
 
 builder = DDEXBuilder(
     validate=True,           # Enable validation (recommended)
-    preset='universal',      # Use industry preset
+    preset='generic',        # Use generic industry preset
     canonical=True,          # Generate canonical XML
     streaming=False,         # Enable streaming mode for large data
     max_memory=100_000_000   # Memory limit in bytes
@@ -336,7 +336,7 @@ from ddex_builder import DDEXBuilder
 
 def process_music_catalog(artists_df, albums_df, tracks_df):
     """Build DDEX from normalized database tables."""
-    builder = DDEXBuilder(preset='universal', validate=True)
+    builder = DDEXBuilder(preset='generic', validate=True)
     
     # Merge dataframes to create hierarchical structure
     catalog = tracks_df.merge(albums_df, on='album_id') \
@@ -382,7 +382,7 @@ from ddex_builder import DDEXBuilder
 
 def build_from_analytics(streaming_data: pd.DataFrame) -> str:
     """Build DDEX from streaming analytics data."""
-    builder = DDEXBuilder(preset='spotify')
+    builder = DDEXBuilder(preset='generic')
     
     # Aggregate streaming data to releases
     release_stats = streaming_data.groupby(['release_id', 'release_title']).agg({

@@ -16,7 +16,7 @@ exclude = ["*.bak", "*.backup", "*.log", "*.tmp", "tests/integration/*.ts"]
 
 [dependencies]
 # Core dependency
-ddex-core = { version = "0.2.5", path = "../core" }
+ddex-core = { version = "0.3.0", path = "../core" }
 
 # Use workspace dependencies
 quick-xml = { workspace = true }

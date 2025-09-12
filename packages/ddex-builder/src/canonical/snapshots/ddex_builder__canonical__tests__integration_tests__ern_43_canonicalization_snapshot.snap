@@ -1,6 +1,5 @@
 ---
 source: packages/ddex-builder/src/canonical/tests.rs
-assertion_line: 325
 expression: result
 ---
 <?xml version="1.0" encoding="UTF-8"?>

@@ -21,7 +21,7 @@ exclude = [
 
 [dependencies]
 # Core dependency
-ddex-core = { version = "0.2.5", path = "../core" }
+ddex-core = { version = "0.3.0", path = "../core" }
 
 # Deterministic collections (CRITICAL for determinism)
 indexmap = { version = "2.5", features = ["serde"] }

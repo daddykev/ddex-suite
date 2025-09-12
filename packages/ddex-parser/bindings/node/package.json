@@ -1,6 +1,6 @@
 {
   "name": "ddex-parser",
-  "version": "0.2.5",
+  "version": "0.3.0",
   "description": "High-performance DDEX XML parser with native and WASM bindings",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

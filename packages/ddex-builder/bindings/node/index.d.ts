@@ -55,6 +55,57 @@ export interface ValidationRule {
   message: string
   parameters?: Record<string, string>
 }
+export interface FidelityOptions {
+  enablePerfectFidelity?: boolean
+  canonicalization?: string
+  preserveComments?: boolean
+  preserveProcessingInstructions?: boolean
+  preserveExtensions?: boolean
+  preserveAttributeOrder?: boolean
+  preserveNamespacePrefixes?: boolean
+  enableVerification?: boolean
+  collectStatistics?: boolean
+  enableDeterministicOrdering?: boolean
+  memoryOptimization?: string
+  streamingMode?: boolean
+  chunkSize?: number
+  enableChecksums?: boolean
+}
+export interface BuildStatistics {
+  buildTimeMs: number
+  memoryUsedBytes: number
+  xmlSizeBytes: number
+  elementCount: number
+  attributeCount: number
+  namespaceCount: number
+  extensionCount: number
+  canonicalizationTimeMs: number
+  verificationTimeMs?: number
+}
+export interface VerificationResult {
+  roundTripSuccess: boolean
+  fidelityScore: number
+  canonicalizationConsistent: boolean
+  determinismVerified: boolean
+  issues: Array<string>
+  checksumsMatch?: boolean
+}
+export interface BuildResult {
+  xml: string
+  statistics?: BuildStatistics
+  verification?: VerificationResult
+  fidelityInfo?: FidelityInfo
+}
+export interface FidelityInfo {
+  fidelityLevel: string
+  canonicalizationAlgorithm: string
+  commentsPreserved: boolean
+  extensionsPreserved: boolean
+  processingInstructionsPreserved: boolean
+  attributeOrderPreserved: boolean
+  namespacePrefixesPreserved: boolean
+  perfectFidelityEnabled: boolean
+}
 export interface StreamingConfig {
   maxBufferSize: number
   deterministic: boolean
@@ -76,62 +127,6 @@ export interface StreamingStats {
   warnings: Array<string>
   peakMemoryUsage: number
 }
-export interface FidelityOptions {
-  enablePerfectFidelity?: boolean
-  canonicalization?: 'none' | 'c14n' | 'c14n11' | 'db_c14n' | 'custom'
-  preserveComments?: boolean
-  preserveProcessingInstructions?: boolean
-  preserveExtensions?: boolean
-  preserveAttributeOrder?: boolean
-  preserveNamespacePrefixes?: boolean
-  enableVerification?: boolean
-  collectStatistics?: boolean
-  enableDeterministicOrdering?: boolean
-  memoryOptimization?: 'speed' | 'balanced' | 'memory'
-  streamingMode?: boolean
-  chunkSize?: number
-  enableChecksums?: boolean
-}
-
-export interface BuildStatistics {
-  buildTimeMs: number
-  memoryUsedBytes: number
-  xmlSizeBytes: number
-  elementCount: number
-  attributeCount: number
-  namespaceCount: number
-  extensionCount: number
-  canonicalizationTimeMs: number
-  verificationTimeMs?: number
-}
-
-export interface VerificationResult {
-  roundTripSuccess: boolean
-  fidelityScore: number
-  canonicalizationConsistent: boolean
-  determinismVerified: boolean
-  issues: Array<string>
-  checksumsMatch?: boolean
-}
-
-export interface BuildResult {
-  xml: string
-  statistics?: BuildStatistics
-  verification?: VerificationResult
-  fidelityInfo?: FidelityInfo
-}
-
-export interface FidelityInfo {
-  fidelityLevel: string
-  canonicalizationAlgorithm: string
-  commentsPreserved: boolean
-  extensionsPreserved: boolean
-  processingInstructionsPreserved: boolean
-  attributeOrderPreserved: boolean
-  namespacePrefixesPreserved: boolean
-  perfectFidelityEnabled: boolean
-}
-
 export interface MessageHeader {
   messageId?: string
   messageSenderName: string

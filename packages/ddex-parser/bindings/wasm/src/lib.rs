@@ -1,8 +1,8 @@
 // packages/ddex-parser/bindings/wasm/src/lib.rs
 use wasm_bindgen::prelude::*;
 use serde_wasm_bindgen::{from_value, to_value};
-use ddex_parser_core::{DDEXParser as CoreParser, ParserOptions, ParseResult};
-use ddex_core::models::{ERNMessage, FlattenedRelease};
+use ddex_parser::{DDEXParser as CoreParser};
+use ddex_core::models::flat::ParsedERNMessage;
 
 #[wasm_bindgen]
 pub struct DDEXParser {
@@ -21,11 +21,9 @@ impl DDEXParser {
     }
     
     #[wasm_bindgen]
-    pub fn parse(&self, xml: &str, options: JsValue) -> Result<JsValue, JsValue> {
-        let opts: ParserOptions = from_value(options)
-            .map_err(|e| JsValue::from_str(&e.to_string()))?;
-            
-        let result = self.inner.parse(xml, opts)
+    pub fn parse(&self, xml: &str, _options: JsValue) -> Result<JsValue, JsValue> {
+        let cursor = std::io::Cursor::new(xml.as_bytes());
+        let result = self.inner.parse(cursor)
             .map_err(|e| JsValue::from_str(&e.to_string()))?;
             
         to_value(&result)
@@ -35,8 +33,8 @@ impl DDEXParser {
     #[wasm_bindgen]
     pub async fn parse_stream(
         &self, 
-        stream: web_sys::ReadableStream,
-        options: JsValue
+        _stream: web_sys::ReadableStream,
+        _options: JsValue
     ) -> Result<JsValue, JsValue> {
         // Implement Web Streams API support
         todo!("Streaming implementation")

@@ -203,7 +203,7 @@ impl NamespaceDetector {
             version: self.detected_version,
             root_scope: self.scope_stack.first().cloned().unwrap_or_default(),
             warnings: self.warnings.clone(),
-            default_namespace: self.default_namespace_stack.first().cloned().unwrap_or(None),
+            default_namespace: self.detected_namespaces.get("").cloned(),
             custom_namespaces,
         }
     }
@@ -298,10 +298,10 @@ impl NamespaceContext {
     pub fn resolve_element_name(&self, local_name: &str, prefix: Option<&str>) -> ResolvedName {
         match prefix {
             Some(p) => {
-                if let Some(uri) = self.current_scope.resolve_prefix(p) {
+                if let Some(uri) = self.document_namespaces.get(p) {
                     ResolvedName::Qualified {
                         local_name: local_name.to_string(),
-                        namespace_uri: uri,
+                        namespace_uri: uri.clone(),
                         prefix: p.to_string(),
                     }
                 } else {

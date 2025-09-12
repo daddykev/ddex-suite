@@ -1,6 +1,6 @@
-# Changelog - ddex-parser
+# Changelog - v0.3.0
 
-## [0.3.0] - 2025-09-12
+## [0.3.0] - 2025-01-XX
 
 ### 🎉 Major Improvements
 
@@ -18,6 +18,7 @@
   - `releases`: One row per release with full details
   - `tracks`: One row per track with release context
 - Fixed column consistency across all DataFrame methods
+- Added `DdexBuilder.from_dataframe()` for round-trip support
 
 ### 🐛 Bug Fixes
 - Fixed namespace detection in parser (`test_default_namespace_detection`)
@@ -25,6 +26,17 @@
 - Resolved StreamIterator using real data instead of mock
 - Fixed Duration type mismatches in Python bindings
 - Corrected mutable/immutable borrow conflicts
+
+### ⚠️ Known Issues
+- Canonicalization may drop text content in some cases (fix planned for v0.4.0)
+- Some documentation tests need updating
+- WASM builds require additional setup
+
+### 📦 Package Updates
+All packages updated to v0.3.0:
+- `ddex-core`: 0.3.0 (crates.io)
+- `ddex-parser`: 0.3.0 (npm, PyPI, crates.io)
+- `ddex-builder`: 0.3.0 (npm, PyPI, crates.io)
 
 ### 💔 Breaking Changes
 - Python: `format` parameter renamed to `schema` in DataFrame methods
@@ -36,18 +48,10 @@
 - Memory usage optimized with bounded allocation
 - GIL released during intensive operations
 
-## [0.2.5] - 2025-01-10
+### 📚 Documentation
+- Added DataFrame schema specifications
+- Updated Python integration examples
+- Enhanced API documentation for all bindings
 
-### Changed
-- Version alignment with ddex-builder v0.2.5
-- Consistent versioning across entire ddex-suite
-- Documentation improvements
-
-### Technical
-- Node.js and Python bindings updated to v0.2.5
-- Maintained backward compatibility with v0.2.0 API
-- No breaking changes from v0.2.0
-
-### Notes
-- This is a version alignment release to maintain consistency across the ddex-suite
-- All functionality from v0.2.0 remains unchanged
+---
+**Full Diff**: https://github.com/daddykev/ddex-suite/compare/v0.2.5...v0.3.0
