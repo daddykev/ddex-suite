@@ -170,24 +170,31 @@ fn test_reference_equivalence() {
     config.ignore_reference_ids = true;
     let mut engine = DiffEngine::new_with_config(config);
     
-    // Two elements with different reference IDs but same content
+    // Two elements with different reference IDs AND different content
+    let mut resource1 = Element::new("Resource").with_attr("ResourceReference", "R001");
+    resource1.add_child(Element::new("Title").with_text("Original Track"));
+    
+    let mut resource2 = Element::new("Resource").with_attr("ResourceReference", "R002");  
+    resource2.add_child(Element::new("Title").with_text("Remastered Track"));
+    
     let ast1 = AST {
-        root: Element::new("Resource").with_attr("ResourceReference", "R001"),
+        root: resource1,
         namespaces: indexmap::IndexMap::new(),
         schema_location: None,
     };
     
     let ast2 = AST {
-        root: Element::new("Resource").with_attr("ResourceReference", "R002"),
+        root: resource2,
         namespaces: indexmap::IndexMap::new(),
         schema_location: None,
     };
     
     let changeset = engine.diff(&ast1, &ast2).unwrap();
     
-    // Should have changes because we don't have reference content resolution in this simple test
-    // In a real implementation, this would resolve the references and compare content
+    // Should have changes due to different content, even though reference IDs are ignored
     assert!(changeset.has_changes());
+    assert_eq!(changeset.summary.total_changes, 1);
+    assert_eq!(changeset.changes[0].change_type, types::ChangeType::TextModified);
 }
 
 #[test]

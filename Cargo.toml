@@ -50,7 +50,7 @@ similar = "2.4"
 # Bindings-specific
 napi = "2"
 napi-derive = "2"
-pyo3 = "0.21"
+pyo3 = "0.24.1"
 wasm-bindgen = "0.2"
 
 # Profile configurations for optimized builds (moved from packages)

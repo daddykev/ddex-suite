@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDEX Builder WASM - Async Operations Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8fafc;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        h1 {
+            color: #1e293b;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .test-section h2 {
+            color: #374151;
+            margin-bottom: 15px;
+            font-size: 1.25rem;
+        }
+        
+        .test-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .test-controls label {
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .test-controls input,
+        .test-controls select {
+            padding: 8px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .test-controls button {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .test-controls button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        
+        .test-controls button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .stop-btn {
+            background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+        }
+        
+        .stop-btn:hover {
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
+        }
+        
+        .test-results {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .metric {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .metric-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #3b82f6;
+        }
+        
+        .metric-unit {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-left: 4px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #f3f4f6;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #2563eb);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        .worker-status {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .worker {
+            background: #f1f5f9;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            border: 1px solid #cbd5e1;
+        }
+        
+        .worker-id {
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        .worker-state {
+            color: #64748b;
+            font-family: monospace;
+        }
+        
+        .worker.active {
+            background: #ecfdf5;
+            border-color: #bbf7d0;
+        }
+        
+        .worker.active .worker-state {
+            color: #065f46;
+        }
+        
+        .worker.error {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+        
+        .worker.error .worker-state {
+            color: #dc2626;
+        }
+        
+        .timing-chart {
+            height: 200px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            margin: 15px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .timing-bar {
+            position: absolute;
+            height: 20px;
+            background: #3b82f6;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            font-size: 0.75rem;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .timing-bar.completed {
+            background: #10b981;
+        }
+        
+        .timing-bar.failed {
+            background: #ef4444;
+        }
+        
+        .test-log {
+            background: #111827;
+            color: #f3f4f6;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'SF Mono', Consolas, monospace;
+            font-size: 0.875rem;
+            height: 250px;
+            overflow-y: auto;
+            line-height: 1.4;
+        }
+        
+        .log-entry {
+            margin: 2px 0;
+            padding: 1px 0;
+        }
+        
+        .log-entry.info {
+            color: #93c5fd;
+        }
+        
+        .log-entry.success {
+            color: #34d399;
+        }
+        
+        .log-entry.warning {
+            color: #fbbf24;
+        }
+        
+        .log-entry.error {
+            color: #f87171;
+        }
+        
+        .log-entry.debug {
+            color: #a3a3a3;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ DDEX Builder WASM - Async Operations Test</h1>
+        
+        <!-- Concurrent Operations Test -->
+        <div class="test-section">
+            <h2>🔄 Concurrent Operations Test</h2>
+            <p>Test multiple concurrent WASM operations and measure performance, race conditions, and resource usage.</p>
+            
+            <div class="test-controls">
+                <label>Concurrent Operations:</label>
+                <input type="number" id="concurrent-count" value="5" min="1" max="50">
+                
+                <label>Operations per Worker:</label>
+                <input type="number" id="ops-per-worker" value="10" min="1" max="100">
+                
+                <label>Data Complexity:</label>
+                <select id="concurrent-complexity">
+                    <option value="simple">Simple</option>
+                    <option value="complex">Complex</option>
+                    <option value="mixed">Mixed</option>
+                </select>
+                
+                <button id="run-concurrent" onclick="runConcurrentTest()">🚀 Run Concurrent Test</button>
+                <button id="stop-concurrent" onclick="stopConcurrentTest()" disabled class="stop-btn">⏹️ Stop</button>
+            </div>
+            
+            <div id="concurrent-results" class="test-results" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="concurrent-progress"></div>
+                </div>
+                <div id="concurrent-metrics" class="metrics-grid"></div>
+                <div id="worker-status" class="worker-status"></div>
+                <div id="timing-chart" class="timing-chart"></div>
+            </div>
+        </div>
+        
+        <!-- Promise Chain Test -->
+        <div class="test-section">
+            <h2>🔗 Promise Chain Test</h2>
+            <p>Test sequential promise chains with WASM operations to detect memory leaks and performance degradation.</p>
+            
+            <div class="test-controls">
+                <label>Chain Length:</label>
+                <input type="number" id="chain-length" value="20" min="5" max="100">
+                
+                <label>Delay Between Operations (ms):</label>
+                <input type="number" id="chain-delay" value="50" min="0" max="1000">
+                
+                <label>Error Simulation:</label>
+                <select id="error-simulation">
+                    <option value="none">None</option>
+                    <option value="random">Random (10%)</option>
+                    <option value="pattern">Every 5th Operation</option>
+                </select>
+                
+                <button id="run-chain" onclick="runPromiseChainTest()">🔗 Run Chain Test</button>
+                <button id="stop-chain" onclick="stopPromiseChainTest()" disabled class="stop-btn">⏹️ Stop</button>
+            </div>
+            
+            <div id="chain-results" class="test-results" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="chain-progress"></div>
+                </div>
+                <div id="chain-metrics" class="metrics-grid"></div>
+            </div>
+        </div>
+        
+        <!-- Async/Await vs Promise Test -->
+        <div class="test-section">
+            <h2>⚖️ Async/Await vs Promise Comparison</h2>
+            <p>Compare performance between async/await and raw Promise patterns with WASM operations.</p>
+            
+            <div class="test-controls">
+                <label>Test Iterations:</label>
+                <input type="number" id="comparison-iterations" value="100" min="10" max="1000">
+                
+                <label>Concurrent Level:</label>
+                <select id="comparison-concurrency">
+                    <option value="1">Sequential</option>
+                    <option value="5">Low Concurrency (5)</option>
+                    <option value="10">Medium Concurrency (10)</option>
+                    <option value="20">High Concurrency (20)</option>
+                </select>
+                
+                <button id="run-comparison" onclick="runAsyncComparisonTest()">⚖️ Run Comparison</button>
+            </div>
+            
+            <div id="comparison-results" class="test-results" style="display: none;">
+                <div id="comparison-metrics" class="metrics-grid"></div>
+            </div>
+        </div>
+        
+        <!-- Error Handling Test -->
+        <div class="test-section">
+            <h2>🚨 Error Handling & Recovery Test</h2>
+            <p>Test async error handling, recovery mechanisms, and resource cleanup.</p>
+            
+            <div class="test-controls">
+                <label>Error Rate:</label>
+                <select id="error-rate">
+                    <option value="0.1">10%</option>
+                    <option value="0.25">25%</option>
+                    <option value="0.5">50%</option>
+                </select>
+                
+                <label>Recovery Strategy:</label>
+                <select id="recovery-strategy">
+                    <option value="retry">Retry Failed Operations</option>
+                    <option value="skip">Skip Failed Operations</option>
+                    <option value="abort">Abort on Error</option>
+                </select>
+                
+                <label>Operations Count:</label>
+                <input type="number" id="error-ops-count" value="50" min="10" max="200">
+                
+                <button id="run-error-test" onclick="runErrorHandlingTest()">🚨 Run Error Test</button>
+                <button id="stop-error-test" onclick="stopErrorHandlingTest()" disabled class="stop-btn">⏹️ Stop</button>
+            </div>
+            
+            <div id="error-results" class="test-results" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="error-progress"></div>
+                </div>
+                <div id="error-metrics" class="metrics-grid"></div>
+            </div>
+        </div>
+        
+        <!-- Test Log -->
+        <div class="test-section">
+            <h2>📋 Test Log</h2>
+            <div id="test-log" class="test-log">
+                <div class="log-entry info">[INFO] Async operations test suite ready. Initialize WASM module...</div>
+            </div>
+            <button onclick="clearLog()">🗑️ Clear Log</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import init, { DdexBuilder } from '../pkg/ddex_builder_wasm.js';
+        
+        let wasmBuilder = null;
+        let testRunning = false;
+        let currentTest = null;
+        let testAborted = false;
+        
+        // Initialize WASM module
+        async function initializeWasm() {
+            try {
+                log('Initializing WASM module...', 'info');
+                await init();
+                wasmBuilder = new DdexBuilder();
+                log('WASM module initialized successfully', 'success');
+            } catch (error) {
+                log(`Failed to initialize WASM: ${error.message}`, 'error');
+            }
+        }
+        
+        // Logging utility
+        function log(message, level = 'info') {
+            const logEl = document.getElementById('test-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${level}`;
+            entry.textContent = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('test-log').innerHTML = 
+                '<div class="log-entry info">[INFO] Test log cleared.</div>';
+        }
+        
+        // Generate test data
+        function generateReleaseData(complexity = 'simple', id = Math.random().toString(36).substr(2, 9)) {
+            const base = {
+                release_id: `ASYNC_${id}`,
+                title: `Async Test Release ${id}`,
+                artist: `Test Artist ${id}`,
+                release_type: 'Album',
+                release_date: '2024-01-01'
+            };
+            
+            if (complexity === 'complex' || (complexity === 'mixed' && Math.random() > 0.5)) {
+                base.metadata = {
+                    description: `Complex metadata for release ${id}`.repeat(100),
+                    producer: `Producer ${id}`,
+                    total_tracks: 12,
+                    copyright: `2024 Artist ${id}`,
+                    additional_credits: Array.from({length: 10}, (_, i) => `Credit ${i}`),
+                    technical_info: {
+                        sample_rate: 44100,
+                        bit_depth: 16,
+                        channels: 2,
+                        format: 'PCM'
+                    }
+                };
+            }
+            
+            return base;
+        }
+        
+        // Simulate operation that might fail
+        async function performOperation(id, shouldFail = false) {
+            const startTime = performance.now();
+            
+            try {
+                if (shouldFail) {
+                    throw new Error(`Simulated error for operation ${id}`);
+                }
+                
+                const complexity = document.getElementById('concurrent-complexity')?.value || 'simple';
+                const testData = generateReleaseData(complexity, id);
+                const xml = wasmBuilder.build_release_simple(JSON.stringify(testData));
+                
+                const endTime = performance.now();
+                return {
+                    id,
+                    success: true,
+                    duration: endTime - startTime,
+                    outputSize: xml.length,
+                    result: xml
+                };
+            } catch (error) {
+                const endTime = performance.now();
+                return {
+                    id,
+                    success: false,
+                    duration: endTime - startTime,
+                    error: error.message
+                };
+            }
+        }
+        
+        // Concurrent Operations Test
+        async function runConcurrentTest() {
+            if (!wasmBuilder || testRunning) return;
+            
+            testRunning = true;
+            testAborted = false;
+            currentTest = 'concurrent';
+            
+            const concurrentCount = parseInt(document.getElementById('concurrent-count').value);
+            const opsPerWorker = parseInt(document.getElementById('ops-per-worker').value);
+            const totalOperations = concurrentCount * opsPerWorker;
+            
+            log(`Starting concurrent test: ${concurrentCount} workers, ${opsPerWorker} ops each (${totalOperations} total)`, 'info');
+            
+            // Update UI
+            document.getElementById('run-concurrent').disabled = true;
+            document.getElementById('stop-concurrent').disabled = false;
+            document.getElementById('concurrent-results').style.display = 'block';
+            
+            // Create worker status display
+            const workerStatusEl = document.getElementById('worker-status');
+            workerStatusEl.innerHTML = '';
+            const workerElements = [];
+            
+            for (let i = 0; i < concurrentCount; i++) {
+                const workerEl = document.createElement('div');
+                workerEl.className = 'worker';
+                workerEl.innerHTML = `
+                    <div class="worker-id">Worker ${i + 1}</div>
+                    <div class="worker-state">Idle</div>
+                `;
+                workerStatusEl.appendChild(workerEl);
+                workerElements.push(workerEl);
+            }
+            
+            // Create timing chart
+            const timingChart = document.getElementById('timing-chart');
+            timingChart.innerHTML = '';
+            
+            const startTime = performance.now();
+            let completedOperations = 0;
+            const results = [];
+            
+            try {
+                // Create concurrent workers
+                const workerPromises = Array.from({length: concurrentCount}, async (_, workerIndex) => {
+                    const workerEl = workerElements[workerIndex];
+                    const workerResults = [];
+                    
+                    for (let opIndex = 0; opIndex < opsPerWorker && !testAborted; opIndex++) {
+                        const operationId = `W${workerIndex + 1}O${opIndex + 1}`;
+                        
+                        // Update worker status
+                        workerEl.className = 'worker active';
+                        workerEl.querySelector('.worker-state').textContent = `Op ${opIndex + 1}/${opsPerWorker}`;
+                        
+                        const opStartTime = performance.now();
+                        const result = await performOperation(operationId);
+                        const opEndTime = performance.now();
+                        
+                        workerResults.push(result);
+                        completedOperations++;
+                        
+                        // Update progress
+                        const progress = (completedOperations / totalOperations) * 100;
+                        document.getElementById('concurrent-progress').style.width = `${progress}%`;
+                        
+                        // Add timing bar to chart
+                        const timingBar = document.createElement('div');
+                        timingBar.className = `timing-bar ${result.success ? 'completed' : 'failed'}`;
+                        timingBar.style.left = `${((opStartTime - startTime) / 5000) * 100}%`;  // Assuming 5s max
+                        timingBar.style.width = `${(result.duration / 5000) * 100}%`;
+                        timingBar.style.top = `${workerIndex * 25}px`;
+                        timingBar.textContent = operationId;
+                        timingChart.appendChild(timingBar);
+                        
+                        // Small delay to prevent blocking
+                        if (opIndex % 5 === 0) {
+                            await new Promise(resolve => setTimeout(resolve, 1));
+                        }
+                    }
+                    
+                    // Update worker status
+                    if (!testAborted) {
+                        workerEl.className = 'worker';
+                        workerEl.querySelector('.worker-state').textContent = 'Completed';
+                    }
+                    
+                    return workerResults;
+                });
+                
+                // Wait for all workers to complete
+                const allResults = await Promise.all(workerPromises);
+                const flatResults = allResults.flat();
+                
+                const endTime = performance.now();
+                const totalTime = endTime - startTime;
+                
+                // Calculate statistics
+                const successful = flatResults.filter(r => r.success);
+                const failed = flatResults.filter(r => !r.success);
+                const avgDuration = successful.reduce((sum, r) => sum + r.duration, 0) / successful.length;
+                const throughput = (successful.length / totalTime) * 1000; // ops/sec
+                
+                // Update metrics display
+                const metricsEl = document.getElementById('concurrent-metrics');
+                metricsEl.innerHTML = `
+                    <div class="metric">
+                        <div class="metric-label">Total Time</div>
+                        <div class="metric-value">${totalTime.toFixed(0)}<span class="metric-unit">ms</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Successful</div>
+                        <div class="metric-value">${successful.length}<span class="metric-unit">ops</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Failed</div>
+                        <div class="metric-value">${failed.length}<span class="metric-unit">ops</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Avg Duration</div>
+                        <div class="metric-value">${avgDuration.toFixed(1)}<span class="metric-unit">ms</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Throughput</div>
+                        <div class="metric-value">${throughput.toFixed(1)}<span class="metric-unit">ops/sec</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Concurrency</div>
+                        <div class="metric-value">${concurrentCount}<span class="metric-unit">workers</span></div>
+                    </div>
+                `;
+                
+                log(`Concurrent test completed: ${successful.length}/${flatResults.length} successful, ${throughput.toFixed(1)} ops/sec`, 'success');
+                
+            } catch (error) {
+                log(`Concurrent test failed: ${error.message}`, 'error');
+            } finally {
+                testRunning = false;
+                currentTest = null;
+                document.getElementById('run-concurrent').disabled = false;
+                document.getElementById('stop-concurrent').disabled = true;
+            }
+        }
+        
+        function stopConcurrentTest() {
+            testAborted = true;
+            log('Concurrent test stopped by user', 'warning');
+        }
+        
+        // Promise Chain Test
+        async function runPromiseChainTest() {
+            if (!wasmBuilder || testRunning) return;
+            
+            testRunning = true;
+            testAborted = false;
+            currentTest = 'chain';
+            
+            const chainLength = parseInt(document.getElementById('chain-length').value);
+            const delay = parseInt(document.getElementById('chain-delay').value);
+            const errorSimulation = document.getElementById('error-simulation').value;
+            
+            log(`Starting promise chain test: ${chainLength} operations, ${delay}ms delay, ${errorSimulation} errors`, 'info');
+            
+            // Update UI
+            document.getElementById('run-chain').disabled = true;
+            document.getElementById('stop-chain').disabled = false;
+            document.getElementById('chain-results').style.display = 'block';
+            
+            const startTime = performance.now();
+            const results = [];
+            let successful = 0;
+            let failed = 0;
+            
+            try {
+                for (let i = 0; i < chainLength && !testAborted; i++) {
+                    const shouldFail = 
+                        errorSimulation === 'random' ? Math.random() < 0.1 :
+                        errorSimulation === 'pattern' ? (i + 1) % 5 === 0 :
+                        false;
+                    
+                    const result = await performOperation(`CHAIN_${i + 1}`, shouldFail);
+                    results.push(result);
+                    
+                    if (result.success) {
+                        successful++;
+                    } else {
+                        failed++;
+                        log(`Chain operation ${i + 1} failed: ${result.error}`, 'warning');
+                    }
+                    
+                    // Update progress
+                    const progress = ((i + 1) / chainLength) * 100;
+                    document.getElementById('chain-progress').style.width = `${progress}%`;
+                    
+                    // Add delay if specified
+                    if (delay > 0) {
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                }
+                
+                const endTime = performance.now();
+                const totalTime = endTime - startTime;
+                const avgDuration = successful > 0 ? 
+                    results.filter(r => r.success).reduce((sum, r) => sum + r.duration, 0) / successful : 0;
+                
+                // Update metrics
+                const metricsEl = document.getElementById('chain-metrics');
+                metricsEl.innerHTML = `
+                    <div class="metric">
+                        <div class="metric-label">Total Time</div>
+                        <div class="metric-value">${totalTime.toFixed(0)}<span class="metric-unit">ms</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Chain Length</div>
+                        <div class="metric-value">${results.length}<span class="metric-unit">ops</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Successful</div>
+                        <div class="metric-value">${successful}<span class="metric-unit">ops</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Failed</div>
+                        <div class="metric-value">${failed}<span class="metric-unit">ops</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Avg Duration</div>
+                        <div class="metric-value">${avgDuration.toFixed(1)}<span class="metric-unit">ms</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Success Rate</div>
+                        <div class="metric-value">${((successful / results.length) * 100).toFixed(1)}<span class="metric-unit">%</span></div>
+                    </div>
+                `;
+                
+                log(`Promise chain test completed: ${successful}/${results.length} successful`, 'success');
+                
+            } catch (error) {
+                log(`Promise chain test failed: ${error.message}`, 'error');
+            } finally {
+                testRunning = false;
+                currentTest = null;
+                document.getElementById('run-chain').disabled = false;
+                document.getElementById('stop-chain').disabled = true;
+            }
+        }
+        
+        function stopPromiseChainTest() {
+            testAborted = true;
+            log('Promise chain test stopped by user', 'warning');
+        }
+        
+        // Async/Await vs Promise Comparison Test
+        async function runAsyncComparisonTest() {
+            if (!wasmBuilder || testRunning) return;
+            
+            testRunning = true;
+            
+            const iterations = parseInt(document.getElementById('comparison-iterations').value);
+            const concurrency = parseInt(document.getElementById('comparison-concurrency').value);
+            
+            log(`Starting async comparison test: ${iterations} iterations, concurrency ${concurrency}`, 'info');
+            
+            // Update UI
+            document.getElementById('run-comparison').disabled = true;
+            document.getElementById('comparison-results').style.display = 'block';
+            
+            try {
+                // Test async/await pattern
+                log('Testing async/await pattern...', 'debug');
+                const asyncStartTime = performance.now();
+                
+                if (concurrency === 1) {
+                    // Sequential
+                    for (let i = 0; i < iterations; i++) {
+                        await performOperation(`ASYNC_${i}`);
+                    }
+                } else {
+                    // Concurrent batches
+                    const batches = Math.ceil(iterations / concurrency);
+                    for (let batch = 0; batch < batches; batch++) {
+                        const batchPromises = [];
+                        const batchStart = batch * concurrency;
+                        const batchEnd = Math.min(batchStart + concurrency, iterations);
+                        
+                        for (let i = batchStart; i < batchEnd; i++) {
+                            batchPromises.push(performOperation(`ASYNC_BATCH_${i}`));
+                        }
+                        
+                        await Promise.all(batchPromises);
+                    }
+                }
+                
+                const asyncEndTime = performance.now();
+                const asyncDuration = asyncEndTime - asyncStartTime;
+                
+                // Test raw Promise pattern
+                log('Testing raw Promise pattern...', 'debug');
+                const promiseStartTime = performance.now();
+                
+                if (concurrency === 1) {
+                    // Sequential with then/catch
+                    let promise = Promise.resolve();
+                    for (let i = 0; i < iterations; i++) {
+                        promise = promise.then(() => performOperation(`PROMISE_${i}`));
+                    }
+                    await promise;
+                } else {
+                    // Concurrent with Promise.all
+                    const allPromises = [];
+                    for (let i = 0; i < iterations; i++) {
+                        allPromises.push(performOperation(`PROMISE_CONC_${i}`));
+                    }
+                    await Promise.all(allPromises);
+                }
+                
+                const promiseEndTime = performance.now();
+                const promiseDuration = promiseEndTime - promiseStartTime;
+                
+                // Calculate metrics
+                const asyncThroughput = (iterations / asyncDuration) * 1000;
+                const promiseThroughput = (iterations / promiseDuration) * 1000;
+                const performanceDiff = ((asyncDuration - promiseDuration) / promiseDuration * 100);
+                
+                // Update metrics display
+                const metricsEl = document.getElementById('comparison-metrics');
+                metricsEl.innerHTML = `
+                    <div class="metric">
+                        <div class="metric-label">Async/Await Time</div>
+                        <div class="metric-value">${asyncDuration.toFixed(0)}<span class="metric-unit">ms</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Promise Time</div>
+                        <div class="metric-value">${promiseDuration.toFixed(0)}<span class="metric-unit">ms</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Async Throughput</div>
+                        <div class="metric-value">${asyncThroughput.toFixed(1)}<span class="metric-unit">ops/sec</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Promise Throughput</div>
+                        <div class="metric-value">${promiseThroughput.toFixed(1)}<span class="metric-unit">ops/sec</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Performance Diff</div>
+                        <div class="metric-value">${performanceDiff > 0 ? '+' : ''}${performanceDiff.toFixed(1)}<span class="metric-unit">%</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Winner</div>
+                        <div class="metric-value">${asyncDuration < promiseDuration ? 'Async/Await' : 'Promise'}</div>
+                    </div>
+                `;
+                
+                log(`Comparison completed: Async/Await ${asyncDuration.toFixed(0)}ms vs Promise ${promiseDuration.toFixed(0)}ms`, 'success');
+                
+            } catch (error) {
+                log(`Comparison test failed: ${error.message}`, 'error');
+            } finally {
+                testRunning = false;
+                document.getElementById('run-comparison').disabled = false;
+            }
+        }
+        
+        // Error Handling Test
+        async function runErrorHandlingTest() {
+            if (!wasmBuilder || testRunning) return;
+            
+            testRunning = true;
+            testAborted = false;
+            currentTest = 'error';
+            
+            const errorRate = parseFloat(document.getElementById('error-rate').value);
+            const recoveryStrategy = document.getElementById('recovery-strategy').value;
+            const opsCount = parseInt(document.getElementById('error-ops-count').value);
+            
+            log(`Starting error handling test: ${opsCount} ops, ${(errorRate * 100)}% error rate, ${recoveryStrategy} strategy`, 'info');
+            
+            // Update UI
+            document.getElementById('run-error-test').disabled = true;
+            document.getElementById('stop-error-test').disabled = false;
+            document.getElementById('error-results').style.display = 'block';
+            
+            const startTime = performance.now();
+            let successful = 0;
+            let failed = 0;
+            let retries = 0;
+            let recovered = 0;
+            
+            try {
+                for (let i = 0; i < opsCount && !testAborted; i++) {
+                    const shouldFail = Math.random() < errorRate;
+                    let result = await performOperation(`ERROR_${i + 1}`, shouldFail);
+                    
+                    if (!result.success) {
+                        failed++;
+                        log(`Operation ${i + 1} failed: ${result.error}`, 'debug');
+                        
+                        if (recoveryStrategy === 'retry') {
+                            // Retry up to 3 times
+                            for (let retry = 1; retry <= 3 && !result.success; retry++) {
+                                retries++;
+                                log(`Retrying operation ${i + 1} (attempt ${retry + 1})`, 'debug');
+                                result = await performOperation(`ERROR_${i + 1}_RETRY_${retry}`, false);
+                                
+                                if (result.success) {
+                                    recovered++;
+                                    log(`Operation ${i + 1} recovered on retry ${retry}`, 'success');
+                                }
+                            }
+                        } else if (recoveryStrategy === 'abort') {
+                            log(`Aborting test due to error in operation ${i + 1}`, 'error');
+                            break;
+                        }
+                        // 'skip' strategy just continues to next operation
+                    }
+                    
+                    if (result.success) {
+                        successful++;
+                    }
+                    
+                    // Update progress
+                    const progress = ((i + 1) / opsCount) * 100;
+                    document.getElementById('error-progress').style.width = `${progress}%`;
+                }
+                
+                const endTime = performance.now();
+                const totalTime = endTime - startTime;
+                const totalAttempts = successful + failed + retries;
+                
+                // Update metrics
+                const metricsEl = document.getElementById('error-metrics');
+                metricsEl.innerHTML = `
+                    <div class="metric">
+                        <div class="metric-label">Total Time</div>
+                        <div class="metric-value">${totalTime.toFixed(0)}<span class="metric-unit">ms</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Successful</div>
+                        <div class="metric-value">${successful}<span class="metric-unit">ops</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Failed</div>
+                        <div class="metric-value">${failed}<span class="metric-unit">ops</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Retries</div>
+                        <div class="metric-value">${retries}<span class="metric-unit">attempts</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Recovered</div>
+                        <div class="metric-value">${recovered}<span class="metric-unit">ops</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Success Rate</div>
+                        <div class="metric-value">${((successful / (successful + failed)) * 100).toFixed(1)}<span class="metric-unit">%</span></div>
+                    </div>
+                `;
+                
+                log(`Error handling test completed: ${successful} successful, ${failed} failed, ${recovered} recovered`, 'success');
+                
+            } catch (error) {
+                log(`Error handling test failed: ${error.message}`, 'error');
+            } finally {
+                testRunning = false;
+                currentTest = null;
+                document.getElementById('run-error-test').disabled = false;
+                document.getElementById('stop-error-test').disabled = true;
+            }
+        }
+        
+        function stopErrorHandlingTest() {
+            testAborted = true;
+            log('Error handling test stopped by user', 'warning');
+        }
+        
+        // Make functions globally available
+        window.runConcurrentTest = runConcurrentTest;
+        window.stopConcurrentTest = stopConcurrentTest;
+        window.runPromiseChainTest = runPromiseChainTest;
+        window.stopPromiseChainTest = stopPromiseChainTest;
+        window.runAsyncComparisonTest = runAsyncComparisonTest;
+        window.runErrorHandlingTest = runErrorHandlingTest;
+        window.stopErrorHandlingTest = stopErrorHandlingTest;
+        window.clearLog = clearLog;
+        
+        // Initialize WASM module
+        initializeWasm();
+    </script>
+</body>
+</html>

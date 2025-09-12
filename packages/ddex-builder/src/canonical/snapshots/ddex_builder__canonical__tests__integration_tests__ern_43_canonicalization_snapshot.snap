@@ -4,10 +4,26 @@ expression: result
 ---
 <?xml version="1.0" encoding="UTF-8"?>
 <ern:NewReleaseMessage xmlns:avs="http://ddex.net/xml/avs" xmlns:ern="http://ddex.net/xml/ern/43" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <MessageSender/>
-  <MessageRecipient/>
-  <MessageId/>
-  <MessageType/>
-  <MessageCreatedDateTime/>
-  <MessageControlType/>
+  <MessageHeader>
+    <MessageId>MSG_001</MessageId>
+    <MessageType>NewReleaseMessage</MessageType>
+    <MessageCreatedDateTime>2023-12-01T10:00:00Z</MessageCreatedDateTime>
+    <MessageSender>TestSender</MessageSender>
+    <MessageRecipient>TestRecipient</MessageRecipient>
+    <MessageControlType>LiveMessage</MessageControlType>
+  </MessageHeader>
+  <ReleaseList>
+    <Release>
+      <ReleaseReference>REL_001</ReleaseReference>
+      <ReleaseId>
+        <GRid>A1234567890123456789</GRid>
+      </ReleaseId>
+      <ReferenceTitle>
+        <TitleText>Sample Release Title</TitleText>
+      </ReferenceTitle>
+      <ReleaseDetailsByTerritory>
+        <TerritoryCode>Worldwide</TerritoryCode>
+      </ReleaseDetailsByTerritory>
+    </Release>
+  </ReleaseList>
 </ern:NewReleaseMessage>

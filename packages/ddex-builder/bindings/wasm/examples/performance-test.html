@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDEX Builder WASM - Performance Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+        
+        .test-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+        
+        .test-section h2 {
+            color: #34495e;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .test-controls input,
+        .test-controls select {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .test-controls label {
+            font-weight: 600;
+            color: #34495e;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .results {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .results h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .metric {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+        
+        .metric-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .metric-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .metric-unit {
+            font-size: 14px;
+            color: #6c757d;
+            margin-left: 4px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+        }
+        
+        .log-entry.info { color: #495057; }
+        .log-entry.success { color: #28a745; }
+        .log-entry.warning { color: #ffc107; }
+        .log-entry.error { color: #dc3545; }
+        
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .memory-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .memory-info h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .memory-stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .memory-stat {
+            font-size: 14px;
+            color: #856404;
+        }
+        
+        .memory-stat strong {
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 DDEX Builder WASM Performance Test</h1>
+        
+        <div id="loading" class="test-section">
+            <h2>Loading WASM Module...</h2>
+            <div class="progress-bar">
+                <div class="progress-fill" id="load-progress"></div>
+            </div>
+        </div>
+        
+        <div id="test-container" style="display: none;">
+            <!-- Single Generation Test -->
+            <div class="test-section">
+                <h2>📄 Single Generation Test</h2>
+                <p>Test the performance of generating a single DDEX release.</p>
+                
+                <div class="test-controls">
+                    <label>Release Type:</label>
+                    <select id="single-type">
+                        <option value="single">Single Track</option>
+                        <option value="album">Album (12 tracks)</option>
+                        <option value="compilation">Compilation (20 tracks)</option>
+                    </select>
+                    
+                    <label>Complexity:</label>
+                    <select id="single-complexity">
+                        <option value="simple">Simple</option>
+                        <option value="standard">Standard</option>
+                        <option value="complex">Complex</option>
+                    </select>
+                    
+                    <button id="run-single-test">🎯 Run Single Test</button>
+                </div>
+                
+                <div id="single-results" class="results" style="display: none;"></div>
+            </div>
+            
+            <!-- Batch Generation Test -->
+            <div class="test-section">
+                <h2>🔄 Batch Generation Test</h2>
+                <p>Test the performance of generating multiple releases in sequence.</p>
+                
+                <div class="test-controls">
+                    <label>Number of Releases:</label>
+                    <input type="number" id="batch-count" value="100" min="1" max="1000">
+                    
+                    <label>Release Type:</label>
+                    <select id="batch-type">
+                        <option value="single">Singles</option>
+                        <option value="mixed">Mixed Types</option>
+                        <option value="album">Albums</option>
+                    </select>
+                    
+                    <button id="run-batch-test">🚀 Run Batch Test</button>
+                    <button id="stop-batch-test" disabled>⏹️ Stop Test</button>
+                </div>
+                
+                <div id="batch-progress" class="progress-bar" style="display: none;">
+                    <div class="progress-fill" id="batch-progress-fill"></div>
+                </div>
+                
+                <div id="batch-results" class="results" style="display: none;"></div>
+            </div>
+            
+            <!-- Memory Usage Test -->
+            <div class="test-section">
+                <h2>💾 Memory Usage Test</h2>
+                <p>Monitor memory usage during continuous DDEX generation.</p>
+                
+                <div class="test-controls">
+                    <label>Duration (seconds):</label>
+                    <input type="number" id="memory-duration" value="30" min="5" max="300">
+                    
+                    <label>Generation Interval (ms):</label>
+                    <input type="number" id="memory-interval" value="100" min="10" max="1000">
+                    
+                    <button id="run-memory-test">🧠 Run Memory Test</button>
+                    <button id="stop-memory-test" disabled>⏹️ Stop Test</button>
+                </div>
+                
+                <div id="memory-results" class="results" style="display: none;"></div>
+                
+                <div class="memory-info" id="memory-info" style="display: none;">
+                    <h4>📊 Current Memory Usage</h4>
+                    <div class="memory-stats">
+                        <div class="memory-stat">
+                            Used: <strong id="memory-used">--</strong> MB
+                        </div>
+                        <div class="memory-stat">
+                            Total: <strong id="memory-total">--</strong> MB
+                        </div>
+                        <div class="memory-stat">
+                            Peak: <strong id="memory-peak">--</strong> MB
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Comparison Test -->
+            <div class="test-section">
+                <h2>⚖️ Version Comparison</h2>
+                <p>Compare performance across different DDEX versions.</p>
+                
+                <div class="test-controls">
+                    <label>Test Iterations:</label>
+                    <input type="number" id="comparison-iterations" value="50" min="1" max="500">
+                    
+                    <button id="run-comparison-test">🔍 Run Comparison</button>
+                </div>
+                
+                <div id="comparison-results" class="results" style="display: none;"></div>
+            </div>
+        </div>
+        
+        <!-- Performance Log -->
+        <div class="test-section">
+            <h2>📋 Performance Log</h2>
+            <div id="performance-log" class="log">
+                <div class="log-entry info">Initializing performance test suite...</div>
+            </div>
+            <button onclick="clearLog()">🗑️ Clear Log</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import init, { DdexBuilder } from './pkg/ddex_builder_wasm.js';
+        
+        let wasmBuilder = null;
+        let testRunning = false;
+        let memoryTestInterval = null;
+        let batchTestRunning = false;
+        
+        // Logging utilities
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('performance-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${timestamp}] ${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('performance-log').innerHTML = 
+                '<div class="log-entry info">Performance log cleared.</div>';
+        }
+        
+        // Memory monitoring
+        function getMemoryUsage() {
+            if (performance.memory) {
+                return {
+                    used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024 * 100) / 100,
+                    total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024 * 100) / 100,
+                    limit: Math.round(performance.memory.jsHeapSizeLimit / 1024 / 1024 * 100) / 100
+                };
+            }
+            return null;
+        }
+        
+        function updateMemoryDisplay() {
+            const memory = getMemoryUsage();
+            if (memory) {
+                document.getElementById('memory-used').textContent = memory.used;
+                document.getElementById('memory-total').textContent = memory.total;
+                document.getElementById('memory-info').style.display = 'block';
+            }
+        }
+        
+        // Test data generators
+        function generateReleaseData(type, complexity) {
+            const base = {
+                release_id: `TEST${Date.now()}`,
+                title: `Test Release ${Math.random().toString(36).substr(2, 9)}`,
+                artist: `Test Artist ${Math.random().toString(36).substr(2, 6)}`,
+                release_type: type === 'single' ? 'Single' : type === 'album' ? 'Album' : 'Compilation',
+                release_date: '2024-01-01'
+            };
+            
+            if (complexity === 'standard') {
+                base.label = 'Test Records';
+                base.genre = 'Electronic';
+                base.upc = '123456789012';
+            } else if (complexity === 'complex') {
+                base.label = 'Complex Test Records Ltd.';
+                base.genre = 'Electronic, Dance, House, Techno';
+                base.upc = '123456789012';
+                base.metadata = {
+                    copyright: '2024 Test Artist',
+                    producer: 'Test Producer',
+                    total_tracks: type === 'single' ? 1 : type === 'album' ? 12 : 20,
+                    total_runtime: '45:32'
+                };
+            }
+            
+            return base;
+        }
+        
+        // Performance measurement utilities
+        function measurePerformance(name, fn) {
+            const startTime = performance.now();
+            const startMemory = getMemoryUsage();
+            
+            const result = fn();
+            
+            const endTime = performance.now();
+            const endMemory = getMemoryUsage();
+            const duration = endTime - startTime;
+            
+            const metrics = {
+                name,
+                duration: Math.round(duration * 100) / 100,
+                startMemory,
+                endMemory,
+                memoryDelta: endMemory && startMemory ? 
+                    Math.round((endMemory.used - startMemory.used) * 100) / 100 : null,
+                result
+            };
+            
+            log(`${name}: ${metrics.duration}ms${metrics.memoryDelta ? 
+                ` (${metrics.memoryDelta > 0 ? '+' : ''}${metrics.memoryDelta}MB)` : ''}`, 
+                'success');
+            
+            return metrics;
+        }
+        
+        // Test runners
+        async function runSingleTest() {
+            if (testRunning) return;
+            testRunning = true;
+            
+            const type = document.getElementById('single-type').value;
+            const complexity = document.getElementById('single-complexity').value;
+            
+            log(`Starting single generation test: ${type} (${complexity})`, 'info');
+            
+            try {
+                const releaseData = generateReleaseData(type, complexity);
+                
+                const metrics = measurePerformance(
+                    `Generate ${type} release (${complexity})`,
+                    () => wasmBuilder.build_release_simple(JSON.stringify(releaseData))
+                );
+                
+                // Display results
+                const resultsEl = document.getElementById('single-results');
+                resultsEl.innerHTML = `
+                    <h3>🎯 Single Test Results</h3>
+                    <div class="metrics-grid">
+                        <div class="metric">
+                            <div class="metric-label">Generation Time</div>
+                            <div class="metric-value">${metrics.duration}<span class="metric-unit">ms</span></div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">XML Size</div>
+                            <div class="metric-value">${Math.round(metrics.result.length / 1024 * 100) / 100}<span class="metric-unit">KB</span></div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Throughput</div>
+                            <div class="metric-value">${Math.round(1000 / metrics.duration)}<span class="metric-unit">ops/sec</span></div>
+                        </div>
+                        ${metrics.memoryDelta ? `
+                        <div class="metric">
+                            <div class="metric-label">Memory Delta</div>
+                            <div class="metric-value">${metrics.memoryDelta}<span class="metric-unit">MB</span></div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <details>
+                        <summary>Generated XML Preview (first 500 chars)</summary>
+                        <pre style="margin-top: 10px; font-size: 10px;">${metrics.result.substring(0, 500)}...</pre>
+                    </details>
+                `;
+                resultsEl.style.display = 'block';
+                
+                log('Single test completed successfully', 'success');
+                
+            } catch (error) {
+                log(`Single test failed: ${error.message}`, 'error');
+            } finally {
+                testRunning = false;
+            }
+        }
+        
+        async function runBatchTest() {
+            if (batchTestRunning) return;
+            batchTestRunning = true;
+            
+            const count = parseInt(document.getElementById('batch-count').value);
+            const type = document.getElementById('batch-type').value;
+            
+            log(`Starting batch test: ${count} releases of type ${type}`, 'info');
+            
+            document.getElementById('run-batch-test').disabled = true;
+            document.getElementById('stop-batch-test').disabled = false;
+            document.getElementById('batch-progress').style.display = 'block';
+            
+            const results = [];
+            const startTime = performance.now();
+            const startMemory = getMemoryUsage();
+            
+            try {
+                for (let i = 0; i < count && batchTestRunning; i++) {
+                    const releaseType = type === 'mixed' ? 
+                        ['single', 'album', 'compilation'][i % 3] : type;
+                    
+                    const releaseData = generateReleaseData(releaseType, 'standard');
+                    
+                    const itemStart = performance.now();
+                    const xml = wasmBuilder.build_release_simple(JSON.stringify(releaseData));
+                    const itemEnd = performance.now();
+                    
+                    results.push({
+                        index: i + 1,
+                        type: releaseType,
+                        duration: itemEnd - itemStart,
+                        size: xml.length
+                    });
+                    
+                    // Update progress
+                    const progress = ((i + 1) / count) * 100;
+                    document.getElementById('batch-progress-fill').style.width = `${progress}%`;
+                    
+                    // Log progress every 10%
+                    if ((i + 1) % Math.ceil(count / 10) === 0) {
+                        log(`Batch progress: ${i + 1}/${count} (${Math.round(progress)}%)`, 'info');
+                        updateMemoryDisplay();
+                    }
+                    
+                    // Small delay to prevent blocking
+                    if (i % 50 === 0) {
+                        await new Promise(resolve => setTimeout(resolve, 1));
+                    }
+                }
+                
+                const totalTime = performance.now() - startTime;
+                const endMemory = getMemoryUsage();
+                
+                // Calculate statistics
+                const durations = results.map(r => r.duration);
+                const sizes = results.map(r => r.size);
+                
+                const stats = {
+                    count: results.length,
+                    totalTime: Math.round(totalTime),
+                    avgDuration: Math.round(durations.reduce((a, b) => a + b, 0) / durations.length * 100) / 100,
+                    minDuration: Math.min(...durations),
+                    maxDuration: Math.max(...durations),
+                    throughput: Math.round(results.length / (totalTime / 1000) * 100) / 100,
+                    avgSize: Math.round(sizes.reduce((a, b) => a + b, 0) / sizes.length / 1024 * 100) / 100,
+                    totalSize: Math.round(sizes.reduce((a, b) => a + b, 0) / 1024 / 1024 * 100) / 100,
+                    memoryDelta: endMemory && startMemory ? 
+                        Math.round((endMemory.used - startMemory.used) * 100) / 100 : null
+                };
+                
+                // Display results
+                const resultsEl = document.getElementById('batch-results');
+                resultsEl.innerHTML = `
+                    <h3>🔄 Batch Test Results</h3>
+                    <div class="metrics-grid">
+                        <div class="metric">
+                            <div class="metric-label">Total Time</div>
+                            <div class="metric-value">${stats.totalTime}<span class="metric-unit">ms</span></div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Avg Generation</div>
+                            <div class="metric-value">${stats.avgDuration}<span class="metric-unit">ms</span></div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Throughput</div>
+                            <div class="metric-value">${stats.throughput}<span class="metric-unit">ops/sec</span></div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Total Output</div>
+                            <div class="metric-value">${stats.totalSize}<span class="metric-unit">MB</span></div>
+                        </div>
+                        ${stats.memoryDelta ? `
+                        <div class="metric">
+                            <div class="metric-label">Memory Delta</div>
+                            <div class="metric-value">${stats.memoryDelta}<span class="metric-unit">MB</span></div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <p><strong>Range:</strong> ${Math.round(stats.minDuration * 100) / 100}ms - ${Math.round(stats.maxDuration * 100) / 100}ms</p>
+                `;
+                resultsEl.style.display = 'block';
+                
+                log(`Batch test completed: ${stats.count} releases in ${stats.totalTime}ms (${stats.throughput} ops/sec)`, 'success');
+                
+            } catch (error) {
+                log(`Batch test failed: ${error.message}`, 'error');
+            } finally {
+                batchTestRunning = false;
+                document.getElementById('run-batch-test').disabled = false;
+                document.getElementById('stop-batch-test').disabled = true;
+                document.getElementById('batch-progress').style.display = 'none';
+            }
+        }
+        
+        function stopBatchTest() {
+            batchTestRunning = false;
+            log('Batch test stopped by user', 'warning');
+        }
+        
+        // Initialize WASM and setup event handlers
+        async function initializeWasm() {
+            try {
+                log('Loading WASM module...', 'info');
+                
+                await init();
+                wasmBuilder = new DdexBuilder();
+                
+                log('WASM module loaded successfully', 'success');
+                
+                // Hide loading section and show tests
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('test-container').style.display = 'block';
+                
+                // Update memory display
+                updateMemoryDisplay();
+                
+                // Setup event handlers
+                document.getElementById('run-single-test').onclick = runSingleTest;
+                document.getElementById('run-batch-test').onclick = runBatchTest;
+                document.getElementById('stop-batch-test').onclick = stopBatchTest;
+                
+                log('Performance test suite ready', 'success');
+                
+            } catch (error) {
+                log(`Failed to initialize WASM: ${error.message}`, 'error');
+            }
+        }
+        
+        // Make functions available globally
+        window.clearLog = clearLog;
+        
+        // Initialize when page loads
+        initializeWasm();
+    </script>
+</body>
+</html>

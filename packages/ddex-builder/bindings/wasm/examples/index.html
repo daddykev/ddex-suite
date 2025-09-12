@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDEX Builder WASM - Basic Example</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .status {
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
+        .status.loading {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+        }
+        
+        input[type="text"],
+        input[type="date"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus,
+        input[type="date"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover:not(:disabled) {
+            background-color: #2980b9;
+        }
+        
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        .xml-output {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+        
+        .xml-output pre {
+            margin: 0;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #2c3e50;
+        }
+        
+        .performance-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #ecf0f1;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .example-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .example-buttons button {
+            background-color: #95a5a6;
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        
+        .example-buttons button:hover {
+            background-color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 DDEX Builder WASM Demo</h1>
+        
+        <div id="status" class="status loading">
+            Loading WASM module...
+        </div>
+        
+        <div id="form-container" style="display: none;">
+            <div class="example-buttons">
+                <button onclick="loadExample('single')">Single Track</button>
+                <button onclick="loadExample('album')">Full Album</button>
+                <button onclick="loadExample('complex')">Complex Release</button>
+                <button onclick="clearForm()">Clear Form</button>
+            </div>
+            
+            <form id="ddex-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="release-id">Release ID *</label>
+                        <input type="text" id="release-id" name="release_id" required 
+                               placeholder="e.g., REL2024001">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="release-type">Release Type</label>
+                        <select id="release-type" name="release_type">
+                            <option value="Album">Album</option>
+                            <option value="Single">Single</option>
+                            <option value="EP">EP</option>
+                            <option value="Compilation">Compilation</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="title">Title *</label>
+                        <input type="text" id="title" name="title" required 
+                               placeholder="e.g., My Amazing Album">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="artist">Artist *</label>
+                        <input type="text" id="artist" name="artist" required 
+                               placeholder="e.g., John Doe">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="label">Record Label</label>
+                        <input type="text" id="label" name="label" 
+                               placeholder="e.g., Awesome Records">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="release-date">Release Date</label>
+                        <input type="date" id="release-date" name="release_date">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="genre">Genre</label>
+                    <input type="text" id="genre" name="genre" 
+                           placeholder="e.g., Pop, Rock, Jazz">
+                </div>
+                
+                <div class="form-group">
+                    <label for="upc">UPC/EAN (Optional)</label>
+                    <input type="text" id="upc" name="upc" 
+                           placeholder="e.g., 123456789012">
+                </div>
+                
+                <div class="form-group">
+                    <label for="metadata">Additional Metadata (JSON)</label>
+                    <textarea id="metadata" name="metadata" rows="3" 
+                              placeholder='{"copyright": "2024 Artist Name", "producer": "Producer Name"}'></textarea>
+                </div>
+                
+                <button type="submit" id="generate-btn">
+                    🚀 Generate DDEX XML
+                </button>
+            </form>
+            
+            <div id="xml-output" class="xml-output" style="display: none;">
+                <h3>Generated DDEX XML:</h3>
+                <div id="performance-info" class="performance-info">
+                    <span id="generation-time">Generation time: --</span>
+                    <span id="xml-size">XML size: --</span>
+                    <span id="memory-usage">Memory: --</span>
+                </div>
+                <pre id="xml-content"></pre>
+                
+                <div style="margin-top: 15px;">
+                    <button onclick="downloadXml()">📥 Download XML</button>
+                    <button onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+                    <button onclick="validateXml()">✅ Validate XML</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import init, { DdexBuilder, Release } from '../pkg/ddex_builder_wasm.js';
+        
+        let wasmBuilder = null;
+        let generatedXml = '';
+        
+        // Example data sets
+        const examples = {
+            single: {
+                release_id: 'REL2024001',
+                release_type: 'Single',
+                title: 'Summer Nights',
+                artist: 'Luna Rodriguez',
+                label: 'Midnight Records',
+                release_date: '2024-06-15',
+                genre: 'Pop',
+                upc: '123456789012'
+            },
+            album: {
+                release_id: 'ALB2024001',
+                release_type: 'Album',
+                title: 'Digital Dreams',
+                artist: 'The Synthetic Collective',
+                label: 'Future Sound Records',
+                release_date: '2024-09-01',
+                genre: 'Electronic, Synthwave',
+                upc: '987654321098',
+                metadata: '{"copyright": "2024 The Synthetic Collective", "producer": "Alex Dreamweaver", "total_tracks": 12}'
+            },
+            complex: {
+                release_id: 'COMP2024001',
+                release_type: 'Compilation',
+                title: 'Best of Indie 2024',
+                artist: 'Various Artists',
+                label: 'Indie Collective Records',
+                release_date: '2024-12-01',
+                genre: 'Indie, Alternative Rock',
+                upc: '456789012345',
+                metadata: '{"copyright": "2024 Indie Collective", "compilation": true, "curated_by": "Sarah Mitchell", "total_tracks": 20, "total_runtime": "74:32"}'
+            }
+        };
+        
+        async function initializeWasm() {
+            const statusEl = document.getElementById('status');
+            
+            try {
+                statusEl.textContent = 'Loading WASM module...';
+                statusEl.className = 'status loading';
+                
+                await init();
+                wasmBuilder = new DdexBuilder();
+                
+                statusEl.textContent = '✅ DDEX Builder WASM loaded successfully!';
+                statusEl.className = 'status success';
+                
+                document.getElementById('form-container').style.display = 'block';
+                
+                // Set default date to today
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('release-date').value = today;
+                
+                console.log('DDEX Builder WASM initialized successfully');
+                
+            } catch (error) {
+                console.error('Failed to initialize WASM:', error);
+                statusEl.textContent = `❌ Failed to load WASM module: ${error.message}`;
+                statusEl.className = 'status error';
+            }
+        }
+        
+        function loadExample(type) {
+            const example = examples[type];
+            if (!example) return;
+            
+            Object.entries(example).forEach(([key, value]) => {
+                const element = document.getElementById(key.replace('_', '-'));
+                if (element) {
+                    if (typeof value === 'object') {
+                        element.value = JSON.stringify(value, null, 2);
+                    } else {
+                        element.value = value;
+                    }
+                }
+            });
+        }
+        
+        function clearForm() {
+            document.getElementById('ddex-form').reset();
+            document.getElementById('xml-output').style.display = 'none';
+        }
+        
+        function getFormData() {
+            const formData = new FormData(document.getElementById('ddex-form'));
+            const data = {};
+            
+            for (let [key, value] of formData.entries()) {
+                if (value.trim()) {
+                    data[key] = value;
+                }
+            }
+            
+            // Parse metadata JSON if provided
+            if (data.metadata) {
+                try {
+                    data.metadata = JSON.parse(data.metadata);
+                } catch (e) {
+                    console.warn('Invalid JSON in metadata field:', e);
+                    delete data.metadata;
+                }
+            }
+            
+            return data;
+        }
+        
+        function formatXml(xml) {
+            // Simple XML formatting for display
+            const formatted = xml.replace(/></g, '>\n<');
+            const lines = formatted.split('\n');
+            let indentLevel = 0;
+            const indentSize = 2;
+            
+            return lines.map(line => {
+                if (line.match(/<\/\w/)) {
+                    indentLevel--;
+                }
+                
+                const indentedLine = ' '.repeat(indentLevel * indentSize) + line;
+                
+                if (line.match(/<\w[^>]*[^/]>$/)) {
+                    indentLevel++;
+                }
+                
+                return indentedLine;
+            }).join('\n');
+        }
+        
+        function updatePerformanceInfo(startTime, xmlSize) {
+            const endTime = performance.now();
+            const generationTime = (endTime - startTime).toFixed(2);
+            
+            document.getElementById('generation-time').textContent = `Generation time: ${generationTime}ms`;
+            document.getElementById('xml-size').textContent = `XML size: ${(xmlSize / 1024).toFixed(2)}KB`;
+            
+            if (performance.memory) {
+                const memoryMB = (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(2);
+                document.getElementById('memory-usage').textContent = `Memory: ${memoryMB}MB`;
+            } else {
+                document.getElementById('memory-usage').textContent = 'Memory: N/A';
+            }
+        }
+        
+        async function generateDdexXml(event) {
+            event.preventDefault();
+            
+            if (!wasmBuilder) {
+                alert('WASM module not loaded yet');
+                return;
+            }
+            
+            const generateBtn = document.getElementById('generate-btn');
+            const originalText = generateBtn.textContent;
+            
+            try {
+                generateBtn.textContent = 'Generating...';
+                generateBtn.disabled = true;
+                
+                const startTime = performance.now();
+                const formData = getFormData();
+                
+                // Create Release object (simplified for demo)
+                const release = new Release();
+                release.release_id = formData.release_id || 'UNKNOWN';
+                release.title = formData.title || 'Untitled';
+                release.artist = formData.artist || 'Unknown Artist';
+                
+                // Build the XML
+                generatedXml = wasmBuilder.build_release(release);
+                
+                // Format and display
+                const formattedXml = formatXml(generatedXml);
+                document.getElementById('xml-content').textContent = formattedXml;
+                document.getElementById('xml-output').style.display = 'block';
+                
+                // Update performance info
+                updatePerformanceInfo(startTime, generatedXml.length);
+                
+                // Scroll to output
+                document.getElementById('xml-output').scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                
+            } catch (error) {
+                console.error('Generation failed:', error);
+                alert(`Failed to generate DDEX XML: ${error.message}`);
+            } finally {
+                generateBtn.textContent = originalText;
+                generateBtn.disabled = false;
+            }
+        }
+        
+        function downloadXml() {
+            if (!generatedXml) return;
+            
+            const blob = new Blob([generatedXml], { type: 'application/xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            
+            a.href = url;
+            a.download = `ddex-${Date.now()}.xml`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        async function copyToClipboard() {
+            if (!generatedXml) return;
+            
+            try {
+                await navigator.clipboard.writeText(generatedXml);
+                alert('XML copied to clipboard!');
+            } catch (error) {
+                console.error('Failed to copy:', error);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = generatedXml;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('XML copied to clipboard!');
+            }
+        }
+        
+        function validateXml() {
+            if (!generatedXml || !wasmBuilder) return;
+            
+            try {
+                const isValid = wasmBuilder.validate_xml(generatedXml);
+                if (isValid) {
+                    alert('✅ XML is valid according to DDEX schema!');
+                } else {
+                    alert('❌ XML validation failed. Check console for details.');
+                }
+            } catch (error) {
+                console.error('Validation error:', error);
+                alert(`Validation error: ${error.message}`);
+            }
+        }
+        
+        // Make functions available globally
+        window.loadExample = loadExample;
+        window.clearForm = clearForm;
+        window.downloadXml = downloadXml;
+        window.copyToClipboard = copyToClipboard;
+        window.validateXml = validateXml;
+        
+        // Event listeners
+        document.getElementById('ddex-form').addEventListener('submit', generateDdexXml);
+        
+        // Initialize when page loads
+        initializeWasm();
+    </script>
+</body>
+</html>

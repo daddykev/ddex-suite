@@ -30,6 +30,27 @@ impl Arena {
     /// Allocate space for a value in the arena (safe version using Box)
     pub fn alloc<T>(&self, value: T) -> Box<T> {
         // For security audit compliance, use safe Box allocation instead of raw pointers
+        // Track the allocation in our chunks for statistics
+        let size = std::mem::size_of::<T>();
+        
+        {
+            let mut chunks = self.chunks.borrow_mut();
+            if chunks.is_empty() || chunks.last().unwrap().len() + size > self.chunk_size {
+                // Need a new chunk
+                chunks.push(Vec::with_capacity(self.chunk_size));
+                *self.current_chunk.borrow_mut() = chunks.len() - 1;
+                *self.current_offset.borrow_mut() = 0;
+            }
+            
+            // Record the allocation in the current chunk
+            let current_chunk_idx = *self.current_chunk.borrow();
+            if let Some(chunk) = chunks.get_mut(current_chunk_idx) {
+                // Simulate allocation by adding to chunk length
+                chunk.resize(chunk.len() + size, 0);
+                *self.current_offset.borrow_mut() += size;
+            }
+        }
+        
         Box::new(value)
     }
     

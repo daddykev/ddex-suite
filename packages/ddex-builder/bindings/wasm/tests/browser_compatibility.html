@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDEX Builder WASM - Browser Compatibility Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8fafc;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        h1 {
+            color: #1e293b;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #10b981;
+        }
+        
+        .test-section.failed {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+        
+        .test-section.warning {
+            border-left-color: #f59e0b;
+            background: #fffbeb;
+        }
+        
+        .test-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #374151;
+        }
+        
+        .test-status {
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        
+        .status-pass {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-fail {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .status-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-running {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .test-details {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+        
+        .test-results {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'SF Mono', Consolas, monospace;
+            font-size: 0.875rem;
+        }
+        
+        .browser-info {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .browser-info h2 {
+            margin-bottom: 15px;
+            color: #334155;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #475569;
+        }
+        
+        .info-value {
+            color: #64748b;
+            font-family: monospace;
+        }
+        
+        .run-tests-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 20px 0;
+            transition: all 0.2s;
+        }
+        
+        .run-tests-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        
+        .run-tests-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .error-details {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .error-details pre {
+            margin: 0;
+            font-size: 0.75rem;
+            color: #dc2626;
+            white-space: pre-wrap;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #f3f4f6;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #059669);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 DDEX Builder WASM - Browser Compatibility Test</h1>
+        
+        <!-- Browser Information -->
+        <div class="browser-info">
+            <h2>📊 Browser Environment</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">User Agent:</span>
+                    <span class="info-value" id="user-agent">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">WebAssembly Support:</span>
+                    <span class="info-value" id="wasm-support">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">BigInt Support:</span>
+                    <span class="info-value" id="bigint-support">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">SharedArrayBuffer:</span>
+                    <span class="info-value" id="shared-buffer">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Memory API:</span>
+                    <span class="info-value" id="memory-api">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Clipboard API:</span>
+                    <span class="info-value" id="clipboard-api">--</span>
+                </div>
+            </div>
+        </div>
+        
+        <button class="run-tests-btn" id="run-tests" onclick="runCompatibilityTests()">
+            🚀 Run Compatibility Tests
+        </button>
+        
+        <div class="progress-bar" id="progress-container" style="display: none;">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        
+        <!-- Test Results -->
+        <div id="test-results">
+            <!-- Tests will be populated here -->
+        </div>
+    </div>
+
+    <script type="module">
+        let testResults = [];
+        let currentTestIndex = 0;
+        
+        // Detect browser environment
+        function detectBrowserEnvironment() {
+            const info = {
+                userAgent: navigator.userAgent.split(' ')[0] || 'Unknown',
+                wasmSupport: typeof WebAssembly !== 'undefined',
+                bigintSupport: typeof BigInt !== 'undefined',
+                sharedArrayBuffer: typeof SharedArrayBuffer !== 'undefined',
+                memoryAPI: 'memory' in performance,
+                clipboardAPI: 'clipboard' in navigator
+            };
+            
+            document.getElementById('user-agent').textContent = info.userAgent;
+            document.getElementById('wasm-support').textContent = info.wasmSupport ? '✅ Yes' : '❌ No';
+            document.getElementById('bigint-support').textContent = info.bigintSupport ? '✅ Yes' : '❌ No';
+            document.getElementById('shared-buffer').textContent = info.sharedArrayBuffer ? '✅ Yes' : '❌ No';
+            document.getElementById('memory-api').textContent = info.memoryAPI ? '✅ Yes' : '❌ No';
+            document.getElementById('clipboard-api').textContent = info.clipboardAPI ? '✅ Yes' : '❌ No';
+            
+            return info;
+        }
+        
+        // Test definitions
+        const compatibilityTests = [
+            {
+                name: 'WebAssembly Basic Support',
+                description: 'Verify WebAssembly is supported and can be instantiated',
+                test: async () => {
+                    if (typeof WebAssembly === 'undefined') {
+                        throw new Error('WebAssembly is not supported');
+                    }
+                    
+                    // Test basic WebAssembly functionality
+                    const wasmCode = new Uint8Array([
+                        0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
+                        0x01, 0x07, 0x01, 0x60, 0x02, 0x7f, 0x7f, 0x01, 0x7f,
+                        0x03, 0x02, 0x01, 0x00,
+                        0x07, 0x07, 0x01, 0x03, 0x61, 0x64, 0x64, 0x00, 0x00,
+                        0x0a, 0x09, 0x01, 0x07, 0x00, 0x20, 0x00, 0x20, 0x01, 0x6a, 0x0b
+                    ]);
+                    
+                    const module = await WebAssembly.instantiate(wasmCode);
+                    const result = module.instance.exports.add(2, 3);
+                    
+                    if (result !== 5) {
+                        throw new Error(`WebAssembly execution failed: expected 5, got ${result}`);
+                    }
+                    
+                    return 'WebAssembly basic functionality verified';
+                }
+            },
+            
+            {
+                name: 'DDEX Builder WASM Loading',
+                description: 'Test loading the DDEX Builder WASM module',
+                test: async () => {
+                    try {
+                        const init = await import('../pkg/ddex_builder_wasm.js').then(m => m.default);
+                        await init();
+                        return 'DDEX Builder WASM module loaded successfully';
+                    } catch (error) {
+                        throw new Error(`Failed to load WASM module: ${error.message}`);
+                    }
+                }
+            },
+            
+            {
+                name: 'DDEX Builder Instantiation',
+                description: 'Test creating a DdexBuilder instance',
+                test: async () => {
+                    const { DdexBuilder } = await import('../pkg/ddex_builder_wasm.js');
+                    const builder = new DdexBuilder();
+                    
+                    if (!builder) {
+                        throw new Error('Failed to create DdexBuilder instance');
+                    }
+                    
+                    return 'DdexBuilder instance created successfully';
+                }
+            },
+            
+            {
+                name: 'Basic XML Generation',
+                description: 'Test generating a simple DDEX XML document',
+                test: async () => {
+                    const { DdexBuilder } = await import('../pkg/ddex_builder_wasm.js');
+                    const builder = new DdexBuilder();
+                    
+                    const releaseData = {
+                        release_id: 'TEST001',
+                        title: 'Test Release',
+                        artist: 'Test Artist'
+                    };
+                    
+                    const xml = builder.build_release_simple(JSON.stringify(releaseData));
+                    
+                    if (!xml || typeof xml !== 'string' || xml.length < 100) {
+                        throw new Error(`Invalid XML output: ${xml ? `length ${xml.length}` : 'null/undefined'}`);
+                    }
+                    
+                    if (!xml.includes('<NewReleaseMessage')) {
+                        throw new Error('Generated XML does not contain expected DDEX structure');
+                    }
+                    
+                    return `Generated XML document (${Math.round(xml.length / 1024)}KB)`;
+                }
+            },
+            
+            {
+                name: 'Error Handling',
+                description: 'Test WASM error handling with invalid input',
+                test: async () => {
+                    const { DdexBuilder } = await import('../pkg/ddex_builder_wasm.js');
+                    const builder = new DdexBuilder();
+                    
+                    try {
+                        // This should throw an error
+                        builder.build_release_simple('invalid json');
+                        throw new Error('Expected error was not thrown');
+                    } catch (error) {
+                        if (error.message === 'Expected error was not thrown') {
+                            throw error;
+                        }
+                        // Error was correctly thrown
+                        return `Error handling works correctly: ${error.message.substring(0, 50)}...`;
+                    }
+                }
+            },
+            
+            {
+                name: 'Memory Management',
+                description: 'Test memory usage during multiple operations',
+                test: async () => {
+                    const { DdexBuilder } = await import('../pkg/ddex_builder_wasm.js');
+                    
+                    const initialMemory = performance.memory?.usedJSHeapSize || 0;
+                    
+                    // Create multiple builders and generate XML
+                    const builders = [];
+                    for (let i = 0; i < 10; i++) {
+                        const builder = new DdexBuilder();
+                        builders.push(builder);
+                        
+                        const releaseData = {
+                            release_id: `TEST${i}`,
+                            title: `Test Release ${i}`,
+                            artist: `Test Artist ${i}`
+                        };
+                        
+                        builder.build_release_simple(JSON.stringify(releaseData));
+                    }
+                    
+                    const finalMemory = performance.memory?.usedJSHeapSize || 0;
+                    const memoryDelta = Math.round((finalMemory - initialMemory) / 1024);
+                    
+                    if (performance.memory && memoryDelta > 50 * 1024) { // 50MB threshold
+                        throw new Error(`Excessive memory usage: ${memoryDelta}KB`);
+                    }
+                    
+                    return `Memory test passed (${memoryDelta}KB used)`;
+                }
+            },
+            
+            {
+                name: 'Concurrent Operations',
+                description: 'Test multiple concurrent WASM operations',
+                test: async () => {
+                    const { DdexBuilder } = await import('../pkg/ddex_builder_wasm.js');
+                    
+                    const promises = [];
+                    for (let i = 0; i < 5; i++) {
+                        const promise = (async () => {
+                            const builder = new DdexBuilder();
+                            const releaseData = {
+                                release_id: `CONCURRENT${i}`,
+                                title: `Concurrent Release ${i}`,
+                                artist: `Concurrent Artist ${i}`
+                            };
+                            
+                            return builder.build_release_simple(JSON.stringify(releaseData));
+                        })();
+                        
+                        promises.push(promise);
+                    }
+                    
+                    const results = await Promise.all(promises);
+                    
+                    if (results.length !== 5) {
+                        throw new Error(`Expected 5 results, got ${results.length}`);
+                    }
+                    
+                    for (const xml of results) {
+                        if (!xml || !xml.includes('<NewReleaseMessage')) {
+                            throw new Error('Invalid XML in concurrent operation');
+                        }
+                    }
+                    
+                    return `Successfully completed ${results.length} concurrent operations`;
+                }
+            },
+            
+            {
+                name: 'Large Data Handling',
+                description: 'Test handling of larger data structures',
+                test: async () => {
+                    const { DdexBuilder } = await import('../pkg/ddex_builder_wasm.js');
+                    const builder = new DdexBuilder();
+                    
+                    // Create a release with extensive metadata
+                    const releaseData = {
+                        release_id: 'LARGE_TEST_001',
+                        title: 'Large Data Test Release with Very Long Title That Contains Many Words and Characters',
+                        artist: 'Test Artist with Extended Name and Multiple Aliases',
+                        release_type: 'Album',
+                        label: 'Large Test Records with Extended Label Information',
+                        genre: 'Electronic, Dance, House, Techno, Progressive, Ambient, Experimental',
+                        metadata: {
+                            copyright: '2024 Test Artist with Extended Copyright Information',
+                            producer: 'Test Producer with Extended Credits',
+                            total_tracks: 20,
+                            description: 'A'.repeat(1000), // 1KB description
+                            additional_info: {
+                                recording_location: 'Studio with Very Long Name',
+                                mixing_engineer: 'Engineer Name',
+                                mastering_engineer: 'Mastering Engineer Name',
+                                artwork_credits: 'Artist Name for Artwork'
+                            }
+                        }
+                    };
+                    
+                    const startTime = performance.now();
+                    const xml = builder.build_release_simple(JSON.stringify(releaseData));
+                    const endTime = performance.now();
+                    
+                    if (!xml || xml.length < 1000) {
+                        throw new Error(`Generated XML too small: ${xml?.length || 0} bytes`);
+                    }
+                    
+                    const duration = Math.round(endTime - startTime);
+                    return `Large data processed in ${duration}ms (${Math.round(xml.length / 1024)}KB output)`;
+                }
+            }
+        ];
+        
+        // Run a single test
+        async function runSingleTest(test, index) {
+            const testEl = createTestElement(test, index);
+            
+            try {
+                const result = await test.test();
+                updateTestStatus(testEl, 'pass', result);
+                return { passed: true, result };
+            } catch (error) {
+                updateTestStatus(testEl, 'fail', error.message);
+                return { passed: false, error: error.message };
+            }
+        }
+        
+        // Create test element
+        function createTestElement(test, index) {
+            const testEl = document.createElement('div');
+            testEl.className = 'test-section';
+            testEl.id = `test-${index}`;
+            
+            testEl.innerHTML = `
+                <div class="test-title">${test.name}</div>
+                <div class="test-status status-running">🔄 Running...</div>
+                <div class="test-details">${test.description}</div>
+                <div class="test-results" style="display: none;"></div>
+            `;
+            
+            document.getElementById('test-results').appendChild(testEl);
+            return testEl;
+        }
+        
+        // Update test status
+        function updateTestStatus(testEl, status, message) {
+            const statusEl = testEl.querySelector('.test-status');
+            const resultsEl = testEl.querySelector('.test-results');
+            
+            if (status === 'pass') {
+                testEl.className = 'test-section';
+                statusEl.className = 'test-status status-pass';
+                statusEl.textContent = '✅ Passed';
+                resultsEl.textContent = message;
+                resultsEl.style.display = 'block';
+            } else if (status === 'fail') {
+                testEl.className = 'test-section failed';
+                statusEl.className = 'test-status status-fail';
+                statusEl.textContent = '❌ Failed';
+                
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-details';
+                errorDiv.innerHTML = `<pre>${message}</pre>`;
+                resultsEl.appendChild(errorDiv);
+                resultsEl.style.display = 'block';
+            }
+        }
+        
+        // Update progress
+        function updateProgress(current, total) {
+            const progress = (current / total) * 100;
+            document.getElementById('progress-fill').style.width = `${progress}%`;
+        }
+        
+        // Run all compatibility tests
+        async function runCompatibilityTests() {
+            const runButton = document.getElementById('run-tests');
+            const progressContainer = document.getElementById('progress-container');
+            const testResults = document.getElementById('test-results');
+            
+            runButton.disabled = true;
+            runButton.textContent = '🔄 Running Tests...';
+            progressContainer.style.display = 'block';
+            testResults.innerHTML = '';
+            
+            let passedTests = 0;
+            let failedTests = 0;
+            
+            try {
+                for (let i = 0; i < compatibilityTests.length; i++) {
+                    const test = compatibilityTests[i];
+                    updateProgress(i, compatibilityTests.length);
+                    
+                    const result = await runSingleTest(test, i);
+                    
+                    if (result.passed) {
+                        passedTests++;
+                    } else {
+                        failedTests++;
+                    }
+                    
+                    // Small delay between tests
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                updateProgress(compatibilityTests.length, compatibilityTests.length);
+                
+                // Show summary
+                const summaryEl = document.createElement('div');
+                summaryEl.className = failedTests === 0 ? 'test-section' : 'test-section warning';
+                summaryEl.innerHTML = `
+                    <div class="test-title">📊 Test Summary</div>
+                    <div class="test-status ${failedTests === 0 ? 'status-pass' : 'status-warning'}">
+                        ${failedTests === 0 ? '✅' : '⚠️'} ${passedTests} passed, ${failedTests} failed
+                    </div>
+                    <div class="test-details">
+                        Browser compatibility: ${failedTests === 0 ? 'Fully Compatible' : 'Partial Compatibility'}
+                    </div>
+                `;
+                testResults.insertBefore(summaryEl, testResults.firstChild);
+                
+            } catch (error) {
+                console.error('Test suite error:', error);
+                
+                const errorEl = document.createElement('div');
+                errorEl.className = 'test-section failed';
+                errorEl.innerHTML = `
+                    <div class="test-title">💥 Test Suite Error</div>
+                    <div class="test-status status-fail">❌ Critical Error</div>
+                    <div class="error-details"><pre>${error.message}</pre></div>
+                `;
+                testResults.appendChild(errorEl);
+                
+            } finally {
+                runButton.disabled = false;
+                runButton.textContent = '🔄 Run Tests Again';
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 1000);
+            }
+        }
+        
+        // Make function available globally
+        window.runCompatibilityTests = runCompatibilityTests;
+        
+        // Initialize browser detection on page load
+        detectBrowserEnvironment();
+    </script>
+</body>
+</html>

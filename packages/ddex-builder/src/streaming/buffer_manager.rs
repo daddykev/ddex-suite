@@ -162,6 +162,11 @@ impl<W: IoWrite> BufferManager<W> {
         // Write directly
         self.write_buffer(data)?;
         
+        // Call flush callback for direct writes too
+        if let Some(ref callback) = self.flush_callback {
+            callback(data.len());
+        }
+        
         Ok(())
     }
     

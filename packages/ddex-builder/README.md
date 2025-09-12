@@ -18,6 +18,7 @@ Choose your preferred language and get started immediately:
 |----------|---------|-------------|
 | **JavaScript/TypeScript** | [ddex-builder (npm)](https://www.npmjs.com/package/ddex-builder) | `npm install ddex-builder` |
 | **Python** | [ddex-builder (PyPI)](https://pypi.org/project/ddex-builder/) | `pip install ddex-builder` |
+| **WebAssembly** | [Browser/WASM](./bindings/wasm/) | CDN or local build |
 | **Rust** | [ddex-builder-core (crates.io)](https://crates.io/crates/ddex-builder-core) | `cargo add ddex-builder-core` |
 
 ## Quick Start
@@ -77,6 +78,35 @@ xml = builder.build_from_dict(release_data, version='4.3')
 print(f'Generated deterministic DDEX XML: {len(xml)} bytes')
 ```
 
+### WebAssembly (Browser)
+
+```javascript
+// Load from CDN or local build
+import init, { DdexBuilder } from './pkg/ddex_builder_wasm.js';
+
+async function generateDDEX() {
+  // Initialize WASM module
+  await init();
+  const builder = new DdexBuilder();
+  
+  const releaseData = {
+    release_id: 'RELEASE_2024_001',
+    title: 'Amazing Album',
+    artist: 'Incredible Artist',
+    release_date: '2024-01-01',
+    tracks: [{
+      title: 'Hit Song',
+      duration: 195,
+      isrc: 'US1234567890'
+    }]
+  };
+  
+  const xml = builder.build_release_simple(JSON.stringify(releaseData));
+  console.log('Generated deterministic DDEX XML:', xml.length, 'bytes');
+  return xml;
+}
+```
+
 ### Rust
 
 ```rust
@@ -125,7 +155,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### 🌐 Cross-Platform Compatibility
 - **Node.js 16+** with native addon performance  
 - **Python 3.8+** with comprehensive type hints
-- **Browser support** via optimized WASM (<400KB)
+- **Browser support** via optimized WASM (114KB gzipped)
 - **Rust native** for maximum performance and safety
 
 ### 🔒 Comprehensive Validation
@@ -291,14 +321,16 @@ Performance comparison across environments and languages:
 ### Installation Guides
 
 - **[JavaScript/TypeScript →](./bindings/node/README.md)** - npm package with Node.js and browser support
-- **[Python →](./bindings/python/README.md)** - PyPI package with pandas integration  
+- **[Python →](./bindings/python/README.md)** - PyPI package with pandas integration
+- **[WebAssembly →](./bindings/wasm/README.md)** - Browser-ready WASM bundle with examples
 - **[Rust →](./README-rust.md)** - Crates.io package documentation
 
 ### Example Projects
 
 - [Express.js API](./examples/express-api) - REST API for DDEX generation
 - [Python Analytics](./examples/python-analytics) - Catalog generation from analytics data
-- [React Generator](./examples/react-generator) - Interactive DDEX builder
+- [React WASM App](./bindings/wasm/examples/react-app/) - Interactive browser-based DDEX builder
+- [WASM Performance Tests](./bindings/wasm/tests/) - Browser compatibility and performance benchmarks
 - [Rust CLI](./examples/rust-cli) - Command-line DDEX builder
 
 ## Industry Presets Reference

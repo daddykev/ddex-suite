@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDEX Builder WASM - Memory Stress Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8fafc;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        h1 {
+            color: #1e293b;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-controls {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .test-controls label {
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .test-controls input,
+        .test-controls select {
+            padding: 8px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .test-controls button {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .test-controls button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+        }
+        
+        .test-controls button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .stop-btn {
+            background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+        }
+        
+        .stop-btn:hover {
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3) !important;
+        }
+        
+        .memory-monitor {
+            background: #1f2937;
+            color: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            font-family: 'SF Mono', Consolas, monospace;
+        }
+        
+        .memory-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .memory-stat {
+            background: #374151;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #10b981;
+        }
+        
+        .stat-value.warning {
+            color: #f59e0b;
+        }
+        
+        .stat-value.critical {
+            color: #ef4444;
+        }
+        
+        .memory-chart {
+            height: 150px;
+            background: #374151;
+            border-radius: 6px;
+            margin-top: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .chart-line {
+            position: absolute;
+            bottom: 0;
+            width: 2px;
+            background: #10b981;
+            transition: height 0.1s ease;
+        }
+        
+        .chart-line.warning {
+            background: #f59e0b;
+        }
+        
+        .chart-line.critical {
+            background: #ef4444;
+        }
+        
+        .test-log {
+            background: #111827;
+            color: #f3f4f6;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'SF Mono', Consolas, monospace;
+            font-size: 0.875rem;
+            height: 300px;
+            overflow-y: auto;
+            line-height: 1.5;
+        }
+        
+        .log-entry {
+            margin: 2px 0;
+        }
+        
+        .log-entry.info {
+            color: #93c5fd;
+        }
+        
+        .log-entry.success {
+            color: #34d399;
+        }
+        
+        .log-entry.warning {
+            color: #fbbf24;
+        }
+        
+        .log-entry.error {
+            color: #f87171;
+        }
+        
+        .log-entry.critical {
+            color: #ef4444;
+            font-weight: bold;
+        }
+        
+        .progress-info {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            display: none;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #dc2626, #b91c1c);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        .alert-banner {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            display: none;
+        }
+        
+        .alert-banner.warning {
+            background: #fffbeb;
+            border-color: #fed7aa;
+        }
+        
+        .alert-banner h4 {
+            color: #dc2626;
+            margin: 0 0 10px 0;
+            font-size: 1rem;
+        }
+        
+        .alert-banner.warning h4 {
+            color: #d97706;
+        }
+        
+        .gc-button {
+            background: linear-gradient(135deg, #6366f1, #4f46e5) !important;
+            margin-left: 10px;
+        }
+        
+        .gc-button:hover {
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 DDEX Builder WASM - Memory Stress Test</h1>
+        
+        <div class="alert-banner" id="browser-warning">
+            <h4>⚠️ Browser Limitation</h4>
+            <p>This browser does not support the Performance Memory API. Memory monitoring will be limited.</p>
+        </div>
+        
+        <div class="test-controls">
+            <label>Test Duration (seconds):</label>
+            <input type="number" id="duration" value="60" min="10" max="600">
+            
+            <label>Operations per Second:</label>
+            <input type="number" id="ops-per-sec" value="10" min="1" max="100">
+            
+            <label>Data Size:</label>
+            <select id="data-size">
+                <option value="small">Small (1KB)</option>
+                <option value="medium">Medium (10KB)</option>
+                <option value="large">Large (100KB)</option>
+                <option value="xlarge">Extra Large (1MB)</option>
+            </select>
+            
+            <label>Memory Limit (MB):</label>
+            <input type="number" id="memory-limit" value="100" min="10" max="500">
+            
+            <button id="start-test" onclick="startMemoryTest()">🚀 Start Stress Test</button>
+            <button id="stop-test" onclick="stopMemoryTest()" disabled class="stop-btn">⏹️ Stop Test</button>
+            <button id="gc-test" onclick="forceGarbageCollection()" class="gc-button">🗑️ Force GC</button>
+        </div>
+        
+        <div class="progress-info" id="progress-info">
+            <div>Test Progress: <span id="progress-text">0%</span></div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+        
+        <div class="alert-banner" id="memory-alert">
+            <h4>🚨 Memory Alert</h4>
+            <p id="memory-alert-text">Memory usage is approaching dangerous levels.</p>
+        </div>
+        
+        <div class="memory-monitor">
+            <div class="memory-stats">
+                <div class="memory-stat">
+                    <div class="stat-label">Current Usage</div>
+                    <div class="stat-value" id="current-memory">-- MB</div>
+                </div>
+                <div class="memory-stat">
+                    <div class="stat-label">Peak Usage</div>
+                    <div class="stat-value" id="peak-memory">-- MB</div>
+                </div>
+                <div class="memory-stat">
+                    <div class="stat-label">Operations</div>
+                    <div class="stat-value" id="operation-count">0</div>
+                </div>
+                <div class="memory-stat">
+                    <div class="stat-label">Memory/Op</div>
+                    <div class="stat-value" id="memory-per-op">-- KB</div>
+                </div>
+                <div class="memory-stat">
+                    <div class="stat-label">GC Events</div>
+                    <div class="stat-value" id="gc-count">0</div>
+                </div>
+                <div class="memory-stat">
+                    <div class="stat-label">Test Status</div>
+                    <div class="stat-value" id="test-status">Ready</div>
+                </div>
+            </div>
+            
+            <div class="memory-chart" id="memory-chart">
+                <!-- Memory usage chart bars will be inserted here -->
+            </div>
+        </div>
+        
+        <div class="test-log" id="test-log">
+            <div class="log-entry info">[INFO] Memory stress test initialized. Click 'Start Stress Test' to begin.</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import init, { DdexBuilder } from '../pkg/ddex_builder_wasm.js';
+        
+        let wasmBuilder = null;
+        let testRunning = false;
+        let testInterval = null;
+        let monitorInterval = null;
+        let operationCount = 0;
+        let peakMemoryUsage = 0;
+        let gcCount = 0;
+        let testStartMemory = 0;
+        let chartData = [];
+        let maxChartPoints = 100;
+        
+        // Initialize WASM module
+        async function initializeWasm() {
+            try {
+                log('Initializing WASM module...', 'info');
+                await init();
+                wasmBuilder = new DdexBuilder();
+                log('WASM module initialized successfully', 'success');
+                
+                // Check browser capabilities
+                if (!performance.memory) {
+                    document.getElementById('browser-warning').style.display = 'block';
+                    log('Performance Memory API not available - limited monitoring', 'warning');
+                }
+                
+                updateMemoryDisplay();
+            } catch (error) {
+                log(`Failed to initialize WASM: ${error.message}`, 'error');
+            }
+        }
+        
+        // Logging utility
+        function log(message, level = 'info') {
+            const logEl = document.getElementById('test-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${level}`;
+            entry.textContent = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        // Memory monitoring
+        function getMemoryUsage() {
+            if (performance.memory) {
+                return {
+                    used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024 * 100) / 100,
+                    total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024 * 100) / 100,
+                    limit: Math.round(performance.memory.jsHeapSizeLimit / 1024 / 1024 * 100) / 100
+                };
+            }
+            return null;
+        }
+        
+        function updateMemoryDisplay() {
+            const memory = getMemoryUsage();
+            if (!memory) return;
+            
+            const currentEl = document.getElementById('current-memory');
+            const peakEl = document.getElementById('peak-memory');
+            
+            currentEl.textContent = `${memory.used} MB`;
+            
+            // Update peak memory
+            if (memory.used > peakMemoryUsage) {
+                peakMemoryUsage = memory.used;
+                peakEl.textContent = `${peakMemoryUsage} MB`;
+            }
+            
+            // Color coding based on usage
+            const memoryLimit = parseInt(document.getElementById('memory-limit').value);
+            const usagePercent = (memory.used / memoryLimit) * 100;
+            
+            if (usagePercent > 90) {
+                currentEl.className = 'stat-value critical';
+                showMemoryAlert('critical', `Memory usage critical: ${memory.used}MB / ${memoryLimit}MB (${Math.round(usagePercent)}%)`);
+            } else if (usagePercent > 70) {
+                currentEl.className = 'stat-value warning';
+                showMemoryAlert('warning', `Memory usage high: ${memory.used}MB / ${memoryLimit}MB (${Math.round(usagePercent)}%)`);
+            } else {
+                currentEl.className = 'stat-value';
+                hideMemoryAlert();
+            }
+            
+            // Update memory per operation
+            if (operationCount > 0) {
+                const memoryPerOp = Math.round((memory.used - testStartMemory) / operationCount * 1024);
+                document.getElementById('memory-per-op').textContent = `${memoryPerOp} KB`;
+            }
+            
+            // Update chart
+            updateMemoryChart(memory.used, memoryLimit);
+            
+            // Check for GC events (heuristic based on memory drops)
+            if (chartData.length > 1) {
+                const lastMemory = chartData[chartData.length - 1];
+                if (memory.used < lastMemory * 0.8) {  // 20% drop indicates possible GC
+                    gcCount++;
+                    document.getElementById('gc-count').textContent = gcCount;
+                    log(`Potential garbage collection detected (${lastMemory.toFixed(2)} -> ${memory.used} MB)`, 'info');
+                }
+            }
+        }
+        
+        function updateMemoryChart(currentMemory, memoryLimit) {
+            chartData.push(currentMemory);
+            if (chartData.length > maxChartPoints) {
+                chartData.shift();
+            }
+            
+            const chartEl = document.getElementById('memory-chart');
+            const maxMemory = Math.max(...chartData, memoryLimit);
+            
+            // Clear existing bars
+            chartEl.innerHTML = '';
+            
+            // Create bars for each data point
+            chartData.forEach((memory, index) => {
+                const bar = document.createElement('div');
+                bar.className = 'chart-line';
+                
+                const height = (memory / maxMemory) * 150;
+                bar.style.height = `${height}px`;
+                bar.style.left = `${(index / maxChartPoints) * 100}%`;
+                
+                // Color coding
+                const usagePercent = (memory / memoryLimit) * 100;
+                if (usagePercent > 90) {
+                    bar.classList.add('critical');
+                } else if (usagePercent > 70) {
+                    bar.classList.add('warning');
+                }
+                
+                chartEl.appendChild(bar);
+            });
+        }
+        
+        function showMemoryAlert(level, message) {
+            const alertEl = document.getElementById('memory-alert');
+            const textEl = document.getElementById('memory-alert-text');
+            
+            if (level === 'warning') {
+                alertEl.className = 'alert-banner warning';
+            } else {
+                alertEl.className = 'alert-banner';
+            }
+            
+            textEl.textContent = message;
+            alertEl.style.display = 'block';
+        }
+        
+        function hideMemoryAlert() {
+            document.getElementById('memory-alert').style.display = 'none';
+        }
+        
+        // Generate test data of specified size
+        function generateTestData(size) {
+            const baseData = {
+                release_id: `STRESS_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                title: `Stress Test Release ${operationCount}`,
+                artist: `Stress Test Artist ${operationCount}`,
+                release_type: 'Album',
+                release_date: '2024-01-01'
+            };
+            
+            if (size === 'small') {
+                return baseData;
+            } else if (size === 'medium') {
+                baseData.metadata = {
+                    description: 'A'.repeat(5000),  // ~5KB
+                    credits: 'B'.repeat(5000)
+                };
+            } else if (size === 'large') {
+                baseData.metadata = {
+                    description: 'A'.repeat(50000),  // ~50KB
+                    credits: 'B'.repeat(50000)
+                };
+            } else if (size === 'xlarge') {
+                baseData.metadata = {
+                    description: 'A'.repeat(500000),  // ~500KB
+                    credits: 'B'.repeat(500000)
+                };
+            }
+            
+            return baseData;
+        }
+        
+        // Perform a single stress operation
+        async function performStressOperation() {
+            if (!wasmBuilder || !testRunning) return;
+            
+            try {
+                const dataSize = document.getElementById('data-size').value;
+                const testData = generateTestData(dataSize);
+                
+                const startTime = performance.now();
+                const xml = wasmBuilder.build_release_simple(JSON.stringify(testData));
+                const endTime = performance.now();
+                
+                operationCount++;
+                document.getElementById('operation-count').textContent = operationCount;
+                
+                const duration = endTime - startTime;
+                if (duration > 100) {  // Log slow operations
+                    log(`Slow operation: ${duration.toFixed(2)}ms (${dataSize} data)`, 'warning');
+                }
+                
+                // Check memory limit
+                const memory = getMemoryUsage();
+                const memoryLimit = parseInt(document.getElementById('memory-limit').value);
+                
+                if (memory && memory.used > memoryLimit) {
+                    log(`Memory limit exceeded: ${memory.used}MB > ${memoryLimit}MB`, 'critical');
+                    stopMemoryTest();
+                    return;
+                }
+                
+            } catch (error) {
+                log(`Operation failed: ${error.message}`, 'error');
+                stopMemoryTest();
+            }
+        }
+        
+        // Start memory stress test
+        async function startMemoryTest() {
+            if (!wasmBuilder) {
+                log('WASM module not initialized', 'error');
+                return;
+            }
+            
+            if (testRunning) return;
+            
+            testRunning = true;
+            operationCount = 0;
+            gcCount = 0;
+            peakMemoryUsage = 0;
+            chartData = [];
+            
+            const duration = parseInt(document.getElementById('duration').value);
+            const opsPerSec = parseInt(document.getElementById('ops-per-sec').value);
+            const dataSize = document.getElementById('data-size').value;
+            
+            log(`Starting memory stress test: ${duration}s, ${opsPerSec} ops/sec, ${dataSize} data`, 'info');
+            
+            // Update UI
+            document.getElementById('start-test').disabled = true;
+            document.getElementById('stop-test').disabled = false;
+            document.getElementById('test-status').textContent = 'Running';
+            document.getElementById('progress-info').style.display = 'block';
+            
+            // Record starting memory
+            const startMemory = getMemoryUsage();
+            testStartMemory = startMemory ? startMemory.used : 0;
+            
+            // Start operations
+            const operationInterval = 1000 / opsPerSec;
+            testInterval = setInterval(performStressOperation, operationInterval);
+            
+            // Start memory monitoring
+            monitorInterval = setInterval(updateMemoryDisplay, 250);
+            
+            // Progress tracking
+            const startTime = Date.now();
+            const progressInterval = setInterval(() => {
+                if (!testRunning) {
+                    clearInterval(progressInterval);
+                    return;
+                }
+                
+                const elapsed = (Date.now() - startTime) / 1000;
+                const progress = Math.min((elapsed / duration) * 100, 100);
+                
+                document.getElementById('progress-fill').style.width = `${progress}%`;
+                document.getElementById('progress-text').textContent = `${Math.round(progress)}%`;
+                
+                if (elapsed >= duration) {
+                    log(`Test duration completed: ${duration}s`, 'success');
+                    stopMemoryTest();
+                }
+            }, 100);
+        }
+        
+        // Stop memory stress test
+        function stopMemoryTest() {
+            if (!testRunning) return;
+            
+            testRunning = false;
+            
+            if (testInterval) {
+                clearInterval(testInterval);
+                testInterval = null;
+            }
+            
+            if (monitorInterval) {
+                clearInterval(monitorInterval);
+                monitorInterval = null;
+            }
+            
+            // Update UI
+            document.getElementById('start-test').disabled = false;
+            document.getElementById('stop-test').disabled = true;
+            document.getElementById('test-status').textContent = 'Stopped';
+            document.getElementById('progress-info').style.display = 'none';
+            
+            // Final summary
+            const finalMemory = getMemoryUsage();
+            const memoryDelta = finalMemory ? (finalMemory.used - testStartMemory).toFixed(2) : 'Unknown';
+            
+            log(`Test stopped. Operations: ${operationCount}, Memory delta: ${memoryDelta}MB, Peak: ${peakMemoryUsage}MB, GC events: ${gcCount}`, 'success');
+        }
+        
+        // Force garbage collection (if available)
+        function forceGarbageCollection() {
+            if (window.gc) {
+                log('Forcing garbage collection...', 'info');
+                window.gc();
+                setTimeout(updateMemoryDisplay, 100);
+            } else {
+                log('Garbage collection not available (run with --expose-gc flag)', 'warning');
+                // Fallback: create memory pressure to encourage GC
+                const dummy = [];
+                for (let i = 0; i < 1000; i++) {
+                    dummy.push(new Array(10000).fill(Math.random()));
+                }
+                dummy.length = 0;  // Clear array
+                setTimeout(updateMemoryDisplay, 100);
+            }
+        }
+        
+        // Make functions globally available
+        window.startMemoryTest = startMemoryTest;
+        window.stopMemoryTest = stopMemoryTest;
+        window.forceGarbageCollection = forceGarbageCollection;
+        
+        // Initialize on page load
+        initializeWasm();
+    </script>
+</body>
+</html>

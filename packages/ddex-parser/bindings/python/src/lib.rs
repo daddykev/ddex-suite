@@ -4,7 +4,7 @@ use pyo3::exceptions::PyValueError;
 use pyo3::types::{PyBytes, PyDict, PyList, PyModule};
 use pyo3::Bound;
 use pythonize::pythonize;
-use pyo3_asyncio_0_21 as pyo3_asyncio;
+use pyo3_async_runtimes;
 use ddex_parser::{DDEXParser as CoreParser, parser::ParseOptions as CoreParseOptions};
 use ddex_core::models::flat::ParsedERNMessage as CoreParsedERNMessage;
 use std::io::Cursor;
@@ -74,7 +74,7 @@ impl PyDDEXParser {
         let parser = self.parser.clone();
         
         // Create async future
-        pyo3_asyncio::tokio::future_into_py(py, async move {
+        pyo3_async_runtimes::tokio::future_into_py(py, async move {
             // Run parsing in a blocking task to avoid blocking the async runtime
             let result = tokio::task::spawn_blocking(move || {
                 let cursor = Cursor::new(xml_str.as_bytes());
@@ -144,7 +144,7 @@ impl PyDDEXParser {
             .map_err(|e| PyValueError::new_err(format!("Parse error: {}", e)))?;
         
         // Try to import pandas
-        let pandas = py.import("pandas")
+        let pandas = py.import_bound("pandas")
             .map_err(|_| PyValueError::new_err("pandas is required for to_dataframe(). Install with: pip install pandas"))?;
         
         match schema {
@@ -251,7 +251,7 @@ impl PyDDEXParser {
         template: Option<&PyAny>,
     ) -> PyResult<String> {
         // Check if it's a pandas DataFrame
-        let pandas = py.import("pandas")
+        let pandas = py.import_bound("pandas")
             .map_err(|_| PyValueError::new_err("pandas is required for from_dataframe(). Install with: pip install pandas"))?;
         
         let dataframe_type = pandas.getattr("DataFrame")?;
@@ -495,7 +495,7 @@ impl PyParsedERNMessage {
     #[pyo3(signature = (schema = "flat"))]
     fn to_dataframe(&self, py: Python, schema: &str) -> PyResult<Py<PyAny>> {
         // Try to import pandas
-        let pandas = py.import("pandas")
+        let pandas = py.import_bound("pandas")
             .map_err(|_| PyValueError::new_err("pandas is required for to_dataframe(). Install with: pip install pandas"))?;
         
         // Convert based on schema

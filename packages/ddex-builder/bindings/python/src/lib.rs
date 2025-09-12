@@ -809,7 +809,7 @@ impl DdexBuilder {
     #[pyo3(signature = (df, schema = None))]
     pub fn from_dataframe(&mut self, df: &PyAny, schema: Option<&str>) -> PyResult<String> {
         // Import pandas functionality through PyO3
-        let pandas = PyModule::import(df.py(), "pandas")?;
+        let pandas = df.py().import_bound("pandas")?;
         let pd_dataframe = pandas.getattr("DataFrame")?;
         
         // Check if the input is a pandas DataFrame

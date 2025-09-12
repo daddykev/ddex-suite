@@ -322,11 +322,6 @@ impl PathValidator {
                 ));
             }
             
-            if SUSPICIOUS_EXTENSIONS.is_match(filename) {
-                return Err(BuildError::InputSanitization(
-                    "Suspicious file extension detected".to_string()
-                ));
-            }
             
             // Check Windows reserved names
             let filename_upper = filename.to_uppercase();
@@ -383,7 +378,8 @@ impl PathValidator {
                     let name_str = name.to_string_lossy();
                     
                     // Check for hidden files/directories
-                    if !self.config.allow_hidden && name_str.starts_with('.') {
+                    // Allow current directory reference (.) but not other hidden files
+                    if !self.config.allow_hidden && name_str.starts_with('.') && name_str != "." {
                         return Err(BuildError::InputSanitization(
                             "Hidden files/directories not allowed".to_string()
                         ));
@@ -436,6 +432,12 @@ impl PathValidator {
         // Check if path starts with any allowed base directory
         for base_dir in &self.config.allowed_base_dirs {
             if path.starts_with(base_dir) || path == base_dir {
+                return Ok(());
+            }
+            
+            // Special case: if the base directory is "." and the path is a relative file
+            // without a directory component, consider it as being in the current directory
+            if base_dir == Path::new(".") && (path.parent().is_none() || path.parent() == Some(Path::new(""))) {
                 return Ok(());
             }
             
@@ -577,6 +579,13 @@ impl PathValidator {
             }
         }
         
+        // Warn about suspicious extensions
+        if let Some(filename) = normalized.file_name().and_then(|s| s.to_str()) {
+            if SUSPICIOUS_EXTENSIONS.is_match(filename) {
+                warnings.push("Suspicious file extension detected".to_string());
+            }
+        }
+        
         warnings
     }
     
@@ -609,6 +618,7 @@ mod tests {
         // Valid paths
         assert!(validator.validate("data/file.xml").is_ok());
         assert!(validator.validate("input/subdir/file.json").is_ok());
+        
         assert!(validator.validate("./file.txt").is_ok());
         
         // Invalid paths

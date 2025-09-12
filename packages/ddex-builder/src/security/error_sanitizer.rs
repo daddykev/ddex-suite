@@ -275,7 +275,7 @@ static DEFAULT_REDACTION_RULES: Lazy<Vec<RedactionRule>> = Lazy::new(|| {
     // API keys and tokens (basic patterns)
     if let Ok(rule) = RedactionRule::new(
         "api_keys",
-        r"(?i)(api_?key|token|secret|password|auth)[\s]*[:=][\s]*[a-zA-Z0-9\-_]{16,}",
+        r#"(?i)(api_?key|token|secret|password|auth)[\s]*[:=][\s]*"?([a-zA-Z0-9\-_]{16,})"?"#,
         "$1=<redacted>",
         true, // production
         true, // development
@@ -791,7 +791,7 @@ mod tests {
     fn test_api_key_redaction() {
         let rule = RedactionRule::new(
             "test_keys",
-            r"(?i)(api_?key|token)[\s]*[:=][\s]*[a-zA-Z0-9\-_]{16,}",
+            r#"(?i)(api_?key|token)[\s]*[:=][\s]*"?[a-zA-Z0-9\-_]{16,}"?"#,
             "$1=<redacted>",
             true, true, true
         ).unwrap();
