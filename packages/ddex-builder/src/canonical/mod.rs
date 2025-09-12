@@ -78,6 +78,8 @@ use quick_xml::{Reader, events::Event};
 use std::io::Cursor;
 use std::collections::BTreeMap;
 
+pub mod rules;
+
 /// DB-C14N/1.0 canonicalizer
 #[allow(non_camel_case_types)]  // Allow non-standard naming for DB-C14N
 pub struct DB_C14N {
@@ -257,35 +259,53 @@ impl DB_C14N {
     }
     
     fn apply_namespace_prefix_locking(&self, attributes: &mut IndexMap<String, String>, version: &str) -> Result<(), super::error::BuildError> {
-        let prefix_table = rules::get_namespace_prefixes(version);
+        // Use the new comprehensive namespace manager
+        let manager = rules::CanonicalNamespaceManager::new();
         
-        // Update xmlns attributes to use locked prefixes
-        let mut updated_attrs = IndexMap::new();
+        // Extract namespace declarations from attributes
+        let mut namespace_declarations = IndexMap::new();
+        let mut other_attributes = IndexMap::new();
+        
         for (key, value) in attributes.iter() {
-            if key.starts_with("xmlns:") || key == "xmlns" {
-                if let Some(locked_prefix) = prefix_table.get(value) {
-                    let new_key = if key == "xmlns" {
-                        key.clone()
-                    } else {
-                        format!("xmlns:{}", locked_prefix)
-                    };
-                    updated_attrs.insert(new_key, value.clone());
-                } else {
-                    updated_attrs.insert(key.clone(), value.clone());
-                }
+            if key.starts_with("xmlns:") {
+                let prefix = key.strip_prefix("xmlns:").unwrap_or("");
+                namespace_declarations.insert(prefix.to_string(), value.clone());
+            } else if key == "xmlns" {
+                namespace_declarations.insert("".to_string(), value.clone()); // Default namespace
             } else {
-                updated_attrs.insert(key.clone(), value.clone());
+                other_attributes.insert(key.clone(), value.clone());
             }
         }
-        *attributes = updated_attrs;
         
+        // Apply canonical namespace transformation
+        let canonical_declarations = manager.canonicalize_namespaces(&namespace_declarations, version);
+        
+        // Rebuild attributes with canonical namespaces
+        let mut updated_attrs = IndexMap::new();
+        
+        // Add canonical namespace declarations
+        for (prefix, uri) in canonical_declarations {
+            let key = if prefix.is_empty() {
+                "xmlns".to_string()
+            } else {
+                format!("xmlns:{}", prefix)
+            };
+            updated_attrs.insert(key, uri);
+        }
+        
+        // Add other attributes
+        for (key, value) in other_attributes {
+            updated_attrs.insert(key, value);
+        }
+        
+        *attributes = updated_attrs;
         Ok(())
     }
     
     fn sort_child_elements(&self, children: &mut Vec<XmlNode>, parent_name: &str, version: &str) -> Result<(), super::error::BuildError> {
-        let element_order = rules::get_element_order(version);
+        let manager = rules::CanonicalNamespaceManager::new();
         
-        if let Some(order) = element_order.get(parent_name) {
+        if let Some(order) = manager.get_canonical_element_order(parent_name, version) {
             // Create a map for quick lookup of element order
             let order_map: IndexMap<String, usize> = order.iter().enumerate()
                 .map(|(i, name)| (name.clone(), i))
@@ -438,175 +458,6 @@ enum XmlNode {
     Comment(String),
 }
 
-/// DB-C14N/1.0 Specification Rules
-pub mod rules {
-    use indexmap::IndexMap;
-    
-    /// Fixed XML declaration
-    pub const XML_DECLARATION: &str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-    
-    /// Namespace prefix lock table for ERN 3.8.2
-    pub fn ern_382_prefixes() -> IndexMap<String, String> {
-        let mut prefixes = IndexMap::new();
-        prefixes.insert("http://ddex.net/xml/ern/382".to_string(), "ern".to_string());
-        prefixes.insert("http://ddex.net/xml/avs".to_string(), "avs".to_string());
-        prefixes.insert("http://www.w3.org/2001/XMLSchema-instance".to_string(), "xsi".to_string());
-        prefixes
-    }
-    
-    /// Namespace prefix lock table for ERN 4.2
-    pub fn ern_42_prefixes() -> IndexMap<String, String> {
-        let mut prefixes = IndexMap::new();
-        prefixes.insert("http://ddex.net/xml/ern/42".to_string(), "ern".to_string());
-        prefixes.insert("http://ddex.net/xml/avs".to_string(), "avs".to_string());
-        prefixes.insert("http://www.w3.org/2001/XMLSchema-instance".to_string(), "xsi".to_string());
-        prefixes
-    }
-    
-    /// Namespace prefix lock table for ERN 4.3
-    pub fn ern_43_prefixes() -> IndexMap<String, String> {
-        let mut prefixes = IndexMap::new();
-        prefixes.insert("http://ddex.net/xml/ern/43".to_string(), "ern".to_string());
-        prefixes.insert("http://ddex.net/xml/avs".to_string(), "avs".to_string());
-        prefixes.insert("http://www.w3.org/2001/XMLSchema-instance".to_string(), "xsi".to_string());
-        prefixes
-    }
-    
-    /// Get namespace prefix table for a specific ERN version
-    pub fn get_namespace_prefixes(version: &str) -> IndexMap<String, String> {
-        match version {
-            "3.8.2" | "382" => ern_382_prefixes(),
-            "4.2" | "42" => ern_42_prefixes(),
-            "4.3" | "43" => ern_43_prefixes(),
-            _ => ern_43_prefixes(), // Default to latest
-        }
-    }
-    
-    /// Canonical element order for ERN 3.8.2
-    pub fn ern_382_element_order() -> IndexMap<String, Vec<String>> {
-        let mut order = IndexMap::new();
-        
-        // Message header order for 3.8.2
-        order.insert("MessageHeader".to_string(), vec![
-            "MessageId".to_string(),
-            "MessageType".to_string(),
-            "MessageCreatedDateTime".to_string(),
-            "MessageSender".to_string(),
-            "MessageRecipient".to_string(),
-            "MessageControlType".to_string(),
-        ]);
-        
-        // Release order for 3.8.2
-        order.insert("Release".to_string(), vec![
-            "ReleaseReference".to_string(),
-            "ReleaseId".to_string(),
-            "ReferenceTitle".to_string(),
-            "ReleaseResourceReferenceList".to_string(),
-            "ReleaseDetailsByTerritory".to_string(),
-        ]);
-        
-        // Deal order for 3.8.2
-        order.insert("Deal".to_string(), vec![
-            "DealReference".to_string(),
-            "DealTerms".to_string(),
-            "DealReleaseReference".to_string(),
-        ]);
-        
-        order
-    }
-    
-    /// Canonical element order for ERN 4.2
-    pub fn ern_42_element_order() -> IndexMap<String, Vec<String>> {
-        let mut order = IndexMap::new();
-        
-        // Message header order for 4.2
-        order.insert("MessageHeader".to_string(), vec![
-            "MessageId".to_string(),
-            "MessageType".to_string(),
-            "MessageCreatedDateTime".to_string(),
-            "MessageSender".to_string(),
-            "MessageRecipient".to_string(),
-            "MessageControlType".to_string(),
-            "MessageAuditTrail".to_string(),
-        ]);
-        
-        // Release order for 4.2
-        order.insert("Release".to_string(), vec![
-            "ReleaseReference".to_string(),
-            "ReleaseId".to_string(),
-            "ReferenceTitle".to_string(),
-            "ReleaseResourceReferenceList".to_string(),
-            "ReleaseDetailsByTerritory".to_string(),
-        ]);
-        
-        // Deal order for 4.2
-        order.insert("Deal".to_string(), vec![
-            "DealReference".to_string(),
-            "DealTerms".to_string(),
-            "DealReleaseReference".to_string(),
-        ]);
-        
-        order
-    }
-    
-    /// Canonical element order for ERN 4.3
-    pub fn ern_43_element_order() -> IndexMap<String, Vec<String>> {
-        let mut order = IndexMap::new();
-        
-        // Message header order
-        order.insert("MessageHeader".to_string(), vec![
-            "MessageId".to_string(),
-            "MessageType".to_string(),
-            "MessageCreatedDateTime".to_string(),
-            "MessageSender".to_string(),
-            "MessageRecipient".to_string(),
-            "MessageControlType".to_string(),
-            "MessageAuditTrail".to_string(),
-        ]);
-        
-        // Release order
-        order.insert("Release".to_string(), vec![
-            "ReleaseReference".to_string(),
-            "ReleaseId".to_string(),
-            "ReferenceTitle".to_string(),
-            "ReleaseResourceReferenceList".to_string(),
-            "ReleaseDetailsByTerritory".to_string(),
-        ]);
-        
-        // Deal order
-        order.insert("Deal".to_string(), vec![
-            "DealReference".to_string(),
-            "DealTerms".to_string(),
-            "DealReleaseReference".to_string(),
-        ]);
-        
-        // Track order
-        order.insert("SoundRecording".to_string(), vec![
-            "SoundRecordingType".to_string(),
-            "SoundRecordingId".to_string(),
-            "ReferenceTitle".to_string(),
-            "DisplayTitle".to_string(),
-            "DisplayTitleText".to_string(),
-            "Duration".to_string(),
-            "CreationDate".to_string(),
-            "MasteredDate".to_string(),
-            "OriginalResourceReleaseDate".to_string(),
-            "SoundRecordingDetailsByTerritory".to_string(),
-        ]);
-        
-        order
-    }
-    
-    /// Get element order for a specific ERN version
-    pub fn get_element_order(version: &str) -> IndexMap<String, Vec<String>> {
-        match version {
-            "3.8.2" | "382" => ern_382_element_order(),
-            "4.2" | "42" => ern_42_element_order(), 
-            "4.3" | "43" => ern_43_element_order(),
-            _ => ern_43_element_order(), // Default to latest
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests;

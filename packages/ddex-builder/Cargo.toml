@@ -91,6 +91,13 @@ proptest = { workspace = true }
 insta = { workspace = true }
 similar = "2.4"
 
+# Fidelity testing dependencies
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
+futures = { workspace = true }
+num_cpus = "1.16"
+rand = "0.8"
+regex = "1.11"
+
 # Performance profiling
 pprof = { version = "0.15", features = ["flamegraph", "criterion"] }
 

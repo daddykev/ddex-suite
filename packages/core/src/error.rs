@@ -45,6 +45,17 @@ pub struct ErrorLocation {
     pub path: String,
 }
 
+impl Default for ErrorLocation {
+    fn default() -> Self {
+        Self {
+            line: 0,
+            column: 0,
+            byte_offset: None,
+            path: "unknown".to_string(),
+        }
+    }
+}
+
 /// FFI-friendly error representation
 pub mod ffi {
     use super::*;

@@ -482,6 +482,7 @@ impl StreamIterator {
 fn rust_parse_options_from_dict(dict: &PyDict) -> PyResult<CoreParseOptions> {
     let mut options = CoreParseOptions::default();
     
+    // Legacy options for backward compatibility
     if let Ok(Some(v)) = dict.get_item("include_raw_extensions") {
         options.include_raw_extensions = v.extract()?;
     }
@@ -497,6 +498,74 @@ fn rust_parse_options_from_dict(dict: &PyDict) -> PyResult<CoreParseOptions> {
     if let Ok(Some(v)) = dict.get_item("timeout") {
         let timeout_secs: f64 = v.extract()?;
         options.timeout_ms = (timeout_secs * 1000.0) as u64;
+    }
+    
+    // Perfect Fidelity Engine options
+    if let Ok(Some(v)) = dict.get_item("fidelity_level") {
+        let level_str: String = v.extract()?;
+        options.fidelity_level = match level_str.as_str() {
+            "fast" => ddex_parser::parser::FidelityLevel::Fast,
+            "balanced" => ddex_parser::parser::FidelityLevel::Balanced,
+            "perfect" => ddex_parser::parser::FidelityLevel::Perfect,
+            _ => ddex_parser::parser::FidelityLevel::Balanced,
+        };
+    }
+    if let Ok(Some(v)) = dict.get_item("preserve_comments") {
+        options.preserve_comments = v.extract()?;
+    }
+    if let Ok(Some(v)) = dict.get_item("preserve_processing_instructions") {
+        options.preserve_processing_instructions = v.extract()?;
+    }
+    if let Ok(Some(v)) = dict.get_item("preserve_extensions") {
+        options.preserve_extensions = v.extract()?;
+    }
+    if let Ok(Some(v)) = dict.get_item("preserve_attribute_order") {
+        options.preserve_attribute_order = v.extract()?;
+    }
+    if let Ok(Some(v)) = dict.get_item("preserve_namespace_prefixes") {
+        options.preserve_namespace_prefixes = v.extract()?;
+    }
+    if let Ok(Some(v)) = dict.get_item("canonicalization") {
+        let canon_str: String = v.extract()?;
+        options.canonicalization = match canon_str.as_str() {
+            "none" => ddex_parser::parser::CanonicalizationAlgorithm::None,
+            "c14n" => ddex_parser::parser::CanonicalizationAlgorithm::C14N,
+            "c14n11" => ddex_parser::parser::CanonicalizationAlgorithm::C14N11,
+            "db_c14n" => ddex_parser::parser::CanonicalizationAlgorithm::DbC14N,
+            "custom" => ddex_parser::parser::CanonicalizationAlgorithm::Custom,
+            _ => ddex_parser::parser::CanonicalizationAlgorithm::DbC14N,
+        };
+    }
+    if let Ok(Some(v)) = dict.get_item("collect_statistics") {
+        options.collect_statistics = v.extract()?;
+    }
+    if let Ok(Some(v)) = dict.get_item("enable_streaming") {
+        options.enable_streaming = v.extract()?;
+    }
+    if let Ok(Some(v)) = dict.get_item("streaming_threshold") {
+        options.streaming_threshold = v.extract()?;
+    }
+    if let Ok(Some(v)) = dict.get_item("validation_level") {
+        let level_str: String = v.extract()?;
+        options.validation_level = match level_str.as_str() {
+            "none" => ddex_parser::parser::ValidationLevel::None,
+            "basic" => ddex_parser::parser::ValidationLevel::Basic,
+            "standard" => ddex_parser::parser::ValidationLevel::Standard,
+            "strict" => ddex_parser::parser::ValidationLevel::Strict,
+            _ => ddex_parser::parser::ValidationLevel::Standard,
+        };
+    }
+    if let Ok(Some(v)) = dict.get_item("extension_validation") {
+        options.extension_validation = v.extract()?;
+    }
+    if let Ok(Some(v)) = dict.get_item("enable_checksums") {
+        options.enable_checksums = v.extract()?;
+    }
+    if let Ok(Some(v)) = dict.get_item("memory_limit") {
+        options.memory_limit = Some(v.extract()?);
+    }
+    if let Ok(Some(v)) = dict.get_item("enable_detailed_errors") {
+        options.enable_detailed_errors = v.extract()?;
     }
     
     Ok(options)

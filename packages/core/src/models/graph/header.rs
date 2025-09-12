@@ -3,7 +3,7 @@
 
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
-use crate::models::{Extensions, Comment, common::{Identifier, LocalizedString}};
+use crate::models::{Extensions, Comment, AttributeMap, common::{Identifier, LocalizedString}};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MessageHeader {
@@ -14,6 +14,8 @@ pub struct MessageHeader {
     pub message_recipient: MessageRecipient,
     pub message_control_type: Option<MessageControlType>,
     pub message_thread_id: Option<String>,
+    /// All XML attributes (standard and custom)
+    pub attributes: Option<AttributeMap>,
     /// Extensions for message header
     pub extensions: Option<Extensions>,
     /// Comments associated with message header
@@ -38,6 +40,8 @@ pub struct MessageSender {
     pub party_id: Vec<Identifier>,
     pub party_name: Vec<LocalizedString>,
     pub trading_name: Option<String>,
+    /// All XML attributes (standard and custom)
+    pub attributes: Option<AttributeMap>,
     /// Extensions for message sender
     pub extensions: Option<Extensions>,
     /// Comments associated with message sender
@@ -49,6 +53,8 @@ pub struct MessageRecipient {
     pub party_id: Vec<Identifier>,
     pub party_name: Vec<LocalizedString>,
     pub trading_name: Option<String>,
+    /// All XML attributes (standard and custom)
+    pub attributes: Option<AttributeMap>,
     /// Extensions for message recipient
     pub extensions: Option<Extensions>,
     /// Comments associated with message recipient

@@ -22,6 +22,9 @@ ts-rs = { version = "7.1", optional = true }
 # Extension system dependencies
 indexmap = { version = "2.5", features = ["serde"] }
 html-escape = "0.2"
+# Validation dependencies
+url = "2.4"
+regex = "1.10"
 
 [features]
 default = []

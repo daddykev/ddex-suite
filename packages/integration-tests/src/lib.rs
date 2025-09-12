@@ -8,6 +8,7 @@ pub mod fixtures;
 pub mod round_trip;
 pub mod utils;
 pub mod comment_retention_tests;
+pub mod namespace_integration_tests;
 
 /// Test fixture data and utilities
 pub use fixtures::*;

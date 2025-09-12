@@ -1,6 +1,7 @@
 // core/src/transform/graph.rs
 // Remove unused imports and variables
 use crate::error::ParseError;
+use crate::parser::namespace_detector::NamespaceContext;
 use ddex_core::models::graph::{
     ERNMessage, MessageHeader, MessageType, MessageSender, MessageRecipient,
     Release
@@ -69,6 +70,13 @@ impl GraphBuilder {
             legacy_extensions: None,
             comments: None,
         })
+    }
+    
+    /// Build graph model from XML with namespace context
+    pub fn build_from_xml_with_context<R: BufRead>(&self, reader: R, _context: NamespaceContext) -> Result<ERNMessage, ParseError> {
+        // For now, delegate to the existing method
+        // In the future, this would use the namespace context for proper element resolution
+        self.build_from_xml(reader)
     }
     
     fn parse_header<R: BufRead>(&self, _reader: &mut Reader<R>) -> Result<MessageHeader, ParseError> {

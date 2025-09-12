@@ -3,7 +3,7 @@
 
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
-use crate::models::{Extensions, Comment, common::{Identifier, LocalizedString}};
+use crate::models::{Extensions, Comment, AttributeMap, common::{Identifier, LocalizedString}};
 use super::Artist;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -20,6 +20,8 @@ pub struct Release {
     pub release_date: Vec<ReleaseEvent>,
     pub territory_code: Vec<String>,
     pub excluded_territory_code: Vec<String>,
+    /// All XML attributes (standard and custom)
+    pub attributes: Option<AttributeMap>,
     /// Extensions for release
     pub extensions: Option<Extensions>,
     /// Comments associated with release
@@ -39,6 +41,8 @@ pub enum ReleaseType {
 pub struct Genre {
     pub genre_text: String,
     pub sub_genre: Option<String>,
+    /// All XML attributes (standard and custom)
+    pub attributes: Option<AttributeMap>,
     /// Extensions for genre
     pub extensions: Option<Extensions>,
     /// Comments associated with genre

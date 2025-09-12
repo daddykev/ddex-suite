@@ -7,6 +7,8 @@ pub mod stream;
 pub mod mode;
 pub mod dom;
 pub mod extension_capture;
+pub mod namespace_detector;
+pub mod attribute_extractor;
 
 #[cfg(test)]
 mod tests;

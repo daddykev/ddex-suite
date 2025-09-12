@@ -2,7 +2,7 @@
 //! ERN Message types
 
 use serde::{Deserialize, Serialize};
-use crate::models::{Extensions, Comment, versions::ERNVersion};
+use crate::models::{Extensions, Comment, AttributeMap, versions::ERNVersion};
 use super::{MessageHeader, Party, Resource, Release, Deal};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -15,6 +15,8 @@ pub struct ERNMessage {
     pub version: ERNVersion,
     pub profile: Option<ERNProfile>,
     pub message_audit_trail: Option<MessageAuditTrail>,
+    /// All XML attributes (standard and custom) for the root element
+    pub attributes: Option<AttributeMap>,
     /// Comprehensive extension preservation system
     pub extensions: Option<Extensions>,
     /// Legacy extensions (for backward compatibility)
@@ -33,6 +35,8 @@ pub enum ERNProfile {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MessageAuditTrail {
     pub audit_trail_events: Vec<AuditTrailEvent>,
+    /// All XML attributes (standard and custom)
+    pub attributes: Option<AttributeMap>,
     /// Extensions for audit trail
     pub extensions: Option<Extensions>,
     /// Comments associated with audit trail
@@ -45,6 +49,8 @@ pub struct AuditTrailEvent {
     pub message_audit_trail_event_type: String,
     pub date_time: chrono::DateTime<chrono::Utc>,
     pub responsible_party_reference: Option<String>,
+    /// All XML attributes (standard and custom)
+    pub attributes: Option<AttributeMap>,
     /// Extensions for individual audit trail events
     pub extensions: Option<Extensions>,
     /// Comments associated with this audit trail event
