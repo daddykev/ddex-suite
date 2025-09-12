@@ -1756,10 +1756,11 @@ interface DeterminismConfig {
 - [x] Supply chain security audit (1 PyO3 vulnerability identified)
 
 #### Remaining Minor Items
-- [ ] Fix PyO3 vulnerability (upgrade to 0.24.1)
-- [ ] Tune 3 security validator configs
-- [ ] Complete WASM setup documentation
-- [ ] Fix 4 non-critical optimization tests
+- [x] Fix PyO3 vulnerability (upgrade to 0.24.1) ✅ **COMPLETE**
+- [x] Complete builder Python bindings PyO3 0.24 migration
+- [x] Tune 3 security validator configs
+- [x] Complete WASM setup documentation
+- [x] Fix 4 non-critical optimization tests
 - [ ] Documentation improvements
 - [ ] Publish v0.3.5 as "Security & Stability" release
 

@@ -1,0 +1,769 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /Users/kevinmoo/Desktop/localrepo/ddex-suite/packages/ddex-builder/bindings/node/Cargo.toml
+workspace: /Users/kevinmoo/Desktop/localrepo/ddex-suite/Cargo.toml
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /Users/kevinmoo/Desktop/localrepo/ddex-suite/packages/ddex-builder/bindings/wasm/Cargo.toml
+workspace: /Users/kevinmoo/Desktop/localrepo/ddex-suite/Cargo.toml
+   Compiling serde v1.0.219
+   Compiling pyo3-macros-backend v0.24.2
+   Compiling pyo3-ffi v0.24.2
+   Compiling getrandom v0.3.3
+   Compiling either v1.15.0
+   Compiling ddex-parser v0.3.0 (/Users/kevinmoo/Desktop/localrepo/ddex-suite/packages/ddex-parser)
+   Compiling ahash v0.8.12
+   Compiling rayon v1.11.0
+   Compiling indexmap v2.11.1
+   Compiling serde_spanned v0.6.9
+   Compiling toml_datetime v0.6.11
+   Compiling serde_json v1.0.143
+   Compiling url v2.5.7
+   Compiling chrono v0.4.42
+   Compiling csv v1.3.1
+   Compiling rmp-serde v1.3.0
+   Compiling uuid v1.18.1
+   Compiling toml_edit v0.22.27
+   Compiling serde_yaml v0.9.34+deprecated
+   Compiling pyo3-macros v0.24.2
+   Compiling ddex-core v0.3.0 (/Users/kevinmoo/Desktop/localrepo/ddex-suite/packages/core)
+   Compiling pyo3 v0.24.2
+   Compiling toml v0.8.23
+   Compiling pyo3-async-runtimes v0.24.0
+   Compiling pythonize v0.24.0
+   Compiling numpy v0.24.0
+warning: variable `has_namespace_declarations` is assigned to, but never used
+   --> packages/ddex-parser/src/parser/namespace_detector.rs:103:17
+    |
+103 |         let mut has_namespace_declarations = false;
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: consider using `_has_namespace_declarations` instead
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: value assigned to `has_namespace_declarations` is never read
+   --> packages/ddex-parser/src/parser/namespace_detector.rs:120:17
+    |
+120 |                 has_namespace_declarations = true;
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+    = note: `#[warn(unused_assignments)]` on by default
+
+warning: value assigned to `has_namespace_declarations` is never read
+   --> packages/ddex-parser/src/parser/namespace_detector.rs:136:17
+    |
+136 |                 has_namespace_declarations = true;
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+
+warning: field `version` is never read
+  --> packages/ddex-parser/src/parser/stream.rs:28:5
+   |
+26 | pub struct StreamingParser<R: BufRead> {
+   |            --------------- field in this struct
+27 |     reader: Reader<R>,
+28 |     version: ERNVersion,
+   |     ^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: fields `parser`, `done`, and `in_resource_list` are never read
+   --> packages/ddex-parser/src/parser/stream.rs:541:5
+    |
+540 | pub struct ResourceIterator<'a, R: BufRead> {
+    |            ---------------- fields in this struct
+541 |     parser: &'a mut StreamingParser<R>,
+    |     ^^^^^^
+542 |     done: bool,
+    |     ^^^^
+543 |     in_resource_list: bool,
+    |     ^^^^^^^^^^^^^^^^
+
+warning: fields `parser` and `done` are never read
+   --> packages/ddex-parser/src/parser/stream.rs:566:5
+    |
+565 | pub struct PartyIterator<'a, R: BufRead> {
+    |            ------------- fields in this struct
+566 |     parser: &'a mut StreamingParser<R>,
+    |     ^^^^^^
+567 |     done: bool,
+    |     ^^^^
+
+warning: fields `parser` and `done` are never read
+   --> packages/ddex-parser/src/parser/stream.rs:588:5
+    |
+587 | pub struct DealIterator<'a, R: BufRead> {
+    |            ------------ fields in this struct
+588 |     parser: &'a mut StreamingParser<R>,
+    |     ^^^^^^
+589 |     done: bool,
+    |     ^^^^
+
+warning: associated functions `count_tracks` and `calculate_total_duration` are never used
+   --> packages/ddex-parser/src/transform/flatten.rs:173:8
+    |
+19  | impl Flattener {
+    | -------------- associated functions in this implementation
+...
+173 |     fn count_tracks(releases: &[ParsedRelease]) -> usize {
+    |        ^^^^^^^^^^^^
+...
+177 |     fn calculate_total_duration(resources: &HashMap<String, ParsedResource>) -> u64 {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `version` and `differences` are never read
+  --> packages/ddex-parser/src/transform/version_adapter.rs:10:5
+   |
+9  | pub struct VersionAdapter {
+   |            -------------- fields in this struct
+10 |     version: ERNVersion,
+   |     ^^^^^^^
+11 |     differences: VersionDifferences,
+   |     ^^^^^^^^^^^
+
+warning: `ddex-parser` (lib) generated 9 warnings
+   Compiling ddex-parser-python v0.3.0 (/Users/kevinmoo/Desktop/localrepo/ddex-suite/packages/ddex-parser/bindings/python)
+warning: use of deprecated method `pyo3::Python::<'py>::import_bound`: renamed to `Python::import`
+   --> packages/ddex-parser/bindings/python/src/lib.rs:147:25
+    |
+147 |         let pandas = py.import_bound("pandas")
+    |                         ^^^^^^^^^^^^
+    |
+    = note: `#[warn(deprecated)]` on by default
+
+warning: use of deprecated associated function `pyo3::types::PyDict::new_bound`: renamed to `PyDict::new`
+   --> packages/ddex-parser/bindings/python/src/lib.rs:156:44
+    |
+156 |                 let message_dict = PyDict::new_bound(py);
+    |                                            ^^^^^^^^^
+
+warning: use of deprecated associated function `pyo3::types::PyDict::new_bound`: renamed to `PyDict::new`
+   --> packages/ddex-parser/bindings/python/src/lib.rs:173:48
+    |
+173 |                     let release_dict = PyDict::new_bound(py);
+    |                                                ^^^^^^^^^
+
+warning: use of deprecated associated function `pyo3::types::PyList::new_bound`: renamed to `PyList::new`
+   --> packages/ddex-parser/bindings/python/src/lib.rs:189:42
+    |
+189 |                 let py_records = PyList::new_bound(py, records);
+    |                                          ^^^^^^^^^
+
+error[E0599]: no method named `as_gil_ref` found for struct `pyo3::Bound<'_, PyList>` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:190:71
+    |
+190 |                 let df = pandas.call_method1("DataFrame", (py_records.as_gil_ref(),))?;
+    |                                                                       ^^^^^^^^^^
+    |
+help: there is a method `as_ref` with a similar name
+    |
+190 -                 let df = pandas.call_method1("DataFrame", (py_records.as_gil_ref(),))?;
+190 +                 let df = pandas.call_method1("DataFrame", (py_records.as_ref(),))?;
+    |
+
+warning: use of deprecated associated function `pyo3::types::PyDict::new_bound`: renamed to `PyDict::new`
+   --> packages/ddex-parser/bindings/python/src/lib.rs:197:40
+    |
+197 |                     let dict = PyDict::new_bound(py);
+    |                                        ^^^^^^^^^
+
+warning: use of deprecated associated function `pyo3::types::PyList::new_bound`: renamed to `PyList::new`
+   --> packages/ddex-parser/bindings/python/src/lib.rs:208:42
+    |
+208 |                 let py_records = PyList::new_bound(py, records);
+    |                                          ^^^^^^^^^
+
+error[E0599]: no method named `as_gil_ref` found for struct `pyo3::Bound<'_, PyList>` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:209:71
+    |
+209 |                 let df = pandas.call_method1("DataFrame", (py_records.as_gil_ref(),))?;
+    |                                                                       ^^^^^^^^^^
+    |
+help: there is a method `as_ref` with a similar name
+    |
+209 -                 let df = pandas.call_method1("DataFrame", (py_records.as_gil_ref(),))?;
+209 +                 let df = pandas.call_method1("DataFrame", (py_records.as_ref(),))?;
+    |
+
+warning: use of deprecated associated function `pyo3::types::PyDict::new_bound`: renamed to `PyDict::new`
+   --> packages/ddex-parser/bindings/python/src/lib.rs:218:44
+    |
+218 |                         let dict = PyDict::new_bound(py);
+    |                                            ^^^^^^^^^
+
+warning: use of deprecated associated function `pyo3::types::PyList::new_bound`: renamed to `PyList::new`
+   --> packages/ddex-parser/bindings/python/src/lib.rs:231:42
+    |
+231 |                 let py_records = PyList::new_bound(py, records);
+    |                                          ^^^^^^^^^
+
+error[E0599]: no method named `as_gil_ref` found for struct `pyo3::Bound<'_, PyList>` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:232:71
+    |
+232 |                 let df = pandas.call_method1("DataFrame", (py_records.as_gil_ref(),))?;
+    |                                                                       ^^^^^^^^^^
+    |
+help: there is a method `as_ref` with a similar name
+    |
+232 -                 let df = pandas.call_method1("DataFrame", (py_records.as_gil_ref(),))?;
+232 +                 let df = pandas.call_method1("DataFrame", (py_records.as_ref(),))?;
+    |
+
+warning: use of deprecated method `pyo3::Python::<'py>::import_bound`: renamed to `Python::import`
+   --> packages/ddex-parser/bindings/python/src/lib.rs:254:25
+    |
+254 |         let pandas = py.import_bound("pandas")
+    |                         ^^^^^^^^^^^^
+
+error[E0599]: no method named `is_instance` found for reference `&pyo3::PyAny` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:258:16
+    |
+258 |         if !df.is_instance(&dataframe_type)? {
+    |                ^^^^^^^^^^^ method not found in `&pyo3::PyAny`
+
+error[E0599]: no method named `getattr` found for reference `&pyo3::PyAny` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:263:33
+    |
+263 |         let to_dict_method = df.getattr("to_dict")?;
+    |                                 ^^^^^^^ method not found in `&pyo3::PyAny`
+
+error[E0599]: no method named `get_item` found for reference `&&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:328:56
+    |
+328 |             if let Ok(Some(message_id)) = first_record.get_item("message_id") {
+    |                                                        ^^^^^^^^ method not found in `&&PyDict`
+
+error[E0599]: no method named `get_item` found for reference `&&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:344:51
+    |
+344 |             if let Ok(Some(record_type)) = record.get_item("type") {
+    |                                                   ^^^^^^^^ method not found in `&&PyDict`
+
+error[E0599]: no method named `get_item` found for reference `&&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:349:62
+    |
+349 |                         if let Ok(Some(release_id)) = record.get_item("release_id") {
+    |                                                              ^^^^^^^^ method not found in `&&PyDict`
+
+error[E0599]: no method named `get_item` found for reference `&&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:355:57
+    |
+355 |                         if let Ok(Some(title)) = record.get_item("title") {
+    |                                                         ^^^^^^^^ method not found in `&&PyDict`
+
+error[E0599]: no method named `get_item` found for reference `&&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:390:50
+    |
+390 |             if let Ok(Some(release_id)) = record.get_item("release_id") {
+    |                                                  ^^^^^^^^ method not found in `&&PyDict`
+
+error[E0599]: no method named `get_item` found for reference `&&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:396:45
+    |
+396 |             if let Ok(Some(title)) = record.get_item("title") {
+    |                                             ^^^^^^^^ method not found in `&&PyDict`
+
+error[E0599]: no method named `get_item` found for reference `&&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:423:50
+    |
+423 |             if let Ok(Some(release_id)) = record.get_item("release_id") {
+    |                                                  ^^^^^^^^ method not found in `&&PyDict`
+
+error[E0599]: no method named `get_item` found for reference `&&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:442:54
+    |
+442 |                 if let Ok(Some(title)) = first_track.get_item("release_title") {
+    |                                                      ^^^^^^^^ method not found in `&&PyDict`
+
+error[E0599]: no method named `get_item` found for reference `&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:454:51
+    |
+454 |                 if let Ok(Some(track_id)) = track.get_item("track_id") {
+    |                                                   ^^^^^^^^ method not found in `&PyDict`
+
+error[E0599]: no method named `get_item` found for reference `&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:460:54
+    |
+460 |                 if let Ok(Some(track_title)) = track.get_item("track_title") {
+    |                                                      ^^^^^^^^ method not found in `&PyDict`
+
+error[E0277]: the trait bound `&pyo3::PyAny: PyFunctionArgument<'_, '_, false>` is not satisfied
+   --> packages/ddex-parser/bindings/python/src/lib.rs:33:14
+    |
+33  |         xml: &PyAny,
+    |              ^ the trait `PyClass` is not implemented for `&pyo3::PyAny`
+    |
+    = help: the following other types implement trait `PyClass`:
+              PyDDEXParser
+              PyParsedERNMessage
+              StreamIterator
+    = note: required for `&pyo3::PyAny` to implement `FromPyObject<'_>`
+    = note: required for `&pyo3::PyAny` to implement `FromPyObjectBound<'_, '_>`
+    = note: required for `&pyo3::PyAny` to implement `PyFunctionArgument<'_, '_, false>`
+note: required by a bound in `extract_argument`
+   --> /Users/kevinmoo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-0.24.2/src/impl_/extract_argument.rs:119:8
+    |
+113 | pub fn extract_argument<'a, 'py, T, const IS_OPTION: bool>(
+    |        ---------------- required by a bound in this function
+...
+119 |     T: PyFunctionArgument<'a, 'py, IS_OPTION>,
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `extract_argument`
+
+error[E0277]: the trait bound `&PyDict: PyFunctionArgument<'_, '_, false>` is not satisfied
+   --> packages/ddex-parser/bindings/python/src/lib.rs:34:18
+    |
+34  |         options: Option<&PyDict>,
+    |                  ^^^^^^ the trait `PyClass` is not implemented for `&PyDict`
+    |
+    = help: the following other types implement trait `PyClass`:
+              PyDDEXParser
+              PyParsedERNMessage
+              StreamIterator
+    = note: required for `&PyDict` to implement `FromPyObject<'_>`
+    = note: required for `&PyDict` to implement `FromPyObjectBound<'_, '_>`
+    = note: required for `&PyDict` to implement `PyFunctionArgument<'_, '_, false>`
+note: required by a bound in `extract_optional_argument`
+   --> /Users/kevinmoo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-0.24.2/src/impl_/extract_argument.rs:137:8
+    |
+130 | pub fn extract_optional_argument<'a, 'py, T, const IS_OPTION: bool>(
+    |        ------------------------- required by a bound in this function
+...
+137 |     T: PyFunctionArgument<'a, 'py, IS_OPTION>,
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `extract_optional_argument`
+
+error[E0277]: the trait bound `&pyo3::PyAny: PyFunctionArgument<'_, '_, false>` is not satisfied
+   --> packages/ddex-parser/bindings/python/src/lib.rs:64:14
+    |
+64  |         xml: &PyAny,
+    |              ^ the trait `PyClass` is not implemented for `&pyo3::PyAny`
+    |
+    = help: the following other types implement trait `PyClass`:
+              PyDDEXParser
+              PyParsedERNMessage
+              StreamIterator
+    = note: required for `&pyo3::PyAny` to implement `FromPyObject<'_>`
+    = note: required for `&pyo3::PyAny` to implement `FromPyObjectBound<'_, '_>`
+    = note: required for `&pyo3::PyAny` to implement `PyFunctionArgument<'_, '_, false>`
+note: required by a bound in `extract_argument`
+   --> /Users/kevinmoo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-0.24.2/src/impl_/extract_argument.rs:119:8
+    |
+113 | pub fn extract_argument<'a, 'py, T, const IS_OPTION: bool>(
+    |        ---------------- required by a bound in this function
+...
+119 |     T: PyFunctionArgument<'a, 'py, IS_OPTION>,
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `extract_argument`
+
+error[E0277]: the trait bound `&PyDict: PyFunctionArgument<'_, '_, false>` is not satisfied
+   --> packages/ddex-parser/bindings/python/src/lib.rs:65:18
+    |
+65  |         options: Option<&PyDict>,
+    |                  ^^^^^^ the trait `PyClass` is not implemented for `&PyDict`
+    |
+    = help: the following other types implement trait `PyClass`:
+              PyDDEXParser
+              PyParsedERNMessage
+              StreamIterator
+    = note: required for `&PyDict` to implement `FromPyObject<'_>`
+    = note: required for `&PyDict` to implement `FromPyObjectBound<'_, '_>`
+    = note: required for `&PyDict` to implement `PyFunctionArgument<'_, '_, false>`
+note: required by a bound in `extract_optional_argument`
+   --> /Users/kevinmoo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-0.24.2/src/impl_/extract_argument.rs:137:8
+    |
+130 | pub fn extract_optional_argument<'a, 'py, T, const IS_OPTION: bool>(
+    |        ------------------------- required by a bound in this function
+...
+137 |     T: PyFunctionArgument<'a, 'py, IS_OPTION>,
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `extract_optional_argument`
+
+error[E0277]: the trait bound `&pyo3::PyAny: PyFunctionArgument<'_, '_, false>` is not satisfied
+   --> packages/ddex-parser/bindings/python/src/lib.rs:98:17
+    |
+98  |         source: &PyAny,
+    |                 ^ the trait `PyClass` is not implemented for `&pyo3::PyAny`
+    |
+    = help: the following other types implement trait `PyClass`:
+              PyDDEXParser
+              PyParsedERNMessage
+              StreamIterator
+    = note: required for `&pyo3::PyAny` to implement `FromPyObject<'_>`
+    = note: required for `&pyo3::PyAny` to implement `FromPyObjectBound<'_, '_>`
+    = note: required for `&pyo3::PyAny` to implement `PyFunctionArgument<'_, '_, false>`
+note: required by a bound in `extract_argument`
+   --> /Users/kevinmoo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-0.24.2/src/impl_/extract_argument.rs:119:8
+    |
+113 | pub fn extract_argument<'a, 'py, T, const IS_OPTION: bool>(
+    |        ---------------- required by a bound in this function
+...
+119 |     T: PyFunctionArgument<'a, 'py, IS_OPTION>,
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `extract_argument`
+
+error[E0277]: the trait bound `&PyDict: PyClass` is not satisfied
+  --> packages/ddex-parser/bindings/python/src/lib.rs:99:18
+   |
+99 |         options: Option<&PyDict>,
+   |                  ^^^^^^ the trait `PyClass` is not implemented for `&PyDict`
+   |
+   = help: the following other types implement trait `PyClass`:
+             PyDDEXParser
+             PyParsedERNMessage
+             StreamIterator
+   = note: required for `&PyDict` to implement `FromPyObject<'_>`
+   = note: required for `&PyDict` to implement `FromPyObjectBound<'_, '_>`
+   = note: required for `&PyDict` to implement `PyFunctionArgument<'_, '_, false>`
+
+error[E0277]: the trait bound `&pyo3::PyAny: PyFunctionArgument<'_, '_, false>` is not satisfied
+   --> packages/ddex-parser/bindings/python/src/lib.rs:136:14
+    |
+136 |         xml: &PyAny,
+    |              ^ the trait `PyClass` is not implemented for `&pyo3::PyAny`
+    |
+    = help: the following other types implement trait `PyClass`:
+              PyDDEXParser
+              PyParsedERNMessage
+              StreamIterator
+    = note: required for `&pyo3::PyAny` to implement `FromPyObject<'_>`
+    = note: required for `&pyo3::PyAny` to implement `FromPyObjectBound<'_, '_>`
+    = note: required for `&pyo3::PyAny` to implement `PyFunctionArgument<'_, '_, false>`
+note: required by a bound in `extract_argument`
+   --> /Users/kevinmoo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-0.24.2/src/impl_/extract_argument.rs:119:8
+    |
+113 | pub fn extract_argument<'a, 'py, T, const IS_OPTION: bool>(
+    |        ---------------- required by a bound in this function
+...
+119 |     T: PyFunctionArgument<'a, 'py, IS_OPTION>,
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `extract_argument`
+
+error[E0277]: the trait bound `&pyo3::PyAny: PyFunctionArgument<'_, '_, false>` is not satisfied
+   --> packages/ddex-parser/bindings/python/src/lib.rs:249:13
+    |
+249 |         df: &PyAny,
+    |             ^ the trait `PyClass` is not implemented for `&pyo3::PyAny`
+    |
+    = help: the following other types implement trait `PyClass`:
+              PyDDEXParser
+              PyParsedERNMessage
+              StreamIterator
+    = note: required for `&pyo3::PyAny` to implement `FromPyObject<'_>`
+    = note: required for `&pyo3::PyAny` to implement `FromPyObjectBound<'_, '_>`
+    = note: required for `&pyo3::PyAny` to implement `PyFunctionArgument<'_, '_, false>`
+note: required by a bound in `extract_argument`
+   --> /Users/kevinmoo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-0.24.2/src/impl_/extract_argument.rs:119:8
+    |
+113 | pub fn extract_argument<'a, 'py, T, const IS_OPTION: bool>(
+    |        ---------------- required by a bound in this function
+...
+119 |     T: PyFunctionArgument<'a, 'py, IS_OPTION>,
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `extract_argument`
+
+error[E0277]: the trait bound `&pyo3::PyAny: PyFunctionArgument<'_, '_, false>` is not satisfied
+   --> packages/ddex-parser/bindings/python/src/lib.rs:251:19
+    |
+251 |         template: Option<&PyAny>,
+    |                   ^^^^^^ the trait `PyClass` is not implemented for `&pyo3::PyAny`
+    |
+    = help: the following other types implement trait `PyClass`:
+              PyDDEXParser
+              PyParsedERNMessage
+              StreamIterator
+    = note: required for `&pyo3::PyAny` to implement `FromPyObject<'_>`
+    = note: required for `&pyo3::PyAny` to implement `FromPyObjectBound<'_, '_>`
+    = note: required for `&pyo3::PyAny` to implement `PyFunctionArgument<'_, '_, false>`
+note: required by a bound in `extract_optional_argument`
+   --> /Users/kevinmoo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-0.24.2/src/impl_/extract_argument.rs:137:8
+    |
+130 | pub fn extract_optional_argument<'a, 'py, T, const IS_OPTION: bool>(
+    |        ------------------------- required by a bound in this function
+...
+137 |     T: PyFunctionArgument<'a, 'py, IS_OPTION>,
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `extract_optional_argument`
+
+error[E0277]: the trait bound `&pyo3::PyAny: PyFunctionArgument<'_, '_, false>` is not satisfied
+   --> packages/ddex-parser/bindings/python/src/lib.rs:287:39
+    |
+287 |     pub fn detect_version(&self, xml: &PyAny) -> PyResult<String> {
+    |                                       ^ the trait `PyClass` is not implemented for `&pyo3::PyAny`
+    |
+    = help: the following other types implement trait `PyClass`:
+              PyDDEXParser
+              PyParsedERNMessage
+              StreamIterator
+    = note: required for `&pyo3::PyAny` to implement `FromPyObject<'_>`
+    = note: required for `&pyo3::PyAny` to implement `FromPyObjectBound<'_, '_>`
+    = note: required for `&pyo3::PyAny` to implement `PyFunctionArgument<'_, '_, false>`
+note: required by a bound in `extract_argument`
+   --> /Users/kevinmoo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-0.24.2/src/impl_/extract_argument.rs:119:8
+    |
+113 | pub fn extract_argument<'a, 'py, T, const IS_OPTION: bool>(
+    |        ---------------- required by a bound in this function
+...
+119 |     T: PyFunctionArgument<'a, 'py, IS_OPTION>,
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `extract_argument`
+
+error[E0277]: the trait bound `&pyo3::PyAny: PyFunctionArgument<'_, '_, false>` is not satisfied
+   --> packages/ddex-parser/bindings/python/src/lib.rs:298:49
+    |
+298 |     pub fn sanity_check(&self, py: Python, xml: &PyAny) -> PyResult<Py<PyAny>> {
+    |                                                 ^ the trait `PyClass` is not implemented for `&pyo3::PyAny`
+    |
+    = help: the following other types implement trait `PyClass`:
+              PyDDEXParser
+              PyParsedERNMessage
+              StreamIterator
+    = note: required for `&pyo3::PyAny` to implement `FromPyObject<'_>`
+    = note: required for `&pyo3::PyAny` to implement `FromPyObjectBound<'_, '_>`
+    = note: required for `&pyo3::PyAny` to implement `PyFunctionArgument<'_, '_, false>`
+note: required by a bound in `extract_argument`
+   --> /Users/kevinmoo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-0.24.2/src/impl_/extract_argument.rs:119:8
+    |
+113 | pub fn extract_argument<'a, 'py, T, const IS_OPTION: bool>(
+    |        ---------------- required by a bound in this function
+...
+119 |     T: PyFunctionArgument<'a, 'py, IS_OPTION>,
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `extract_argument`
+
+error[E0277]: the trait bound `Vec<&PyDict>: PyFunctionArgument<'_, '_, false>` is not satisfied
+   --> packages/ddex-parser/bindings/python/src/lib.rs:315:18
+    |
+315 |         records: Vec<&PyDict>,
+    |                  ^^^ the trait `FromPyObject<'_>` is not implemented for `Vec<&PyDict>`
+    |
+    = help: the trait `FromPyObject<'_>` is implemented for `Vec<T>`
+    = note: required for `Vec<&PyDict>` to implement `FromPyObjectBound<'_, '_>`
+    = note: required for `Vec<&PyDict>` to implement `PyFunctionArgument<'_, '_, false>`
+note: required by a bound in `extract_argument`
+   --> /Users/kevinmoo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-0.24.2/src/impl_/extract_argument.rs:119:8
+    |
+113 | pub fn extract_argument<'a, 'py, T, const IS_OPTION: bool>(
+    |        ---------------- required by a bound in this function
+...
+119 |     T: PyFunctionArgument<'a, 'py, IS_OPTION>,
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `extract_argument`
+
+error[E0277]: the trait bound `&pyo3::PyAny: PyClass` is not satisfied
+   --> packages/ddex-parser/bindings/python/src/lib.rs:316:20
+    |
+316 |         _template: Option<&PyAny>,
+    |                    ^^^^^^ the trait `PyClass` is not implemented for `&pyo3::PyAny`
+    |
+    = help: the following other types implement trait `PyClass`:
+              PyDDEXParser
+              PyParsedERNMessage
+              StreamIterator
+    = note: required for `&pyo3::PyAny` to implement `FromPyObject<'_>`
+    = note: required for `&pyo3::PyAny` to implement `FromPyObjectBound<'_, '_>`
+    = note: required for `&pyo3::PyAny` to implement `PyFunctionArgument<'_, '_, false>`
+
+error[E0277]: the trait bound `Vec<&PyDict>: PyFunctionArgument<'_, '_, false>` is not satisfied
+   --> packages/ddex-parser/bindings/python/src/lib.rs:376:18
+    |
+376 |         records: Vec<&PyDict>,
+    |                  ^^^ the trait `FromPyObject<'_>` is not implemented for `Vec<&PyDict>`
+    |
+    = help: the trait `FromPyObject<'_>` is implemented for `Vec<T>`
+    = note: required for `Vec<&PyDict>` to implement `FromPyObjectBound<'_, '_>`
+    = note: required for `Vec<&PyDict>` to implement `PyFunctionArgument<'_, '_, false>`
+note: required by a bound in `extract_argument`
+   --> /Users/kevinmoo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-0.24.2/src/impl_/extract_argument.rs:119:8
+    |
+113 | pub fn extract_argument<'a, 'py, T, const IS_OPTION: bool>(
+    |        ---------------- required by a bound in this function
+...
+119 |     T: PyFunctionArgument<'a, 'py, IS_OPTION>,
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `extract_argument`
+
+error[E0277]: the trait bound `&pyo3::PyAny: PyClass` is not satisfied
+   --> packages/ddex-parser/bindings/python/src/lib.rs:377:20
+    |
+377 |         _template: Option<&PyAny>,
+    |                    ^^^^^^ the trait `PyClass` is not implemented for `&pyo3::PyAny`
+    |
+    = help: the following other types implement trait `PyClass`:
+              PyDDEXParser
+              PyParsedERNMessage
+              StreamIterator
+    = note: required for `&pyo3::PyAny` to implement `FromPyObject<'_>`
+    = note: required for `&pyo3::PyAny` to implement `FromPyObjectBound<'_, '_>`
+    = note: required for `&pyo3::PyAny` to implement `PyFunctionArgument<'_, '_, false>`
+
+error[E0277]: the trait bound `Vec<&PyDict>: PyFunctionArgument<'_, '_, false>` is not satisfied
+   --> packages/ddex-parser/bindings/python/src/lib.rs:414:18
+    |
+414 |         records: Vec<&PyDict>,
+    |                  ^^^ the trait `FromPyObject<'_>` is not implemented for `Vec<&PyDict>`
+    |
+    = help: the trait `FromPyObject<'_>` is implemented for `Vec<T>`
+    = note: required for `Vec<&PyDict>` to implement `FromPyObjectBound<'_, '_>`
+    = note: required for `Vec<&PyDict>` to implement `PyFunctionArgument<'_, '_, false>`
+note: required by a bound in `extract_argument`
+   --> /Users/kevinmoo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-0.24.2/src/impl_/extract_argument.rs:119:8
+    |
+113 | pub fn extract_argument<'a, 'py, T, const IS_OPTION: bool>(
+    |        ---------------- required by a bound in this function
+...
+119 |     T: PyFunctionArgument<'a, 'py, IS_OPTION>,
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `extract_argument`
+
+error[E0277]: the trait bound `&pyo3::PyAny: PyClass` is not satisfied
+   --> packages/ddex-parser/bindings/python/src/lib.rs:415:20
+    |
+415 |         _template: Option<&PyAny>,
+    |                    ^^^^^^ the trait `PyClass` is not implemented for `&pyo3::PyAny`
+    |
+    = help: the following other types implement trait `PyClass`:
+              PyDDEXParser
+              PyParsedERNMessage
+              StreamIterator
+    = note: required for `&pyo3::PyAny` to implement `FromPyObject<'_>`
+    = note: required for `&pyo3::PyAny` to implement `FromPyObjectBound<'_, '_>`
+    = note: required for `&pyo3::PyAny` to implement `PyFunctionArgument<'_, '_, false>`
+
+warning: use of deprecated method `pyo3::Python::<'py>::import_bound`: renamed to `Python::import`
+   --> packages/ddex-parser/bindings/python/src/lib.rs:498:25
+    |
+498 |         let pandas = py.import_bound("pandas")
+    |                         ^^^^^^^^^^^^
+
+warning: use of deprecated associated function `pyo3::types::PyList::new_bound`: renamed to `PyList::new`
+   --> packages/ddex-parser/bindings/python/src/lib.rs:512:34
+    |
+512 |         let py_records = PyList::new_bound(py, data);
+    |                                  ^^^^^^^^^
+
+error[E0599]: no method named `as_gil_ref` found for struct `pyo3::Bound<'_, PyList>` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:513:63
+    |
+513 |         let df = pandas.call_method1("DataFrame", (py_records.as_gil_ref(),))?;
+    |                                                               ^^^^^^^^^^
+    |
+help: there is a method `as_ref` with a similar name
+    |
+513 -         let df = pandas.call_method1("DataFrame", (py_records.as_gil_ref(),))?;
+513 +         let df = pandas.call_method1("DataFrame", (py_records.as_ref(),))?;
+    |
+
+warning: use of deprecated associated function `pyo3::types::PyDict::new_bound`: renamed to `PyDict::new`
+   --> packages/ddex-parser/bindings/python/src/lib.rs:539:31
+    |
+539 |         let msg_row = PyDict::new_bound(py);
+    |                               ^^^^^^^^^
+
+warning: use of deprecated associated function `pyo3::types::PyDict::new_bound`: renamed to `PyDict::new`
+   --> packages/ddex-parser/bindings/python/src/lib.rs:556:31
+    |
+556 |             let row = PyDict::new_bound(py);
+    |                               ^^^^^^^^^
+
+warning: use of deprecated associated function `pyo3::types::PyDict::new_bound`: renamed to `PyDict::new`
+   --> packages/ddex-parser/bindings/python/src/lib.rs:578:31
+    |
+578 |             let row = PyDict::new_bound(py);
+    |                               ^^^^^^^^^
+
+warning: use of deprecated associated function `pyo3::types::PyDict::new_bound`: renamed to `PyDict::new`
+   --> packages/ddex-parser/bindings/python/src/lib.rs:596:35
+    |
+596 |                 let row = PyDict::new_bound(py);
+    |                                   ^^^^^^^^^
+
+warning: use of deprecated associated function `pyo3::types::PyDict::new_bound`: renamed to `PyDict::new`
+   --> packages/ddex-parser/bindings/python/src/lib.rs:666:28
+    |
+666 |         let dict = PyDict::new_bound(py);
+    |                            ^^^^^^^^^
+
+error[E0599]: no method named `get_item` found for reference `&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:682:31
+    |
+682 |     if let Ok(Some(v)) = dict.get_item("resolve_references") {
+    |                               ^^^^^^^^ method not found in `&PyDict`
+
+error[E0599]: no method named `get_item` found for reference `&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:685:31
+    |
+685 |     if let Ok(Some(v)) = dict.get_item("include_raw") {
+    |                               ^^^^^^^^ method not found in `&PyDict`
+
+error[E0599]: no method named `get_item` found for reference `&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:688:31
+    |
+688 |     if let Ok(Some(v)) = dict.get_item("max_memory") {
+    |                               ^^^^^^^^ method not found in `&PyDict`
+
+error[E0599]: no method named `get_item` found for reference `&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:691:31
+    |
+691 |     if let Ok(Some(v)) = dict.get_item("timeout_ms") {
+    |                               ^^^^^^^^ method not found in `&PyDict`
+
+error[E0599]: no method named `get_item` found for reference `&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:694:31
+    |
+694 |     if let Ok(Some(v)) = dict.get_item("allow_blocking") {
+    |                               ^^^^^^^^ method not found in `&PyDict`
+
+error[E0599]: no method named `get_item` found for reference `&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:697:31
+    |
+697 |     if let Ok(Some(v)) = dict.get_item("include_raw_extensions") {
+    |                               ^^^^^^^^ method not found in `&PyDict`
+
+error[E0599]: no method named `get_item` found for reference `&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:700:31
+    |
+700 |     if let Ok(Some(v)) = dict.get_item("include_comments") {
+    |                               ^^^^^^^^ method not found in `&PyDict`
+
+error[E0599]: no method named `get_item` found for reference `&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:703:31
+    |
+703 |     if let Ok(Some(v)) = dict.get_item("preserve_unknown_elements") {
+    |                               ^^^^^^^^ method not found in `&PyDict`
+
+error[E0599]: no method named `get_item` found for reference `&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:706:31
+    |
+706 |     if let Ok(Some(v)) = dict.get_item("chunk_size") {
+    |                               ^^^^^^^^ method not found in `&PyDict`
+
+error[E0599]: no method named `get_item` found for reference `&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:709:31
+    |
+709 |     if let Ok(Some(v)) = dict.get_item("auto_threshold") {
+    |                               ^^^^^^^^ method not found in `&PyDict`
+
+error[E0599]: no method named `get_item` found for reference `&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:714:31
+    |
+714 |     if let Ok(Some(v)) = dict.get_item("validate_references") {
+    |                               ^^^^^^^^ method not found in `&PyDict`
+
+error[E0599]: no method named `get_item` found for reference `&PyDict` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:717:31
+    |
+717 |     if let Ok(Some(v)) = dict.get_item("timeout") {
+    |                               ^^^^^^^^ method not found in `&PyDict`
+
+error[E0599]: no method named `extract` found for reference `&pyo3::PyAny` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:726:24
+    |
+726 |     if let Ok(s) = xml.extract::<String>() {
+    |                        ^^^^^^^ method not found in `&pyo3::PyAny`
+
+error[E0599]: no method named `extract` found for reference `&pyo3::PyAny` in the current scope
+   --> packages/ddex-parser/bindings/python/src/lib.rs:728:35
+    |
+728 |     } else if let Ok(bytes) = xml.extract::<&PyBytes>() {
+    |                                   ^^^^^^^ method not found in `&pyo3::PyAny`
+
+warning: unused variable: `py`
+  --> packages/ddex-parser/bindings/python/src/lib.rs:97:9
+   |
+97 |         py: Python,
+   |         ^^ help: if this is intentional, prefix it with an underscore: `_py`
+   |
+   = note: `#[warn(unused_variables)]` on by default
+
+Some errors have detailed explanations: E0277, E0599.
+For more information about an error, try `rustc --explain E0277`.
+warning: `ddex-parser-python` (lib) generated 17 warnings
+error: could not compile `ddex-parser-python` (lib) due to 47 previous errors; 17 warnings emitted

@@ -1367,7 +1367,7 @@ impl DdexBuilder {
 }
 
 #[pymodule]
-fn ddex_builder(_py: Python, m: &PyModule) -> PyResult<()> {
+fn ddex_builder(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Release>()?;
     m.add_class::<Resource>()?;
     m.add_class::<ValidationResult>()?;
