@@ -1,0 +1,2 @@
+ddex-parser>=0.2.5
+psutil>=5.9.0

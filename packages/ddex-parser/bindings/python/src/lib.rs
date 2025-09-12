@@ -6,6 +6,7 @@ use pyo3::Bound;
 use pythonize::pythonize;
 use pyo3_asyncio_0_21 as pyo3_asyncio;
 use ddex_parser::{DDEXParser as CoreParser, parser::ParseOptions as CoreParseOptions};
+use ddex_core::models::flat::ParsedERNMessage as CoreParsedERNMessage;
 use std::io::Cursor;
 
 /// Main DDEX Parser class for Python
@@ -49,11 +50,10 @@ impl PyDDEXParser {
         let result = self.parser.parse_with_options(cursor, parse_options)
             .map_err(|e| PyValueError::new_err(format!("Parse error: {}", e)))?;
         
-        // Convert to Python dict  
-        let py_obj = pythonize(py, &result)
-            .map_err(|e| PyValueError::new_err(format!("Serialization error: {}", e)))?;
-        
-        Ok(py_obj.into())
+        // Return PyParsedERNMessage wrapper
+        let wrapped_result = PyParsedERNMessage::new(result);
+        let py_obj = Py::new(py, wrapped_result)?;
+        Ok(py_obj.into_any())
     }
     
     /// Parse DDEX XML asynchronously  
@@ -84,9 +84,9 @@ impl PyDDEXParser {
             .map_err(|e| PyValueError::new_err(format!("Parse error: {}", e)))?;
             
             Python::with_gil(|py| -> PyResult<Py<PyAny>> {
-                let py_obj = pythonize(py, &result)
-                    .map_err(|e| PyValueError::new_err(format!("Serialization error: {}", e)))?;
-                Ok(py_obj.into())
+                let wrapped_result = PyParsedERNMessage::new(result);
+                let py_obj = Py::new(py, wrapped_result)?;
+                Ok(py_obj.into_any())
             })
         })
     }
@@ -94,15 +94,41 @@ impl PyDDEXParser {
     /// Stream parse large files
     pub fn stream(
         &self,
-        _py: Python,
-        _source: &PyAny,
-        _options: Option<&PyDict>,
+        py: Python,
+        source: &PyAny,
+        options: Option<&PyDict>,
     ) -> PyResult<StreamIterator> {
-        // Return a Python iterator
-        Ok(StreamIterator::new())
+        // Extract XML content
+        let xml_str = extract_xml_string(source)?;
+        
+        // Parse options
+        let parse_options = if let Some(opts) = options {
+            rust_parse_options_from_dict(opts)?
+        } else {
+            CoreParseOptions::default()
+        };
+        
+        // Parse the entire document first (for now - in a true streaming implementation,
+        // this would parse incrementally)
+        let cursor = Cursor::new(xml_str.as_bytes());
+        let parsed_result = self.parser.parse_with_options(cursor, parse_options)
+            .map_err(|e| PyValueError::new_err(format!("Stream parse error: {}", e)))?;
+        
+        // Create iterator with the parsed releases
+        Ok(StreamIterator::from_parsed_result(parsed_result))
     }
     
-    /// Convert to pandas DataFrame
+    /// Convert DDEX XML to pandas DataFrame
+    /// 
+    /// Args:
+    ///     xml: DDEX XML content (string or bytes)
+    ///     schema: Output schema format (default "flat")
+    ///         - "flat": Mixed schema with message row and release rows
+    ///         - "releases": One row per release with release details 
+    ///         - "tracks": One row per track with full track details
+    ///
+    /// Returns:
+    ///     pandas.DataFrame with DDEX data
     #[pyo3(signature = (xml, schema="flat"))]
     pub fn to_dataframe(
         &self,
@@ -126,17 +152,29 @@ impl PyDDEXParser {
                 // Create a flattened representation suitable for DataFrame
                 let mut records = Vec::new();
                 
-                // Extract message-level info
+                // Extract message-level info with all columns
                 let message_dict = PyDict::new_bound(py);
                 message_dict.set_item("message_id", &parsed.flat.message_id)?;
                 message_dict.set_item("sender", format!("{:?}", &parsed.flat.sender))?;
                 message_dict.set_item("created_date", &parsed.flat.message_date.to_rfc3339())?;
                 message_dict.set_item("message_type", &parsed.flat.message_type)?;
+                message_dict.set_item("type", "message")?;
+                message_dict.set_item("release_index", py.None())?;
+                message_dict.set_item("release_id", py.None())?;
+                message_dict.set_item("title", py.None())?;
+                message_dict.set_item("artist", py.None())?;
+                message_dict.set_item("p_line", py.None())?;
+                message_dict.set_item("genre", py.None())?;
+                message_dict.set_item("track_count", py.None())?;
                 records.push(message_dict.into_any());
                 
-                // Extract release info
+                // Extract release info with all columns
                 for (idx, release) in parsed.flat.releases.iter().enumerate() {
                     let release_dict = PyDict::new_bound(py);
+                    release_dict.set_item("message_id", py.None())?;
+                    release_dict.set_item("sender", py.None())?;
+                    release_dict.set_item("created_date", py.None())?;
+                    release_dict.set_item("message_type", py.None())?;
                     release_dict.set_item("type", "release")?;
                     release_dict.set_item("release_index", idx)?;
                     release_dict.set_item("release_id", &release.release_id)?;
@@ -160,9 +198,10 @@ impl PyDDEXParser {
                     dict.set_item("release_id", &release.release_id)?;
                     dict.set_item("title", &release.default_title)?;
                     dict.set_item("artist", &release.display_artist)?;
-                    dict.set_item("track_count", release.track_count)?;
                     dict.set_item("p_line", format!("{:?}", &release.p_line))?;
                     dict.set_item("genre", format!("{:?}", &release.genre))?;
+                    dict.set_item("track_count", release.track_count)?;
+                    dict.set_item("release_date", format!("{:?}", &release.release_date))?;
                     records.push(dict.into_any());
                 }
                 
@@ -377,9 +416,8 @@ impl PyDDEXParser {
     ) -> PyResult<String> {
         // Build DDEX with tracks/sound recordings focus
         // Group tracks by release_id
-        use std::collections::HashMap;
         
-        let mut releases_map: HashMap<String, Vec<&PyDict>> = HashMap::new();
+        let mut releases_map: std::collections::HashMap<String, Vec<&PyDict>> = std::collections::HashMap::new();
         
         for record in &records {
             if let Ok(Some(release_id)) = record.get_item("release_id") {
@@ -438,18 +476,175 @@ impl PyDDEXParser {
     }
 }
 
+/// ParsedERNMessage wrapper for Python
+#[pyclass(name = "ParsedERNMessage")]
+#[derive(Clone)]
+pub struct PyParsedERNMessage {
+    inner: CoreParsedERNMessage,
+}
+
+impl PyParsedERNMessage {
+    pub fn new(inner: CoreParsedERNMessage) -> Self {
+        Self { inner }
+    }
+}
+
+#[pymethods]
+impl PyParsedERNMessage {
+    /// Convert to pandas DataFrame
+    #[pyo3(signature = (schema = "flat"))]
+    fn to_dataframe(&self, py: Python, schema: &str) -> PyResult<Py<PyAny>> {
+        // Try to import pandas
+        let pandas = py.import("pandas")
+            .map_err(|_| PyValueError::new_err("pandas is required for to_dataframe(). Install with: pip install pandas"))?;
+        
+        // Convert based on schema
+        let data = match schema {
+            "flat" => self.to_flat_dataframe_data(py)?,
+            "releases" => self.to_releases_dataframe_data(py)?,
+            "tracks" => self.to_tracks_dataframe_data(py)?,
+            _ => return Err(PyValueError::new_err(format!(
+                "Unknown schema: {}. Use 'flat', 'releases', or 'tracks'", schema
+            ))),
+        };
+        
+        // Create DataFrame
+        let py_records = PyList::new_bound(py, data);
+        let df = pandas.call_method1("DataFrame", (py_records.as_gil_ref(),))?;
+        Ok(df.into())
+    }
+    
+    /// Get message ID
+    fn message_id(&self) -> String {
+        self.inner.flat.message_id.clone()
+    }
+    
+    /// Get version
+    fn version(&self) -> String {
+        self.inner.flat.version.clone()
+    }
+    
+    /// Get number of releases
+    fn release_count(&self) -> usize {
+        self.inner.flat.releases.len()
+    }
+}
+
+impl PyParsedERNMessage {
+    fn to_flat_dataframe_data(&self, py: Python) -> PyResult<Vec<Py<PyAny>>> {
+        // Flat schema: one row per release with basic info
+        let mut rows = Vec::new();
+        
+        // Add message-level row with all columns (None for release-specific fields)
+        let msg_row = PyDict::new_bound(py);
+        msg_row.set_item("message_id", &self.inner.flat.message_id)?;
+        msg_row.set_item("sender", format!("{:?}", &self.inner.flat.sender))?;
+        msg_row.set_item("created_date", &self.inner.flat.message_date.to_rfc3339())?;
+        msg_row.set_item("message_type", &self.inner.flat.message_type)?;
+        msg_row.set_item("type", "message")?;
+        msg_row.set_item("release_index", py.None())?;
+        msg_row.set_item("release_id", py.None())?;
+        msg_row.set_item("title", py.None())?;
+        msg_row.set_item("artist", py.None())?;
+        msg_row.set_item("p_line", py.None())?;
+        msg_row.set_item("genre", py.None())?;
+        msg_row.set_item("track_count", py.None())?;
+        rows.push(msg_row.into_any().into());
+        
+        // Add release rows with all columns (None for message-specific fields)
+        for (idx, release) in self.inner.flat.releases.iter().enumerate() {
+            let row = PyDict::new_bound(py);
+            row.set_item("message_id", py.None())?;
+            row.set_item("sender", py.None())?;
+            row.set_item("created_date", py.None())?;
+            row.set_item("message_type", py.None())?;
+            row.set_item("type", "release")?;
+            row.set_item("release_index", idx)?;
+            row.set_item("release_id", &release.release_id)?;
+            row.set_item("title", &release.default_title)?;
+            row.set_item("artist", &release.display_artist)?;
+            row.set_item("p_line", format!("{:?}", &release.p_line))?;
+            row.set_item("genre", format!("{:?}", &release.genre))?;
+            row.set_item("track_count", release.track_count)?;
+            rows.push(row.into_any().into());
+        }
+        Ok(rows)
+    }
+    
+    fn to_releases_dataframe_data(&self, py: Python) -> PyResult<Vec<Py<PyAny>>> {
+        // Releases schema: one row per release with all release details
+        let mut rows = Vec::new();
+        for release in &self.inner.flat.releases {
+            let row = PyDict::new_bound(py);
+            row.set_item("release_id", &release.release_id)?;
+            row.set_item("title", &release.default_title)?;
+            row.set_item("artist", &release.display_artist)?;
+            row.set_item("p_line", format!("{:?}", &release.p_line))?;
+            row.set_item("genre", format!("{:?}", &release.genre))?;
+            row.set_item("track_count", release.track_count)?;
+            row.set_item("release_date", format!("{:?}", &release.release_date))?;
+            rows.push(row.into_any().into());
+        }
+        Ok(rows)
+    }
+    
+    fn to_tracks_dataframe_data(&self, py: Python) -> PyResult<Vec<Py<PyAny>>> {
+        // Tracks schema: one row per track with full details
+        let mut rows = Vec::new();
+        for release in &self.inner.flat.releases {
+            for (track_idx, track) in release.tracks.iter().enumerate() {
+                let row = PyDict::new_bound(py);
+                row.set_item("release_id", &release.release_id)?;
+                row.set_item("release_title", &release.default_title)?;
+                row.set_item("track_index", track_idx)?;
+                row.set_item("track_id", &track.track_id)?;
+                row.set_item("track_title", &track.title)?;
+                row.set_item("artist", &track.display_artist)?;
+                row.set_item("duration", format!("{:?}", &track.duration))?;
+                row.set_item("isrc", format!("{:?}", &track.isrc))?;
+                rows.push(row.into_any().into());
+            }
+        }
+        Ok(rows)
+    }
+}
+
 /// Stream iterator for large files
 #[pyclass]
 pub struct StreamIterator {
     position: usize,
-    max_items: usize,
+    releases: Vec<StreamRelease>,
+}
+
+#[derive(Clone)]
+struct StreamRelease {
+    release_id: String,
+    title: String,
+    artist: String,
+    track_count: u32,
 }
 
 impl StreamIterator {
     fn new() -> Self {
         StreamIterator {
             position: 0,
-            max_items: 3,
+            releases: Vec::new(),
+        }
+    }
+    
+    fn from_parsed_result(parsed_result: ddex_core::models::flat::ParsedERNMessage) -> Self {
+        let releases = parsed_result.flat.releases.iter().map(|release| {
+            StreamRelease {
+                release_id: release.release_id.clone(),
+                title: release.default_title.clone(),
+                artist: release.display_artist.clone(),
+                track_count: release.track_count as u32,
+            }
+        }).collect();
+        
+        StreamIterator {
+            position: 0,
+            releases,
         }
     }
 }
@@ -461,17 +656,18 @@ impl StreamIterator {
     }
     
     fn __next__(mut slf: PyRefMut<'_, Self>, py: Python) -> Option<Py<PyAny>> {
-        if slf.position >= slf.max_items {
+        if slf.position >= slf.releases.len() {
             return None;
         }
         
+        let release = slf.releases[slf.position].clone();
         slf.position += 1;
         
         let dict = PyDict::new_bound(py);
-        dict.set_item("release_id", format!("R{:03}", slf.position)).ok()?;
-        dict.set_item("title", format!("Release {}", slf.position)).ok()?;
-        dict.set_item("artist", "Test Artist").ok()?;
-        dict.set_item("track_count", 10).ok()?;
+        dict.set_item("release_id", &release.release_id).ok()?;
+        dict.set_item("title", &release.title).ok()?;
+        dict.set_item("artist", &release.artist).ok()?;
+        dict.set_item("track_count", release.track_count).ok()?;
         
         Some(dict.into_any().into())
     }
@@ -482,90 +678,45 @@ impl StreamIterator {
 fn rust_parse_options_from_dict(dict: &PyDict) -> PyResult<CoreParseOptions> {
     let mut options = CoreParseOptions::default();
     
-    // Legacy options for backward compatibility
+    // Core options matching the actual ParseOptions struct
+    if let Ok(Some(v)) = dict.get_item("resolve_references") {
+        options.resolve_references = v.extract()?;
+    }
+    if let Ok(Some(v)) = dict.get_item("include_raw") {
+        options.include_raw = v.extract()?;
+    }
+    if let Ok(Some(v)) = dict.get_item("max_memory") {
+        options.max_memory = v.extract()?;
+    }
+    if let Ok(Some(v)) = dict.get_item("timeout_ms") {
+        options.timeout_ms = v.extract()?;
+    }
+    if let Ok(Some(v)) = dict.get_item("allow_blocking") {
+        options.allow_blocking = v.extract()?;
+    }
     if let Ok(Some(v)) = dict.get_item("include_raw_extensions") {
         options.include_raw_extensions = v.extract()?;
     }
     if let Ok(Some(v)) = dict.get_item("include_comments") {
         options.include_comments = v.extract()?;
     }
+    if let Ok(Some(v)) = dict.get_item("preserve_unknown_elements") {
+        options.preserve_unknown_elements = v.extract()?;
+    }
+    if let Ok(Some(v)) = dict.get_item("chunk_size") {
+        options.chunk_size = v.extract()?;
+    }
+    if let Ok(Some(v)) = dict.get_item("auto_threshold") {
+        options.auto_threshold = v.extract()?;
+    }
+    
+    // Legacy options for backward compatibility
     if let Ok(Some(v)) = dict.get_item("validate_references") {
         options.resolve_references = v.extract()?;
-    }
-    if let Ok(Some(v)) = dict.get_item("max_memory") {
-        options.max_memory = v.extract()?;
     }
     if let Ok(Some(v)) = dict.get_item("timeout") {
         let timeout_secs: f64 = v.extract()?;
         options.timeout_ms = (timeout_secs * 1000.0) as u64;
-    }
-    
-    // Perfect Fidelity Engine options
-    if let Ok(Some(v)) = dict.get_item("fidelity_level") {
-        let level_str: String = v.extract()?;
-        options.fidelity_level = match level_str.as_str() {
-            "fast" => ddex_parser::parser::FidelityLevel::Fast,
-            "balanced" => ddex_parser::parser::FidelityLevel::Balanced,
-            "perfect" => ddex_parser::parser::FidelityLevel::Perfect,
-            _ => ddex_parser::parser::FidelityLevel::Balanced,
-        };
-    }
-    if let Ok(Some(v)) = dict.get_item("preserve_comments") {
-        options.preserve_comments = v.extract()?;
-    }
-    if let Ok(Some(v)) = dict.get_item("preserve_processing_instructions") {
-        options.preserve_processing_instructions = v.extract()?;
-    }
-    if let Ok(Some(v)) = dict.get_item("preserve_extensions") {
-        options.preserve_extensions = v.extract()?;
-    }
-    if let Ok(Some(v)) = dict.get_item("preserve_attribute_order") {
-        options.preserve_attribute_order = v.extract()?;
-    }
-    if let Ok(Some(v)) = dict.get_item("preserve_namespace_prefixes") {
-        options.preserve_namespace_prefixes = v.extract()?;
-    }
-    if let Ok(Some(v)) = dict.get_item("canonicalization") {
-        let canon_str: String = v.extract()?;
-        options.canonicalization = match canon_str.as_str() {
-            "none" => ddex_parser::parser::CanonicalizationAlgorithm::None,
-            "c14n" => ddex_parser::parser::CanonicalizationAlgorithm::C14N,
-            "c14n11" => ddex_parser::parser::CanonicalizationAlgorithm::C14N11,
-            "db_c14n" => ddex_parser::parser::CanonicalizationAlgorithm::DbC14N,
-            "custom" => ddex_parser::parser::CanonicalizationAlgorithm::Custom,
-            _ => ddex_parser::parser::CanonicalizationAlgorithm::DbC14N,
-        };
-    }
-    if let Ok(Some(v)) = dict.get_item("collect_statistics") {
-        options.collect_statistics = v.extract()?;
-    }
-    if let Ok(Some(v)) = dict.get_item("enable_streaming") {
-        options.enable_streaming = v.extract()?;
-    }
-    if let Ok(Some(v)) = dict.get_item("streaming_threshold") {
-        options.streaming_threshold = v.extract()?;
-    }
-    if let Ok(Some(v)) = dict.get_item("validation_level") {
-        let level_str: String = v.extract()?;
-        options.validation_level = match level_str.as_str() {
-            "none" => ddex_parser::parser::ValidationLevel::None,
-            "basic" => ddex_parser::parser::ValidationLevel::Basic,
-            "standard" => ddex_parser::parser::ValidationLevel::Standard,
-            "strict" => ddex_parser::parser::ValidationLevel::Strict,
-            _ => ddex_parser::parser::ValidationLevel::Standard,
-        };
-    }
-    if let Ok(Some(v)) = dict.get_item("extension_validation") {
-        options.extension_validation = v.extract()?;
-    }
-    if let Ok(Some(v)) = dict.get_item("enable_checksums") {
-        options.enable_checksums = v.extract()?;
-    }
-    if let Ok(Some(v)) = dict.get_item("memory_limit") {
-        options.memory_limit = Some(v.extract()?);
-    }
-    if let Ok(Some(v)) = dict.get_item("enable_detailed_errors") {
-        options.enable_detailed_errors = v.extract()?;
     }
     
     Ok(options)
@@ -587,6 +738,7 @@ fn extract_xml_string(xml: &PyAny) -> PyResult<String> {
 #[pymodule]
 fn _internal(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {  // Changed from ddex_parser to _internal
     m.add_class::<PyDDEXParser>()?;
+    m.add_class::<PyParsedERNMessage>()?;
     m.add_class::<StreamIterator>()?;
     m.add("__version__", "0.1.0")?;
     Ok(())

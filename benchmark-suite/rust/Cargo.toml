@@ -1,0 +1,21 @@
+[workspace]
+
+[package]
+name = "ddex-benchmark"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "benchmark"
+path = "benchmark.rs"
+
+[[bin]]
+name = "simple_benchmark"
+path = "simple_benchmark.rs"
+
+[dependencies]
+ddex-parser = { path = "../../packages/ddex-parser" }
+ddex-builder = { path = "../../packages/ddex-builder" }
+ddex-core = { path = "../../packages/core" }
+rayon = "1.10"
+sysinfo = "0.32"

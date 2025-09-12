@@ -886,7 +886,7 @@ mod tests {
         let attr_name = QName::new("required_attr".to_string());
         validator.add_global_rule(attr_name.clone(), ValidationRule::Required);
         
-        let mut attributes = AttributeMap::new();
+        let attributes = AttributeMap::new();
         let result = validator.validate_global_attributes(&attributes);
         
         // Should not fail since we're not testing element-specific validation

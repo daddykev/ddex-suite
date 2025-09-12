@@ -65,7 +65,7 @@ impl NamespaceMinimizer {
     }
 
     /// Minimize namespace declarations in AST
-    pub fn minimize(&self, mut ast: AST) -> Result<MinimizationResult, String> {
+    pub fn minimize(&self, ast: AST) -> Result<MinimizationResult, String> {
         debug!("Starting namespace minimization for ERN {:?}", self.version);
         
         // Step 1: Analyze namespace usage throughout the document

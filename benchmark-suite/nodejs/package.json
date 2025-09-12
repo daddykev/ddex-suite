@@ -1,0 +1,19 @@
+{
+  "name": "ddex-benchmark-nodejs",
+  "version": "1.0.0",
+  "description": "DDEX Suite Node.js Performance Benchmark",
+  "main": "benchmark.js",
+  "scripts": {
+    "benchmark": "node benchmark.js",
+    "test": "npm run benchmark"
+  },
+  "dependencies": {
+    "ddex-parser": "latest",
+    "ddex-builder": "latest"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": ["ddex", "benchmark", "performance", "xml", "music"]
+}

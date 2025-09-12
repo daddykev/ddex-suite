@@ -136,12 +136,16 @@ impl<R: BufRead> StreamingParser<R> {
             party_name: Vec::new(),
             trading_name: None,
             extensions: None,
+            attributes: None,
+            comments: None,
         };
         let mut recipient = MessageRecipient {
             party_id: Vec::new(),
             party_name: Vec::new(),
             trading_name: None,
             extensions: None,
+            attributes: None,
+            comments: None,
         };
         
         self.buffer.clear();
@@ -198,6 +202,8 @@ impl<R: BufRead> StreamingParser<R> {
             message_control_type: None,
             message_thread_id: None,
             extensions: None,
+            attributes: None,
+            comments: None,
         })
     }
     
@@ -209,6 +215,8 @@ impl<R: BufRead> StreamingParser<R> {
             party_name: Vec::new(),
             trading_name: None,
             extensions: None,
+            attributes: None,
+            comments: None,
         };
         
         self.buffer.clear();
@@ -253,6 +261,8 @@ impl<R: BufRead> StreamingParser<R> {
             party_name: Vec::new(),
             trading_name: None,
             extensions: None,
+            attributes: None,
+            comments: None,
         };
         
         self.buffer.clear();
@@ -460,6 +470,8 @@ impl<'a, R: BufRead> ReleaseIterator<'a, R> {
             territory_code: Vec::new(),
             excluded_territory_code: Vec::new(),
             extensions: None,
+            attributes: None,
+            comments: None,
         };
         
         self.parser.buffer.clear();
@@ -650,6 +662,7 @@ pub fn parse_streaming<R: BufRead>(
         extensions: None,
         legacy_extensions: None,
         comments: None,
+        attributes: None,
     };
     
     // Flatten to developer-friendly model

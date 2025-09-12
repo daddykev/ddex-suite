@@ -1,0 +1,507 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43" MessageSchemaVersionId="ern/43" LanguageAndScriptCode="en">
+  <MessageHeader>
+    <MessageThreadId>BENCH_MSG_QRX822JH</MessageThreadId>
+    <MessageId>MSG_A38T305HFKP1</MessageId>
+    <MessageSender>
+      <PartyId>PADPIDA2014120301</PartyId>
+      <PartyName>Benchmark Sender</PartyName>
+    </MessageSender>
+    <MessageRecipient>
+      <PartyId>PADPIDA2014120302</PartyId>
+      <PartyName>Benchmark Recipient</PartyName>
+    </MessageRecipient>
+    <MessageCreatedDateTime>2025-09-11T19:28:28.085717</MessageCreatedDateTime>
+  </MessageHeader>
+  <ReleaseList>
+        <Release>
+      <ReleaseReference>R1</ReleaseReference>
+      <ReleaseId>
+        <GRid>A1-BENCH-GRID-0001</GRid>
+      </ReleaseId>
+      <ReferenceTitle>
+        <TitleText>Benchmark Release 1 - Generated for Performance Testing</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 1</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <AdditionalTitle>
+        <TitleText>Alternative Title for Release 1</TitleText>
+      </AdditionalTitle>
+    </Release>
+    <Release>
+      <ReleaseReference>R2</ReleaseReference>
+      <ReleaseId>
+        <GRid>A1-BENCH-GRID-0002</GRid>
+      </ReleaseId>
+      <ReferenceTitle>
+        <TitleText>Benchmark Release 2 - Generated for Performance Testing</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 2</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <AdditionalTitle>
+        <TitleText>Alternative Title for Release 2</TitleText>
+      </AdditionalTitle>
+    </Release>
+    <Release>
+      <ReleaseReference>R3</ReleaseReference>
+      <ReleaseId>
+        <GRid>A1-BENCH-GRID-0003</GRid>
+      </ReleaseId>
+      <ReferenceTitle>
+        <TitleText>Benchmark Release 3 - Generated for Performance Testing</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 3</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <AdditionalTitle>
+        <TitleText>Alternative Title for Release 3</TitleText>
+      </AdditionalTitle>
+    </Release>
+    <Release>
+      <ReleaseReference>R4</ReleaseReference>
+      <ReleaseId>
+        <GRid>A1-BENCH-GRID-0004</GRid>
+      </ReleaseId>
+      <ReferenceTitle>
+        <TitleText>Benchmark Release 4 - Generated for Performance Testing</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 4</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <AdditionalTitle>
+        <TitleText>Alternative Title for Release 4</TitleText>
+      </AdditionalTitle>
+    </Release>
+    <Release>
+      <ReleaseReference>R5</ReleaseReference>
+      <ReleaseId>
+        <GRid>A1-BENCH-GRID-0005</GRid>
+      </ReleaseId>
+      <ReferenceTitle>
+        <TitleText>Benchmark Release 5 - Generated for Performance Testing</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 5</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <AdditionalTitle>
+        <TitleText>Alternative Title for Release 5</TitleText>
+      </AdditionalTitle>
+    </Release>
+  </ReleaseList>
+  <ResourceList>
+        <SoundRecording>
+      <ResourceReference>A1_1</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0100001</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 1 from Release 1 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 1</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A1_2</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0100002</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 2 from Release 1 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 1</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A1_3</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0100003</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 3 from Release 1 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 1</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A1_4</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0100004</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 4 from Release 1 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 1</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A1_5</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0100005</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 5 from Release 1 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 1</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A2_1</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0200001</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 1 from Release 2 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 2</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A2_2</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0200002</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 2 from Release 2 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 2</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A2_3</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0200003</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 3 from Release 2 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 2</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A2_4</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0200004</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 4 from Release 2 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 2</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A2_5</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0200005</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 5 from Release 2 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 2</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A3_1</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0300001</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 1 from Release 3 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 3</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A3_2</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0300002</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 2 from Release 3 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 3</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A3_3</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0300003</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 3 from Release 3 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 3</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A3_4</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0300004</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 4 from Release 3 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 3</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A3_5</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0300005</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 5 from Release 3 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 3</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A4_1</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0400001</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 1 from Release 4 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 4</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A4_2</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0400002</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 2 from Release 4 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 4</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A4_3</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0400003</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 3 from Release 4 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 4</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A4_4</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0400004</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 4 from Release 4 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 4</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A4_5</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0400005</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 5 from Release 4 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 4</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A5_1</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0500001</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 1 from Release 5 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 5</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A5_2</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0500002</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 2 from Release 5 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 5</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A5_3</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0500003</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 3 from Release 5 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 5</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+    <SoundRecording>
+      <ResourceReference>A5_4</ResourceReference>
+      <SoundRecordingId>
+        <ISRC>USBENCH0500004</ISRC>
+      </SoundRecordingId>
+      <ReferenceTitle>
+        <TitleText>Track 4 from Release 5 - Benchmark Audio</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 5</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+    </SoundRecording>
+  </ResourceList>
+  <DealList>
+        <ReleaseDeal>
+      <DealReleaseReference>R1</DealReleaseReference>
+      <Deal>
+        <TerritoryCode>Worldwide</TerritoryCode>
+        <StartDate>2025-01-01</StartDate>
+        <EndDate>2026-12-31</EndDate>
+      </Deal>
+    </ReleaseDeal>
+    <ReleaseDeal>
+      <DealReleaseReference>R2</DealReleaseReference>
+      <Deal>
+        <TerritoryCode>Worldwide</TerritoryCode>
+        <StartDate>2025-01-01</StartDate>
+        <EndDate>2026-12-31</EndDate>
+      </Deal>
+    </ReleaseDeal>
+    <ReleaseDeal>
+      <DealReleaseReference>R3</DealReleaseReference>
+      <Deal>
+        <TerritoryCode>Worldwide</TerritoryCode>
+        <StartDate>2025-01-01</StartDate>
+        <EndDate>2026-12-31</EndDate>
+      </Deal>
+    </ReleaseDeal>
+    <ReleaseDeal>
+      <DealReleaseReference>R4</DealReleaseReference>
+      <Deal>
+        <TerritoryCode>Worldwide</TerritoryCode>
+        <StartDate>2025-01-01</StartDate>
+        <EndDate>2026-12-31</EndDate>
+      </Deal>
+    </ReleaseDeal>
+    <ReleaseDeal>
+      <DealReleaseReference>R5</DealReleaseReference>
+      <Deal>
+        <TerritoryCode>Worldwide</TerritoryCode>
+        <StartDate>2025-01-01</StartDate>
+        <EndDate>2026-12-31</EndDate>
+      </Deal>
+    </ReleaseDeal>
+  </DealList>
+</ern:NewReleaseMessage>

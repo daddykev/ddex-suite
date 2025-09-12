@@ -1,0 +1,28 @@
+{
+  "comments": null,
+  "deals": [],
+  "extensions": null,
+  "message_audit_trail": null,
+  "message_header": {
+    "message_control_type": null,
+    "message_created_date_time": "2025-09-12T01:57:16.845744Z",
+    "message_id": "MSG_V4_3",
+    "message_recipient": {
+      "party_id": [],
+      "party_name": [],
+      "trading_name": null
+    },
+    "message_sender": {
+      "party_id": [],
+      "party_name": [],
+      "trading_name": null
+    },
+    "message_thread_id": "THREAD_001",
+    "message_type": "NewReleaseMessage"
+  },
+  "parties": [],
+  "profile": null,
+  "releases": [],
+  "resources": [],
+  "version": "V4_3"
+}

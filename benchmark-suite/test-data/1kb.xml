@@ -1,0 +1,48 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43" MessageSchemaVersionId="ern/43" LanguageAndScriptCode="en">
+  <MessageHeader>
+    <MessageThreadId>BENCH_MSG_ZEGB569J</MessageThreadId>
+    <MessageId>MSG_XQ3ICVD9SMZZ</MessageId>
+    <MessageSender>
+      <PartyId>PADPIDA2014120301</PartyId>
+      <PartyName>Benchmark Sender</PartyName>
+    </MessageSender>
+    <MessageRecipient>
+      <PartyId>PADPIDA2014120302</PartyId>
+      <PartyName>Benchmark Recipient</PartyName>
+    </MessageRecipient>
+    <MessageCreatedDateTime>2025-09-11T19:28:28.085261</MessageCreatedDateTime>
+  </MessageHeader>
+  <ReleaseList>
+        <Release>
+      <ReleaseReference>R1</ReleaseReference>
+      <ReleaseId>
+        <GRid>A1-BENCH-GRID-0001</GRid>
+      </ReleaseId>
+      <ReferenceTitle>
+        <TitleText>Benchmark Release 1 - Generated for Performance Testing</TitleText>
+      </ReferenceTitle>
+      <DisplayArtist>
+        <PartyName>
+          <FullName>Benchmark Artist 1</FullName>
+        </PartyName>
+      </DisplayArtist>
+      <AdditionalTitle>
+        <TitleText>Alternative Title for Release 1</TitleText>
+      </AdditionalTitle>
+    </Release>
+  </ReleaseList>
+  <ResourceList>
+    
+  </ResourceList>
+  <DealList>
+        <ReleaseDeal>
+      <DealReleaseReference>R1</DealReleaseReference>
+      <Deal>
+        <TerritoryCode>Worldwide</TerritoryCode>
+        <StartDate>2025-01-01</StartDate>
+        <EndDate>2026-12-31</EndDate>
+      </Deal>
+    </ReleaseDeal>
+  </DealList>
+</ern:NewReleaseMessage>

@@ -237,13 +237,14 @@ impl RoundTripTester {
             }
         }
 
+        let extension_count = extension_namespaces.len();
         Ok(ExtensionAnalysis {
-            total_extensions: extension_namespaces.len(),
+            total_extensions: extension_count,
             extension_namespaces,
             known_extensions: 0, // Would classify based on known patterns
-            unknown_extensions: extension_namespaces.len(),
+            unknown_extensions: extension_count,
             preserved_extensions: if self.fidelity_options.preserve_extensions {
-                extension_namespaces.len()
+                extension_count
             } else {
                 0
             },

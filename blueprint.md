@@ -1679,10 +1679,10 @@ ddex-suite/
 - [x] Add namespace management
 - [x] Implement attribute preservation
 - [x] Test with 100+ real-world files
-- [x] Integration and Polish
+- [x] Integration and component polish
 - [ ] Comprehensive system re-test
 - [ ] Documentation re-review
-- [ ] Publish v0.4.3
+- [ ] Publish v0.3.0
 
 #### 4.3 Determinism Specification (DB-C14N/1.0)
 
@@ -1737,7 +1737,7 @@ interface DeterminismConfig {
 #### 4.4 Additional Bindings
 - [ ] Swift binding
 - [ ] C# (.NET) binding
-- [ ] Publish v0.4.4
+- [ ] Publish v0.4.0
 
 #### 4.5 Performance & Scale
 - [ ] Optimize for sub-10ms parsing

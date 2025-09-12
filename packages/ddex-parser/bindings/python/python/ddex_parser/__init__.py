@@ -86,7 +86,7 @@ class DDEXParser:
         
         opts = options.to_dict() if options else None
         result = self._parser.parse(xml, opts)
-        return ParseResult(result)
+        return result  # Return PyParsedERNMessage directly
     
     async def parse_async(self, xml: Union[str, bytes], options: Optional[ParseOptions] = None) -> ParseResult:
         """Parse DDEX XML asynchronously."""
@@ -97,7 +97,7 @@ class DDEXParser:
         
         opts = options.to_dict() if options else None
         result = await self._parser.parse_async(xml, opts)
-        return ParseResult(result)
+        return result  # Return PyParsedERNMessage directly
     
     def stream(self, xml: Union[str, bytes], options: Optional[ParseOptions] = None) -> Iterator[Dict[str, Any]]:
         """Stream parse large DDEX files."""

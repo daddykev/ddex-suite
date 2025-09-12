@@ -856,8 +856,38 @@ impl Builder {
         
         // Perform verification if enabled
         let verification_result = if self.fidelity_options.enable_verification {
-            let verifier = verification::BuildVerifier::new(self.verification_config.clone());
-            Some(verifier.verify(&build_result.xml, &self.fidelity_options)?)
+            // Convert lib VerificationConfig to verification VerificationConfig
+            let verification_config = verification::VerificationConfig {
+                enable_round_trip_verification: self.verification_config.enable_round_trip_verification,
+                enable_canonicalization_verification: self.verification_config.enable_canonicalization_verification,
+                enable_schema_validation: self.verification_config.enable_schema_validation,
+                enable_determinism_verification: self.verification_config.enable_determinism_verification,
+                determinism_test_iterations: self.verification_config.determinism_test_iterations,
+                verification_timeout: self.verification_config.verification_timeout,
+            };
+            let verifier = verification::BuildVerifier::new(verification_config);
+            let result = verifier.verify(&build_result.xml, &self.fidelity_options)?;
+            
+            // Convert verification::VerificationResult to VerificationResult
+            Some(VerificationResult {
+                success: result.success,
+                round_trip_success: result.round_trip_success,
+                canonicalization_success: result.canonicalization_success,
+                determinism_success: result.determinism_success,
+                schema_validation_success: result.schema_validation_success,
+                issues: result.issues.into_iter().map(|issue| VerificationIssue {
+                    category: issue.category,
+                    severity: match issue.severity {
+                        verification::VerificationSeverity::Error => VerificationSeverity::Error,
+                        verification::VerificationSeverity::Warning => VerificationSeverity::Warning,
+                        verification::VerificationSeverity::Info => VerificationSeverity::Info,
+                    },
+                    message: issue.message,
+                    path: issue.path,
+                    suggestion: issue.suggestion,
+                }).collect(),
+                verification_time: result.verification_time,
+            })
         } else {
             None
         };
@@ -881,14 +911,55 @@ impl Builder {
     
     /// Verify build output meets fidelity requirements
     pub fn verify_build(&self, xml_output: &str) -> Result<VerificationResult, error::BuildError> {
-        let verifier = verification::BuildVerifier::new(self.verification_config.clone());
-        verifier.verify(xml_output, &self.fidelity_options)
+        // Convert lib VerificationConfig to verification VerificationConfig
+        let verification_config = verification::VerificationConfig {
+            enable_round_trip_verification: self.verification_config.enable_round_trip_verification,
+            enable_canonicalization_verification: self.verification_config.enable_canonicalization_verification,
+            enable_schema_validation: self.verification_config.enable_schema_validation,
+            enable_determinism_verification: self.verification_config.enable_determinism_verification,
+            determinism_test_iterations: self.verification_config.determinism_test_iterations,
+            verification_timeout: self.verification_config.verification_timeout,
+        };
+        
+        let verifier = verification::BuildVerifier::new(verification_config);
+        let result = verifier.verify(xml_output, &self.fidelity_options)?;
+        
+        // Convert verification::VerificationResult to VerificationResult
+        Ok(VerificationResult {
+            success: result.success,
+            round_trip_success: result.round_trip_success,
+            canonicalization_success: result.canonicalization_success,
+            determinism_success: result.determinism_success,
+            schema_validation_success: result.schema_validation_success,
+            issues: result.issues.into_iter().map(|issue| VerificationIssue {
+                category: issue.category,
+                severity: match issue.severity {
+                    verification::VerificationSeverity::Error => VerificationSeverity::Error,
+                    verification::VerificationSeverity::Warning => VerificationSeverity::Warning,
+                    verification::VerificationSeverity::Info => VerificationSeverity::Info,
+                },
+                message: issue.message,
+                path: issue.path,
+                suggestion: issue.suggestion,
+            }).collect(),
+            verification_time: result.verification_time,
+        })
     }
     
     /// Test round-trip fidelity: XML → Parse → Build → Parse → Compare
     pub fn test_round_trip_fidelity(&self, original_xml: &str) -> Result<RoundTripResult, error::BuildError> {
         let round_trip = round_trip::RoundTripTester::new(self.fidelity_options.clone());
-        round_trip.test_round_trip(original_xml)
+        let result = round_trip.test_round_trip(original_xml)?;
+        
+        // Convert round_trip::RoundTripResult to RoundTripResult
+        Ok(RoundTripResult {
+            success: result.success,
+            original_xml: result.original_xml,
+            rebuilt_xml: result.rebuilt_xml,
+            byte_identical: result.byte_identical,
+            differences: result.differences,
+            test_time: result.test_time,
+        })
     }
     
     /// Canonicalize XML using the configured algorithm

@@ -69,6 +69,7 @@ impl GraphBuilder {
             extensions: None,
             legacy_extensions: None,
             comments: None,
+            attributes: None,
         })
     }
     
@@ -92,6 +93,7 @@ impl GraphBuilder {
                 party_name: Vec::new(),
                 trading_name: None,
                 extensions: None,
+                attributes: None,
                 comments: None,
             },
             message_recipient: MessageRecipient {
@@ -99,11 +101,13 @@ impl GraphBuilder {
                 party_name: Vec::new(),
                 trading_name: None,
                 extensions: None,
+                attributes: None,
                 comments: None,
             },
             message_control_type: None,
             message_thread_id: Some("THREAD_001".to_string()),
             extensions: None,
+            attributes: None,
             comments: None,
         })
     }
@@ -125,6 +129,7 @@ impl GraphBuilder {
             territory_code: Vec::new(),
             excluded_territory_code: Vec::new(),
             extensions: None,
+            attributes: None,
             comments: None,
         };
         

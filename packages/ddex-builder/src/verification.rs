@@ -252,7 +252,6 @@ impl BuildVerifier {
 
         // Basic XML well-formedness check
         let mut reader = quick_xml::Reader::from_str(xml_output);
-        reader.trim_text(true);
 
         loop {
             match reader.read_event() {
