@@ -1739,9 +1739,8 @@ interface DeterminismConfig {
 ```
 
 #### 4.4 Additional Bindings 🔄 **IN PROGRESS**
-- [ ] Go language binding (planned)
+- [ ] Swift binding (planned)
 - [ ] C# (.NET) binding (planned)  
-- [ ] Swift binding (exploration)
 - [ ] Publish v0.4.0 with additional bindings
 
 #### 4.5 Performance & Scale

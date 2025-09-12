@@ -26,7 +26,6 @@ use std::process;
     author = "Kevin Marques Moo"
 )]
 #[command(propagate_version = true)]
-#[command(disable_version_flag = true)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
