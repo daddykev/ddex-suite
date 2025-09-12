@@ -1738,7 +1738,33 @@ interface DeterminismConfig {
 }
 ```
 
-#### 4.4 Additional Bindings 🔄 **IN PROGRESS**
+#### 4.3.5 Core Stabilization 🔄 **IN PROGRESS**
+- [ ] Fix canonicalization text dropping bug (critical)
+- [ ] Resolve 7 failing tests in advanced features
+  - [ ] Fix diff operations (5 tests)
+  - [ ] Fix memory optimization arena allocation
+  - [ ] Fix streaming buffer manager flush callback
+- [ ] Complete WASM setup documentation and tests
+- [ ] Add comprehensive fidelity test suite (100+ real-world files)
+- [ ] Implement property-based testing for determinism
+- [ ] Add stress tests for large catalogs (>100MB files)
+- [ ] Expand cross-platform determinism tests beyond basic
+- [ ] Performance profiling and optimization
+  - [ ] Benchmark against competitors
+  - [ ] Memory leak detection and fixes
+  - [ ] Large file processing optimization
+- [ ] Security hardening
+  - [ ] Fuzz testing for XML parser
+  - [ ] XXE attack prevention validation
+  - [ ] Supply chain security audit
+- [ ] Documentation improvements
+  - [ ] Fix all documentation test failures
+  - [ ] Add troubleshooting guides
+  - [ ] Create video tutorials for Parse → Modify → Build
+- [ ] Achieve 100% test coverage for core functionality
+- [ ] Publish v0.3.5 as "Stability & Performance" release
+
+#### 4.4 Additional Bindings
 - [ ] Swift binding (planned)
 - [ ] C# (.NET) binding (planned)  
 - [ ] Publish v0.4.0 with additional bindings
@@ -1790,7 +1816,7 @@ interface DeterminismConfig {
 - ✅ Cross-platform bindings (Node.js, Python, WASM all working)
 - 🔄 100% determinism across CI matrix (basic tests passing)
 
-### Current Build Verification Summary (v0.2.5)
+### Current Build Verification Summary (v0.3.0)
 
 | Component          | Size  | Status                   |
 |--------------------|-------|--------------------------|
@@ -1821,7 +1847,7 @@ interface DeterminismConfig {
   - https://crates.io/crates/ddex-builder
 - **GitHub**: https://github.com/daddykev/ddex-suite
 
-## Current Status (January 2025)
+## Current Status (September 2025)
 
 ### Completed ✅
 - Monorepo structure established
@@ -1844,6 +1870,7 @@ interface DeterminismConfig {
 - Comprehensive CHANGELOG.md documentation
 
 ### In Progress 🔄
+- Phase 4.3.5 Core Stabilization, v0.3.5 publish
 - Documentation site enhancement
 - Additional language bindings (C#/.NET, Go)
 - Interactive tutorials
