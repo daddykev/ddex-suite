@@ -93,7 +93,7 @@ interface ParsedRelease {
 
 ## 🎯 Perfect Fidelity Engine
 
-**New in v0.2.5**: The Perfect Fidelity Engine ensures 100% round-trip preservation of DDEX XML with mathematical guarantees.
+**New in v0.3.0**: The Perfect Fidelity Engine ensures 100% round-trip preservation of DDEX XML with mathematical guarantees.
 
 ### 🔒 Fidelity Guarantees
 
@@ -154,7 +154,7 @@ console.log(`🔍 Round-trip: ${result.verification.round_trip_success ? 'PASSED
 
 ## 🚀 Features
 
-### ✅ Perfect Fidelity Engine (v0.2.5+)
+### ✅ Perfect Fidelity Engine (v0.3.0)
 - **🔒 Mathematical Guarantees**: Verifiable round-trip fidelity with formal proofs
 - **📐 DB-C14N/1.0 Canonicalization**: DDEX-specific canonicalization for byte-perfect output
 - **🔌 Extension Preservation**: 100% preservation of Spotify, Apple, YouTube, Amazon extensions
@@ -316,7 +316,7 @@ Built as a monorepo with shared core components:
 
 ## 📊 Performance Metrics
 
-### Perfect Fidelity Engine Performance (v0.2.5)
+### Perfect Fidelity Engine Performance (v0.3.0)
 
 | Operation | Target | Achieved | Fidelity Level |
 |-----------|--------|----------|----------------|
@@ -399,4 +399,4 @@ DDEX Suite is designed to complement [DDEX Workbench](https://ddex-workbench.org
 **Parser**: v0.3.0 on [npm](https://www.npmjs.com/package/ddex-parser) and [PyPI](https://pypi.org/project/ddex-parser/)  
 **Builder**: v0.3.0 on [npm](https://www.npmjs.com/package/ddex-builder) and [PyPI](https://pypi.org/project/ddex-builder/)  
 **Suite Target**: v1.0.0 in Q1 2026  
-**Last Updated**: January 11, 2025
+**Last Updated**: September 12, 2025
