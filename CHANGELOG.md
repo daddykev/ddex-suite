@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use `youtube_album`/`youtube_video` for YouTube (retained, based on public docs)
 - See `docs/PRESET_MIGRATION.md` for complete migration guide
 
-## [0.3.0] - 2025-09-12
+## [0.3.0] - 2025-01-11
 
 ### 🎉 Major Improvements
 
@@ -191,7 +191,7 @@ All packages updated to v0.3.0:
 ---
 
 ## Version History
-- **v0.3.0** (2025-01-XX): Production-ready Python bindings, DataFrame integration, Critical bug fixes
+- **v0.3.0** (2025-01-11): Production-ready Python bindings, DataFrame integration, Critical bug fixes
 - **v0.2.5** (2025-01-10): Partner presets refactor, Comment retention, Placeholder removal
 - **v0.2.0** (2025-09-09): Integration & Round-Trip Testing complete, Enhanced Python bindings, Advanced CLI features
 - **v0.1.0** (2025-09-08): Initial release with ddex-builder and ddex-parser core functionality
