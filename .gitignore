@@ -46,6 +46,7 @@ lerna-debug.log*
 .yarn-integrity
 *.tsbuildinfo
 .eslintcache
+package-lock.json
 
 # Node.js native addons build
 build/
