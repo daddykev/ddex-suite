@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDEX Suite - High-Performance DDEX Processing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #1a0033;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated floating particles */
+        .logo-particle {
+            position: absolute;
+            font-family: 'Courier New', Consolas, Monaco, monospace;
+            font-size: 16px;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 15;
+            animation: detachAndFloat 6s ease-out forwards;
+        }
+
+        @keyframes detachAndFloat {
+            0% {
+                transform: translate(0, 0) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            10% {
+                transform: translate(0, -2px) scale(1.1) rotate(-2deg);
+            }
+            20% {
+                transform: translate(10px, -10px) scale(1.2) rotate(5deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(
+                    calc(var(--float-x) * 1px), 
+                    calc(var(--float-y) * 1px)
+                ) scale(0.6) rotate(var(--rotation));
+                opacity: 0;
+            }
+        }
+
+        /* Background floating letters */
+        .floating-letters {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .floating-letter {
+            position: absolute;
+            font-family: 'Courier New', Consolas, Monaco, monospace;
+            font-size: 18px;
+            font-weight: bold;
+            animation: backgroundFloat 15s infinite ease-in-out;
+        }
+
+        .floating-letter.d { color: rgba(255, 234, 0, 0.3); }
+        .floating-letter.e { color: rgba(139, 233, 253, 0.3); }
+        .floating-letter.x { color: rgba(80, 250, 123, 0.3); }
+        .floating-letter.s { color: rgba(189, 147, 249, 0.3); }
+        .floating-letter.u { color: rgba(255, 121, 198, 0.3); }
+        .floating-letter.i { color: rgba(139, 233, 253, 0.3); }
+        .floating-letter.t { color: rgba(255, 234, 0, 0.3); }
+
+        @keyframes backgroundFloat {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+                opacity: 0.3;
+            }
+            25% {
+                transform: translate(50px, -30px) scale(1.1);
+                opacity: 0.4;
+            }
+            50% {
+                transform: translate(-30px, 20px) scale(0.9);
+                opacity: 0.35;
+            }
+            75% {
+                transform: translate(20px, -10px) scale(1.05);
+                opacity: 0.45;
+            }
+        }
+
+        .container {
+            position: relative;
+            z-index: 10;
+            max-width: 1200px;
+            width: 100%;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            align-items: center;
+        }
+
+        /* Top section - Logo and branding */
+        .branding {
+            text-align: center;
+            width: 100%;
+        }
+
+        .logo-container {
+            position: relative;
+            display: inline-block;
+            margin: 0 auto 40px auto;
+        }
+
+        .logo {
+            font-family: 'Courier New', Consolas, Monaco, monospace;
+            font-size: 16px;
+            line-height: 1.2;
+            color: #8be9fd;
+            white-space: pre;
+            text-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+            animation: glow 3s ease-in-out infinite;
+            letter-spacing: 0;
+            position: relative;
+            font-weight: bold;
+            text-align: left;
+            display: inline-block;
+            overflow-x: auto;
+            max-width: 100%;
+        }
+
+        .logo-mobile {
+            display: none;
+            font-size: 24px;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        @keyframes glow {
+            0%, 100% {
+                filter: brightness(1);
+                text-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+            }
+            50% {
+                filter: brightness(1.3);
+                text-shadow: 0 0 50px rgba(102, 126, 234, 0.8);
+            }
+        }
+
+        /* Colored sections within the ASCII art */
+        .logo-ddex {
+            color: #ffea00;
+        }
+
+        .logo-suite {
+            color: #bd93f9;
+        }
+
+        .tagline {
+            margin-top: 30px;
+            margin-bottom: 35px;
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 400;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .feature-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .feature-badge {
+            display: inline-flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .cta-button {
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-block;
+            white-space: nowrap;
+        }
+
+        .cta-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: 2px solid transparent;
+        }
+
+        .cta-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .cta-secondary {
+            background: transparent;
+            color: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(102, 126, 234, 0.5);
+        }
+
+        .cta-secondary:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: rgba(102, 126, 234, 0.8);
+        }
+
+        /* Code window */
+        .code-window {
+            width: 100%;
+            max-width: 900px;
+            background: rgba(30, 30, 46, 0.9);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 12px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5),
+                        0 0 100px rgba(102, 126, 234, 0.1);
+            overflow: hidden;
+            animation: slideIn 0.8s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .window-header {
+            background: rgba(43, 45, 66, 0.9);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .window-control {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .window-control.close {
+            background: #ff5f56;
+        }
+
+        .window-control.minimize {
+            background: #ffbd2e;
+        }
+
+        .window-control.maximize {
+            background: #27c93f;
+        }
+
+        .window-title {
+            margin-left: 10px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 13px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .code-content {
+            padding: 20px;
+            font-family: 'Courier New', Consolas, Monaco, monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #f8f8f2;
+            max-height: 400px;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+
+        .line {
+            display: flex;
+            padding: 2px 0;
+            transition: background 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .line:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .line-number {
+            width: 40px;
+            color: rgba(255, 255, 255, 0.3);
+            text-align: right;
+            padding-right: 20px;
+            user-select: none;
+            flex-shrink: 0;
+        }
+
+        .comment {
+            color: #6272a4;
+        }
+
+        .tag {
+            color: #ff79c6;
+        }
+
+        .attr-name {
+            color: #50fa7b;
+        }
+
+        .attr-value {
+            color: #f1fa8c;
+        }
+
+        .text {
+            color: #f8f8f2;
+        }
+
+        .code-dim {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            body {
+                overflow-y: auto;
+                align-items: flex-start;
+                padding-top: 20px;
+                padding-bottom: 20px;
+            }
+
+            .container {
+                padding: 20px;
+                gap: 30px;
+            }
+
+            .logo-container {
+                margin-bottom: 20px;
+                width: 100%;
+                display: flex;
+                justify-content: center;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .logo-desktop {
+                font-size: 8px;
+                line-height: 1.2;
+                transform: none;
+                margin: 0;
+            }
+
+            .tagline {
+                font-size: 16px;
+                margin-top: 20px;
+                margin-bottom: 20px;
+                padding: 0 10px;
+            }
+
+            .feature-badges {
+                font-size: 14px;
+            }
+
+            .feature-badge {
+                font-size: 13px;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                width: 100%;
+                gap: 12px;
+                margin-top: 20px;
+                padding: 0 20px;
+            }
+
+            .cta-button {
+                width: 100%;
+                text-align: center;
+                padding: 14px 20px;
+                font-size: 15px;
+            }
+
+            .code-window {
+                border-radius: 8px;
+                margin: 0 -10px;
+            }
+
+            .window-header {
+                padding: 12px 15px;
+            }
+
+            .window-control {
+                width: 10px;
+                height: 10px;
+            }
+
+            .window-title {
+                font-size: 11px;
+                margin-left: 8px;
+            }
+
+            .code-content {
+                padding: 15px;
+                font-size: 11px;
+                max-height: 300px;
+            }
+
+            .line-number {
+                width: 30px;
+                padding-right: 15px;
+                font-size: 10px;
+            }
+
+            /* Reduce floating letters on mobile for performance */
+            .floating-letter {
+                display: none;
+            }
+
+            /* Show only a few floating letters on mobile */
+            .floating-letter:nth-child(-n+3) {
+                display: block;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logo-desktop {
+                font-size: 6px;
+                line-height: 1.2;
+            }
+
+            .tagline {
+                font-size: 14px;
+                line-height: 1.5;
+            }
+
+            .tagline br {
+                display: none;
+            }
+
+            .feature-badges {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .cta-buttons {
+                padding: 0 10px;
+            }
+
+            .cta-button {
+                font-size: 14px;
+                padding: 12px 16px;
+            }
+
+            .code-window {
+                margin: 0 -15px;
+            }
+
+            .code-content {
+                padding: 10px;
+                font-size: 10px;
+                max-height: 250px;
+            }
+        }
+
+        /* Landscape mobile adjustments */
+        @media (max-width: 768px) and (orientation: landscape) {
+            body {
+                padding-top: 10px;
+                padding-bottom: 10px;
+            }
+
+            .container {
+                gap: 20px;
+            }
+
+            .logo-desktop {
+                font-size: 6px;
+                line-height: 1.1;
+            }
+
+            .tagline {
+                margin-top: 10px;
+                margin-bottom: 15px;
+            }
+
+            .code-window {
+                max-height: 50vh;
+            }
+
+            .code-content {
+                max-height: calc(50vh - 60px);
+            }
+        }
+
+        /* Very small screens */
+        @media (max-width: 375px) {
+            .container {
+                padding: 15px;
+            }
+
+            .logo-desktop {
+                font-size: 5px;
+                line-height: 1.15;
+            }
+
+            .logo-mobile {
+                display: none;
+            }
+
+            .tagline {
+                font-size: 13px;
+            }
+
+            .cta-button {
+                font-size: 13px;
+                padding: 10px 14px;
+            }
+        }
+
+        /* Hide particles on very small screens for performance */
+        @media (max-width: 480px) {
+            .logo-particle {
+                display: none;
+            }
+        }
+
+        /* Accessibility - Reduce motion */
+        @media (prefers-reduced-motion: reduce) {
+            .logo,
+            .floating-letter,
+            .logo-particle,
+            .code-window {
+                animation: none;
+            }
+
+            .cta-button,
+            .line {
+                transition: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-letters" id="floatingLetters"></div>
+    
+    <div class="container">
+        <div class="branding">
+            <div class="logo-container" id="logoContainer">
+                <pre class="logo logo-desktop" id="asciiLogo">      ddd        ddd
+       ddd         ddd
+ ddddddddd   ddddddddd   eeeeeeeee   xxx   xxx
+ ddd   ddd   ddd   ddd   eee          xxx xxx
+ ddd   ddd   ddd   ddd   eeeeeeeee     xxxxx
+ ddd   ddd   ddd   ddd   eee          xxx xxx
+ ddddddddd   ddddddddd   eeeeeeeee   xxx   xxx
+
+
+sssssssss  uuu   uuu  iii  ttttttttt  eeeeeeeee
+sss        uuu   uuu  iii     ttt     eee
+sssssssss  uuu   uuu  iii     ttt     eeeeeeeee
+      sss  uuu   uuu  iii     ttt     eee
+sssssssss  uuuuuuuuu  iii     ttt     eeeeeeeee</pre>
+                <pre class="logo logo-mobile" id="asciiLogoMobile">DDEX
+SUITE</pre>
+            </div>
+            
+            <p class="tagline">
+                High-Performance DDEX Processing
+            </p>
+            
+            <div class="feature-badges">
+                <span class="feature-badge" style="color: #8be9fd;">10MB in &lt;100ms</span>
+                <span class="feature-badge" style="color: #8be9fd;"> • </span>
+                <span class="feature-badge" style="color: #50fa7b;">Deterministic</span>
+                <span class="feature-badge" style="color: #50fa7b;"> • </span>
+                <span class="feature-badge" style="color: #ffea00;">Multi-Language</span>
+            </div>
+            
+            <div class="cta-buttons">
+                <a href="https://github.com/daddykev/ddex-suite" class="cta-button cta-primary">
+                    Get Started →
+                </a>
+                <a href="https://ddex-suite.web.app" class="cta-button cta-secondary">
+                    Documentation
+                </a>
+            </div>
+        </div>
+        
+        <div class="code-window">
+            <div class="window-header">
+                <div class="window-controls">
+                    <div class="window-control close"></div>
+                    <div class="window-control minimize"></div>
+                    <div class="window-control maximize"></div>
+                </div>
+                <div class="window-title">NewReleaseMessage.xml • ERN 4.3</div>
+            </div>
+            <div class="code-content" id="code-content">
+                <div class="line">
+                    <span class="line-number">1</span>
+                    <span class="comment">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span>
+                </div>
+                <div class="line">
+                    <span class="line-number">2</span>
+                    <span class="tag">&lt;ern:NewReleaseMessage</span>
+                </div>
+                <div class="line">
+                    <span class="line-number">3</span>
+                    <span class="attr-name">  xmlns:ern=</span><span class="attr-value">"http://ddex.net/xml/ern/43"</span>
+                </div>
+                <div class="line">
+                    <span class="line-number">4</span>
+                    <span class="attr-name">  xmlns:avs=</span><span class="attr-value">"http://ddex.net/xml/avs/avs"</span>
+                </div>
+                <div class="line">
+                    <span class="line-number">5</span>
+                    <span class="attr-name">  MessageSchemaVersionId=</span><span class="attr-value">"ern/43"</span><span class="tag">&gt;</span>
+                </div>
+                <div class="line">
+                    <span class="line-number">6</span>
+                    <span class="text">  </span><span class="tag">&lt;MessageHeader&gt;</span>
+                </div>
+                <div class="line">
+                    <span class="line-number">7</span>
+                    <span class="text">    </span><span class="tag">&lt;MessageId&gt;</span><span class="text">MSG2025091200001</span><span class="tag">&lt;/MessageId&gt;</span>
+                </div>
+                <div class="line">
+                    <span class="line-number">8</span>
+                    <span class="text">    </span><span class="tag">&lt;MessageCreatedDateTime&gt;</span><span class="text">2025-09-12T08:00:00Z</span><span class="tag">&lt;/MessageCreatedDateTime&gt;</span>
+                </div>
+                <div class="line">
+                    <span class="line-number">9</span>
+                    <span class="text">  </span><span class="tag">&lt;/MessageHeader&gt;</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Detect if mobile
+        function isMobile() {
+            return window.innerWidth <= 768;
+        }
+
+        // Create background floating letters
+        function createBackgroundFloatingLetters() {
+            const container = document.getElementById('floatingLetters');
+            const letters = [
+                { char: 'd', class: 'd', count: isMobile() ? 1 : 2 },
+                { char: 'e', class: 'e', count: isMobile() ? 1 : 2 },
+                { char: 'x', class: 'x', count: 1 },
+                { char: 's', class: 's', count: isMobile() ? 0 : 1 },
+                { char: 'u', class: 'u', count: isMobile() ? 0 : 1 },
+                { char: 'i', class: 'i', count: isMobile() ? 0 : 1 },
+                { char: 't', class: 't', count: isMobile() ? 0 : 1 },
+                { char: 'e', class: 'e', count: isMobile() ? 0 : 1 }
+            ];
+            
+            const positions = [
+                { top: '10%', left: '15%' },
+                { top: '20%', left: '85%' },
+                { top: '30%', left: '10%' },
+                { top: '40%', left: '90%' },
+                { top: '50%', left: '5%' },
+                { top: '60%', left: '95%' },
+                { top: '70%', left: '20%' },
+                { top: '80%', left: '80%' },
+                { top: '15%', left: '50%' },
+                { top: '85%', left: '50%' }
+            ];
+            
+            let posIndex = 0;
+            
+            letters.forEach(letterInfo => {
+                for (let i = 0; i < letterInfo.count; i++) {
+                    const span = document.createElement('span');
+                    span.className = `floating-letter ${letterInfo.class}`;
+                    span.textContent = letterInfo.char;
+                    
+                    const pos = positions[posIndex % positions.length];
+                    span.style.top = pos.top;
+                    span.style.left = pos.left;
+                    span.style.animationDelay = Math.random() * 5 + 's';
+                    
+                    container.appendChild(span);
+                    posIndex++;
+                }
+            });
+        }
+
+        // Extract characters from the ASCII art for particles
+        function createParticleSystem() {
+            // Skip particle system on mobile for performance
+            if (isMobile()) return;
+            
+            const container = document.getElementById('logoContainer');
+            const logo = document.getElementById('asciiLogo');
+            const text = logo.textContent;
+            
+            // Parse the ASCII art to find all letter positions
+            const letterPositions = [];
+            const lines = text.split('\n');
+            
+            lines.forEach((line, lineIndex) => {
+                for (let charIndex = 0; charIndex < line.length; charIndex++) {
+                    const char = line[charIndex].toLowerCase();
+                    // Only track actual letters (d, e, x, s, u, i, t)
+                    if (['d', 'e', 'x', 's', 'u', 'i', 't'].includes(char)) {
+                        letterPositions.push({
+                            char: char,
+                            x: charIndex * 9.6,  // Approximate character width at 16px font
+                            y: lineIndex * 19.2,  // Line height at 1.2
+                            originalChar: char
+                        });
+                    }
+                }
+            });
+            
+            // Color mapping for each letter type
+            const colors = {
+                'd': '#ffea00',
+                'e': '#8be9fd',
+                'x': '#50fa7b',
+                's': '#bd93f9',
+                'u': '#ff79c6',
+                'i': '#8be9fd',
+                't': '#ffea00'
+            };
+            
+            // Periodically create floating particles from actual letter positions
+            setInterval(() => {
+                if (letterPositions.length === 0) return;
+                
+                // Create fewer particles on mobile
+                const numParticles = isMobile() ? 1 : Math.floor(Math.random() * 3) + 2;
+                
+                for (let i = 0; i < numParticles; i++) {
+                    // Pick a random letter position from the ASCII art
+                    const letterData = letterPositions[Math.floor(Math.random() * letterPositions.length)];
+                    
+                    const particle = document.createElement('span');
+                    particle.className = 'logo-particle';
+                    particle.textContent = letterData.char;
+                    particle.style.color = colors[letterData.char] || '#8be9fd';
+                    particle.style.textShadow = `0 0 20px ${colors[letterData.char] || '#8be9fd'}`;
+                    
+                    // Position at the actual letter location
+                    particle.style.left = letterData.x + 'px';
+                    particle.style.top = letterData.y + 'px';
+                    
+                    // Random float destination
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = isMobile() ? 100 + Math.random() * 150 : 200 + Math.random() * 350;
+                    const floatX = Math.cos(angle) * distance;
+                    const floatY = Math.sin(angle) * distance;
+                    const rotation = (Math.random() - 0.5) * 720;
+                    
+                    particle.style.setProperty('--float-x', floatX);
+                    particle.style.setProperty('--float-y', floatY);
+                    particle.style.setProperty('--rotation', rotation + 'deg');
+                    
+                    container.appendChild(particle);
+                    
+                    // Remove after animation
+                    setTimeout(() => {
+                        particle.remove();
+                    }, 6000);
+                }
+            }, isMobile() ? 1200 : 600);
+        }
+
+        // Typing effect for code
+        function typeCode() {
+            const lines = document.querySelectorAll('.line');
+            lines.forEach((line, index) => {
+                line.style.opacity = '0';
+                line.style.transform = 'translateX(-10px)';
+                
+                setTimeout(() => {
+                    line.style.transition = 'all 0.3s ease';
+                    line.style.opacity = '1';
+                    line.style.transform = 'translateX(0)';
+                }, index * (isMobile() ? 30 : 50));
+            });
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            createBackgroundFloatingLetters();
+            createParticleSystem();
+            setTimeout(typeCode, 500);
+        });
+
+        // Add hover effect to code lines (desktop only)
+        if (!isMobile()) {
+            document.querySelectorAll('.line').forEach(line => {
+                line.addEventListener('mouseenter', function() {
+                    this.style.background = 'rgba(102, 126, 234, 0.1)';
+                });
+                line.addEventListener('mouseleave', function() {
+                    this.style.background = 'transparent';
+                });
+            });
+        }
+
+        // Recalculate on resize
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                // Clear and recreate floating letters if switching between mobile/desktop
+                const container = document.getElementById('floatingLetters');
+                container.innerHTML = '';
+                createBackgroundFloatingLetters();
+            }, 250);
+        });
+    </script>
+</body>
+</html>

@@ -1,17 +1,19 @@
 import React from 'react';
 import clsx from 'clsx';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBolt, faGlobeAmericas, faBullseye, faWrench, faRetweet, faHeart } from '@fortawesome/free-solid-svg-icons';
 import styles from './styles.module.css';
 
 type FeatureItem = {
   title: string;
-  icon: string;
+  icon: JSX.Element;
   description: JSX.Element;
 };
 
 const FeatureList: FeatureItem[] = [
   {
     title: 'High Performance',
-    icon: '⚡',
+    icon: <FontAwesomeIcon icon={faBolt} />,
     description: (
       <>
         Rust core with sub-millisecond parsing and building. Stream large files
@@ -21,7 +23,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'Multi-Platform',
-    icon: '🌐',
+    icon: <FontAwesomeIcon icon={faGlobeAmericas} />,
     description: (
       <>
         Native bindings for Node.js and Python. WASM support for browsers.
@@ -31,7 +33,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'Deterministic',
-    icon: '🎯',
+    icon: <FontAwesomeIcon icon={faBullseye} />,
     description: (
       <>
         Byte-perfect reproducible XML generation with DB-C14N/1.0 canonicalization.
@@ -41,7 +43,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'Industry Presets',
-    icon: '🛠️',
+    icon: <FontAwesomeIcon icon={faWrench} />,
     description: (
       <>
         Pre-configured for Spotify, Apple Music, YouTube, and Amazon.
@@ -51,7 +53,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'Perfect Round-Trip',
-    icon: '🔄',
+    icon: <FontAwesomeIcon icon={faRetweet} />,
     description: (
       <>
         Parse any DDEX file, modify it, and build it back without losing
@@ -61,7 +63,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'Developer Friendly',
-    icon: '❤️',
+    icon: <FontAwesomeIcon icon={faHeart} />,
     description: (
       <>
         TypeScript definitions, Python type hints, comprehensive docs,

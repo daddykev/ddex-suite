@@ -161,7 +161,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} DDEX Suite. Built with ❤️ for the music industry.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Kevin Marques Moo. Open-source under MIT License.`,
     },
     prism: {
       theme: prismThemes.github,

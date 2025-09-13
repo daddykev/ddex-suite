@@ -1,0 +1,68 @@
+/* Landing page specific styles */
+.landing-page {
+  background: #1a0033 !important;
+}
+
+.landing-page .navbar {
+  background: rgba(26, 0, 51, 0.9) !important;
+  backdrop-filter: blur(10px);
+}
+
+.landing-page .navbar__inner {
+  background: transparent !important;
+}
+
+.landing-page .navbar__brand {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.landing-page .navbar__link {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.landing-page .navbar__link:hover {
+  color: rgba(255, 255, 255, 1) !important;
+}
+
+.landing-page .footer {
+  display: none;
+}
+
+/* Override main margin for landing page */
+.landing-page main {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #1a0033 !important;
+}
+
+.landing-page .container {
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Ensure no theme interference */
+.landing-page,
+.landing-page *:not(.floatingLetter):not(.logoParticle),
+.landing-page [data-theme="light"],
+.landing-page [data-theme="dark"] {
+  background-color: #1a0033 !important;
+}
+
+/* Explicitly ensure floating elements have no background */
+.landing-page .floatingLetter,
+.landing-page .logoParticle {
+  background: none !important;
+  background-color: transparent !important;
+}
+
+.landing-page .main-wrapper {
+  background: #1a0033 !important;
+}
+
+/* Force background on all potential container elements */
+.landing-page .theme-doc-wrapper,
+.landing-page .theme-doc-container,
+.landing-page .container-fluid {
+  background: #1a0033 !important;
+}
