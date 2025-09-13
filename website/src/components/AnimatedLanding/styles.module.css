@@ -9,6 +9,26 @@
   animation: detachAndFloat 6s ease-out forwards;
 }
 
+/* Dimming animation for ASCII logo letters */
+.logoDimmed {
+  animation: dimAndRestore 3s ease-out forwards;
+}
+
+@keyframes dimAndRestore {
+  0% {
+    opacity: 1;
+  }
+  10% {
+    opacity: 0.5;
+  }
+  90% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 @keyframes detachAndFloat {
   0% {
     transform: translate(0, 0) scale(1) rotate(0deg);
@@ -549,7 +569,8 @@
   .logo,
   .floatingLetter,
   .logoParticle,
-  .codeWindow {
+  .codeWindow,
+  .logoDimmed {
     animation: none;
   }
 

@@ -83,16 +83,92 @@ export default function AnimatedLanding(): JSX.Element {
     });
   };
 
+  // Function to create spans around each character in the ASCII logo for individual dimming
+  const wrapLogoCharacters = () => {
+    if (!asciiLogoRef.current) return;
+
+    const logo = asciiLogoRef.current;
+    const text = logo.textContent || '';
+
+    // Clear existing content
+    logo.innerHTML = '';
+
+    const lines = text.split('\n');
+    lines.forEach((line, lineIndex) => {
+      for (let charIndex = 0; charIndex < line.length; charIndex++) {
+        const char = line[charIndex];
+        const span = document.createElement('span');
+        span.textContent = char;
+        span.style.position = 'relative';
+        span.style.display = 'inline-block';
+        span.dataset.lineIndex = lineIndex.toString();
+        span.dataset.charIndex = charIndex.toString();
+        logo.appendChild(span);
+      }
+
+      // Add newline except for the last line
+      if (lineIndex < lines.length - 1) {
+        logo.appendChild(document.createTextNode('\n'));
+      }
+    });
+  };
+
+  // Function to find and dim the closest character
+  const dimNearbyCharacters = (particleX: number, particleY: number) => {
+    if (!asciiLogoRef.current) return;
+
+    const spans = asciiLogoRef.current.querySelectorAll('span');
+    let closestSpan: HTMLElement | null = null;
+    let minDistance = Infinity;
+
+    spans.forEach(span => {
+      const lineIndex = parseInt(span.dataset.lineIndex || '0');
+      const charIndex = parseInt(span.dataset.charIndex || '0');
+
+      // Calculate character position
+      const charX = charIndex * 9.6;
+      const charY = lineIndex * 19.2;
+
+      // Calculate distance from particle
+      const distance = Math.sqrt(
+        Math.pow(particleX - charX, 2) + Math.pow(particleY - charY, 2)
+      );
+
+      // Track the closest character
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestSpan = span as HTMLElement;
+      }
+    });
+
+    // Dim only the closest character
+    if (closestSpan) {
+      // Remove any existing dimming class and add new one
+      closestSpan.classList.remove(styles.logoDimmed);
+      // Force reflow to restart animation
+      closestSpan.offsetHeight;
+      closestSpan.classList.add(styles.logoDimmed);
+
+      // Remove the class after animation completes
+      setTimeout(() => {
+        closestSpan?.classList.remove(styles.logoDimmed);
+      }, 3000);
+    }
+  };
+
   const createParticleSystem = () => {
     if (isMobile() || !logoContainerRef.current || !asciiLogoRef.current) return;
-    
+
     const container = logoContainerRef.current;
     const logo = asciiLogoRef.current;
     const text = logo.textContent || '';
-    
+
+    // Wrap logo characters first
+    wrapLogoCharacters();
+
     const letterPositions: LetterPosition[] = [];
     const lines = text.split('\n');
-    
+
     lines.forEach((line, lineIndex) => {
       for (let charIndex = 0; charIndex < line.length; charIndex++) {
         const char = line[charIndex].toLowerCase();
@@ -106,7 +182,7 @@ export default function AnimatedLanding(): JSX.Element {
         }
       }
     });
-    
+
     const colors: Record<string, string> = {
       'd': '#ffea00',
       'e': '#8be9fd',
@@ -116,15 +192,18 @@ export default function AnimatedLanding(): JSX.Element {
       'i': '#8be9fd',
       't': '#ffea00'
     };
-    
+
     const interval = setInterval(() => {
       if (letterPositions.length === 0) return;
-      
+
       const numParticles = isMobile() ? 1 : Math.floor(Math.random() * 3) + 2;
-      
+
       for (let i = 0; i < numParticles; i++) {
         const letterData = letterPositions[Math.floor(Math.random() * letterPositions.length)];
-        
+
+        // Dim nearby characters when particle is created
+        dimNearbyCharacters(letterData.x, letterData.y);
+
         const particle = document.createElement('span');
         particle.className = styles.logoParticle;
         particle.textContent = letterData.char;
@@ -140,19 +219,19 @@ export default function AnimatedLanding(): JSX.Element {
         particle.style.border = 'none';
         particle.style.boxShadow = 'none';
         particle.style.outline = 'none';
-        
+
         const angle = Math.random() * Math.PI * 2;
         const distance = isMobile() ? 100 + Math.random() * 150 : 200 + Math.random() * 350;
         const floatX = Math.cos(angle) * distance;
         const floatY = Math.sin(angle) * distance;
         const rotation = (Math.random() - 0.5) * 720;
-        
+
         particle.style.setProperty('--float-x', floatX.toString());
         particle.style.setProperty('--float-y', floatY.toString());
         particle.style.setProperty('--rotation', rotation + 'deg');
-        
+
         container.appendChild(particle);
-        
+
         setTimeout(() => {
           particle.remove();
         }, 6000);
