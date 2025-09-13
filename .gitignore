@@ -1,4 +1,14 @@
 # =========================
+# Development & AI Assistant Files
+# =========================
+# Claude Code instructions
+CLAUDE.md
+
+# Archive directories
+archive/
+test-archive/
+
+# =========================
 # Rust / Cargo
 # =========================
 # Compiled files and build artifacts
