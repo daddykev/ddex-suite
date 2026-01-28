@@ -77,7 +77,9 @@ impl ParsedElement {
                 !r.resource_reference.is_empty() && !r.reference_title.is_empty()
             }
             ParsedElement::Party(p) => !p.party_id.is_empty() && !p.party_name.is_empty(),
-            ParsedElement::Deal(d) => d.deal_reference.as_ref().is_some_and(|r| !r.is_empty()),
+            // DealReference is optional per DDEX ERN spec (minOccurs="0").
+            // A Deal is complete if it has release references linking it to releases.
+            ParsedElement::Deal(d) => !d.deal_release_reference.is_empty(),
             ParsedElement::EndOfStream => true,
         }
     }
