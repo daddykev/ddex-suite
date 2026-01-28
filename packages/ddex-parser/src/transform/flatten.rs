@@ -12,6 +12,7 @@ use ddex_core::models::flat::{
 };
 use ddex_core::models::graph::{
     Artist, Deal, DealTerms, ERNMessage, Party, Release, ReleaseResourceReference, Resource,
+    ResourceType,
 };
 use indexmap::IndexMap;
 use std::collections::HashMap;
@@ -108,7 +109,11 @@ impl Flattener {
                 let parsed = ParsedResource {
                     resource_id: resource.resource_reference.clone(),
                     resource_type: format!("{:?}", resource.resource_type),
-                    title: Self::get_primary_title(&resource.reference_title, "Resource/ReferenceTitle/TitleText")?,
+                    // ReferenceTitle is not present on all resource types (e.g., Image in ERN 3.8.2).
+                    // Use optional getter and fallback to resource reference if not present.
+                    title: Self::get_primary_title_optional(&resource.reference_title)
+                        .filter(|t| !t.is_empty())
+                        .unwrap_or_else(|| resource.resource_reference.clone()),
                     duration: resource.duration,
                     technical_details: TechnicalInfo {
                         file_format: resource
@@ -290,18 +295,31 @@ impl Flattener {
     fn build_tracks(refs: &[ReleaseResourceReference], resources: &[Resource]) -> Result<Vec<ParsedTrack>> {
         refs.iter()
             .enumerate()
-            .map(|(idx, rref)| {
+            .filter_map(|(idx, rref)| {
                 let resource = resources
                     .iter()
                     .find(|r| r.resource_reference == rref.resource_reference);
 
-                // For tracks, title is optional - if resource is missing, we can't proceed
-                let title = match resource {
-                    Some(r) => Self::get_primary_title_optional(&r.reference_title),
-                    None => None,
-                };
+                // Skip non-audio resources (images, text, etc.) - they're not tracks
+                if let Some(r) = resource {
+                    if !matches!(r.resource_type, ResourceType::SoundRecording | ResourceType::Video) {
+                        return None;
+                    }
+                }
 
-                Ok(ParsedTrack {
+                // For tracks, get title (fall back to resource reference if empty/missing)
+                let title = resource
+                    .and_then(|r| Self::get_primary_title_optional(&r.reference_title))
+                    .filter(|t| !t.is_empty())
+                    .unwrap_or_else(|| rref.resource_reference.clone());
+
+                // Duration is optional for tracks (some valid DDEX files don't include it)
+                let duration = resource.and_then(|r| r.duration);
+                let duration_formatted = duration
+                    .map(ParsedTrack::format_duration)
+                    .unwrap_or_else(|| "0:00".to_string());
+
+                Some(Ok(ParsedTrack {
                     track_id: rref.resource_reference.clone(),
                     isrc: resource.and_then(|r| {
                         r.resource_id
@@ -319,17 +337,12 @@ impl Flattener {
                     track_number: rref.track_number,
                     disc_number: rref.disc_number,
                     side: rref.side.clone(),
-                    title: title.ok_or_else(|| ParseError::MissingField("Resource/ReferenceTitle/TitleText".to_string()))?,
+                    title,
                     subtitle: None,
                     display_artist: String::new(),
                     artists: Vec::new(),
-                    duration: resource
-                        .and_then(|r| r.duration)
-                        .ok_or_else(|| ParseError::MissingField("Resource/Duration".to_string()))?,
-                    duration_formatted: resource
-                        .and_then(|r| r.duration)
-                        .map(ParsedTrack::format_duration)
-                        .ok_or_else(|| ParseError::MissingField("Resource/Duration".to_string()))?,
+                    duration: duration.unwrap_or_default(),
+                    duration_formatted,
                     file_format: None,
                     bitrate: None,
                     sample_rate: None,
@@ -337,7 +350,7 @@ impl Flattener {
                     is_bonus: rref.is_bonus,
                     is_explicit: false,
                     is_instrumental: false,
-                })
+                }))
             })
             .collect()
     }
