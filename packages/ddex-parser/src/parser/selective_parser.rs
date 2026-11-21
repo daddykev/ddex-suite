@@ -346,9 +346,8 @@ impl SelectiveParser {
 
     /// Extract element name from QName (strips namespace prefix)
     fn extract_element_name(&self, qname: &[u8]) -> Result<String, ParseError> {
-        let name_str = std::str::from_utf8(qname).map_err(|_| ParseError::IoError(
-            "Invalid UTF-8 in element name".to_string(),
-        ))?;
+        let name_str = std::str::from_utf8(qname)
+            .map_err(|_| ParseError::IoError("Invalid UTF-8 in element name".to_string()))?;
 
         // Strip namespace prefix if present
         let local_name = if let Some(colon_pos) = name_str.find(':') {

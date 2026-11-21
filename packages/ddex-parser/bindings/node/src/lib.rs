@@ -6,11 +6,11 @@ use napi_derive::napi;
 use std::io::Cursor;
 
 // Import the actual DDEX parser and related types
-use ddex_parser::{DDEXParser as RustDDEXParser, error::ParseError};
-use ddex_core::models::flat::{ParsedERNMessage, ParsedRelease, ParsedResource, ParsedDeal};
+use ddex_core::models::flat::{ParsedDeal, ParsedERNMessage, ParsedRelease, ParsedResource};
 use ddex_core::models::versions::ERNVersion;
-use serde_json;
+use ddex_parser::{error::ParseError, DDEXParser as RustDDEXParser};
 use indexmap;
+use serde_json;
 
 /// Convert a JavaScript string to a BufRead + Seek cursor for the parser
 fn string_to_cursor(xml: String) -> Cursor<Vec<u8>> {
@@ -229,11 +229,16 @@ fn convert_resource(resource: ParsedResource) -> JsResource {
         resource_type: resource.resource_type,
         title: resource.title,
         duration_seconds: resource.duration.map(|d| d.as_secs_f64()),
-        duration_string: resource.duration.map(|d| format!("{}:{:02}", d.as_secs() / 60, d.as_secs() % 60)),
+        duration_string: resource
+            .duration
+            .map(|d| format!("{}:{:02}", d.as_secs() / 60, d.as_secs() % 60)),
         file_format: resource.technical_details.file_format,
         bitrate: resource.technical_details.bitrate,
         sample_rate: resource.technical_details.sample_rate,
-        file_size: resource.technical_details.file_size.map(|size| size.to_string()),
+        file_size: resource
+            .technical_details
+            .file_size
+            .map(|size| size.to_string()),
     }
 }
 
@@ -253,12 +258,17 @@ fn convert_deal(deal: ParsedDeal) -> JsDeal {
 }
 
 /// Convert IndexMap<String, ParsedResource> to JavaScript object
-fn convert_resources_to_js_object(resources: indexmap::IndexMap<String, ParsedResource>) -> serde_json::Value {
+fn convert_resources_to_js_object(
+    resources: indexmap::IndexMap<String, ParsedResource>,
+) -> serde_json::Value {
     let mut js_resources = serde_json::Map::new();
 
     for (id, resource) in resources {
         let js_resource = convert_resource(resource);
-        js_resources.insert(id, serde_json::to_value(js_resource).unwrap_or(serde_json::Value::Null));
+        js_resources.insert(
+            id,
+            serde_json::to_value(js_resource).unwrap_or(serde_json::Value::Null),
+        );
     }
 
     serde_json::Value::Object(js_resources)
@@ -282,16 +292,13 @@ fn convert_parsed_message(
     let deal_count = deals.len() as u32;
 
     // Generate statistics if requested
-    let statistics = if options
-        .and_then(|o| o.collect_statistics)
-        .unwrap_or(false)
-    {
+    let statistics = if options.and_then(|o| o.collect_statistics).unwrap_or(false) {
         Some(ParseStatistics {
-            parse_time_ms: 0.0, // TODO: Add timing
+            parse_time_ms: 0.0,   // TODO: Add timing
             memory_used_bytes: 0, // TODO: Add memory tracking
-            element_count: 0, // TODO: Count elements during parsing
-            attribute_count: 0, // TODO: Count attributes during parsing
-            comment_count: 0, // TODO: Count comments during parsing
+            element_count: 0,     // TODO: Count elements during parsing
+            attribute_count: 0,   // TODO: Count attributes during parsing
+            comment_count: 0,     // TODO: Count comments during parsing
             extension_count: if parsed.extensions.is_some() { 1 } else { 0 },
             namespace_count: 1, // TODO: Count namespaces during parsing
             file_size_bytes: 0, // TODO: Track file size
@@ -462,7 +469,11 @@ impl DdexParser {
     }
 
     #[napi]
-    pub fn parse_sync(&mut self, xml: String, options: Option<ParseOptions>) -> Result<ParsedMessage> {
+    pub fn parse_sync(
+        &mut self,
+        xml: String,
+        options: Option<ParseOptions>,
+    ) -> Result<ParsedMessage> {
         // Validate input
         if xml.is_empty() {
             return Err(napi::Error::new(
@@ -471,7 +482,8 @@ impl DdexParser {
             ));
         }
 
-        if xml.len() > 100_000_000 {  // 100MB limit
+        if xml.len() > 100_000_000 {
+            // 100MB limit
             return Err(napi::Error::new(
                 napi::Status::InvalidArg,
                 "XML input too large (>100MB). Consider using streaming mode for large files.",
@@ -485,9 +497,10 @@ impl DdexParser {
         match self.inner.parse(cursor) {
             Ok(parsed_message) => {
                 // Validate that we got meaningful data
-                if parsed_message.flat.releases.is_empty() &&
-                   parsed_message.flat.resources.is_empty() &&
-                   parsed_message.flat.deals.is_empty() {
+                if parsed_message.flat.releases.is_empty()
+                    && parsed_message.flat.resources.is_empty()
+                    && parsed_message.flat.deals.is_empty()
+                {
                     return Err(napi::Error::new(
                         napi::Status::InvalidArg,
                         "DDEX parsing succeeded but no releases, resources, or deals were found. Please check that the XML contains valid DDEX content.",
@@ -516,7 +529,11 @@ impl DdexParser {
     }
 
     #[napi]
-    pub async unsafe fn parse(&mut self, xml: String, options: Option<ParseOptions>) -> Result<ParsedMessage> {
+    pub async unsafe fn parse(
+        &mut self,
+        xml: String,
+        options: Option<ParseOptions>,
+    ) -> Result<ParsedMessage> {
         // For now, delegate to sync version with proper async handling
         // TODO: Implement true async parsing using tokio::task::spawn_blocking for CPU-intensive work
 
@@ -534,7 +551,10 @@ impl DdexParser {
             Err(err) => {
                 // Add async context to error message
                 let mut async_err = err;
-                async_err.reason = format!("{} [Note: This was called via async parse method]", async_err.reason);
+                async_err.reason = format!(
+                    "{} [Note: This was called via async parse method]",
+                    async_err.reason
+                );
                 Err(async_err)
             }
         }
@@ -566,14 +586,12 @@ impl DdexParser {
 
         // Use the real parser's sanity check
         match self.inner.sanity_check(cursor) {
-            Ok(result) => {
-                Ok(SanityCheckResult {
-                    is_valid: result.is_valid,
-                    version: version_to_string(result.version),
-                    errors: result.errors,
-                    warnings: result.warnings,
-                })
-            }
+            Ok(result) => Ok(SanityCheckResult {
+                is_valid: result.is_valid,
+                version: version_to_string(result.version),
+                errors: result.errors,
+                warnings: result.warnings,
+            }),
             Err(err) => {
                 // If sanity check fails, return detailed error information
                 let detailed_error = match err {
@@ -614,9 +632,7 @@ impl DdexParser {
                 napi::Status::GenericFailure,
                 "No error found - parsing succeeded",
             )),
-            Err(parse_error) => {
-                Ok(parse_error_to_detailed(parse_error))
-            }
+            Err(parse_error) => Ok(parse_error_to_detailed(parse_error)),
         }
     }
 }

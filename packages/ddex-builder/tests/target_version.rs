@@ -66,7 +66,11 @@ fn accepted_version_spellings() {
         ("4.2", ERNVersion::V4_2),
         ("ern/43", ERNVersion::V4_3),
     ] {
-        assert_eq!(parse_target_version(input).unwrap(), expected, "input {input}");
+        assert_eq!(
+            parse_target_version(input).unwrap(),
+            expected,
+            "input {input}"
+        );
     }
 }
 
@@ -92,5 +96,8 @@ fn rejects_unsupported_version() {
     let err = DDEXBuilder::new()
         .build(request("9.9"), BuildOptions::default())
         .expect_err("unsupported versions must fail");
-    assert!(err.to_string().contains("unsupported ERN version '9.9'"), "{err}");
+    assert!(
+        err.to_string().contains("unsupported ERN version '9.9'"),
+        "{err}"
+    );
 }

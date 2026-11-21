@@ -239,7 +239,11 @@ impl XmlValidator {
 
         // CDATA sections cannot contain "]]>" sequence except at the end
         let cdata_str = std::str::from_utf8(cdata).map_err(|e| ParseError::InvalidUtf8 {
-            message: format!("UTF-8 decoding error at position {}: {}", self.current_position + e.valid_up_to(), e),
+            message: format!(
+                "UTF-8 decoding error at position {}: {}",
+                self.current_position + e.valid_up_to(),
+                e
+            ),
         })?;
 
         if cdata_str.contains("]]>") && !cdata_str.ends_with("]]>") {

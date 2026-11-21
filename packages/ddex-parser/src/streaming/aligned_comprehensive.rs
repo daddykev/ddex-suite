@@ -8,7 +8,10 @@ use ddex_core::models::streaming_types::*;
 use ddex_core::models::IdentifierType;
 use ddex_core::models::{graph::*, versions::ERNVersion};
 use log::warn;
-use quick_xml::{events::{Event, BytesStart}, Reader};
+use quick_xml::{
+    events::{BytesStart, Event},
+    Reader,
+};
 use std::collections::HashMap;
 use std::io::BufRead;
 use std::time::Instant;
@@ -80,7 +83,8 @@ impl<R: BufRead> AlignedStreamingParser<R> {
                     // Extract attributes into a temporary structure
                     let mut attributes = HashMap::new();
                     for attr_result in e.attributes() {
-                        let attr = attr_result.map_err(|e| ParseError::XmlError(format!("Attribute error: {}", e)))?;
+                        let attr = attr_result
+                            .map_err(|e| ParseError::XmlError(format!("Attribute error: {}", e)))?;
 
                         let key = std::str::from_utf8(attr.key.as_ref())?;
                         let value = std::str::from_utf8(&attr.value)?;
@@ -125,7 +129,6 @@ impl<R: BufRead> AlignedStreamingParser<R> {
             self.buffer.clear();
         }
     }
-
 
     fn handle_start_element_by_name(&mut self, name: &str) -> Result<(), ParseError> {
         self.current_path.push(name.to_string());
@@ -547,7 +550,10 @@ mod tests {
             match element {
                 AlignedStreamingElement::Header(header) => {
                     assert_eq!(header.message_id, "UMG-2024-NEW-RELEASE-001");
-                    assert_eq!(header.message_sender.party_name[0].text, "Universal Music Group");
+                    assert_eq!(
+                        header.message_sender.party_name[0].text,
+                        "Universal Music Group"
+                    );
                 }
                 AlignedStreamingElement::Release(release) => {
                     assert_eq!(release.release_reference, "TAYLOR_SWIFT_MIDNIGHTS_DELUXE");
@@ -593,7 +599,10 @@ mod tests {
     fn test_conversion_traits() {
         // Test ToCore trait
         let mut builder = ReleaseBuilder::new("FOLKLORE_DELUXE".to_string());
-        builder.add_title(create_localized_string("Folklore (Deluxe Version)".to_string(), None));
+        builder.add_title(create_localized_string(
+            "Folklore (Deluxe Version)".to_string(),
+            None,
+        ));
 
         let release = builder.to_core().unwrap();
         assert_eq!(release.release_reference, "FOLKLORE_DELUXE");

@@ -203,11 +203,16 @@ impl<R: BufRead> StreamingParser<R> {
                     break;
                 }
                 Ok(Event::Eof) => {
-                    return Err(ParseError::XmlError("Unexpected EOF in MessageHeader".to_string()));
+                    return Err(ParseError::XmlError(
+                        "Unexpected EOF in MessageHeader".to_string(),
+                    ));
                 }
                 Err(e) => {
-                    return Err(ParseError::XmlError(format!("XML error at {}: {}",
-                        self.get_current_location(), e)));
+                    return Err(ParseError::XmlError(format!(
+                        "XML error at {}: {}",
+                        self.get_current_location(),
+                        e
+                    )));
                 }
                 _ => {}
             }
@@ -361,7 +366,10 @@ impl<R: BufRead> StreamingParser<R> {
                 }
                 Err(e) => {
                     let location = self.get_current_location();
-                    return Err(ParseError::XmlError(format!("XML error at {}: {}", location, e)));
+                    return Err(ParseError::XmlError(format!(
+                        "XML error at {}: {}",
+                        location, e
+                    )));
                 }
                 _ => {}
             }
@@ -396,7 +404,7 @@ impl<R: BufRead> StreamingParser<R> {
                 }
                 Ok(Event::Eof) => break,
                 Err(e) => {
-                    return Err(ParseError::XmlError( e.to_string()));
+                    return Err(ParseError::XmlError(e.to_string()));
                 }
                 _ => {}
             }
@@ -407,7 +415,10 @@ impl<R: BufRead> StreamingParser<R> {
     }
 
     fn get_current_location(&self) -> String {
-        format!("byte offset {} in /NewReleaseMessage", self.reader.buffer_position())
+        format!(
+            "byte offset {} in /NewReleaseMessage",
+            self.reader.buffer_position()
+        )
     }
 }
 
@@ -454,7 +465,7 @@ impl<'a, R: BufRead> ReleaseIterator<'a, R> {
                     return Ok(None);
                 }
                 Err(e) => {
-                    return Err(ParseError::XmlError( e.to_string()));
+                    return Err(ParseError::XmlError(e.to_string()));
                 }
                 _ => {}
             }
@@ -618,34 +629,35 @@ impl<'a, R: BufRead> DealIterator<'a, R> {
     fn read_next_release_deal(&mut self) -> Result<Option<Vec<Deal>>, ParseError> {
         loop {
             self.parser.buffer.clear();
-            let release_deal_start = match self.parser.reader.read_event_into(&mut self.parser.buffer) {
-                Ok(Event::Start(ref e)) => match e.name().as_ref() {
-                    b"DealList" => {
-                        self.parser.current_depth += 1;
-                        self.in_deal_list = true;
-                        continue;
+            let release_deal_start =
+                match self.parser.reader.read_event_into(&mut self.parser.buffer) {
+                    Ok(Event::Start(ref e)) => match e.name().as_ref() {
+                        b"DealList" => {
+                            self.parser.current_depth += 1;
+                            self.in_deal_list = true;
+                            continue;
+                        }
+                        b"ReleaseDeal" if self.in_deal_list => e.to_owned(),
+                        // Not yet inside the message root (stream_deals called at the start of the
+                        // document): descend into the root instead of skipping it.
+                        _ if self.parser.current_depth == 0 => {
+                            self.parser.current_depth += 1;
+                            continue;
+                        }
+                        _ => {
+                            self.parser.current_depth += 1;
+                            self.parser.skip_element()?;
+                            continue;
+                        }
+                    },
+                    Ok(Event::End(ref e)) if e.name().as_ref() == b"DealList" => {
+                        self.parser.current_depth = self.parser.current_depth.saturating_sub(1);
+                        return Ok(None);
                     }
-                    b"ReleaseDeal" if self.in_deal_list => e.to_owned(),
-                    // Not yet inside the message root (stream_deals called at the start of the
-                    // document): descend into the root instead of skipping it.
-                    _ if self.parser.current_depth == 0 => {
-                        self.parser.current_depth += 1;
-                        continue;
-                    }
-                    _ => {
-                        self.parser.current_depth += 1;
-                        self.parser.skip_element()?;
-                        continue;
-                    }
-                },
-                Ok(Event::End(ref e)) if e.name().as_ref() == b"DealList" => {
-                    self.parser.current_depth = self.parser.current_depth.saturating_sub(1);
-                    return Ok(None);
-                }
-                Ok(Event::Eof) => return Ok(None),
-                Err(e) => return Err(ParseError::XmlError(e.to_string())),
-                _ => continue,
-            };
+                    Ok(Event::Eof) => return Ok(None),
+                    Err(e) => return Err(ParseError::XmlError(e.to_string())),
+                    _ => continue,
+                };
 
             // The validator must see the ReleaseDeal start tag so the matching end tag balances.
             let mut validator = crate::parser::xml_validator::XmlValidator::strict();

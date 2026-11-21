@@ -71,7 +71,10 @@ pub fn validate_utf8_string(text: &str) -> Result<(), ParseError> {
         if ch == '\u{FFFD}' {
             // Replacement character indicates invalid UTF-8 was present
             return Err(ParseError::InvalidUtf8 {
-                message: format!("Found Unicode replacement character at position {} indicating invalid UTF-8", pos),
+                message: format!(
+                    "Found Unicode replacement character at position {} indicating invalid UTF-8",
+                    pos
+                ),
             });
         }
 
@@ -79,7 +82,10 @@ pub fn validate_utf8_string(text: &str) -> Result<(), ParseError> {
         if ch.is_control() && ch != '\t' && ch != '\n' && ch != '\r' {
             // Allow common whitespace control characters but reject others
             return Err(ParseError::InvalidUtf8 {
-                message: format!("Found invalid control character at position {}: U+{:04X}", pos, ch as u32),
+                message: format!(
+                    "Found invalid control character at position {}: U+{:04X}",
+                    pos, ch as u32
+                ),
             });
         }
     }

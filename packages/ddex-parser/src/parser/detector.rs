@@ -39,7 +39,10 @@ impl VersionDetector {
                                 }
                             }
                             Err(e) => {
-                                return Err(ParseError::XmlError(format!("Invalid XML attribute: {}", e)));
+                                return Err(ParseError::XmlError(format!(
+                                    "Invalid XML attribute: {}",
+                                    e
+                                )));
                             }
                         }
                     }
@@ -58,7 +61,9 @@ impl VersionDetector {
 
         // If no root element found, it's invalid XML
         if !found_root {
-            return Err(ParseError::XmlError("No root element found - invalid XML".to_string()));
+            return Err(ParseError::XmlError(
+                "No root element found - invalid XML".to_string(),
+            ));
         }
 
         // Check for DDEX ERN version in namespace URIs
@@ -76,6 +81,8 @@ impl VersionDetector {
         }
 
         // If no DDEX ERN namespace found, it's not a valid DDEX document
-        Err(ParseError::XmlError("No DDEX ERN namespace found - not a valid DDEX document".to_string()))
+        Err(ParseError::XmlError(
+            "No DDEX ERN namespace found - not a valid DDEX document".to_string(),
+        ))
     }
 }

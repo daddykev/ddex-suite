@@ -1,6 +1,6 @@
 // Test to prevent regression of playground parsing issues
-use ddex_parser::DDEXParser;
 use ddex_parser::error::ParseError;
+use ddex_parser::DDEXParser;
 use std::io::Cursor;
 
 #[cfg(test)]
@@ -65,7 +65,11 @@ mod playground_regression_tests {
         let result = parser.parse(cursor);
 
         // This should NOT fail with "Missing required DDEX field" errors
-        assert!(result.is_ok(), "Playground ERN 4.3 sample should parse successfully: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "Playground ERN 4.3 sample should parse successfully: {:?}",
+            result.err()
+        );
 
         let parsed = result.unwrap();
         assert_eq!(parsed.message_id, "MSG_PLAYGROUND_2024");
@@ -141,7 +145,11 @@ mod playground_regression_tests {
         let cursor = Cursor::new(xml.as_bytes());
         let result = parser.parse(cursor);
 
-        assert!(result.is_ok(), "Playground ERN 4.2 sample should parse successfully: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "Playground ERN 4.2 sample should parse successfully: {:?}",
+            result.err()
+        );
 
         let parsed = result.unwrap();
         assert_eq!(parsed.message_id, "MSG_PLAYGROUND_42_2024");
@@ -181,7 +189,11 @@ mod playground_regression_tests {
         let result = parser.parse(cursor);
 
         // This should work with our fallback parsing logic
-        assert!(result.is_ok(), "Simplified PartyName format should parse successfully: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "Simplified PartyName format should parse successfully: {:?}",
+            result.err()
+        );
 
         let parsed = result.unwrap();
         assert_eq!(parsed.message_id, "TEST_SIMPLIFIED");
@@ -226,7 +238,11 @@ mod playground_regression_tests {
         let result = parser.parse(cursor);
 
         // Should handle missing optional fields gracefully
-        assert!(result.is_ok(), "Minimal DDEX should parse successfully: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "Minimal DDEX should parse successfully: {:?}",
+            result.err()
+        );
     }
 
     // Test error cases that should still fail appropriately
@@ -245,7 +261,10 @@ mod playground_regression_tests {
         let result = parser.parse(cursor);
 
         // This should still fail appropriately for truly missing required fields
-        assert!(result.is_err(), "Truly invalid DDEX should fail appropriately");
+        assert!(
+            result.is_err(),
+            "Truly invalid DDEX should fail appropriately"
+        );
 
         if let Err(ParseError::MissingField(field)) = result {
             // Should report missing required field with helpful context

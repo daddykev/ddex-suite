@@ -405,8 +405,10 @@ mod tests {
         assert!(stats.total_elements > 0);
         assert!(stats.total_bytes > 0);
 
-#[cfg(feature = "performance-debug")]         println!("SIMD Fast streaming stats: {:#?}", stats);
-#[cfg(feature = "performance-debug")]         println!("Throughput: {:.2} MB/s", stats.throughput_mbps);
+        #[cfg(feature = "performance-debug")]
+        println!("SIMD Fast streaming stats: {:#?}", stats);
+        #[cfg(feature = "performance-debug")]
+        println!("Throughput: {:.2} MB/s", stats.throughput_mbps);
     }
 
     #[test]
@@ -479,7 +481,8 @@ mod tests {
         let iterator = result.unwrap();
         let stats = iterator.stats();
 
-#[cfg(feature = "performance-debug")]         println!("SIMD Performance test results:");
+        #[cfg(feature = "performance-debug")]
+        println!("SIMD Performance test results:");
         #[cfg(feature = "performance-debug")]
         println!(
             "  Total bytes: {:.2} MB",
@@ -491,7 +494,8 @@ mod tests {
         println!("  Elapsed: {:?}", elapsed);
         #[cfg(feature = "performance-debug")]
         println!("  Throughput: {:.2} MB/s", stats.throughput_mbps);
-#[cfg(feature = "performance-debug")]         println!("  Elements/sec: {:.2}", stats.elements_per_second);
+        #[cfg(feature = "performance-debug")]
+        println!("  Elements/sec: {:.2}", stats.elements_per_second);
         #[cfg(feature = "performance-debug")]
         println!("  Peak memory: {:.2} MB", stats.peak_memory_mb);
         #[cfg(feature = "performance-debug")]
@@ -568,7 +572,8 @@ mod tests {
             .filter(|e| e.element_type == FastElementType::Deal)
             .count();
 
-#[cfg(feature = "performance-debug")]         println!("Element type counts:");
+        #[cfg(feature = "performance-debug")]
+        println!("Element type counts:");
         #[cfg(feature = "performance-debug")]
         println!("  Headers: {}", header_count);
         #[cfg(feature = "performance-debug")]

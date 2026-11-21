@@ -181,7 +181,8 @@ impl NamespaceDetector {
             self.default_namespace_stack.last().cloned().unwrap_or(None);
 
         for attr_result in element.attributes() {
-            let attr = attr_result.map_err(|e| ParseError::XmlError(format!("Attribute error: {}", e)))?;
+            let attr =
+                attr_result.map_err(|e| ParseError::XmlError(format!("Attribute error: {}", e)))?;
             // Use proper UTF-8 decoding for attribute key and value
             let key = utf8_utils::decode_attribute_name(attr.key.as_ref(), 0)?;
             let value = utf8_utils::decode_attribute_value(&attr.value, 0)?;

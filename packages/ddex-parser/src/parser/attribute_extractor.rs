@@ -202,7 +202,8 @@ impl AttributeExtractor {
 
         // Process all attributes
         for attr_result in element.attributes() {
-            let attr = attr_result.map_err(|e| ParseError::XmlError(format!("Failed to read attribute: {}", e)))?;
+            let attr = attr_result
+                .map_err(|e| ParseError::XmlError(format!("Failed to read attribute: {}", e)))?;
 
             let (qname, attr_value) = self.process_attribute(&attr, namespace_context)?;
 

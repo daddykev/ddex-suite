@@ -38,13 +38,25 @@ impl Flattener {
             message_type: format!("{:?}", graph.message_header.message_type),
             message_date: graph.message_header.message_created_date_time,
             sender: Organization {
-                name: Self::get_primary_name(&graph.message_header.message_sender.party_name, "MessageSender/PartyName")?,
-                id: Self::get_primary_id(&graph.message_header.message_sender.party_id, "MessageSender/PartyId")?,
+                name: Self::get_primary_name(
+                    &graph.message_header.message_sender.party_name,
+                    "MessageSender/PartyName",
+                )?,
+                id: Self::get_primary_id(
+                    &graph.message_header.message_sender.party_id,
+                    "MessageSender/PartyId",
+                )?,
                 extensions: None,
             },
             recipient: Organization {
-                name: Self::get_primary_name(&graph.message_header.message_recipient.party_name, "MessageRecipient/PartyName")?,
-                id: Self::get_primary_id(&graph.message_header.message_recipient.party_id, "MessageRecipient/PartyId")?,
+                name: Self::get_primary_name(
+                    &graph.message_header.message_recipient.party_name,
+                    "MessageRecipient/PartyName",
+                )?,
+                id: Self::get_primary_id(
+                    &graph.message_header.message_recipient.party_id,
+                    "MessageRecipient/PartyId",
+                )?,
                 extensions: None,
             },
             releases,
@@ -58,47 +70,57 @@ impl Flattener {
         })
     }
 
-    fn flatten_releases(releases: &[Release], resources: &[Resource]) -> Result<Vec<ParsedRelease>> {
+    fn flatten_releases(
+        releases: &[Release],
+        resources: &[Resource],
+    ) -> Result<Vec<ParsedRelease>> {
         releases
             .iter()
-            .map(|release| Ok(ParsedRelease {
-                release_id: release.release_reference.clone(),
-                identifiers: Self::extract_identifiers(&release.release_id),
-                title: release.release_title.clone(),
-                default_title: Self::get_primary_title_optional(&release.release_title),
-                subtitle: release.release_subtitle.clone(),
-                default_subtitle: release
-                    .release_subtitle
-                    .as_ref()
-                    .map(|s| Self::get_primary_title_optional(s))
-                    .flatten(),
-                display_artist: Self::format_display_artist(&release.display_artist)?,
-                artists: Self::extract_artists(&release.display_artist)?,
-                release_type: release
-                    .release_type
-                    .as_ref()
-                    .map(|t| format!("{:?}", t))
-                    .ok_or_else(|| ParseError::MissingField("Release/ReleaseType".to_string()))?,
-                genre: release.genre.first().map(|g| g.genre_text.clone()),
-                sub_genre: release.genre.first().and_then(|g| g.sub_genre.clone()),
-                tracks: Self::build_tracks(&release.release_resource_reference_list, resources)?,
-                track_count: release.release_resource_reference_list.len(),
-                disc_count: Self::count_discs(&release.release_resource_reference_list),
-                videos: Vec::new(),
-                images: Vec::new(),
-                cover_art: None,
-                release_date: release.release_date.first().and_then(|e| e.event_date),
-                original_release_date: None,
-                territories: Self::build_territories(
-                    &release.territory_code,
-                    &release.excluded_territory_code,
-                ),
-                p_line: None,
-                c_line: None,
-                parent_release: None,
-                child_releases: Vec::new(),
-                extensions: None,
-            }))
+            .map(|release| {
+                Ok(ParsedRelease {
+                    release_id: release.release_reference.clone(),
+                    identifiers: Self::extract_identifiers(&release.release_id),
+                    title: release.release_title.clone(),
+                    default_title: Self::get_primary_title_optional(&release.release_title),
+                    subtitle: release.release_subtitle.clone(),
+                    default_subtitle: release
+                        .release_subtitle
+                        .as_ref()
+                        .map(|s| Self::get_primary_title_optional(s))
+                        .flatten(),
+                    display_artist: Self::format_display_artist(&release.display_artist)?,
+                    artists: Self::extract_artists(&release.display_artist)?,
+                    release_type: release
+                        .release_type
+                        .as_ref()
+                        .map(|t| format!("{:?}", t))
+                        .ok_or_else(|| {
+                            ParseError::MissingField("Release/ReleaseType".to_string())
+                        })?,
+                    genre: release.genre.first().map(|g| g.genre_text.clone()),
+                    sub_genre: release.genre.first().and_then(|g| g.sub_genre.clone()),
+                    tracks: Self::build_tracks(
+                        &release.release_resource_reference_list,
+                        resources,
+                    )?,
+                    track_count: release.release_resource_reference_list.len(),
+                    disc_count: Self::count_discs(&release.release_resource_reference_list),
+                    videos: Vec::new(),
+                    images: Vec::new(),
+                    cover_art: None,
+                    release_date: release.release_date.first().and_then(|e| e.event_date),
+                    original_release_date: None,
+                    territories: Self::build_territories(
+                        &release.territory_code,
+                        &release.excluded_territory_code,
+                    ),
+                    p_line: None,
+                    c_line: None,
+                    parent_release: None,
+                    child_releases: Vec::new(),
+                    extensions: None,
+                })
+            })
             .collect()
     }
 
@@ -135,41 +157,43 @@ impl Flattener {
     fn flatten_deals(deals: &[Deal]) -> Result<Vec<ParsedDeal>> {
         deals
             .iter()
-            .map(|deal| Ok(ParsedDeal {
-                // DealReference is optional per DDEX ERN spec (minOccurs="0").
-                deal_id: deal.deal_reference.clone(),
-                releases: deal.deal_release_reference.clone(),
-                validity: DealValidity {
-                    start: deal.deal_terms.start_date,
-                    end: deal.deal_terms.end_date,
-                },
-                territories: TerritoryComplexity {
-                    included: deal.deal_terms.territory_code.clone(),
-                    excluded: deal.deal_terms.excluded_territory_code.clone(),
-                },
-                distribution_channels: DistributionComplexity {
-                    included: deal
+            .map(|deal| {
+                Ok(ParsedDeal {
+                    // DealReference is optional per DDEX ERN spec (minOccurs="0").
+                    deal_id: deal.deal_reference.clone(),
+                    releases: deal.deal_release_reference.clone(),
+                    validity: DealValidity {
+                        start: deal.deal_terms.start_date,
+                        end: deal.deal_terms.end_date,
+                    },
+                    territories: TerritoryComplexity {
+                        included: deal.deal_terms.territory_code.clone(),
+                        excluded: deal.deal_terms.excluded_territory_code.clone(),
+                    },
+                    distribution_channels: DistributionComplexity {
+                        included: deal
+                            .deal_terms
+                            .distribution_channel
+                            .iter()
+                            .map(|c| format!("{:?}", c))
+                            .collect(),
+                        excluded: deal
+                            .deal_terms
+                            .excluded_distribution_channel
+                            .iter()
+                            .map(|c| format!("{:?}", c))
+                            .collect(),
+                    },
+                    pricing: Self::build_price_tiers(&deal.deal_terms),
+                    usage_rights: deal
                         .deal_terms
-                        .distribution_channel
+                        .use_type
                         .iter()
-                        .map(|c| format!("{:?}", c))
+                        .map(|u| format!("{:?}", u))
                         .collect(),
-                    excluded: deal
-                        .deal_terms
-                        .excluded_distribution_channel
-                        .iter()
-                        .map(|c| format!("{:?}", c))
-                        .collect(),
-                },
-                pricing: Self::build_price_tiers(&deal.deal_terms),
-                usage_rights: deal
-                    .deal_terms
-                    .use_type
-                    .iter()
-                    .map(|u| format!("{:?}", u))
-                    .collect(),
-                restrictions: Vec::new(),
-            }))
+                    restrictions: Vec::new(),
+                })
+            })
             .collect()
     }
 
@@ -277,19 +301,27 @@ impl Flattener {
     fn extract_artists(artists: &[Artist]) -> Result<Vec<ArtistInfo>> {
         artists
             .iter()
-            .map(|artist| Ok(ArtistInfo {
-                name: Self::get_primary_name(&artist.display_artist_name, "Artist/DisplayArtistName")?,
-                role: artist
-                    .artist_role
-                    .first()
-                    .cloned()
-                    .ok_or_else(|| ParseError::MissingField("Artist/ArtistRole".to_string()))?,
-                party_id: artist.party_reference.clone(),
-            }))
+            .map(|artist| {
+                Ok(ArtistInfo {
+                    name: Self::get_primary_name(
+                        &artist.display_artist_name,
+                        "Artist/DisplayArtistName",
+                    )?,
+                    role: artist
+                        .artist_role
+                        .first()
+                        .cloned()
+                        .ok_or_else(|| ParseError::MissingField("Artist/ArtistRole".to_string()))?,
+                    party_id: artist.party_reference.clone(),
+                })
+            })
             .collect()
     }
 
-    fn build_tracks(refs: &[ReleaseResourceReference], resources: &[Resource]) -> Result<Vec<ParsedTrack>> {
+    fn build_tracks(
+        refs: &[ReleaseResourceReference],
+        resources: &[Resource],
+    ) -> Result<Vec<ParsedTrack>> {
         refs.iter()
             .map(|rref| {
                 let resource = resources
@@ -302,7 +334,10 @@ impl Flattener {
             // their type is unknown. Filter before numbering so positions aren't shifted.
             .filter(|(_, resource)| {
                 resource.map_or(false, |r| {
-                    matches!(r.resource_type, ResourceType::SoundRecording | ResourceType::Video)
+                    matches!(
+                        r.resource_type,
+                        ResourceType::SoundRecording | ResourceType::Video
+                    )
                 })
             })
             .enumerate()

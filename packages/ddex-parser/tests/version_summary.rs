@@ -20,7 +20,12 @@ fn test_version_support_summary() {
     // Test actual parsing for each version
     let mut parser = DDEXParser::new();
 
-    for version in &[ERNVersion::V3_8_1, ERNVersion::V3_8_2, ERNVersion::V4_2, ERNVersion::V4_3] {
+    for version in &[
+        ERNVersion::V3_8_1,
+        ERNVersion::V3_8_2,
+        ERNVersion::V4_2,
+        ERNVersion::V4_3,
+    ] {
         let namespace = version.namespace();
 
         println!("  Version {:?} -> Namespace: {}", version, namespace);

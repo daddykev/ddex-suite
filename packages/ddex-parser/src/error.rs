@@ -5,21 +5,53 @@ pub type Result<T> = std::result::Result<T, ParseError>;
 #[derive(Debug, Clone)]
 pub enum ParseError {
     MissingField(String),
-    InvalidValue { field: String, value: String },
+    InvalidValue {
+        field: String,
+        value: String,
+    },
     XmlError(String),
     StreamError(StreamError),
-    InvalidUtf8 { message: String },
+    InvalidUtf8 {
+        message: String,
+    },
     SimpleXmlError(String),
-    ConversionError { from: String, to: String, message: String },
+    ConversionError {
+        from: String,
+        to: String,
+        message: String,
+    },
     IoError(String),
-    Timeout { message: String },
-    DepthLimitExceeded { depth: usize, limit: usize },
-    SecurityViolation { message: String },
-    MalformedXml { message: String, position: usize },
-    MismatchedTags { expected: String, found: String, position: usize },
-    UnexpectedClosingTag { tag: String, position: usize },
-    InvalidAttribute { message: String, position: usize },
-    UnclosedTags { tags: Vec<String>, position: usize },
+    Timeout {
+        message: String,
+    },
+    DepthLimitExceeded {
+        depth: usize,
+        limit: usize,
+    },
+    SecurityViolation {
+        message: String,
+    },
+    MalformedXml {
+        message: String,
+        position: usize,
+    },
+    MismatchedTags {
+        expected: String,
+        found: String,
+        position: usize,
+    },
+    UnexpectedClosingTag {
+        tag: String,
+        position: usize,
+    },
+    InvalidAttribute {
+        message: String,
+        position: usize,
+    },
+    UnclosedTags {
+        tags: Vec<String>,
+        position: usize,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -49,13 +81,35 @@ impl fmt::Display for ParseError {
             }
             ParseError::IoError(msg) => write!(f, "IO error: {}", msg),
             ParseError::Timeout { message } => write!(f, "Timeout: {}", message),
-            ParseError::DepthLimitExceeded { depth, limit } => write!(f, "Depth limit exceeded: {} > {}", depth, limit),
-            ParseError::SecurityViolation { message } => write!(f, "Security violation: {}", message),
-            ParseError::MalformedXml { message, position } => write!(f, "Malformed XML at position {}: {}", position, message),
-            ParseError::MismatchedTags { expected, found, position } => write!(f, "Mismatched tags at position {}: expected '{}', found '{}'", position, expected, found),
-            ParseError::UnexpectedClosingTag { tag, position } => write!(f, "Unexpected closing tag '{}' at position {}", tag, position),
-            ParseError::InvalidAttribute { message, position } => write!(f, "Invalid attribute at position {}: {}", position, message),
-            ParseError::UnclosedTags { tags, position } => write!(f, "Unclosed tags at position {}: {:?}", position, tags),
+            ParseError::DepthLimitExceeded { depth, limit } => {
+                write!(f, "Depth limit exceeded: {} > {}", depth, limit)
+            }
+            ParseError::SecurityViolation { message } => {
+                write!(f, "Security violation: {}", message)
+            }
+            ParseError::MalformedXml { message, position } => {
+                write!(f, "Malformed XML at position {}: {}", position, message)
+            }
+            ParseError::MismatchedTags {
+                expected,
+                found,
+                position,
+            } => write!(
+                f,
+                "Mismatched tags at position {}: expected '{}', found '{}'",
+                position, expected, found
+            ),
+            ParseError::UnexpectedClosingTag { tag, position } => write!(
+                f,
+                "Unexpected closing tag '{}' at position {}",
+                tag, position
+            ),
+            ParseError::InvalidAttribute { message, position } => {
+                write!(f, "Invalid attribute at position {}: {}", position, message)
+            }
+            ParseError::UnclosedTags { tags, position } => {
+                write!(f, "Unclosed tags at position {}: {:?}", position, tags)
+            }
         }
     }
 }
@@ -71,7 +125,9 @@ impl From<std::io::Error> for ParseError {
 
 impl From<std::str::Utf8Error> for ParseError {
     fn from(err: std::str::Utf8Error) -> Self {
-        ParseError::InvalidUtf8 { message: err.to_string() }
+        ParseError::InvalidUtf8 {
+            message: err.to_string(),
+        }
     }
 }
 
@@ -92,4 +148,3 @@ impl From<String> for ParseError {
         ParseError::SimpleXmlError(err)
     }
 }
-

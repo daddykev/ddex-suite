@@ -372,9 +372,8 @@ impl MultiReleaseParser {
 
     /// Extract element name, handling namespaces
     fn extract_element_name(&self, qname: &[u8]) -> Result<String, ParseError> {
-        let name_str = std::str::from_utf8(qname).map_err(|_| ParseError::IoError(
-            "Invalid UTF-8 in element name".to_string(),
-        ))?;
+        let name_str = std::str::from_utf8(qname)
+            .map_err(|_| ParseError::IoError("Invalid UTF-8 in element name".to_string()))?;
         Ok(name_str.to_string())
     }
 

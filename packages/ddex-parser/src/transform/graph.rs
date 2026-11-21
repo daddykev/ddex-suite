@@ -93,7 +93,8 @@ impl GraphBuilder {
                                         )?,
                                     );
                                 }
-                                name @ (b"SoundRecording" | b"Video" | b"Image" | b"Text" | b"SheetMusic")
+                                name @ (b"SoundRecording" | b"Video" | b"Image" | b"Text"
+                                | b"SheetMusic")
                                     if in_resource_list =>
                                 {
                                     use ddex_core::models::graph::ResourceType;
@@ -116,23 +117,18 @@ impl GraphBuilder {
                                     // A ReleaseDeal holds one or more Deals, all linked to its
                                     // DealReleaseReferences
                                     deals.extend(
-                                        self.parse_release_deal(
-                                            &mut xml_reader,
-                                            &mut validator,
-                                        )?,
+                                        self.parse_release_deal(&mut xml_reader, &mut validator)?,
                                     );
                                 }
                                 _ => {}
                             }
                         }
-                        Event::End(ref e) => {
-                            match e.name().as_ref() {
-                                b"ReleaseList" => in_release_list = false,
-                                b"ResourceList" => in_resource_list = false,
-                                b"DealList" => in_deal_list = false,
-                                _ => {}
-                            }
-                        }
+                        Event::End(ref e) => match e.name().as_ref() {
+                            b"ReleaseList" => in_release_list = false,
+                            b"ResourceList" => in_resource_list = false,
+                            b"DealList" => in_deal_list = false,
+                            _ => {}
+                        },
                         Event::Eof => break,
                         _ => {}
                     }
@@ -184,7 +180,10 @@ impl GraphBuilder {
         self.build_from_xml_with_security_config(reader, security_config)
     }
 
-    fn parse_header_from_xml<R: BufRead>(&self, reader: &mut Reader<R>) -> Result<MessageHeader, ParseError> {
+    fn parse_header_from_xml<R: BufRead>(
+        &self,
+        reader: &mut Reader<R>,
+    ) -> Result<MessageHeader, ParseError> {
         use chrono::Utc;
         use ddex_core::models::common::LocalizedString;
 
@@ -207,62 +206,62 @@ impl GraphBuilder {
         // Parse until we exit MessageHeader or reach EOF
         loop {
             match reader.read_event_into(&mut buf) {
-                Ok(Event::Start(ref e)) => {
-                    match e.name().as_ref() {
-                        b"MessageHeader" => in_message_header = true,
-                        b"MessageId" if in_message_header => current_text.clear(),
-                        b"MessageThreadId" if in_message_header => current_text.clear(),
-                        b"MessageCreatedDateTime" if in_message_header => current_text.clear(),
-                        b"MessageSender" if in_message_header => in_message_sender = true,
-                        b"MessageRecipient" if in_message_header => in_message_recipient = true,
-                        b"PartyId" if in_message_sender => {
-                            current_text.clear();
-                        },
-                        b"PartyId" if in_message_recipient => {
-                            current_text.clear();
-                        },
-                        b"PartyName" if in_message_sender => {
-                            in_sender_party_name = true;
-                            current_text.clear();
-                        },
-                        b"PartyName" if in_message_recipient => {
-                            in_recipient_party_name = true;
-                            current_text.clear();
-                        },
-                        b"FullName" if in_sender_party_name || in_recipient_party_name => {
-                            current_text.clear();
-                        },
-                        _ => {}
+                Ok(Event::Start(ref e)) => match e.name().as_ref() {
+                    b"MessageHeader" => in_message_header = true,
+                    b"MessageId" if in_message_header => current_text.clear(),
+                    b"MessageThreadId" if in_message_header => current_text.clear(),
+                    b"MessageCreatedDateTime" if in_message_header => current_text.clear(),
+                    b"MessageSender" if in_message_header => in_message_sender = true,
+                    b"MessageRecipient" if in_message_header => in_message_recipient = true,
+                    b"PartyId" if in_message_sender => {
+                        current_text.clear();
                     }
+                    b"PartyId" if in_message_recipient => {
+                        current_text.clear();
+                    }
+                    b"PartyName" if in_message_sender => {
+                        in_sender_party_name = true;
+                        current_text.clear();
+                    }
+                    b"PartyName" if in_message_recipient => {
+                        in_recipient_party_name = true;
+                        current_text.clear();
+                    }
+                    b"FullName" if in_sender_party_name || in_recipient_party_name => {
+                        current_text.clear();
+                    }
+                    _ => {}
                 },
                 Ok(Event::Text(ref e)) => {
                     current_text.push_str(&e.unescape().unwrap_or_default());
-                },
+                }
                 Ok(Event::End(ref e)) => {
                     match e.name().as_ref() {
                         b"MessageHeader" => {
                             in_message_header = false;
                             break; // We're done parsing the header
-                        },
+                        }
                         b"MessageId" if in_message_header => {
                             if !current_text.trim().is_empty() {
                                 message_id = current_text.trim().to_string();
                             }
                             current_text.clear();
-                        },
+                        }
                         b"MessageThreadId" if in_message_header => {
                             if !current_text.trim().is_empty() {
                                 message_thread_id = Some(current_text.trim().to_string());
                             }
                             current_text.clear();
-                        },
+                        }
                         b"MessageCreatedDateTime" if in_message_header => {
                             // Try to parse the datetime, fall back to current time if invalid
-                            if let Ok(parsed_time) = chrono::DateTime::parse_from_rfc3339(current_text.trim()) {
+                            if let Ok(parsed_time) =
+                                chrono::DateTime::parse_from_rfc3339(current_text.trim())
+                            {
                                 message_created_date_time = parsed_time.with_timezone(&Utc);
                             }
                             current_text.clear();
-                        },
+                        }
                         b"MessageSender" => in_message_sender = false,
                         b"MessageRecipient" => in_message_recipient = false,
                         b"PartyId" if in_message_sender => {
@@ -276,7 +275,7 @@ impl GraphBuilder {
                                 });
                             }
                             current_text.clear();
-                        },
+                        }
                         b"PartyId" if in_message_recipient => {
                             // Handle PartyId text content
                             if !current_text.trim().is_empty() {
@@ -288,41 +287,48 @@ impl GraphBuilder {
                                 });
                             }
                             current_text.clear();
-                        },
+                        }
                         b"PartyName" if in_message_sender => {
                             // Handle direct text content in PartyName (fallback for simplified format)
                             if !current_text.trim().is_empty() {
-                                sender_party_names.push(LocalizedString::new(current_text.trim().to_string()));
+                                sender_party_names
+                                    .push(LocalizedString::new(current_text.trim().to_string()));
                             }
                             current_text.clear();
                             in_sender_party_name = false;
-                        },
+                        }
                         b"PartyName" if in_message_recipient => {
                             // Handle direct text content in PartyName (fallback for simplified format)
                             if !current_text.trim().is_empty() {
-                                recipient_party_names.push(LocalizedString::new(current_text.trim().to_string()));
+                                recipient_party_names
+                                    .push(LocalizedString::new(current_text.trim().to_string()));
                             }
                             current_text.clear();
                             in_recipient_party_name = false;
-                        },
+                        }
                         b"FullName" if in_sender_party_name => {
                             if !current_text.trim().is_empty() {
-                                sender_party_names.push(LocalizedString::new(current_text.trim().to_string()));
+                                sender_party_names
+                                    .push(LocalizedString::new(current_text.trim().to_string()));
                             }
                             current_text.clear();
-                        },
+                        }
                         b"FullName" if in_recipient_party_name => {
                             if !current_text.trim().is_empty() {
-                                recipient_party_names.push(LocalizedString::new(current_text.trim().to_string()));
+                                recipient_party_names
+                                    .push(LocalizedString::new(current_text.trim().to_string()));
                             }
                             current_text.clear();
-                        },
+                        }
                         _ => {}
                     }
-                },
+                }
                 Ok(Event::Eof) => break,
                 Err(e) => {
-                    return Err(ParseError::XmlError(format!("XML parsing error in header: {}", e)));
+                    return Err(ParseError::XmlError(format!(
+                        "XML parsing error in header: {}",
+                        e
+                    )));
                 }
                 _ => {}
             }
@@ -362,7 +368,7 @@ impl GraphBuilder {
         reader: &mut Reader<R>,
         validator: &mut crate::parser::xml_validator::XmlValidator,
     ) -> Result<Release, ParseError> {
-        use ddex_core::models::common::{LocalizedString, Identifier, IdentifierType};
+        use ddex_core::models::common::{Identifier, IdentifierType, LocalizedString};
         use ddex_core::models::graph::{Artist, ReleaseResourceReference, ReleaseType};
 
         // Initialize all the fields we'll extract
@@ -406,58 +412,68 @@ impl GraphBuilder {
                                 b"ReleaseReference" => {
                                     in_release_reference = true;
                                     current_text.clear();
-                                },
+                                }
                                 b"ReleaseId" => in_release_id = true,
                                 b"ICPN" if in_release_id => {
                                     in_icpn = true;
                                     current_text.clear();
-                                },
+                                }
                                 b"GRIN" if in_release_id => {
                                     in_grin = true;
                                     current_text.clear();
-                                },
+                                }
                                 b"GRid" if in_release_id => {
                                     in_grid = true;
                                     current_text.clear();
-                                },
+                                }
                                 // ReleaseTitle (simplified format) or ReferenceTitle (3.8.x, direct child)
                                 b"ReleaseTitle" => in_release_title = true,
                                 b"ReferenceTitle" if depth == 2 => in_release_title = true,
                                 b"TitleText" if in_release_title => {
                                     in_title_text = true;
                                     current_text.clear();
-                                },
+                                }
                                 // DisplayTitleText (4.x, direct child)
                                 b"DisplayTitleText" if depth == 2 => {
                                     in_display_title_text = true;
                                     current_text.clear();
-                                },
+                                }
                                 b"ReleaseType" => {
                                     in_release_type = true;
                                     current_text.clear();
-                                },
+                                }
                                 b"DisplayArtist" => in_display_artist = true,
                                 b"PartyName" if in_display_artist => {
                                     in_artist_party_name = true;
-                                },
+                                }
                                 b"FullName" if in_artist_party_name => {
                                     in_artist_full_name = true;
                                     current_text.clear();
-                                },
-                                b"ReleaseResourceReferenceList" => in_resource_reference_list = true,
+                                }
+                                b"ReleaseResourceReferenceList" => {
+                                    in_resource_reference_list = true
+                                }
                                 b"ReleaseResourceReference" if in_resource_reference_list => {
                                     in_resource_reference = true;
                                     current_text.clear();
-                                },
+                                }
                                 _ => {}
                             }
-                        },
+                        }
                         Event::Text(ref e) => {
-                            if in_title_text || in_display_title_text || in_release_type || in_release_reference ||
-                               in_icpn || in_grin || in_grid || in_artist_full_name || in_resource_reference {
+                            if in_title_text
+                                || in_display_title_text
+                                || in_release_type
+                                || in_release_reference
+                                || in_icpn
+                                || in_grin
+                                || in_grid
+                                || in_artist_full_name
+                                || in_resource_reference
+                            {
                                 current_text.push_str(&e.unescape().unwrap_or_default());
                             }
-                        },
+                        }
                         Event::End(ref e) => {
                             depth -= 1;
                             match e.name().as_ref() {
@@ -467,7 +483,7 @@ impl GraphBuilder {
                                     }
                                     in_release_reference = false;
                                     current_text.clear();
-                                },
+                                }
                                 b"ReleaseId" => in_release_id = false,
                                 b"ICPN" if in_icpn => {
                                     if !current_text.trim().is_empty() {
@@ -479,7 +495,7 @@ impl GraphBuilder {
                                     }
                                     in_icpn = false;
                                     current_text.clear();
-                                },
+                                }
                                 b"GRIN" if in_grin => {
                                     if !current_text.trim().is_empty() {
                                         release_ids.push(Identifier {
@@ -490,7 +506,7 @@ impl GraphBuilder {
                                     }
                                     in_grin = false;
                                     current_text.clear();
-                                },
+                                }
                                 b"GRid" if in_grid => {
                                     if !current_text.trim().is_empty() {
                                         release_ids.push(Identifier {
@@ -501,22 +517,26 @@ impl GraphBuilder {
                                     }
                                     in_grid = false;
                                     current_text.clear();
-                                },
+                                }
                                 b"ReleaseTitle" | b"ReferenceTitle" => in_release_title = false,
                                 b"TitleText" if in_title_text => {
                                     if !current_text.trim().is_empty() {
-                                        release_titles.push(LocalizedString::new(current_text.trim().to_string()));
+                                        release_titles.push(LocalizedString::new(
+                                            current_text.trim().to_string(),
+                                        ));
                                     }
                                     in_title_text = false;
                                     current_text.clear();
-                                },
+                                }
                                 b"DisplayTitleText" if in_display_title_text => {
                                     if !current_text.trim().is_empty() {
-                                        release_titles.push(LocalizedString::new(current_text.trim().to_string()));
+                                        release_titles.push(LocalizedString::new(
+                                            current_text.trim().to_string(),
+                                        ));
                                     }
                                     in_display_title_text = false;
                                     current_text.clear();
-                                },
+                                }
                                 b"ReleaseType" => {
                                     if !current_text.trim().is_empty() {
                                         release_type = match current_text.trim() {
@@ -529,24 +549,28 @@ impl GraphBuilder {
                                     }
                                     in_release_type = false;
                                     current_text.clear();
-                                },
+                                }
                                 b"DisplayArtist" => in_display_artist = false,
                                 b"PartyName" if in_artist_party_name => {
                                     in_artist_party_name = false;
-                                },
+                                }
                                 b"FullName" if in_artist_full_name => {
                                     if !current_text.trim().is_empty() {
                                         display_artists.push(Artist {
                                             party_reference: None,
                                             artist_role: vec!["MainArtist".to_string()],
-                                            display_artist_name: vec![LocalizedString::new(current_text.trim().to_string())],
+                                            display_artist_name: vec![LocalizedString::new(
+                                                current_text.trim().to_string(),
+                                            )],
                                             sequence_number: None,
                                         });
                                     }
                                     in_artist_full_name = false;
                                     current_text.clear();
-                                },
-                                b"ReleaseResourceReferenceList" => in_resource_reference_list = false,
+                                }
+                                b"ReleaseResourceReferenceList" => {
+                                    in_resource_reference_list = false
+                                }
                                 b"ReleaseResourceReference" if in_resource_reference => {
                                     if !current_text.trim().is_empty() {
                                         resource_references.push(ReleaseResourceReference {
@@ -563,16 +587,19 @@ impl GraphBuilder {
                                     }
                                     in_resource_reference = false;
                                     current_text.clear();
-                                },
+                                }
                                 _ => {}
                             }
-                        },
+                        }
                         Event::Eof => break,
                         _ => {}
                     }
                 }
                 Err(e) => {
-                    return Err(ParseError::XmlError(format!("XML parsing error in release: {}", e)));
+                    return Err(ParseError::XmlError(format!(
+                        "XML parsing error in release: {}",
+                        e
+                    )));
                 }
             }
             buf.clear();
@@ -609,7 +636,7 @@ impl GraphBuilder {
         validator: &mut crate::parser::xml_validator::XmlValidator,
         resource_type: ddex_core::models::graph::ResourceType,
     ) -> Result<ddex_core::models::graph::Resource, ParseError> {
-        use ddex_core::models::common::{LocalizedString, Identifier, IdentifierType};
+        use ddex_core::models::common::{Identifier, IdentifierType, LocalizedString};
         use ddex_core::models::graph::Resource;
         use std::time::Duration;
 
@@ -648,46 +675,53 @@ impl GraphBuilder {
                                 b"ResourceReference" => {
                                     in_resource_reference = true;
                                     current_text.clear();
-                                },
+                                }
                                 // SoundRecordingId / VideoId (3.8.x) or ResourceId (4.x)
-                                b"SoundRecordingId" | b"VideoId" | b"ResourceId" => in_sound_recording_id = true,
+                                b"SoundRecordingId" | b"VideoId" | b"ResourceId" => {
+                                    in_sound_recording_id = true
+                                }
                                 b"ISRC" if in_sound_recording_id => {
                                     in_isrc = true;
                                     current_text.clear();
-                                },
+                                }
                                 // ReferenceTitle (3.8.x, direct child) or Title (details by territory)
                                 b"ReferenceTitle" if depth == 2 => in_title = true,
                                 b"Title" => in_title = true,
                                 b"TitleText" if in_title => {
                                     in_title_text = true;
                                     current_text.clear();
-                                },
+                                }
                                 // DisplayTitleText (4.x, direct child)
                                 b"DisplayTitleText" if depth == 2 => {
                                     in_display_title_text = true;
                                     current_text.clear();
-                                },
+                                }
                                 b"Duration" => {
                                     in_duration = true;
                                     current_text.clear();
-                                },
+                                }
                                 b"DisplayArtist" => in_display_artist = true,
                                 b"PartyName" if in_display_artist => {
                                     in_artist_party_name = true;
-                                },
+                                }
                                 b"FullName" if in_artist_party_name => {
                                     in_artist_full_name = true;
                                     current_text.clear();
-                                },
+                                }
                                 _ => {}
                             }
-                        },
+                        }
                         Event::Text(ref e) => {
-                            if in_resource_reference || in_isrc || in_title_text || in_display_title_text ||
-                               in_duration || in_artist_full_name {
+                            if in_resource_reference
+                                || in_isrc
+                                || in_title_text
+                                || in_display_title_text
+                                || in_duration
+                                || in_artist_full_name
+                            {
                                 current_text.push_str(&e.unescape().unwrap_or_default());
                             }
-                        },
+                        }
                         Event::End(ref e) => {
                             depth -= 1;
                             match e.name().as_ref() {
@@ -697,8 +731,10 @@ impl GraphBuilder {
                                     }
                                     in_resource_reference = false;
                                     current_text.clear();
-                                },
-                                b"SoundRecordingId" | b"VideoId" | b"ResourceId" => in_sound_recording_id = false,
+                                }
+                                b"SoundRecordingId" | b"VideoId" | b"ResourceId" => {
+                                    in_sound_recording_id = false
+                                }
                                 b"ISRC" if in_isrc => {
                                     if !current_text.trim().is_empty() {
                                         resource_ids.push(Identifier {
@@ -709,51 +745,60 @@ impl GraphBuilder {
                                     }
                                     in_isrc = false;
                                     current_text.clear();
-                                },
+                                }
                                 b"ReferenceTitle" | b"Title" => in_title = false,
                                 b"TitleText" if in_title_text => {
                                     if !current_text.trim().is_empty() {
-                                        reference_titles.push(LocalizedString::new(current_text.trim().to_string()));
+                                        reference_titles.push(LocalizedString::new(
+                                            current_text.trim().to_string(),
+                                        ));
                                     }
                                     in_title_text = false;
                                     current_text.clear();
-                                },
+                                }
                                 b"DisplayTitleText" if in_display_title_text => {
                                     if !current_text.trim().is_empty() {
-                                        reference_titles.push(LocalizedString::new(current_text.trim().to_string()));
+                                        reference_titles.push(LocalizedString::new(
+                                            current_text.trim().to_string(),
+                                        ));
                                     }
                                     in_display_title_text = false;
                                     current_text.clear();
-                                },
+                                }
                                 b"Duration" => {
                                     if !current_text.trim().is_empty() {
                                         // Parse duration in ISO 8601 format (PT3M30S) or as seconds
-                                        if let Ok(parsed_duration) = parse_duration(&current_text.trim()) {
+                                        if let Ok(parsed_duration) =
+                                            parse_duration(&current_text.trim())
+                                        {
                                             duration = Some(parsed_duration);
                                         }
                                     }
                                     in_duration = false;
                                     current_text.clear();
-                                },
+                                }
                                 b"DisplayArtist" => in_display_artist = false,
                                 b"PartyName" if in_artist_party_name => {
                                     in_artist_party_name = false;
-                                },
+                                }
                                 b"FullName" if in_artist_full_name => {
                                     // For now, we'll store artist names in the reference_title
                                     // In a full implementation, we might want to track artists separately
                                     in_artist_full_name = false;
                                     current_text.clear();
-                                },
+                                }
                                 _ => {}
                             }
-                        },
+                        }
                         Event::Eof => break,
                         _ => {}
                     }
                 }
                 Err(e) => {
-                    return Err(ParseError::XmlError(format!("XML parsing error in resource: {}", e)));
+                    return Err(ParseError::XmlError(format!(
+                        "XML parsing error in resource: {}",
+                        e
+                    )));
                 }
             }
             buf.clear();
@@ -787,9 +832,9 @@ impl GraphBuilder {
         reader: &mut Reader<R>,
         validator: &mut crate::parser::xml_validator::XmlValidator,
     ) -> Result<Vec<ddex_core::models::graph::Deal>, ParseError> {
+        use chrono::{DateTime, Utc};
         use ddex_core::models::common::ValidityPeriod;
         use ddex_core::models::graph::{CommercialModelType, Deal, DealTerms, UseType};
-        use chrono::{DateTime, Utc};
 
         /// Values collected for one deal.
         #[derive(Default)]
@@ -863,7 +908,7 @@ impl GraphBuilder {
                                 b"DealReleaseReference" if depth == 2 => {
                                     in_release_ref = true;
                                     current_text.clear();
-                                },
+                                }
                                 b"Deal" if depth == 2 => {
                                     // A new <Deal>; anything collected at ReleaseDeal level so far
                                     // belongs to the simplified layout and is kept separately.
@@ -871,40 +916,45 @@ impl GraphBuilder {
                                         finished.push(std::mem::take(&mut current));
                                     }
                                     in_deal_element = true;
-                                },
+                                }
                                 b"DealReference" => {
                                     in_deal_reference = true;
                                     current_text.clear();
-                                },
+                                }
                                 b"DealTerms" => in_deal_terms = true,
                                 b"TerritoryCode" if in_deal_terms => {
                                     in_territory_code = true;
                                     current_text.clear();
-                                },
+                                }
                                 b"UseType" if in_deal_terms => {
                                     in_use_type = true;
                                     current_text.clear();
-                                },
+                                }
                                 b"CommercialModelType" if in_deal_terms => {
                                     in_commercial_model_type = true;
                                     current_text.clear();
-                                },
+                                }
                                 b"ValidityPeriod" if in_deal_terms => {
                                     in_validity_period = true;
-                                },
+                                }
                                 b"StartDate" if in_validity_period => {
                                     in_start_date = true;
                                     current_text.clear();
-                                },
+                                }
                                 _ => {}
                             }
-                        },
+                        }
                         Event::Text(ref e) => {
-                            if in_release_ref || in_deal_reference || in_territory_code || in_use_type ||
-                               in_commercial_model_type || in_start_date {
+                            if in_release_ref
+                                || in_deal_reference
+                                || in_territory_code
+                                || in_use_type
+                                || in_commercial_model_type
+                                || in_start_date
+                            {
                                 current_text.push_str(&e.unescape().unwrap_or_default());
                             }
-                        },
+                        }
                         Event::End(ref e) => {
                             depth -= 1;
                             match e.name().as_ref() {
@@ -914,31 +964,34 @@ impl GraphBuilder {
                                     }
                                     in_release_ref = false;
                                     current_text.clear();
-                                },
+                                }
                                 b"Deal" if in_deal_element && depth == 1 => {
                                     current.seen = true;
                                     finished.push(std::mem::take(&mut current));
                                     in_deal_element = false;
-                                },
+                                }
                                 b"DealReference" => {
                                     if !current_text.trim().is_empty() {
-                                        current.deal_reference = Some(current_text.trim().to_string());
+                                        current.deal_reference =
+                                            Some(current_text.trim().to_string());
                                         current.seen = true;
                                     }
                                     in_deal_reference = false;
                                     current_text.clear();
-                                },
+                                }
                                 b"DealTerms" => {
                                     in_deal_terms = false;
                                     current.seen = true;
-                                },
+                                }
                                 b"TerritoryCode" if in_territory_code => {
                                     if !current_text.trim().is_empty() {
-                                        current.territory_codes.push(current_text.trim().to_string());
+                                        current
+                                            .territory_codes
+                                            .push(current_text.trim().to_string());
                                     }
                                     in_territory_code = false;
                                     current_text.clear();
-                                },
+                                }
                                 b"UseType" if in_use_type => {
                                     if !current_text.trim().is_empty() {
                                         let use_type = match current_text.trim() {
@@ -952,45 +1005,57 @@ impl GraphBuilder {
                                     }
                                     in_use_type = false;
                                     current_text.clear();
-                                },
+                                }
                                 b"CommercialModelType" if in_commercial_model_type => {
                                     if !current_text.trim().is_empty() {
                                         let commercial_model = match current_text.trim() {
-                                            "PayAsYouGoModel" => CommercialModelType::PayAsYouGoModel,
-                                            "SubscriptionModel" => CommercialModelType::SubscriptionModel,
-                                            "AdSupportedModel" => CommercialModelType::AdSupportedModel,
+                                            "PayAsYouGoModel" => {
+                                                CommercialModelType::PayAsYouGoModel
+                                            }
+                                            "SubscriptionModel" => {
+                                                CommercialModelType::SubscriptionModel
+                                            }
+                                            "AdSupportedModel" => {
+                                                CommercialModelType::AdSupportedModel
+                                            }
                                             other => CommercialModelType::Other(other.to_string()),
                                         };
                                         current.commercial_model_types.push(commercial_model);
                                     }
                                     in_commercial_model_type = false;
                                     current_text.clear();
-                                },
+                                }
                                 b"ValidityPeriod" if in_validity_period => {
                                     current.validity_period = Some(ValidityPeriod {
                                         start_date: current.start_date,
                                         end_date: None, // Could be extended to parse EndDate if needed
                                     });
                                     in_validity_period = false;
-                                },
+                                }
                                 b"StartDate" if in_start_date => {
                                     if !current_text.trim().is_empty() {
-                                        if let Ok(parsed_date) = DateTime::parse_from_rfc3339(current_text.trim()) {
-                                            current.start_date = Some(parsed_date.with_timezone(&Utc));
+                                        if let Ok(parsed_date) =
+                                            DateTime::parse_from_rfc3339(current_text.trim())
+                                        {
+                                            current.start_date =
+                                                Some(parsed_date.with_timezone(&Utc));
                                         }
                                     }
                                     in_start_date = false;
                                     current_text.clear();
-                                },
+                                }
                                 _ => {}
                             }
-                        },
+                        }
                         Event::Eof => break,
                         _ => {}
                     }
                 }
                 Err(e) => {
-                    return Err(ParseError::XmlError(format!("XML parsing error in release deal: {}", e)));
+                    return Err(ParseError::XmlError(format!(
+                        "XML parsing error in release deal: {}",
+                        e
+                    )));
                 }
             }
             buf.clear();
@@ -1025,19 +1090,19 @@ fn parse_duration(duration_str: &str) -> Result<std::time::Duration, std::time::
                         total_seconds += (hours * 3600.0) as u64;
                     }
                     current_number.clear();
-                },
+                }
                 'M' => {
                     if let Ok(minutes) = current_number.parse::<f64>() {
                         total_seconds += (minutes * 60.0) as u64;
                     }
                     current_number.clear();
-                },
+                }
                 'S' => {
                     if let Ok(seconds) = current_number.parse::<f64>() {
                         total_seconds += seconds as u64;
                     }
                     current_number.clear();
-                },
+                }
                 _ => {}
             }
         }

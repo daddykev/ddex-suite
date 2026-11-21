@@ -29,7 +29,10 @@ fn deal_without_deal_reference_parses_with_no_id() {
 
     assert_eq!(message.flat.deals.len(), 1);
     let deal = &message.flat.deals[0];
-    assert_eq!(deal.deal_id, None, "absent DealReference must not be invented");
+    assert_eq!(
+        deal.deal_id, None,
+        "absent DealReference must not be invented"
+    );
     assert_eq!(deal.releases, vec!["R1".to_string()]);
     assert_eq!(deal.territories.included, vec!["Worldwide".to_string()]);
 }
@@ -80,7 +83,11 @@ fn streamed_deal_is_complete_per_schema() {
 
     let xml = fixture("deal_without_reference.xml");
     let mut parser = StreamingParser::new(Cursor::new(xml.as_bytes()), ERNVersion::V4_3);
-    let deal = parser.stream_deals().next().expect("a deal").expect("valid deal");
+    let deal = parser
+        .stream_deals()
+        .next()
+        .expect("a deal")
+        .expect("valid deal");
 
     // DealReference is optional; a deal linked to its release is complete
     assert_eq!(deal.deal_reference, None);
@@ -93,12 +100,18 @@ fn image_without_reference_title_has_no_title_and_is_not_a_track() {
 
     let image = message.flat.resources.get("A2").expect("image resource A2");
     assert_eq!(image.resource_type, "Image");
-    assert_eq!(image.title, None, "the resource reference must not be used as a title");
+    assert_eq!(
+        image.title, None,
+        "the resource reference must not be used as a title"
+    );
 
     let tracks = &message.flat.releases[0].tracks;
     assert_eq!(tracks.len(), 1, "images are not tracks");
     assert_eq!(tracks[0].track_id, "A1");
-    assert_eq!(tracks[0].position, 1, "skipped image must not shift track positions");
+    assert_eq!(
+        tracks[0].position, 1,
+        "skipped image must not shift track positions"
+    );
     assert_eq!(tracks[0].title.as_deref(), Some("Example Track"));
     assert_eq!(tracks[0].duration, Some(Duration::from_secs(200)));
     assert_eq!(tracks[0].duration_formatted.as_deref(), Some("3:20"));
@@ -111,7 +124,10 @@ fn sound_recording_without_duration_has_no_duration() {
     let track = &message.flat.releases[0].tracks[0];
     assert_eq!(track.title.as_deref(), Some("Track Without Duration"));
     assert_eq!(track.duration, None, "absent Duration must not become zero");
-    assert_eq!(track.duration_formatted, None, "absent Duration must not become \"0:00\"");
+    assert_eq!(
+        track.duration_formatted, None,
+        "absent Duration must not become \"0:00\""
+    );
 
     let resource = message.flat.resources.get("A1").expect("resource A1");
     assert_eq!(resource.duration, None);
@@ -127,7 +143,10 @@ fn ern_381_is_reported_as_381() {
 
     let message = parse("ern_381.xml");
     assert_eq!(message.graph.version, ERNVersion::V3_8_1);
-    assert_eq!(message.graph.version.namespace(), "http://ddex.net/xml/ern/381");
+    assert_eq!(
+        message.graph.version.namespace(),
+        "http://ddex.net/xml/ern/381"
+    );
 
     // Parsed with the 3.8.2 logic
     let track = &message.flat.releases[0].tracks[0];
@@ -144,5 +163,8 @@ fn ern_4x_titles_come_from_display_title_text() {
         .iter()
         .map(|r| r.default_title.as_deref())
         .collect();
-    assert_eq!(titles, vec![Some("Linked Release One"), Some("Linked Release Two")]);
+    assert_eq!(
+        titles,
+        vec![Some("Linked Release One"), Some("Linked Release Two")]
+    );
 }

@@ -190,7 +190,8 @@ impl PyDDEXParser {
                     release_dict.set_item("release_id", &release.release_id)?;
                     release_dict.set_item("title", &release.default_title)?;
                     release_dict.set_item("artist", &release.display_artist)?;
-                    release_dict.set_item("p_line", release.p_line.as_ref().map(|c| c.text.clone()))?;
+                    release_dict
+                        .set_item("p_line", release.p_line.as_ref().map(|c| c.text.clone()))?;
                     release_dict.set_item("genre", &release.genre)?;
                     release_dict.set_item("track_count", release.track_count)?;
                     records.push(release_dict.into_any());

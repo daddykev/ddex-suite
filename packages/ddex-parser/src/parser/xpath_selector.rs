@@ -325,7 +325,10 @@ impl XPathSelector {
                     // Index filter [1], [2], etc.
                     components.push(PathComponent::IndexFilter { element, index });
                 } else {
-                    return Err(ParseError::XmlError(format!("Invalid filter expression: [{}]", filter)));
+                    return Err(ParseError::XmlError(format!(
+                        "Invalid filter expression: [{}]",
+                        filter
+                    )));
                 }
             } else {
                 components.push(PathComponent::Element(part));
@@ -345,7 +348,10 @@ impl XPathSelector {
             }
         }
 
-        Err(ParseError::XmlError(format!("Invalid filter syntax: {}", input)))
+        Err(ParseError::XmlError(format!(
+            "Invalid filter syntax: {}",
+            input
+        )))
     }
 
     /// Check if current path matches the selector
@@ -494,9 +500,8 @@ impl XPathSelector {
 
     /// Extract element name from QName bytes
     fn extract_element_name(&self, qname: &[u8]) -> Result<String, ParseError> {
-        let name_str = std::str::from_utf8(qname).map_err(|_| ParseError::IoError(
-            "Invalid UTF-8 in element name".to_string(),
-        ))?;
+        let name_str = std::str::from_utf8(qname)
+            .map_err(|_| ParseError::IoError("Invalid UTF-8 in element name".to_string()))?;
 
         Ok(name_str.to_string())
     }

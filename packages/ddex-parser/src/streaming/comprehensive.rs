@@ -148,7 +148,10 @@ impl<R: BufRead> ComprehensiveStreamingParser<R> {
                                         ParseError::ConversionError {
                                             from: "StreamingHeader".to_string(),
                                             to: "MessageHeader".to_string(),
-                                            message: format!("Failed to convert header at {}: {:?}", location, e),
+                                            message: format!(
+                                                "Failed to convert header at {}: {:?}",
+                                                location, e
+                                            ),
                                         }
                                     })?;
                                     self.state = ParserState::Initial;
@@ -184,7 +187,10 @@ impl<R: BufRead> ComprehensiveStreamingParser<R> {
                                         ParseError::ConversionError {
                                             from: "StreamingRelease".to_string(),
                                             to: "Release".to_string(),
-                                            message: format!("Failed to convert release at {}: {:?}", location, e),
+                                            message: format!(
+                                                "Failed to convert release at {}: {:?}",
+                                                location, e
+                                            ),
                                         }
                                     })?;
                                     self.state = ParserState::Initial;
@@ -242,7 +248,10 @@ impl<R: BufRead> ComprehensiveStreamingParser<R> {
                                         ParseError::ConversionError {
                                             from: "StreamingParty".to_string(),
                                             to: "Party".to_string(),
-                                            message: format!("Failed to convert party at {}: {:?}", location, e),
+                                            message: format!(
+                                                "Failed to convert party at {}: {:?}",
+                                                location, e
+                                            ),
                                         }
                                     })?;
                                     self.state = ParserState::Initial;
@@ -399,7 +408,11 @@ mod tests {
         if let Err(ref e) = elements {
             error!("Iterator failed to collect elements: {:?}", e);
         }
-        assert!(elements.is_ok(), "Iterator failed with error: {:?}", elements.as_ref().err());
+        assert!(
+            elements.is_ok(),
+            "Iterator failed with error: {:?}",
+            elements.as_ref().err()
+        );
 
         let elements = elements.unwrap();
         assert!(elements.len() >= 3); // Header, Release, Resource, EndOfStream

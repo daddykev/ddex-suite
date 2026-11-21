@@ -95,7 +95,12 @@ fn example_custom_configuration() -> Result<(), Box<dyn std::error::Error>> {
     let iterator = parser.parse_streaming(&mut reader, Some(progress_callback))?;
 
     let releases: Vec<_> = iterator
-        .filter(|el| matches!(el.element_type, ddex_parser::streaming::FastElementType::Release))
+        .filter(|el| {
+            matches!(
+                el.element_type,
+                ddex_parser::streaming::FastElementType::Release
+            )
+        })
         .collect();
     let elapsed = start.elapsed();
 

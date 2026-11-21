@@ -166,7 +166,10 @@ async fn fidelity_test_sample() {
                 "   Round-trip successful: {}",
                 fidelity_result.round_trip_success
             );
-            println!("   Semantic equivalent: {}", fidelity_result.semantic_equivalent);
+            println!(
+                "   Semantic equivalent: {}",
+                fidelity_result.semantic_equivalent
+            );
             assert!(
                 fidelity_result.round_trip_success,
                 "Round-trip should succeed"
@@ -334,8 +337,8 @@ struct FidelityResult {
 async fn run_fidelity_tests() -> Result<FidelityTestResults, Box<dyn std::error::Error>> {
     // This would run the actual fidelity test suite
     Ok(FidelityTestResults {
-        files_tested: 150,       // Simulated - would be real count
-        success_rate: 0.98,      // 98% success rate
+        files_tested: 150,               // Simulated - would be real count
+        success_rate: 0.98,              // 98% success rate
         semantic_equivalence_rate: 0.98, // 98% semantic equivalence
         total_tests: 150,
         passed_tests: 147,
