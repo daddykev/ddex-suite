@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- ERN 4.2 / 4.3 track extraction. `release.tracks` is built from the main `Release`'s
+  `ResourceGroup` tree in document order (every official 4.2/4.3 DDEX sample previously
+  parsed to 0 tracks). Only SoundRecording and Video resources become tracks.
+  `disc_number` is the `SequenceNumber` of the nearest enclosing `Component` group, or
+  of the nearest `ReleaseComponent` when there is none (`MultiWorkPart` and `Side` never
+  set it). `position` is the 1-based order within that disc, or within the release when
+  there is no disc. `track_number` is the item's own `SequenceNumber` as written.
+  Titles use `DisplayTitleText`, then `DisplayTitle/TitleText`, preferring
+  `IsDefault="true"` entries. ISRCs are read from `ResourceId` (4.2) and
+  `SoundRecordingEdition` / `VideoEdition` (4.3).
+- TrackRelease linking: each track carries the `ReleaseReference` and first `ReleaseId`
+  of the `TrackRelease` for its resource. Deals keep their references as written; a
+  deal on a TrackRelease resolves to a track via `track.track_release_reference`.
+  TrackReleases are not emitted as top-level releases.
+- ERN 4.3 `TrackRelease IsMainRelease="true"`: when a message has no `Release`, each
+  such TrackRelease becomes the flat release (`release_type` is the AVS term
+  `TrackRelease`) with its resource as its one track.
+- Party-resolved artists: `PartyList` is parsed for ERN 4.x, and display artists are
+  resolved through `ArtistPartyReference` when `DisplayArtistName` is absent.
+  `release.artists` / `track.artists` list the `DisplayArtist` parties with their role.
+- Graph model keeps the full 4.x structure for round-tripping: `Release.resource_group`
+  (nested groups with type, `SequenceNumber`, group `ReleaseId` /
+  `ResourceGroupReleaseReference`, content items, and linked resource references with
+  their `LinkDescription`), `ERNMessage.track_releases`, `Party.party_reference`, and
+  the display texts with their `IsDefault` / language / territory attributes.
+- `scripts/ern4_oracle.py` / `scripts/compare_ern4_oracle.py`: an lxml oracle
+  (independent of the parser) and a comparison against the parser's flat output.
+
 ### Fixed
 - Valid ERN files without `Deal/DealReference` no longer fail with "Missing required
   DDEX field: Deal/DealReference" (#1). Thanks to @jontybrook for #2 (optional
@@ -29,6 +58,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Node.js: deals report their parsed territories instead of a hard-coded `["Worldwide"]`.
 - Python: DataFrame/dict values are `None` or real values instead of Rust debug strings
   such as `Some(...)` / `"None"`.
+- ERN 4.x release identifiers come only from the Release's own direct `ReleaseId`.
+  Previously `RelatedRelease` and `ResourceGroup` `ReleaseId`s overwrote them (e.g. the
+  4.x MixedMedia sample reported UPC `5099907138556` instead of `05099907138655`).
+- ERN 4.x `release_type` is the first `ReleaseType` (e.g. `SingleResourceRelease`), not
+  the last one (often `UserDefined`).
+- ERN 4.x resource `duration` is the resource's own `Duration`. Previously the last
+  `Duration` anywhere inside the resource won, which in 4.2 is the preview clip's
+  (e.g. 30 s instead of 3:15).
+- Messages whose `MessageSender` / `MessageRecipient` has no `PartyName` (optional in the
+  XSD) no longer fail with "Required DDEX field missing: MessageSender/PartyName"
+  (e.g. the official 4.2/4.3 `8 DjMix` samples).
+- `stats.track_count` reports the number of tracks; it was always 0.
+- `stats.release_count` counts flat releases (the same as before, except when a 4.3
+  main TrackRelease is promoted).
 
 ### Changed (breaking)
 Absent optional values are now reported as `None` / `null` instead of invented values:
@@ -47,6 +90,18 @@ Absent optional values are now reported as `None` / `null` instead of invented v
 - Python builder round trip (`test_round_trip_fidelity`) rebuilds in the parsed ERN
   version and fails with a clear error when a track has no ISRC, title or duration,
   instead of filling in placeholder values.
+- `ParsedRelease.display_artist`, `ParsedTrack.display_artist`: `String` →
+  `Option<String>`. `None` instead of `""` when there is no artist (3.8.x tracks, whose
+  artists are not extracted, are now `None`).
+- `Organization.name` (`FlattenedMessage.sender` / `recipient`): `String` →
+  `Option<String>`, since `PartyName` is optional in the XSD.
+- `flat.parties` is keyed by `PartyReference`, falling back to the first `PartyId`. A
+  party with neither is a schema error and fails the parse instead of being given an
+  invented key. (Parties were previously never populated.)
+- Node.js (`index.d.ts`): `JsRelease.displayArtist`, `JsTrack.artist`,
+  `ParsedMessage.senderName` and `recipientName` are optional.
+- Python: the `sender` column of the flat DataFrame is the sender's name (or `None`)
+  instead of a Rust debug dump of the whole organization.
 
 ### Documentation
 - Corrected class names in code examples for each language binding: Node.js uses
@@ -58,6 +113,18 @@ Absent optional values are now reported as `None` / `null` instead of invented v
   0.4.5 bindings export.
 
 ### Changed
+- New optional flat-model fields: `ParsedTrack.track_release_reference`,
+  `ParsedTrack.track_release_id` and `ParsedTrack.group_path` (`Vec<TrackGroup>` with
+  `group_type` / `sequence_number`, outermost nested group first). In JSON they are
+  omitted when empty, so 3.8.x output keeps its shape.
+- Node.js: `JsTrack` gains `trackNumber`, `trackReleaseReference`, `trackReleaseId` and
+  `groupPath`; `resourceReference` is now populated (it was always `null`).
+- Python: the tracks DataFrame gains `position`, `disc_number`, `track_number`,
+  `track_release_reference`, `track_release_id` and `group_path` columns.
+- New optional graph fields (`#[serde(default)]`): `Release.display_title_text`,
+  `display_title`, `display_artist_name`, `resource_group`; the same display fields plus
+  `display_artist` on `Resource`; `Party.party_reference`; `ERNMessage.track_releases`.
+  Struct literals constructing these types need the new fields.
 - Cloud Functions `/health` and `/docs` endpoints report the installed `ddex-parser` /
   `ddex-builder` versions instead of a hard-coded `0.4.3`.
 - Stopped tracking the Firebase deploy cache (`website/.firebase/`); removed stray
