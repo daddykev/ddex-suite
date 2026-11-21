@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43" LanguageAndScriptCode="en" AvsVersionId="3">
+   <MessageHeader>
+      <MessageId>MSG1</MessageId>
+      <MessageSender>
+         <PartyId>PADPIDA0000000001S</PartyId>
+         <PartyName><FullName>Test Sender</FullName></PartyName>
+      </MessageSender>
+      <MessageRecipient>
+         <PartyId>PADPIDA0000000002R</PartyId>
+         <PartyName><FullName>Test Recipient</FullName></PartyName>
+      </MessageRecipient>
+      <MessageCreatedDateTime>2026-01-01T00:00:00Z</MessageCreatedDateTime>
+   </MessageHeader>
+   <!-- ERN 4.3 fixture: no Release; a TrackRelease marked IsMainRelease="true". -->
+   <PartyList>
+      <Party>
+         <PartyReference>PArtistA</PartyReference>
+         <PartyName><FullName>Artist A</FullName></PartyName>
+      </Party>
+      <Party>
+         <PartyReference>PLabel</PartyReference>
+         <PartyName><FullName>Test Label</FullName></PartyName>
+      </Party>
+   </PartyList>
+   <ResourceList>
+      <SoundRecording>
+         <ResourceReference>A1</ResourceReference>
+         <Type>MusicalWorkSoundRecording</Type>
+         <SoundRecordingEdition>
+            <ResourceId><ISRC>QZTEST000009</ISRC></ResourceId>
+         </SoundRecordingEdition>
+         <DisplayTitleText>Lonely Track</DisplayTitleText>
+         <DisplayTitle><TitleText>Lonely Track</TitleText></DisplayTitle>
+         <DisplayArtistName>Artist A</DisplayArtistName>
+         <DisplayArtist>
+            <ArtistPartyReference>PArtistA</ArtistPartyReference>
+            <DisplayArtistRole>MainArtist</DisplayArtistRole>
+         </DisplayArtist>
+         <Duration>PT2M30S</Duration>
+         <ParentalWarningType>NotExplicit</ParentalWarningType>
+      </SoundRecording>
+   </ResourceList>
+   <ReleaseList>
+      <TrackRelease IsMainRelease="true">
+         <ReleaseReference>R1</ReleaseReference>
+         <ReleaseId><ProprietaryId Namespace="PADPIDA0000000001S">TR-MAIN</ProprietaryId></ReleaseId>
+         <DisplayTitleText>Lonely Track (Single)</DisplayTitleText>
+         <ReleaseResourceReference>A1</ReleaseResourceReference>
+         <ReleaseLabelReference>PLabel</ReleaseLabelReference>
+         <Genre><GenreText>Pop</GenreText></Genre>
+      </TrackRelease>
+   </ReleaseList>
+   <DealList>
+      <ReleaseDeal>
+         <DealReleaseReference>R1</DealReleaseReference>
+         <Deal>
+            <DealTerms>
+               <TerritoryCode>Worldwide</TerritoryCode>
+               <ValidityPeriod><StartDate>2026-01-01</StartDate></ValidityPeriod>
+               <CommercialModelType>PayAsYouGoModel</CommercialModelType>
+               <UseType>PermanentDownload</UseType>
+            </DealTerms>
+         </Deal>
+      </ReleaseDeal>
+   </DealList>
+</ern:NewReleaseMessage>
