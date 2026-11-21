@@ -131,11 +131,14 @@ impl Flattener {
     fn flatten_deals(deals: &[Deal]) -> Result<Vec<ParsedDeal>> {
         deals
             .iter()
-            .map(|deal| Ok(ParsedDeal {
+            .enumerate()
+            .map(|(idx, deal)| Ok(ParsedDeal {
+                // DealReference is optional per DDEX ERN spec (minOccurs="0").
+                // Generate an auto-ID if not present.
                 deal_id: deal
                     .deal_reference
                     .clone()
-                    .ok_or_else(|| ParseError::MissingField("Deal/DealReference".to_string()))?,
+                    .unwrap_or_else(|| format!("DEAL_AUTO_{}", idx + 1)),
                 releases: deal.deal_release_reference.clone(),
                 validity: DealValidity {
                     start: deal.deal_terms.start_date,
