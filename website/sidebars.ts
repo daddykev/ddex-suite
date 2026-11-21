@@ -24,6 +24,11 @@ const sidebars: SidebarsConfig = {
       ],
     },
     {
+      type: 'doc',
+      id: 'use-cases',
+      label: 'Use Cases',
+    },
+    {
       type: 'category',
       label: 'DDEX Parser',
       items: [
