@@ -370,12 +370,12 @@ class JSONLDExtension(OutputExtension):
         return json.dumps(jsonld, indent=2)
 
 # Register and use
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 from ddex_suite.extensions import register_output_extension
 
 register_output_extension(JSONLDExtension())
 
-builder = DDEXBuilder()
+builder = DdexBuilder()
 xml = builder.build(data)
 
 # Export as JSON-LD

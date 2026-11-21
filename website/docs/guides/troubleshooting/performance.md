@@ -15,7 +15,7 @@ Diagnose and resolve common performance issues in DDEX Suite.
 
 ```typescript
 // For large files, use streaming
-const parser = new DDEXParser({ 
+const parser = new DdexParser({ 
   streaming: true,
   maxMemoryUsage: 512 * 1024 * 1024 // 512MB limit
 });

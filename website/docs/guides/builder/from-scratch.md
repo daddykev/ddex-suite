@@ -7,9 +7,9 @@ Learn how to create DDEX messages programmatically without existing data.
 Start with a minimal release structure:
 
 ```typescript
-import { DDEXBuilder } from 'ddex-builder';
+import { DdexBuilder } from 'ddex-builder';
 
-const builder = new DDEXBuilder();
+const builder = new DdexBuilder();
 
 // Create a basic release
 const releaseData = {
@@ -110,7 +110,7 @@ const xml = await builder.build(releaseWithTracks);
 Use the fluent builder API for complex releases:
 
 ```typescript
-class FluentDDEXBuilder {
+class FluentDdexBuilder {
   private data: any = {
     messageHeader: {},
     releases: [],
@@ -181,7 +181,7 @@ class FluentDDEXBuilder {
   }
 
   async build(): Promise<string> {
-    const builder = new DDEXBuilder();
+    const builder = new DdexBuilder();
     return builder.build(this.data);
   }
 
@@ -191,7 +191,7 @@ class FluentDDEXBuilder {
 }
 
 // Usage example
-const fluentBuilder = new FluentDDEXBuilder()
+const fluentBuilder = new FluentDdexBuilder()
   .messageHeader('MSG_FLUENT_001', 'Creative Music Label', 'Global Distribution')
   .release('REL_ALBUM_001', 'Masterpiece Collection', 'Acclaimed Artist', 'Album')
   .releaseMetadata('REL_ALBUM_001', {
@@ -341,7 +341,7 @@ const albumData = DDEXTemplates.albumTemplate(
   ]
 );
 
-const builder = new DDEXBuilder();
+const builder = new DdexBuilder();
 const singleXml = await builder.build(singleData);
 const albumXml = await builder.build(albumData);
 ```
@@ -349,12 +349,12 @@ const albumXml = await builder.build(albumData);
 ## Python Release Creation
 
 ```python
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 from datetime import datetime, timedelta
 
 class DDEXFactory:
     def __init__(self):
-        self.builder = DDEXBuilder()
+        self.builder = DdexBuilder()
     
     def create_single_release(self, artist, title, label, isrc, duration_seconds):
         """Create a single track release"""
@@ -509,7 +509,7 @@ Always validate your generated DDEX:
 import { DDEXValidator } from 'ddex-validator';
 
 async function buildAndValidate(releaseData: any): Promise<string> {
-  const builder = new DDEXBuilder();
+  const builder = new DdexBuilder();
   const validator = new DDEXValidator();
   
   try {

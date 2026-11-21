@@ -382,12 +382,12 @@ Combine with DDEX Parser for complete workflows:
 ### Parse → Modify → Build
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 import { DdexBuilder } from 'ddex-builder';
 
 async function modifyExistingERN(originalXmlPath: string) {
   // Parse existing DDEX file
-  const parser = new DDEXParser();
+  const parser = new DdexParser();
   const parsed = await parser.parseFile(originalXmlPath);
   
   console.log('Original release:', parsed.flat.releases[0].title);

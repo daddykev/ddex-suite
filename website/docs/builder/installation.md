@@ -262,12 +262,12 @@ except ImportError:
 ### Rust Verification
 
 ```rust
-use ddex_builder::DdexBuilder;
+use ddex_builder::DDEXBuilder;
 use ddex_core::models::BuildRequest;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Check basic functionality
-    let builder = DdexBuilder::new();
+    let builder = DDEXBuilder::new();
     println!("✅ DDEX Builder loaded successfully");
     
     // Test building with minimal data

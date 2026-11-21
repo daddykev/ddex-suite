@@ -216,11 +216,11 @@ const ddexReport = await reportBuilder.build({
 Perfect integration with DDEX Parser for complete workflows:
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 import { DdexBuilder } from 'ddex-builder';
 
 // Parse existing DDEX file
-const parser = new DDEXParser();
+const parser = new DdexParser();
 const parsed = await parser.parseFile('original.xml');
 
 // Modify specific data

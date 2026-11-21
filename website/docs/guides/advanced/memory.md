@@ -16,7 +16,7 @@ Effective memory management enables:
 ### Streaming Parser Configuration
 
 ```typescript
-import { DDEXParser, StreamingConfig } from 'ddex-parser';
+import { DdexParser, StreamingConfig } from 'ddex-parser';
 
 const streamingConfig: StreamingConfig = {
   // Memory limits
@@ -37,11 +37,11 @@ const streamingConfig: StreamingConfig = {
 };
 
 export class MemoryEfficientParser {
-  private parser: DDEXParser;
+  private parser: DdexParser;
   private memoryMonitor: MemoryMonitor;
 
   constructor() {
-    this.parser = new DDEXParser({ streaming: streamingConfig });
+    this.parser = new DdexParser({ streaming: streamingConfig });
     this.memoryMonitor = new MemoryMonitor();
   }
 
@@ -650,13 +650,13 @@ interface MemoryTrend {
 
 // Usage with DDEX processing
 export class MemoryManagedDDEXService {
-  private parser: DDEXParser;
-  private builder: DDEXBuilder;
+  private parser: DdexParser;
+  private builder: DdexBuilder;
   private leakDetector: MemoryLeakDetector;
 
   constructor() {
-    this.parser = new DDEXParser();
-    this.builder = new DDEXBuilder();
+    this.parser = new DdexParser();
+    this.builder = new DdexBuilder();
     this.leakDetector = new MemoryLeakDetector();
     
     // Start leak detection

@@ -111,11 +111,11 @@ def extract_release_data_ddex(xml_content):
 ### Gradual Migration
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 import { parseXMLLegacy } from './legacy-parser';
 
 export class MigrationService {
-  private parser = new DDEXParser();
+  private parser = new DdexParser();
   private useNewParser = process.env.USE_NEW_PARSER === 'true';
 
   async parseWithFallback(xmlContent: string): Promise<any> {

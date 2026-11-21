@@ -22,10 +22,10 @@ interface MemoryOptions {
 ### Memory-Aware Parser Configuration
 
 ```typescript
-import { DDEXParser, MemoryManager } from 'ddex-parser';
+import { DdexParser, MemoryManager } from 'ddex-parser';
 
 // Configure memory management
-const parser = new DDEXParser({
+const parser = new DdexParser({
   memory: {
     maxMemoryUsage: 256 * 1024 * 1024,  // 256MB limit
     adaptiveThresholds: true,
@@ -109,7 +109,7 @@ class MemoryMonitor {
 ### Usage Example with Monitoring
 
 ```typescript
-const parser = new DDEXParser({
+const parser = new DdexParser({
   memory: {
     maxMemoryUsage: 128 * 1024 * 1024, // 128MB
     adaptiveThresholds: true,
@@ -432,7 +432,7 @@ setInterval(() => {
 
 ```typescript
 // ✅ Good: Stream large files
-const parser = new DDEXParser({
+const parser = new DdexParser({
   memory: { maxMemoryUsage: 100 * 1024 * 1024 },
   streaming: true
 });

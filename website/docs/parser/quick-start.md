@@ -11,10 +11,10 @@ Get up and running with DDEX Parser in minutes. This guide walks you through par
 ### JavaScript / TypeScript
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 
 // Create a parser instance
-const parser = new DDEXParser();
+const parser = new DdexParser();
 
 // Parse from file
 const result = await parser.parseFile('path/to/release.xml');
@@ -116,10 +116,10 @@ result.graph.resourceList.soundRecording.forEach(recording => {
 ### Extract Release Metadata
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 
 async function extractReleaseInfo(xmlFile: string) {
-  const parser = new DDEXParser();
+  const parser = new DdexParser();
   const result = await parser.parseFile(xmlFile);
   
   const release = result.flat.releases[0];
@@ -147,12 +147,12 @@ console.log(JSON.stringify(info, null, 2));
 ### Process Multiple Files
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 import { readdir } from 'fs/promises';
 import path from 'path';
 
 async function processDirectory(directoryPath: string) {
-  const parser = new DDEXParser();
+  const parser = new DdexParser();
   const files = await readdir(directoryPath);
   const results = [];
   
@@ -186,7 +186,7 @@ console.table(summary);
 
 ```typescript
 async function extractDeals(xmlFile: string) {
-  const parser = new DDEXParser();
+  const parser = new DdexParser();
   const result = await parser.parseFile(xmlFile);
   
   return result.flat.deals.map(deal => ({
@@ -352,10 +352,10 @@ data = export_to_json('release.xml', 'release_data.json')
 ### Basic Error Handling
 
 ```typescript
-import { DDEXParser, DDEXError, ValidationError } from 'ddex-parser';
+import { DdexParser, DDEXError, ValidationError } from 'ddex-parser';
 
 async function safeParseFile(filePath: string) {
-  const parser = new DDEXParser();
+  const parser = new DdexParser();
   
   try {
     const result = await parser.parseFile(filePath);
@@ -398,11 +398,11 @@ if (result.success) {
 ### Validation and Preprocessing
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 import { readFile } from 'fs/promises';
 
 async function validateAndParse(filePath: string) {
-  const parser = new DDEXParser();
+  const parser = new DdexParser();
   
   // Read and preprocess
   let xmlContent = await readFile(filePath, 'utf-8');
@@ -443,7 +443,7 @@ try {
 ### For Small Files (< 1MB)
 
 ```typescript
-const parser = new DDEXParser({
+const parser = new DdexParser({
   streaming: false,      // Faster for small files
   validation: 'basic',   // Skip heavy validation
   caching: true         // Cache parsed schemas
@@ -453,7 +453,7 @@ const parser = new DDEXParser({
 ### For Large Files (> 10MB)
 
 ```typescript
-const parser = new DDEXParser({
+const parser = new DdexParser({
   streaming: true,       // Essential for large files
   bufferSize: 8192,     // Larger buffer for better I/O
   maxMemoryMB: 100      // Prevent memory issues

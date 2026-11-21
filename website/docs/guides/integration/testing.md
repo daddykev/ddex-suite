@@ -17,16 +17,16 @@ Effective testing ensures:
 
 ```typescript
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DDEXParser } from 'ddex-parser';
-import { DDEXBuilder } from 'ddex-builder';
+import { DdexParser } from 'ddex-parser';
+import { DdexBuilder } from 'ddex-builder';
 import fs from 'fs/promises';
 
 describe('DDEX Parser', () => {
-  let parser: DDEXParser;
+  let parser: DdexParser;
   let sampleXML: string;
 
   beforeEach(async () => {
-    parser = new DDEXParser();
+    parser = new DdexParser();
     sampleXML = await fs.readFile('test/fixtures/sample-release.xml', 'utf-8');
   });
 
@@ -55,8 +55,8 @@ describe('DDEX Parser', () => {
   });
 
   it('should preserve round-trip fidelity', async () => {
-    const parser = new DDEXParser();
-    const builder = new DDEXBuilder();
+    const parser = new DdexParser();
+    const builder = new DdexBuilder();
     
     const parsed = await parser.parse(sampleXML);
     const rebuilt = await builder.build(parsed.toBuildRequest());
@@ -68,11 +68,11 @@ describe('DDEX Parser', () => {
 });
 
 describe('DDEX Builder', () => {
-  let builder: DDEXBuilder;
+  let builder: DdexBuilder;
   let sampleData: any;
 
   beforeEach(async () => {
-    builder = new DDEXBuilder();
+    builder = new DdexBuilder();
     sampleData = JSON.parse(
       await fs.readFile('test/fixtures/sample-data.json', 'utf-8')
     );
@@ -117,7 +117,7 @@ import pytest
 import json
 from pathlib import Path
 from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 
 class TestDDEXParser:
     def setup_method(self):
@@ -161,9 +161,9 @@ class TestDDEXParser:
         assert processing_time < 1.0  # Should process in under 1 second
         assert result is not None
 
-class TestDDEXBuilder:
+class TestDdexBuilder:
     def setup_method(self):
-        self.builder = DDEXBuilder()
+        self.builder = DdexBuilder()
         
         with open(Path(__file__).parent / 'fixtures' / 'sample-data.json') as f:
             self.sample_data = json.load(f)
@@ -538,12 +538,12 @@ import pytest
 import time
 import statistics
 from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 
 class TestPerformance:
     def setup_method(self):
         self.parser = DDEXParser()
-        self.builder = DDEXBuilder()
+        self.builder = DdexBuilder()
         
         # Load test data
         with open('tests/fixtures/large-release.xml') as f:
@@ -610,7 +610,7 @@ class TestPerformance:
 from hypothesis import given, strategies as st
 from hypothesis.extra import django
 from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 
 # Generate test data strategies
 release_strategy = st.builds(
@@ -626,7 +626,7 @@ release_strategy = st.builds(
 def test_roundtrip_property(release_data):
     """Property: Parse -> Build -> Parse should preserve data"""
     parser = DDEXParser()
-    builder = DDEXBuilder()
+    builder = DdexBuilder()
     
     try:
         # Build from data
@@ -667,7 +667,7 @@ def test_parser_robustness(xml_content):
 ```python
 import json
 from faker import Faker
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 
 fake = Faker()
 
@@ -695,7 +695,7 @@ def generate_test_release():
 
 def create_test_fixtures():
     """Create a variety of test fixtures"""
-    builder = DDEXBuilder()
+    builder = DdexBuilder()
     
     fixtures = {
         'simple_release': {

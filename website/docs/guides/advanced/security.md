@@ -16,9 +16,9 @@ DDEX Suite includes built-in security features:
 ### XXE Protection
 
 ```typescript
-import { DDEXParser, SecurityConfig } from 'ddex-parser';
+import { DdexParser, SecurityConfig } from 'ddex-parser';
 
-const parser = new DDEXParser({
+const parser = new DdexParser({
   security: {
     // Disable XML external entities
     disableXXE: true,
@@ -151,7 +151,7 @@ class SecureParser:
 
 ```typescript
 import { SecretManager } from '@google-cloud/secret-manager';
-import { DDEXBuilder } from 'ddex-builder';
+import { DdexBuilder } from 'ddex-builder';
 
 export class SecureConfigManager {
   private secretClient: SecretManager;
@@ -197,10 +197,10 @@ export class SecureConfigManager {
     }
   }
 
-  async createSecureDDEXBuilder(): Promise<DDEXBuilder> {
+  async createSecureDdexBuilder(): Promise<DdexBuilder> {
     const config = await this.getSecureConfig('ddex-builder-config');
     
-    return new DDEXBuilder({
+    return new DdexBuilder({
       // Use secure configuration
       apiKeys: config.apiKeys,
       encryptionKey: config.encryptionKey,
@@ -222,7 +222,7 @@ export class SecureConfigManager {
 
 // Usage with environment-specific secrets
 const configManager = new SecureConfigManager();
-const builder = await configManager.createSecureDDEXBuilder();
+const builder = await configManager.createSecureDdexBuilder();
 ```
 
 ### Data Encryption
@@ -354,13 +354,13 @@ export class AccessController {
 
 // Secure DDEX service with access control
 export class SecureDDEXService {
-  private parser: DDEXParser;
-  private builder: DDEXBuilder;
+  private parser: DdexParser;
+  private builder: DdexBuilder;
   private accessControl: AccessController;
 
   constructor() {
-    this.parser = new DDEXParser();
-    this.builder = new DDEXBuilder();
+    this.parser = new DdexParser();
+    this.builder = new DdexBuilder();
     this.accessControl = new AccessController();
   }
 

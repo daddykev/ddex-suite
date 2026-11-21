@@ -19,9 +19,9 @@ The DDEX Parser transforms DDEX XML messages into clean, structured data that's 
 ### Node.js / TypeScript
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 
-const parser = new DDEXParser();
+const parser = new DdexParser();
 const result = await parser.parse(xmlContent);
 
 // Access flattened, developer-friendly data
@@ -88,7 +88,7 @@ result.graph.newReleaseMessage.dealList.releaseDeal[0]
 ### Parser Settings
 
 ```typescript
-const parser = new DDEXParser({
+const parser = new DdexParser({
   // Validation level
   validation: 'strict', // 'strict' | 'permissive' | 'none'
   
@@ -108,13 +108,13 @@ const parser = new DDEXParser({
 
 ```typescript
 // For large files, use streaming
-const parser = new DDEXParser({
+const parser = new DdexParser({
   streaming: true,
   bufferSizeMb: 10,
 });
 
 // For maximum speed on small files
-const parser = new DDEXParser({
+const parser = new DdexParser({
   streaming: false,
   validation: 'none',
 });

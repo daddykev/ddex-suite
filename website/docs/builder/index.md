@@ -19,9 +19,9 @@ The DDEX Builder generates deterministic, compliant DDEX XML from structured dat
 ### Node.js / TypeScript
 
 ```typescript
-import { DDEXBuilder } from 'ddex-builder';
+import { DdexBuilder } from 'ddex-builder';
 
-const builder = new DDEXBuilder();
+const builder = new DdexBuilder();
 
 // Build from parsed data
 const xml = await builder.build(parseResult.toBuildRequest());
@@ -51,9 +51,9 @@ const xml = await builder.build({
 ### Python
 
 ```python
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 
-builder = DDEXBuilder()
+builder = DdexBuilder()
 
 # Build from parsed data
 xml = builder.build(parse_result.to_build_request())
@@ -67,7 +67,7 @@ xml = builder.from_dataframe(df, version='4.3')
 ### Builder Settings
 
 ```typescript
-const builder = new DDEXBuilder({
+const builder = new DdexBuilder({
   // Output format
   canonicalization: 'db-c14n-1.0', // 'db-c14n-1.0' | 'none'
   
@@ -91,13 +91,13 @@ Different partners have specific requirements. Use presets for compliance:
 
 ```typescript
 // Spotify preset
-const spotifyBuilder = new DDEXBuilder({ preset: 'spotify' });
+const spotifyBuilder = new DdexBuilder({ preset: 'spotify' });
 
 // YouTube preset  
-const youtubeBuilder = new DDEXBuilder({ preset: 'youtube' });
+const youtubeBuilder = new DdexBuilder({ preset: 'youtube' });
 
 // Apple Music preset
-const appleBuilder = new DDEXBuilder({ preset: 'apple' });
+const appleBuilder = new DdexBuilder({ preset: 'apple' });
 ```
 
 ## Building from Scratch
@@ -224,7 +224,7 @@ Build DDEX from pandas DataFrames:
 
 ```python
 import pandas as pd
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 
 # Create DataFrames
 releases_df = pd.DataFrame([{
@@ -241,7 +241,7 @@ recordings_df = pd.DataFrame([{
 }])
 
 # Build from DataFrames
-builder = DDEXBuilder()
+builder = DdexBuilder()
 xml = builder.from_dataframes({
     'releases': releases_df,
     'sound_recordings': recordings_df,

@@ -8,10 +8,10 @@ Complete API documentation for DDEX Suite components.
 
 ## Core Classes
 
-### DDEXParser
+### DdexParser
 
 ```typescript
-class DDEXParser {
+class DdexParser {
   constructor(options?: ParserOptions);
   parse(xml: string): Promise<ParseResult>;
   parseFile(path: string): Promise<ParseResult>;
@@ -19,10 +19,10 @@ class DDEXParser {
 }
 ```
 
-### DDEXBuilder
+### DdexBuilder
 
 ```typescript
-class DDEXBuilder {
+class DdexBuilder {
   constructor(options?: BuilderOptions);
   build(request: BuildRequest): Promise<string>;
   validate(request: BuildRequest): Promise<ValidationResult>;
@@ -221,7 +221,7 @@ The Python API mirrors the TypeScript API with Pythonic conventions:
 
 ```python
 from ddex_parser import DDEXParser, ParserOptions
-from ddex_builder import DDEXBuilder, BuilderOptions
+from ddex_builder import DdexBuilder, BuilderOptions
 
 # Parser
 parser = DDEXParser(ParserOptions(
@@ -232,7 +232,7 @@ parser = DDEXParser(ParserOptions(
 result = parser.parse(xml_content)
 
 # Builder  
-builder = DDEXBuilder(BuilderOptions(
+builder = DdexBuilder(BuilderOptions(
     preset='spotify',
     validation='strict'
 ))

@@ -101,10 +101,10 @@ class ParseError(DDEXError):
 ### Basic Parse Error Recovery
 
 ```typescript
-import { DDEXParser, ParseError } from 'ddex-parser';
+import { DdexParser, ParseError } from 'ddex-parser';
 
 async function robustParse(xmlContent: string) {
-  const parser = new DDEXParser();
+  const parser = new DdexParser();
   
   try {
     return await parser.parse(xmlContent);
@@ -151,7 +151,7 @@ async function attemptXmlRepair(xmlContent: string, error: ParseError): Promise<
     });
   
   // Try parsing the repaired XML
-  const parser = new DDEXParser();
+  const parser = new DdexParser();
   try {
     return await parser.parse(repairedXml);
   } catch (repairError) {
@@ -223,7 +223,7 @@ async def attempt_xml_repair(xml_content: str, error: ParseError) -> Optional[di
 ### Comprehensive Validation with Error Collection
 
 ```typescript
-import { DDEXBuilder, ValidationError, ValidationResult } from 'ddex-builder';
+import { DdexBuilder, ValidationError, ValidationResult } from 'ddex-builder';
 
 interface ValidationReport {
   isValid: boolean;
@@ -237,7 +237,7 @@ interface ValidationReport {
 }
 
 async function validateWithReport(buildRequest: any): Promise<ValidationReport> {
-  const builder = new DDEXBuilder();
+  const builder = new DdexBuilder();
   const errors: ValidationError[] = [];
   const warnings: ValidationError[] = [];
   
@@ -337,7 +337,7 @@ async function autoFixValidationErrors(
 ```python
 from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
-from ddex_builder import DDEXBuilder, ValidationError
+from ddex_builder import DdexBuilder, ValidationError
 
 @dataclass
 class ValidationReport:
@@ -348,7 +348,7 @@ class ValidationReport:
     critical_count: int
 
 async def validate_with_comprehensive_report(build_request: Dict[str, Any]) -> ValidationReport:
-    builder = DDEXBuilder()
+    builder = DdexBuilder()
     errors = []
     warnings = []
     
@@ -425,7 +425,7 @@ async def auto_fix_validation_errors(
 ### Retry Strategies and Circuit Breakers
 
 ```typescript
-import { DDEXParser, SystemError } from 'ddex-parser';
+import { DdexParser, SystemError } from 'ddex-parser';
 
 class RetryConfig {
   maxRetries: number = 3;
@@ -490,7 +490,7 @@ async function parseWithRetry(
   
   return await circuitBreaker.execute(async () => {
     return await retryOperation(
-      () => new DDEXParser().parse(xmlContent),
+      () => new DdexParser().parse(xmlContent),
       config
     );
   });

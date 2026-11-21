@@ -6,7 +6,7 @@ sidebar_position: 4
 
 Complete reference documentation for the DDEX Parser API across all supported languages.
 
-## DDEXParser Class
+## DdexParser Class
 
 The main parser class provides methods for parsing DDEX XML files and strings.
 
@@ -15,9 +15,9 @@ The main parser class provides methods for parsing DDEX XML files and strings.
 #### JavaScript / TypeScript
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 
-const parser = new DDEXParser(options?: ParseOptions);
+const parser = new DdexParser(options?: ParseOptions);
 ```
 
 #### Python
@@ -487,8 +487,8 @@ class SecurityError(DDEXParseError):
 console.log(parser.version);
 
 // Check supported features
-console.log(DDEXParser.supportedVersions);
-console.log(DDEXParser.features);
+console.log(DdexParser.supportedVersions);
+console.log(DdexParser.features);
 ```
 
 ### Python
@@ -508,7 +508,7 @@ print(f"Parser instance version: {parser.__version__}")
 ### Maximum Performance (Small Files)
 
 ```typescript
-const fastParser = new DDEXParser({
+const fastParser = new DdexParser({
   validation: 'none',
   streaming: false,
   caching: true,
@@ -521,7 +521,7 @@ const fastParser = new DDEXParser({
 ### Maximum Security (Untrusted Input)
 
 ```typescript
-const secureParser = new DDEXParser({
+const secureParser = new DdexParser({
   validation: 'strict',
   maxMemoryMB: 50,
   maxEntityExpansions: 100,
@@ -534,7 +534,7 @@ const secureParser = new DDEXParser({
 ### Large File Processing
 
 ```typescript
-const streamingParser = new DDEXParser({
+const streamingParser = new DdexParser({
   streaming: true,
   bufferSize: 16384,
   maxMemoryMB: 200,
@@ -548,10 +548,10 @@ const streamingParser = new DDEXParser({
 ### Batch Processing with Error Handling
 
 ```typescript
-import { DDEXParser, DDEXError, ValidationError } from 'ddex-parser';
+import { DdexParser, DDEXError, ValidationError } from 'ddex-parser';
 
 async function processBatch(files: string[]) {
-  const parser = new DDEXParser({ validation: 'strict' });
+  const parser = new DdexParser({ validation: 'strict' });
   const results = [];
   
   for (const file of files) {
@@ -589,7 +589,7 @@ async function processBatch(files: string[]) {
 ### Custom Extension Handling
 
 ```typescript
-const parser = new DDEXParser({
+const parser = new DdexParser({
   includeRawExtensions: true,
   validation: 'basic' // Allow non-standard extensions
 });

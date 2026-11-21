@@ -80,7 +80,7 @@ release_data = {
 
 ### 1. Use Validation Before Building
 ```typescript
-const builder = new DDEXBuilder();
+const builder = new DdexBuilder();
 
 // Validate first
 const validation = await builder.validate(data);

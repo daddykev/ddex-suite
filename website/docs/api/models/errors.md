@@ -314,10 +314,10 @@ class ErrorRecovery {
 ### Basic Error Handling
 
 ```typescript
-import { DDEXParser, ParseError } from 'ddex-parser';
+import { DdexParser, ParseError } from 'ddex-parser';
 
 try {
-  const parser = new DDEXParser();
+  const parser = new DdexParser();
   const result = await parser.parse(xmlContent);
 } catch (error) {
   if (error instanceof ParseError) {
@@ -336,10 +336,10 @@ try {
 ### Validation Error Handling
 
 ```typescript
-import { DDEXBuilder, BuildError, ValidationError } from 'ddex-builder';
+import { DdexBuilder, BuildError, ValidationError } from 'ddex-builder';
 
 try {
-  const builder = new DDEXBuilder();
+  const builder = new DdexBuilder();
   const xml = await builder.build(releaseData);
 } catch (error) {
   if (error instanceof BuildError && error.validationErrors) {

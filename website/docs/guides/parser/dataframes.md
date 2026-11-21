@@ -444,11 +444,11 @@ print("ML features prepared:", ml_data.columns.tolist())
 For TypeScript/Node.js environments, integrate with data analysis libraries:
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 import * as DataFrame from 'dataframe-js';
 
 class DDEXDataFrameAnalyzer {
-  private parser = new DDEXParser();
+  private parser = new DdexParser();
   
   async parseToDataFrame(xmlContent: string): Promise<{
     releases: DataFrame,

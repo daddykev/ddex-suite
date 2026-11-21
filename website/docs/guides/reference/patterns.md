@@ -8,11 +8,11 @@ Common patterns and best practices for DDEX Suite usage.
 
 ```typescript
 // Classic ETL pattern with DDEX Suite
-import { DDEXParser, DDEXBuilder } from 'ddex-suite';
+import { DdexParser, DdexBuilder } from 'ddex-suite';
 
 class DDEXTransformer {
-  private parser = new DDEXParser();
-  private builder = new DDEXBuilder();
+  private parser = new DdexParser();
+  private builder = new DdexBuilder();
 
   async transformRelease(xmlContent: string, transformFn: (data: any) => any): Promise<string> {
     // Parse
@@ -48,14 +48,14 @@ const result = await transformer.transformRelease(xmlContent, (data) => {
 ```python
 # Process multiple files efficiently
 from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 from concurrent.futures import ThreadPoolExecutor
 import os
 
 class BatchDDEXProcessor:
     def __init__(self, max_workers=4):
         self.parser = DDEXParser()
-        self.builder = DDEXBuilder()
+        self.builder = DdexBuilder()
         self.max_workers = max_workers
     
     def process_directory(self, input_dir, output_dir, transform_fn=None):
@@ -226,7 +226,7 @@ class ProgressiveValidator:
 ```typescript
 // Handle errors gracefully while processing
 export class ResilientDDEXProcessor {
-  private parser = new DDEXParser();
+  private parser = new DdexParser();
   private maxRetries = 3;
   private retryDelay = 1000;
 
@@ -375,7 +375,7 @@ export class LRUCache<K, V> {
 
 // Cached DDEX processor
 export class CachedDDEXProcessor {
-  private parser = new DDEXParser();
+  private parser = new DdexParser();
   private cache = new LRUCache<string, any>(50);
 
   async parseWithCache(xmlContent: string): Promise<any> {

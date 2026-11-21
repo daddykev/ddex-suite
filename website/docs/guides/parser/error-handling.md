@@ -99,7 +99,7 @@ function handleValidationError(error: DDEXValidationError) {
 Continue processing when encountering non-critical errors:
 
 ```typescript
-const parser = new DDEXParser();
+const parser = new DdexParser();
 
 const result = await parser.parse(xmlContent, {
   errorStrategy: 'continue',    // Continue on non-critical errors
@@ -129,8 +129,8 @@ if (result.hasErrors) {
 Implement sophisticated retry mechanisms for transient failures:
 
 ```typescript
-class DDEXParserWithRetry {
-  private parser = new DDEXParser();
+class DdexParserWithRetry {
+  private parser = new DdexParser();
   private readonly maxRetries = 3;
   private readonly baseDelay = 1000; // 1 second
 
@@ -164,7 +164,7 @@ class DDEXParserWithRetry {
 }
 
 // Usage
-const robustParser = new DDEXParserWithRetry();
+const robustParser = new DdexParserWithRetry();
 const result = await robustParser.parseWithRetry(xmlContent);
 ```
 
@@ -245,8 +245,8 @@ Complete production-ready error handling system:
 ```typescript
 import { createLogger } from 'winston';
 
-class ProductionDDEXParser {
-  private parser = new DDEXParser();
+class ProductionDdexParser {
+  private parser = new DdexParser();
   private logger = createLogger({
     level: 'info',
     format: winston.format.json(),
@@ -371,10 +371,10 @@ Create comprehensive tests for error conditions:
 
 ```typescript
 describe('DDEX Parser Error Handling', () => {
-  let parser: DDEXParser;
+  let parser: DdexParser;
 
   beforeEach(() => {
-    parser = new DDEXParser();
+    parser = new DdexParser();
   });
 
   test('should handle malformed XML', async () => {

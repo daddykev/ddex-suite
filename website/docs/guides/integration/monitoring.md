@@ -17,12 +17,12 @@ Effective monitoring provides:
 
 ```typescript
 import newrelic from 'newrelic';
-import { DDEXParser } from 'ddex-parser';
-import { DDEXBuilder } from 'ddex-builder';
+import { DdexParser } from 'ddex-parser';
+import { DdexBuilder } from 'ddex-builder';
 
 class MonitoredDDEXService {
-  private parser = new DDEXParser();
-  private builder = new DDEXBuilder();
+  private parser = new DdexParser();
+  private builder = new DdexBuilder();
 
   async parseWithMonitoring(xmlContent: string) {
     return newrelic.startSegment('ddex-parse', true, async () => {
@@ -87,7 +87,7 @@ class MonitoredDDEXService {
 ```python
 from datadog import initialize, statsd, api
 from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 import time
 import logging
 
@@ -97,7 +97,7 @@ initialize(api_key='your-api-key', app_key='your-app-key')
 class MonitoredDDEXProcessor:
     def __init__(self):
         self.parser = DDEXParser()
-        self.builder = DDEXBuilder()
+        self.builder = DdexBuilder()
         self.logger = logging.getLogger(__name__)
     
     @statsd.timed('ddex.parse.duration')
@@ -195,7 +195,7 @@ class MonitoredDDEXProcessor:
 ```python
 from prometheus_client import Counter, Histogram, Gauge, Info, start_http_server
 from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 import time
 
 # Define metrics
@@ -243,7 +243,7 @@ ddex_info = Info(
 class PrometheusMonitoredDDEXService:
     def __init__(self):
         self.parser = DDEXParser()
-        self.builder = DDEXBuilder()
+        self.builder = DdexBuilder()
         
         # Set static info
         ddex_info.info({
@@ -327,7 +327,7 @@ import logging
 import json
 from datetime import datetime
 from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 
 # Configure structured logging
 logging.basicConfig(
@@ -366,7 +366,7 @@ class StructuredLogger:
 class LoggedDDEXProcessor:
     def __init__(self):
         self.parser = DDEXParser()
-        self.builder = DDEXBuilder()
+        self.builder = DdexBuilder()
         self.logger = StructuredLogger(__name__)
     
     def parse_with_logging(self, xml_content: str, request_id: str = None):
@@ -454,8 +454,8 @@ class LoggedDDEXProcessor:
 
 ```typescript
 import winston from 'winston';
-import { DDEXParser } from 'ddex-parser';
-import { DDEXBuilder } from 'ddex-builder';
+import { DdexParser } from 'ddex-parser';
+import { DdexBuilder } from 'ddex-builder';
 
 // Configure Winston logger
 const logger = winston.createLogger({
@@ -479,8 +479,8 @@ const logger = winston.createLogger({
 });
 
 export class LoggedDDEXService {
-  private parser = new DDEXParser();
-  private builder = new DDEXBuilder();
+  private parser = new DdexParser();
+  private builder = new DdexBuilder();
 
   async parseWithLogging(xmlContent: string, requestId?: string): Promise<any> {
     const startTime = Date.now();
@@ -576,8 +576,8 @@ export class LoggedDDEXService {
 
 ```typescript
 import * as Sentry from '@sentry/node';
-import { DDEXParser } from 'ddex-parser';
-import { DDEXBuilder } from 'ddex-builder';
+import { DdexParser } from 'ddex-parser';
+import { DdexBuilder } from 'ddex-builder';
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
@@ -586,8 +586,8 @@ Sentry.init({
 });
 
 export class SentryMonitoredDDEXService {
-  private parser = new DDEXParser();
-  private builder = new DDEXBuilder();
+  private parser = new DdexParser();
+  private builder = new DdexBuilder();
 
   async parseWithErrorTracking(xmlContent: string, userId?: string) {
     return Sentry.startTransaction({
@@ -706,12 +706,12 @@ export class SentryMonitoredDDEXService {
 
 ```typescript
 import express from 'express';
-import { DDEXParser } from 'ddex-parser';
-import { DDEXBuilder } from 'ddex-builder';
+import { DdexParser } from 'ddex-parser';
+import { DdexBuilder } from 'ddex-builder';
 
 const app = express();
-const parser = new DDEXParser();
-const builder = new DDEXBuilder();
+const parser = new DdexParser();
+const builder = new DdexBuilder();
 
 // Basic health check
 app.get('/health', (req, res) => {

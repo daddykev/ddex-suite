@@ -30,10 +30,10 @@ Performance benchmarks and optimization targets for DDEX Suite.
 
 ```typescript
 import { performance } from 'perf_hooks';
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 
 export class DDEXBenchmark {
-  private parser = new DDEXParser();
+  private parser = new DdexParser();
   
   async benchmarkParsing(testFiles: TestFile[]): Promise<BenchmarkResult[]> {
     const results: BenchmarkResult[] = [];
@@ -275,7 +275,7 @@ for result in memory_results:
 ```typescript
 // Benchmark batch processing performance
 export class BatchProcessingBenchmark {
-  private parser = new DDEXParser();
+  private parser = new DdexParser();
   
   async benchmarkBatchSizes(xmlFiles: string[], batchSizes: number[]): Promise<void> {
     console.log('Benchmarking batch processing...\n');

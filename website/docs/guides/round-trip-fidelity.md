@@ -34,9 +34,9 @@ The DDEX Suite provides comprehensive round-trip fidelity through:
 ### Graph Model - Complete Fidelity
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 
-const parser = new DDEXParser();
+const parser = new DdexParser();
 const result = await parser.parse(xmlContent, {
   preserveExtensions: true,  // Keep unknown elements
   includeComments: true,     // Preserve XML comments
@@ -69,14 +69,14 @@ console.log(result.flat.releases[0]._extensions); // Preserved extensions
 ### Basic Round-Trip Example
 
 ```typescript
-import { DDEXParser, DDEXBuilder } from 'ddex-suite';
+import { DdexParser, DdexBuilder } from 'ddex-suite';
 
 async function modifyReleaseTitleWithFidelity(
   originalXml: string,
   newTitle: string
 ): Promise<string> {
   // Step 1: Parse with full fidelity preservation
-  const parser = new DDEXParser();
+  const parser = new DdexParser();
   const parseResult = await parser.parse(originalXml, {
     preserveExtensions: true,
     includeComments: true,
@@ -88,7 +88,7 @@ async function modifyReleaseTitleWithFidelity(
   parseResult.flat.releases[0].title = newTitle;
   
   // Step 3: Build with fidelity preservation
-  const builder = new DDEXBuilder();
+  const builder = new DdexBuilder();
   const buildRequest = parseResult.toBuildRequest();
   
   const newXml = await builder.build(buildRequest, {
@@ -102,8 +102,8 @@ async function modifyReleaseTitleWithFidelity(
 
 // Verify round-trip fidelity
 async function verifyRoundTrip(originalXml: string) {
-  const parser = new DDEXParser();
-  const builder = new DDEXBuilder();
+  const parser = new DdexParser();
+  const builder = new DdexBuilder();
   
   // Parse original
   const original = await parser.parse(originalXml, { preserveExtensions: true });
@@ -134,7 +134,7 @@ interface ExtensionPreservationOptions {
 }
 
 async function parseWithFullExtensionSupport(xmlContent: string) {
-  const parser = new DDEXParser();
+  const parser = new DdexParser();
   
   const result = await parser.parse(xmlContent, {
     preserveExtensions: true,
@@ -181,7 +181,7 @@ class CustomExtensionHandler {
 
 ```python
 from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 import pandas as pd
 from typing import Dict, Any
 
@@ -210,7 +210,7 @@ async def modify_catalog_with_fidelity(
             df.loc[mask, field] = value
     
     # Rebuild preserving extensions
-    builder = DDEXBuilder()
+    builder = DdexBuilder()
     
     # Convert back with fidelity preservation
     build_request = await builder.from_dataframe(
@@ -280,7 +280,7 @@ class FidelityPreservingProcessor:
         processed_data = await processor_func(result.flat)
         
         # Rebuild with extensions
-        builder = DDEXBuilder()
+        builder = DdexBuilder()
         build_request = self._create_build_request_with_extensions(
             processed_data,
             self.preserved_extensions
@@ -337,8 +337,8 @@ class VersionAwareFidelityHandler {
     fromVersion: string,
     toVersion: string
   ): Promise<string> {
-    const parser = new DDEXParser();
-    const builder = new DDEXBuilder();
+    const parser = new DdexParser();
+    const builder = new DdexBuilder();
     
     // Parse with version-specific handling
     const parseResult = await parser.parse(xmlContent, {
@@ -441,8 +441,8 @@ class FidelityTestSuite {
   }
   
   private async runSingleTest(testCase: FidelityTestCase): Promise<TestResult> {
-    const parser = new DDEXParser();
-    const builder = new DDEXBuilder();
+    const parser = new DdexParser();
+    const builder = new DdexBuilder();
     
     try {
       // Parse original
@@ -646,7 +646,7 @@ class AutomatedFidelityValidator:
         """Test fidelity for a single file"""
         
         parser = DDEXParser()
-        builder = DDEXBuilder()
+        builder = DdexBuilder()
         
         # Parse original
         original = await parser.parse(

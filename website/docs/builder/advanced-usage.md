@@ -9,9 +9,9 @@ For building large DDEX documents, use streaming to manage memory efficiently:
 ### TypeScript Streaming
 
 ```typescript
-import { DDEXBuilder } from 'ddex-builder';
+import { DdexBuilder } from 'ddex-builder';
 
-const builder = new DDEXBuilder({
+const builder = new DdexBuilder({
   streaming: true,
   bufferSize: 8192  // 8KB buffer
 });
@@ -32,10 +32,10 @@ stream.pipe(output);
 ### Python Streaming
 
 ```python
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 import io
 
-builder = DDEXBuilder(streaming=True)
+builder = DdexBuilder(streaming=True)
 
 # Generate large release data
 large_data = generate_bulk_release_data(track_count=5000)
@@ -56,7 +56,7 @@ Extend the default validation with custom business rules:
 ### TypeScript Custom Validation
 
 ```typescript
-import { DDEXBuilder, ValidationRule, ValidationError } from 'ddex-builder';
+import { DdexBuilder, ValidationRule, ValidationError } from 'ddex-builder';
 
 // Custom validation rule
 const customISRCRule: ValidationRule = {
@@ -80,7 +80,7 @@ const customISRCRule: ValidationRule = {
 };
 
 // Use with builder
-const builder = new DDEXBuilder({
+const builder = new DdexBuilder({
   validation: {
     customRules: [customISRCRule],
     strictMode: true
@@ -91,7 +91,7 @@ const builder = new DDEXBuilder({
 ### Python Custom Validation
 
 ```python
-from ddex_builder import DDEXBuilder, ValidationRule
+from ddex_builder import DdexBuilder, ValidationRule
 import re
 
 def validate_label_codes(data):
@@ -120,7 +120,7 @@ def validate_label_codes(data):
 
 # Register custom rule
 custom_rule = ValidationRule('labelCodes', validate_label_codes)
-builder = DDEXBuilder(custom_rules=[custom_rule])
+builder = DdexBuilder(custom_rules=[custom_rule])
 ```
 
 ## Partner Presets and Customization
@@ -130,10 +130,10 @@ Use and customize presets for specific DSP requirements:
 ### Preset Usage
 
 ```typescript
-import { DDEXBuilder, Presets } from 'ddex-builder';
+import { DdexBuilder, Presets } from 'ddex-builder';
 
 // Use Spotify preset
-const builder = new DDEXBuilder({
+const builder = new DdexBuilder({
   preset: Presets.SPOTIFY,
   version: '4.3'
 });
@@ -153,7 +153,7 @@ const customSpotifyPreset = {
   }
 };
 
-const customBuilder = new DDEXBuilder({
+const customBuilder = new DdexBuilder({
   preset: customSpotifyPreset
 });
 ```
@@ -190,7 +190,7 @@ Process multiple releases efficiently:
 ### TypeScript Batch Processing
 
 ```typescript
-import { DDEXBuilder, BatchProcessor } from 'ddex-builder';
+import { DdexBuilder, BatchProcessor } from 'ddex-builder';
 
 const processor = new BatchProcessor({
   concurrency: 4,          // Process 4 releases at once
@@ -226,7 +226,7 @@ results.forEach((result) => {
 ### Python Batch Processing
 
 ```python
-from ddex_builder import DDEXBuilder, BatchProcessor
+from ddex_builder import DdexBuilder, BatchProcessor
 import asyncio
 
 async def process_releases():
@@ -261,9 +261,9 @@ results = asyncio.run(process_releases())
 ### Memory Management
 
 ```typescript
-import { DDEXBuilder, MemoryManager } from 'ddex-builder';
+import { DdexBuilder, MemoryManager } from 'ddex-builder';
 
-const builder = new DDEXBuilder({
+const builder = new DdexBuilder({
   memoryManagement: {
     maxMemoryUsage: 512 * 1024 * 1024,  // 512MB limit
     garbageCollectionThreshold: 0.8,     // GC at 80% usage
@@ -281,7 +281,7 @@ builder.on('memoryWarning', (usage) => {
 ### Caching Strategies
 
 ```typescript
-import { DDEXBuilder, CacheManager } from 'ddex-builder';
+import { DdexBuilder, CacheManager } from 'ddex-builder';
 
 const cache = new CacheManager({
   strategy: 'LRU',           // Least Recently Used
@@ -289,7 +289,7 @@ const cache = new CacheManager({
   ttl: 3600000              // 1 hour TTL
 });
 
-const builder = new DDEXBuilder({
+const builder = new DdexBuilder({
   cache: cache,
   cacheableOperations: [
     'validation',
@@ -313,9 +313,9 @@ Handle and recover from build errors:
 ### Graceful Error Handling
 
 ```typescript
-import { DDEXBuilder, ErrorRecovery } from 'ddex-builder';
+import { DdexBuilder, ErrorRecovery } from 'ddex-builder';
 
-const builder = new DDEXBuilder({
+const builder = new DdexBuilder({
   errorRecovery: {
     strategy: 'partial',        // 'strict', 'partial', or 'lenient'
     skipInvalidItems: true,     // Skip bad items, continue processing
@@ -361,7 +361,7 @@ Extend builder functionality with plugins:
 ### Custom Plugin Development
 
 ```typescript
-import { DDEXBuilder, Plugin } from 'ddex-builder';
+import { DdexBuilder, Plugin } from 'ddex-builder';
 
 const analyticsPlugin: Plugin = {
   name: 'analytics',
@@ -397,7 +397,7 @@ const analyticsPlugin: Plugin = {
 };
 
 // Use plugin
-const builder = new DDEXBuilder({
+const builder = new DdexBuilder({
   plugins: [analyticsPlugin]
 });
 ```
@@ -407,11 +407,11 @@ const builder = new DDEXBuilder({
 Use builder programmatically with CLI features:
 
 ```typescript
-import { DDEXBuilder, CLI } from 'ddex-builder';
+import { DdexBuilder, CLI } from 'ddex-builder';
 
 // Programmatic CLI usage
 const cli = new CLI({
-  builder: new DDEXBuilder({
+  builder: new DdexBuilder({
     preset: Presets.UNIVERSAL,
     validation: { strictMode: false }
   }),

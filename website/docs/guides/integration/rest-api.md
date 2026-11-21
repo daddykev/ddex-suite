@@ -18,13 +18,13 @@ REST API integration enables:
 ```typescript
 import express from 'express';
 import multer from 'multer';
-import { DDEXParser } from 'ddex-parser';
-import { DDEXBuilder } from 'ddex-builder';
+import { DdexParser } from 'ddex-parser';
+import { DdexBuilder } from 'ddex-builder';
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
-const parser = new DDEXParser();
-const builder = new DDEXBuilder();
+const parser = new DdexParser();
+const builder = new DdexBuilder();
 
 app.use(express.json({ limit: '50mb' }));
 
@@ -161,13 +161,13 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 import asyncio
 from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 
 app = FastAPI(title="DDEX Suite API", version="1.0.0")
 
 # Initialize processors
 parser = DDEXParser()
-builder = DDEXBuilder()
+builder = DdexBuilder()
 
 # Request models
 class BuildRequest(BaseModel):

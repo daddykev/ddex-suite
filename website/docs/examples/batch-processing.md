@@ -16,7 +16,7 @@ Batch processing is essential for:
 ### Batch Parsing with Error Handling
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -29,11 +29,11 @@ interface BatchResult {
 }
 
 class BatchProcessor {
-  private parser: DDEXParser;
+  private parser: DdexParser;
   private results: BatchResult[] = [];
 
   constructor() {
-    this.parser = new DDEXParser({
+    this.parser = new DdexParser({
       preserveExtensions: true,
       includeComments: false,
       maxMemoryMB: 100 // Limit memory per file
@@ -128,7 +128,7 @@ async function main() {
 ### Batch Building with Templates
 
 ```typescript
-import { DDEXBuilder } from 'ddex-builder';
+import { DdexBuilder } from 'ddex-builder';
 import { promises as fs } from 'fs';
 
 interface ReleaseData {
@@ -141,10 +141,10 @@ interface ReleaseData {
 }
 
 class BatchBuilder {
-  private builder: DDEXBuilder;
+  private builder: DdexBuilder;
 
   constructor() {
-    this.builder = new DDEXBuilder({
+    this.builder = new DdexBuilder({
       preset: 'youtube_album'',
       validateOutput: true
     });
@@ -247,16 +247,16 @@ class BatchBuilder {
 ### Stream Processing for Large Files
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 import { createReadStream, createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import { Transform } from 'stream';
 
 class StreamingBatchProcessor {
-  private parser: DDEXParser;
+  private parser: DdexParser;
 
   constructor() {
-    this.parser = new DDEXParser({
+    this.parser = new DdexParser({
       streaming: true,
       maxMemoryMB: 50
     });
@@ -468,7 +468,7 @@ print(f"Top genres: {list(analysis['genres'].keys())[:5]}")
 
 ```typescript
 // Configure parser for batch processing
-const parser = new DDEXParser({
+const parser = new DdexParser({
   maxMemoryMB: 100,        // Limit memory per file
   streaming: true,         // Use streaming for large files
   preserveExtensions: false // Skip if not needed for round-trip

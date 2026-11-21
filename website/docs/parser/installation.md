@@ -154,9 +154,9 @@ npm install ddex-parser
 ### Node.js Verification
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 
-const parser = new DDEXParser();
+const parser = new DdexParser();
 console.log(`DDEX Parser version: ${parser.version}`);
 
 // Test basic functionality
@@ -319,7 +319,7 @@ RUN npm install -g ddex-parser
 RUN pip3 install ddex-parser
 
 # Verify installations
-RUN node -e "console.log(require('ddex-parser').DDEXParser)"
+RUN node -e "console.log(require('ddex-parser').DdexParser)"
 RUN python3 -c "from ddex_parser import DDEXParser; print('OK')"
 ```
 
@@ -401,7 +401,7 @@ If you encounter memory errors with large files:
 node --max-old-space-size=4096 your-app.js
 
 // Use streaming for large files
-const parser = new DDEXParser({ streaming: true });
+const parser = new DdexParser({ streaming: true });
 ```
 
 ```python
@@ -439,7 +439,7 @@ docker run --rm -v $(pwd):/workspace node:18 npm install ddex-parser
 
 ```typescript
 // Production settings
-const parser = new DDEXParser({
+const parser = new DdexParser({
   // Disable debugging
   debug: false,
   

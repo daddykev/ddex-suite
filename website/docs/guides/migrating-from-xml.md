@@ -35,7 +35,7 @@ The DDEX Suite provides specialized parsers that understand DDEX semantics, offe
 const xml2js = require('xml2js');
 const fs = require('fs');
 
-class ManualDDEXParser {
+class ManualDdexParser {
   constructor() {
     this.parser = new xml2js.Parser({
       explicitArray: false,
@@ -128,7 +128,7 @@ class ManualDDEXParser {
 }
 
 // Usage - complex and brittle
-const parser = new ManualDDEXParser();
+const parser = new ManualDdexParser();
 parser.parseFile('release.xml')
   .then(result => {
     console.log(`Parsed ${result.releases.length} releases`);
@@ -142,11 +142,11 @@ parser.parseFile('release.xml')
 
 ```typescript
 // NEW APPROACH - Simple and robust
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 import { readFileSync } from 'fs';
 
 async function parseWithDDEXSuite(filePath: string) {
-  const parser = new DDEXParser();
+  const parser = new DdexParser();
   const xmlContent = readFileSync(filePath, 'utf-8');
   
   // Simple, one-line parsing
@@ -367,10 +367,10 @@ Create a compatibility layer to ease transition:
 
 ```typescript
 // migration-adapter.ts
-import { DDEXParser, ParseResult } from 'ddex-parser';
+import { DdexParser, ParseResult } from 'ddex-parser';
 
 export class DDEXMigrationAdapter {
-  private parser = new DDEXParser();
+  private parser = new DdexParser();
 
   // Wrapper that mimics your old API
   async parseFile(filePath: string): Promise<LegacyFormat> {
@@ -670,7 +670,7 @@ class MemoryHeavyParser {
 // After: Memory-efficient with DDEX Suite
 class MemoryEfficientParser {
   async *parseMultipleFilesStream(filePaths: string[]) {
-    const parser = new DDEXParser();
+    const parser = new DdexParser();
     
     for (const filePath of filePaths) {
       const xmlContent = fs.readFileSync(filePath, 'utf-8');

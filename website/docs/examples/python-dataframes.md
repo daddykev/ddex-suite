@@ -18,7 +18,7 @@ The DDEX Suite provides seamless integration with pandas DataFrames, enabling:
 ```python
 import pandas as pd
 from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 
 # Initialize parser
 parser = DDEXParser()
@@ -379,11 +379,11 @@ print(f"Added features. New shape: {enriched_df.shape}")
 ### Building DDEX from Modified DataFrame
 
 ```python
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 
 class DataFrameToDDEX:
     def __init__(self):
-        self.builder = DDEXBuilder()
+        self.builder = DdexBuilder()
     
     def df_to_ddex(self, df: pd.DataFrame, preset: 'youtube_album'') -> str:
         """Convert DataFrame back to DDEX XML"""

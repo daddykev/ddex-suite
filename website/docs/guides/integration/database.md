@@ -56,13 +56,13 @@ CREATE INDEX idx_tracks_release_id ON tracks(release_id);
 import asyncpg
 import asyncio
 from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 
 class DDEXDatabaseProcessor:
     def __init__(self, database_url):
         self.database_url = database_url
         self.parser = DDEXParser()
-        self.builder = DDEXBuilder()
+        self.builder = DdexBuilder()
     
     async def process_incoming_ddex(self, xml_content, source_id):
         """Process DDEX XML and store in database"""
@@ -198,15 +198,15 @@ Lightweight database integration for smaller applications:
 
 ```typescript
 import sqlite3 from 'sqlite3';
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 
 class DDEXSQLiteProcessor {
   private db: sqlite3.Database;
-  private parser: DDEXParser;
+  private parser: DdexParser;
 
   constructor(dbPath: string) {
     this.db = new sqlite3.Database(dbPath);
-    this.parser = new DDEXParser();
+    this.parser = new DdexParser();
     this.initDatabase();
   }
 

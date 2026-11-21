@@ -38,9 +38,9 @@ DDEX (Digital Data Exchange) is the music industry standard for exchanging metad
 Transforms DDEX XML into clean, structured data:
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 
-const parser = new DDEXParser();
+const parser = new DdexParser();
 const result = await parser.parse(xmlContent);
 
 // Access structured data
@@ -52,9 +52,9 @@ console.log(result.flat.soundRecordings[0].artist);
 Generates deterministic DDEX XML from data structures:
 
 ```typescript
-import { DDEXBuilder } from 'ddex-builder';
+import { DdexBuilder } from 'ddex-builder';
 
-const builder = new DDEXBuilder();
+const builder = new DdexBuilder();
 const xml = await builder.build(result.toBuildRequest());
 ```
 

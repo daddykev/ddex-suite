@@ -473,14 +473,14 @@ export const VALIDATION_PROFILES: Record<string, ValidationProfile> = {
 };
 
 // Usage
-import { DDEXBuilder } from 'ddex-builder';
+import { DdexBuilder } from 'ddex-builder';
 
-const builder = new DDEXBuilder({
+const builder = new DdexBuilder({
   validationProfile: 'spotify'
 });
 
 // Or custom configuration
-const customBuilder = new DDEXBuilder({
+const customBuilder = new DdexBuilder({
   validationRules: [
     { name: 'required-fields', enabled: true },
     { name: 'custom-business-rule', enabled: true, severity: 'warning' }
@@ -491,7 +491,7 @@ const customBuilder = new DDEXBuilder({
 ### Rule Options
 
 ```python
-from ddex_builder import DDEXBuilder, ValidationRuleConfig
+from ddex_builder import DdexBuilder, ValidationRuleConfig
 
 # Configure rule-specific options
 rules_config = [
@@ -525,7 +525,7 @@ rules_config = [
     )
 ]
 
-builder = DDEXBuilder(validation_rules=rules_config)
+builder = DdexBuilder(validation_rules=rules_config)
 ```
 
 ## Advanced Rule Development

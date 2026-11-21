@@ -111,7 +111,7 @@ from airflow.providers.postgres.operators.postgres import PostgresOperator
 from datetime import datetime, timedelta
 import pandas as pd
 from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 
 default_args = {
     'owner': 'data-team',
@@ -377,10 +377,10 @@ import os
 import json
 from pathlib import Path
 from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 
 parser = DDEXParser()
-builder = DDEXBuilder()
+builder = DdexBuilder()
 
 input_dir = Path("${DDEX_INPUT_DIR}")
 output_dir = Path("${DDEX_OUTPUT_DIR}")

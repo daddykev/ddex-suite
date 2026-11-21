@@ -17,7 +17,7 @@ Troubleshoot and resolve memory-related problems in DDEX Suite.
 **Solutions**:
 ```typescript
 // Use streaming parser for large files
-const parser = new DDEXParser({
+const parser = new DdexParser({
   streaming: true,
   maxMemoryUsage: 512 * 1024 * 1024, // 512MB limit
   chunkSize: 64 * 1024 // 64KB chunks

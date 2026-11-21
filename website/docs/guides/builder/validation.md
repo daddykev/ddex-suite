@@ -15,9 +15,9 @@ Validation occurs at multiple stages:
 Validate your data before building to catch errors early:
 
 ```typescript
-import { DDEXBuilder, ValidationLevel } from 'ddex-builder';
+import { DdexBuilder, ValidationLevel } from 'ddex-builder';
 
-const builder = new DDEXBuilder();
+const builder = new DdexBuilder();
 const data = { /* your release data */ };
 
 // Comprehensive validation
@@ -44,9 +44,9 @@ if (!validation.isValid) {
 
 ### Basic Validation
 ```python
-from ddex_builder import DDEXBuilder, ValidationLevel
+from ddex_builder import DdexBuilder, ValidationLevel
 
-builder = DDEXBuilder()
+builder = DdexBuilder()
 
 # Basic validation - required fields only
 result = builder.validate(data, level=ValidationLevel.BASIC)
@@ -99,7 +99,7 @@ const appleValidation = await builder.validate(data, {
 Add your own validation logic:
 
 ```python
-from ddex_builder import DDEXBuilder, ValidationRule
+from ddex_builder import DdexBuilder, ValidationRule
 
 class CustomISRCRule(ValidationRule):
     def validate(self, data):
@@ -118,7 +118,7 @@ class CustomISRCRule(ValidationRule):
         # Your custom ISRC validation logic
         return len(isrc) == 12 and isrc[:2].isalpha()
 
-builder = DDEXBuilder()
+builder = DdexBuilder()
 builder.add_validation_rule(CustomISRCRule())
 
 result = builder.validate(data)
@@ -189,7 +189,7 @@ validation.territoryErrors.forEach(error => {
 Enable validation during the build process:
 
 ```python
-builder = DDEXBuilder(
+builder = DdexBuilder(
     validate_on_build=True,
     validation_level=ValidationLevel.STANDARD,
     fail_on_warnings=False
@@ -267,7 +267,7 @@ report_csv = validation.to_csv()
 Customize validation behavior:
 
 ```typescript
-const builder = new DDEXBuilder({
+const builder = new DdexBuilder({
   validation: {
     enabledRules: [
       'required-fields',
@@ -327,7 +327,7 @@ async function validateForSubmission(releaseData, targetPartner) {
 ### Automated Quality Checks
 ```python
 def automated_quality_check(releases):
-    builder = DDEXBuilder()
+    builder = DdexBuilder()
     results = []
     
     for release in releases:

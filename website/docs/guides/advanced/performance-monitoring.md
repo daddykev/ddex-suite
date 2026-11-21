@@ -17,7 +17,7 @@ Performance monitoring helps:
 
 ```typescript
 import { performance } from 'perf_hooks';
-import { DDEXParser, DDEXBuilder } from 'ddex-suite';
+import { DdexParser, DdexBuilder } from 'ddex-suite';
 
 export class PerformanceMonitor {
   private metrics: Map<string, PerformanceMetric[]> = new Map();
@@ -108,8 +108,8 @@ interface PerformanceMetric {
 
 // Usage with DDEX operations
 const monitor = new PerformanceMonitor();
-const parser = new DDEXParser();
-const builder = new DDEXBuilder();
+const parser = new DdexParser();
+const builder = new DdexBuilder();
 
 // Monitored parsing
 const result = await monitor.measureOperation(
@@ -142,7 +142,7 @@ from contextlib import contextmanager
 from typing import Dict, List, Optional
 from dataclasses import dataclass
 from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 
 @dataclass
 class PerformanceProfile:
@@ -158,7 +158,7 @@ class PerformanceProfile:
 class DDEXProfiler:
     def __init__(self):
         self.parser = DDEXParser()
-        self.builder = DDEXBuilder()
+        self.builder = DdexBuilder()
         self.profiles: List[PerformanceProfile] = []
         self.process = psutil.Process()
     
@@ -427,8 +427,8 @@ interface ResourceSummary {
 
 // Usage in DDEX processing
 export class MonitoredDDEXService {
-  private parser = new DDEXParser();
-  private builder = new DDEXBuilder();
+  private parser = new DdexParser();
+  private builder = new DdexBuilder();
   private resourceMonitor = new ResourceMonitor();
 
   async processWithMonitoring(xmlContent: string): Promise<{

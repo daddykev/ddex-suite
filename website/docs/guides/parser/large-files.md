@@ -16,9 +16,9 @@ Use streaming mode for files over 100MB or when memory is limited:
 Enable streaming mode with a simple option:
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 
-const parser = new DDEXParser();
+const parser = new DdexParser();
 const result = await parser.parse(xmlContent, { 
   streaming: true 
 });
@@ -59,11 +59,11 @@ const result = await parser.stream(fileStream, {
 Process large files in smaller, manageable chunks:
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 import { createReadStream } from 'fs';
 
 class ChunkedProcessor {
-  private parser = new DDEXParser();
+  private parser = new DdexParser();
   private results: any[] = [];
 
   async processLargeFile(filePath: string) {
@@ -123,7 +123,7 @@ class ChunkedProcessor {
 Process resources, releases, and deals one at a time:
 
 ```typescript
-const parser = new DDEXParser();
+const parser = new DdexParser();
 
 // Iterator-based processing
 for await (const resource of parser.iterateResources(fileStream)) {

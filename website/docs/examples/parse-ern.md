@@ -11,12 +11,12 @@ Learn how to parse DDEX ERN (Electronic Release Notification) messages and extra
 ### JavaScript / TypeScript
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 import { readFileSync } from 'fs';
 
 async function parseERNExample() {
   // Initialize the parser
-  const parser = new DDEXParser({
+  const parser = new DdexParser({
     validation: 'strict',
     includeRawExtensions: true
   });
@@ -91,7 +91,7 @@ The flattened model provides easy access to denormalized data:
 
 ```typescript
 async function extractReleaseInfo(xmlPath: string) {
-  const parser = new DDEXParser();
+  const parser = new DdexParser();
   const result = await parser.parseFile(xmlPath);
   
   // Extract release information
@@ -172,7 +172,7 @@ df = ern_to_dataframe('catalog.xml')
 
 ```typescript
 async function extractTrackInfo(xmlPath: string) {
-  const parser = new DDEXParser();
+  const parser = new DdexParser();
   const result = await parser.parseFile(xmlPath);
   
   console.log('\n🎵 Sound Recordings:');
@@ -305,7 +305,7 @@ tracks = analyze_tracks('album.xml')
 
 ```typescript
 async function extractDealInfo(xmlPath: string) {
-  const parser = new DDEXParser();
+  const parser = new DdexParser();
   const result = await parser.parseFile(xmlPath);
   
   console.log('\n💼 Commercial Deals:');
@@ -361,7 +361,7 @@ const deals = await extractDealInfo('distribution-deal.xml');
 
 ```typescript
 async function extractPartyInfo(xmlPath: string) {
-  const parser = new DDEXParser();
+  const parser = new DdexParser();
   const result = await parser.parseFile(xmlPath);
   
   console.log('\n👥 Parties:');
@@ -414,7 +414,7 @@ const parties = await extractPartyInfo('release-with-parties.xml');
 
 ```typescript
 import { 
-  DDEXParser, 
+  DdexParser, 
   DDEXError, 
   ValidationError, 
   SecurityError,
@@ -422,7 +422,7 @@ import {
 } from 'ddex-parser';
 
 async function robustERNParsing(xmlPath: string) {
-  const parser = new DDEXParser({
+  const parser = new DdexParser({
     validation: 'strict',
     includeWarnings: true,
     maxMemoryMB: 100
@@ -496,7 +496,7 @@ async function processERNWithFallback(xmlPath: string) {
     console.log('🔄 Attempting fallback parsing with relaxed validation...');
     
     try {
-      const parser = new DDEXParser({ 
+      const parser = new DdexParser({ 
         validation: 'permissive',
         includeRawExtensions: true
       });
@@ -514,7 +514,7 @@ async function processERNWithFallback(xmlPath: string) {
 Here's a complete Node.js application that demonstrates ERN parsing:
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -529,10 +529,10 @@ interface ERNProcessingResult {
 }
 
 class ERNProcessor {
-  private parser: DDEXParser;
+  private parser: DdexParser;
   
   constructor() {
-    this.parser = new DDEXParser({
+    this.parser = new DdexParser({
       validation: 'strict',
       includeRawExtensions: true,
       maxMemoryMB: 200

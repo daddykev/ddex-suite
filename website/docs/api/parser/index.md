@@ -17,7 +17,7 @@ The DDEX Parser provides high-performance parsing of DDEX XML files with native 
 
 | Component | Description |
 |-----------|-------------|
-| [`DDEXParser`](./typescript#ddexparser) | Main parser class for JavaScript/TypeScript |
+| [`DdexParser`](./typescript#ddexparser) | Main parser class for JavaScript/TypeScript |
 | [`DdexParser`](./typescript#ddexparser-native) | Native Rust binding class |
 | [`ParseOptions`](./types#parseoptions) | Configuration options for parsing |
 | [`ParseResult`](./types#parseresult) | Parsed DDEX message structure |
@@ -44,10 +44,10 @@ The DDEX Parser provides high-performance parsing of DDEX XML files with native 
 ## Common Usage Patterns
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 
 // Basic parsing
-const parser = new DDEXParser();
+const parser = new DdexParser();
 const result = await parser.parse(xmlContent);
 
 // Stream large files

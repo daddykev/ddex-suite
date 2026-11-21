@@ -15,9 +15,9 @@ Batch processing allows you to:
 ### JavaScript/TypeScript
 
 ```typescript
-import { DDEXBuilder } from 'ddex-builder';
+import { DdexBuilder } from 'ddex-builder';
 
-const builder = new DDEXBuilder();
+const builder = new DdexBuilder();
 const releases = [
   { title: "Album 1", /* ... */ },
   { title: "Album 2", /* ... */ },
@@ -39,10 +39,10 @@ console.log(`Failed: ${batchResult.errors.length}`);
 ### Python
 
 ```python
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 import pandas as pd
 
-builder = DDEXBuilder()
+builder = DdexBuilder()
 
 # Process DataFrame with multiple releases
 df = pd.read_csv('releases.csv')
@@ -83,7 +83,7 @@ println!("Processed {} documents", results.len());
 For very large datasets, use streaming to minimize memory usage:
 
 ```typescript
-import { DDEXBuilder, StreamingBatchProcessor } from 'ddex-builder';
+import { DdexBuilder, StreamingBatchProcessor } from 'ddex-builder';
 
 const processor = new StreamingBatchProcessor({
   batchSize: 25,
@@ -106,11 +106,11 @@ Process releases directly from database queries:
 
 ```python
 import asyncio
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 from sqlalchemy import create_engine
 
 async def process_from_database():
-    builder = DDEXBuilder()
+    builder = DdexBuilder()
     engine = create_engine('postgresql://...')
     
     # Process in chunks to manage memory
@@ -186,11 +186,11 @@ let results = builder.build_batch_with_options(requests, options)?;
 ### Parallel Processing
 
 ```python
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 import concurrent.futures
 
 def build_release(release_data):
-    builder = DDEXBuilder()  # Thread-local instance
+    builder = DdexBuilder()  # Thread-local instance
     return builder.build(release_data)
 
 # Process with thread pool
@@ -252,7 +252,7 @@ async def producer(queue: Queue, data_source):
         await queue.put(batch)
     await queue.put(None)  # Signal completion
 
-async def consumer(queue: Queue, builder: DDEXBuilder):
+async def consumer(queue: Queue, builder: DdexBuilder):
     while True:
         batch = await queue.get()
         if batch is None:

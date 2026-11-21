@@ -31,7 +31,7 @@ The DDEX Suite provides comprehensive streaming capabilities:
 ### Understanding Stream Processing
 
 ```typescript
-import { StreamingDDEXParser, StreamConfig } from 'ddex-parser';
+import { StreamingDdexParser, StreamConfig } from 'ddex-parser';
 
 interface StreamConfig {
   chunkSize: number;          // Bytes per chunk (default: 64KB)
@@ -42,7 +42,7 @@ interface StreamConfig {
 }
 
 async function basicStreamingExample() {
-  const parser = new StreamingDDEXParser({
+  const parser = new StreamingDdexParser({
     chunkSize: 64 * 1024,      // 64KB chunks
     maxMemory: '500MB',        // 500MB memory limit
     parallelChunks: 4,         // 4 concurrent workers
@@ -87,7 +87,7 @@ class MemoryBoundedProcessor {
     console.log(`File size: ${fileSize} bytes`);
     console.log(`Using chunk size: ${estimatedChunkSize} bytes`);
     
-    const parser = new StreamingDDEXParser({
+    const parser = new StreamingDdexParser({
       chunkSize: estimatedChunkSize,
       maxMemory: `${this.memoryLimit / 1024 / 1024}MB`,
       enableGarbageCollection: true
@@ -344,7 +344,7 @@ if (!isMainThread) {
         
         // Convert buffer to string and parse
         const xmlChunk = buffer.toString('utf8');
-        const parser = new StreamingDDEXParser();
+        const parser = new StreamingDdexParser();
         const result = await parser.parseXmlChunk(xmlChunk, chunkId);
         
         const processingTime = Date.now() - startTime;

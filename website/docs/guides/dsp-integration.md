@@ -33,16 +33,16 @@ The DDEX Suite provides platform-specific presets, validation rules, and deliver
 
 ```typescript
 import { DdexBuilder } from 'ddex-builder';
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 
 class SpotifyIntegration {
   private builder: DdexBuilder;
-  private parser: DDEXParser;
+  private parser: DdexParser;
 
   constructor() {
     this.builder = new DdexBuilder();
     this.builder.applyPreset('spotify');
-    this.parser = new DDEXParser();
+    this.parser = new DdexParser();
   }
 
   async createNewReleaseMessage(releaseData: SpotifyReleaseData): Promise<string> {
@@ -438,7 +438,7 @@ class AppleMusicIntegration {
     const appleErrors: string[] = [];
 
     // Apple-specific validation
-    const parsed = await new DDEXParser().parse(xml);
+    const parsed = await new DdexParser().parse(xml);
     
     parsed.flat.releases.forEach(release => {
       if (!release.copyrightLine) {

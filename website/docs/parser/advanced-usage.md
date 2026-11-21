@@ -15,10 +15,10 @@ When processing large DDEX catalogs (>10MB), streaming prevents memory issues an
 #### JavaScript / TypeScript
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 
 async function processLargeCatalog(filePath: string) {
-  const parser = new DDEXParser({ 
+  const parser = new DdexParser({ 
     streaming: true,
     bufferSize: 8192,
     maxMemoryMB: 100
@@ -98,14 +98,14 @@ async def process_batch(releases, tracks):
 #### Parallel Batch Processing
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
 
 // Main thread: Stream and distribute batches
 async function parallelStreamProcessor(filePath: string, numWorkers: number = 4) {
   if (!isMainThread) return;
   
-  const parser = new DDEXParser({ streaming: true });
+  const parser = new DdexParser({ streaming: true });
   const workers: Worker[] = [];
   const workQueue: any[] = [];
   
@@ -160,11 +160,11 @@ async function processBatchInWorker(batch: any) {
 #### Stream with Backpressure Control
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 import { pipeline, Transform } from 'stream';
 
 async function streamWithBackpressure(filePath: string) {
-  const parser = new DDEXParser({ streaming: true });
+  const parser = new DdexParser({ streaming: true });
   
   let inFlight = 0;
   const maxConcurrent = 10;
@@ -306,7 +306,7 @@ DDEX files often contain custom extensions. The parser preserves these for round
 
 ```typescript
 // Parse with extension preservation
-const parser = new DDEXParser({
+const parser = new DdexParser({
   includeRawExtensions: true,
   validation: 'permissive' // Allow non-standard elements
 });
@@ -335,12 +335,12 @@ result.graph.releaseList.release.forEach(release => {
 ### Round-Trip with Extensions
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
-import { DDEXBuilder } from 'ddex-builder';
+import { DdexParser } from 'ddex-parser';
+import { DdexBuilder } from 'ddex-builder';
 
 async function roundTripWithExtensions(originalXml: string) {
   // Parse with full extension preservation
-  const parser = new DDEXParser({
+  const parser = new DdexParser({
     includeRawExtensions: true,
     includeComments: true,
     validation: 'permissive'
@@ -352,7 +352,7 @@ async function roundTripWithExtensions(originalXml: string) {
   parsed.flat.releases[0].title = "Updated Title";
   
   // Build back to XML with extensions intact
-  const builder = new DDEXBuilder({
+  const builder = new DdexBuilder({
     preserveExtensions: true,
     deterministic: true
   });
@@ -376,7 +376,7 @@ async function roundTripWithExtensions(originalXml: string) {
 
 ```typescript
 // Configure memory limits
-const parser = new DDEXParser({
+const parser = new DdexParser({
   maxMemoryMB: 256,           // Hard memory limit
   streaming: true,            // Enable streaming for large files
   bufferSize: 16384,         // Larger buffer for better I/O
@@ -410,7 +410,7 @@ async function parseWithMemoryMonitoring(filePath: string) {
 
 ```typescript
 // CPU-optimized settings
-const fastParser = new DDEXParser({
+const fastParser = new DdexParser({
   validation: 'none',         // Skip validation for trusted sources
   includeComments: false,     // Skip comment preservation
   includeRawExtensions: false, // Skip extension preservation  
@@ -447,16 +447,16 @@ async function optimizedBatchProcessing(files: string[]) {
 ### Caching Strategies
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 import { createHash } from 'crypto';
 
 class CachingParser {
-  private parser: DDEXParser;
+  private parser: DdexParser;
   private cache = new Map<string, any>();
   private maxCacheSize = 100;
   
   constructor() {
-    this.parser = new DDEXParser({ caching: true });
+    this.parser = new DdexParser({ caching: true });
   }
   
   async parseWithCache(xml: string): Promise<any> {
@@ -497,11 +497,11 @@ class CachingParser {
 ```typescript
 // DDEX Parser Service
 import express from 'express';
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 import multer from 'multer';
 
 const app = express();
-const parser = new DDEXParser({
+const parser = new DdexParser({
   validation: 'strict',
   maxMemoryMB: 512,
   timeoutSeconds: 30
@@ -659,15 +659,15 @@ if __name__ == "__main__":
 ### Database Integration
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 import { Pool } from 'pg';
 
 class DDEXDatabaseIntegrator {
-  private parser: DDEXParser;
+  private parser: DdexParser;
   private db: Pool;
   
   constructor(dbConfig: any) {
-    this.parser = new DDEXParser({
+    this.parser = new DdexParser({
       validation: 'strict',
       streaming: true
     });
@@ -765,15 +765,15 @@ await integrator.processFile('large-catalog.xml');
 ### Retry Strategies
 
 ```typescript
-import { DDEXParser, DDEXError, SecurityError } from 'ddex-parser';
+import { DdexParser, DDEXError, SecurityError } from 'ddex-parser';
 
 class ResilientParser {
-  private parser: DDEXParser;
+  private parser: DdexParser;
   private maxRetries: number = 3;
   private retryDelay: number = 1000;
   
   constructor() {
-    this.parser = new DDEXParser({
+    this.parser = new DdexParser({
       validation: 'strict',
       timeoutSeconds: 30
     });
@@ -810,7 +810,7 @@ class ResilientParser {
 
 // Circuit breaker pattern
 class CircuitBreakerParser {
-  private parser: DDEXParser;
+  private parser: DdexParser;
   private failureCount = 0;
   private failureThreshold = 5;
   private resetTimeout = 60000; // 1 minute
@@ -818,7 +818,7 @@ class CircuitBreakerParser {
   private nextAttempt = 0;
   
   constructor() {
-    this.parser = new DDEXParser();
+    this.parser = new DdexParser();
   }
   
   async parse(xml: string): Promise<any> {

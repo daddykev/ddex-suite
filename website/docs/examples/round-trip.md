@@ -11,12 +11,12 @@ Learn how to parse existing DDEX files, modify the data, and rebuild determinist
 ### Parse → Modify → Build
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 import { DdexBuilder } from 'ddex-builder';
 
 async function basicRoundTrip(inputFile: string) {
   // Step 1: Parse existing DDEX file
-  const parser = new DDEXParser({
+  const parser = new DdexParser({
     validation: 'strict',
     includeRawExtensions: true  // Preserve extensions for round-trip
   });
@@ -213,11 +213,11 @@ if __name__ == "__main__":
 
 ```typescript
 class DDEXMetadataEnhancer {
-  private parser: DDEXParser;
+  private parser: DdexParser;
   private builder: DdexBuilder;
   
   constructor() {
-    this.parser = new DDEXParser({
+    this.parser = new DdexParser({
       validation: 'strict',
       includeRawExtensions: true
     });
@@ -551,12 +551,12 @@ await enhancer.enhanceMetadata('./original-release.xml', enhancements);
 
 ```typescript
 class DDEXVersionMigrator {
-  private parser: DDEXParser;
+  private parser: DdexParser;
   private builder43: DdexBuilder;
   private builder42: DdexBuilder;
   
   constructor() {
-    this.parser = new DDEXParser();
+    this.parser = new DdexParser();
     this.builder43 = new DdexBuilder({ version: '4.3' });
     this.builder42 = new DdexBuilder({ version: '4.2' });
   }
@@ -734,11 +734,11 @@ await migrator.downgradeTo42('./new-release-v43.xml');
 
 ```typescript
 class BatchRoundTripProcessor {
-  private parser: DDEXParser;
+  private parser: DdexParser;
   private builder: DdexBuilder;
   
   constructor(preset: string = 'generic_audio_album') {
-    this.parser = new DDEXParser({
+    this.parser = new DdexParser({
       includeRawExtensions: true,
       validation: 'permissive' // More forgiving for batch processing
     });
@@ -913,11 +913,11 @@ await territoryExpander.processDirectory('./regional', './worldwide', (buildData
 
 ```typescript
 class RoundTripValidator {
-  private parser: DDEXParser;
+  private parser: DdexParser;
   private builder: DdexBuilder;
   
   constructor() {
-    this.parser = new DDEXParser({ includeRawExtensions: true });
+    this.parser = new DdexParser({ includeRawExtensions: true });
     this.builder = new DdexBuilder({ canonical: true, preserveExtensions: true });
   }
   

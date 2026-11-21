@@ -41,9 +41,9 @@ DDEX Parser transforms complex DDEX XML messages into clean, structured data tha
 Parse incoming DDEX deliveries from record labels to extract release information, track metadata, and commercial terms for your catalog management system.
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 
-const parser = new DDEXParser();
+const parser = new DdexParser();
 const delivery = await parser.parseFile('label-delivery.xml');
 
 // Extract key information
@@ -81,8 +81,8 @@ result.flat.releases[0].title = "Updated Album Title";
 result.flat.releases[0].displayArtist = "New Artist Name";
 
 // Round-trip with ddex-builder
-import { DDEXBuilder } from 'ddex-builder';
-const builder = new DDEXBuilder();
+import { DdexBuilder } from 'ddex-builder';
+const builder = new DdexBuilder();
 const updatedXML = await builder.build(result.toBuildRequest());
 ```
 
@@ -90,7 +90,7 @@ const updatedXML = await builder.build(result.toBuildRequest());
 Implement automated quality checks and validation workflows for DDEX deliveries.
 
 ```typescript
-const parser = new DDEXParser({
+const parser = new DdexParser({
   validation: 'strict',
   includeWarnings: true
 });
@@ -137,7 +137,7 @@ The parser provides comprehensive support for all major DDEX ERN versions:
 The parser automatically detects DDEX versions and applies the appropriate schema:
 
 ```typescript
-const parser = new DDEXParser();
+const parser = new DdexParser();
 const version = await parser.detectVersion(xmlContent);
 console.log(`Detected DDEX version: ${version}`);
 ```
@@ -165,7 +165,7 @@ console.log(`Detected DDEX version: ${version}`);
 ### XML Security Protections
 
 ```typescript
-const parser = new DDEXParser({
+const parser = new DdexParser({
   // Entity expansion limits
   maxEntityExpansions: 1000,
   
@@ -247,7 +247,7 @@ Process large catalogs efficiently with streaming:
 ```typescript
 import { createReadStream } from 'fs';
 
-const parser = new DDEXParser({ streaming: true });
+const parser = new DdexParser({ streaming: true });
 
 for await (const batch of parser.streamFile('large-catalog.xml')) {
   // Process releases in batches

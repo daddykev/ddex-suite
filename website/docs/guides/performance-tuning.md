@@ -33,14 +33,14 @@ The DDEX Suite provides multiple optimization strategies including streaming par
 ### Streaming Parser Configuration
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 import { createReadStream } from 'fs';
 
 class MemoryEfficientParser {
-  private parser: DDEXParser;
+  private parser: DdexParser;
 
   constructor() {
-    this.parser = new DDEXParser();
+    this.parser = new DdexParser();
   }
 
   async parseHugeFile(filePath: string): Promise<void> {
@@ -385,8 +385,8 @@ if (!isMainThread) {
   const { filePaths, workerId } = workerData;
   
   (async () => {
-    const { DDEXParser } = await import('ddex-parser');
-    const parser = new DDEXParser();
+    const { DdexParser } = await import('ddex-parser');
+    const parser = new DdexParser();
     const results: ProcessingResult[] = [];
 
     for (const filePath of filePaths) {
@@ -676,7 +676,7 @@ class HighPerformanceDDEXProcessor:
         
         return df
 
-class OptimizedDDEXBuilder:
+class OptimizedDdexBuilder:
     def __init__(self):
         self.builder = DdexBuilder()
     
@@ -921,7 +921,7 @@ interface CacheStatistics {
 // Usage with cache
 async function processWithIntelligentCaching(filePaths: string[]) {
   const cache = new DDEXParseCache('./cache', 500);
-  const parser = new DDEXParser();
+  const parser = new DdexParser();
   
   console.log('Processing files with intelligent caching...');
   
@@ -950,16 +950,16 @@ async function processWithIntelligentCaching(filePaths: string[]) {
 
 ```typescript
 import { Pool } from 'pg'; // PostgreSQL
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 
 class DatabaseOptimizedProcessor {
   private db: Pool;
-  private parser: DDEXParser;
+  private parser: DdexParser;
   private batchSize: number = 1000;
 
   constructor(dbConfig: any) {
     this.db = new Pool(dbConfig);
-    this.parser = new DDEXParser();
+    this.parser = new DdexParser();
   }
 
   async processToDatabaseBatched(filePaths: string[]): Promise<void> {

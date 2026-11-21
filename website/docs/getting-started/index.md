@@ -68,14 +68,14 @@ Let's walk through a complete example: parsing DDEX XML, modifying the data, and
 ### Step 1: Parse DDEX XML
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 import fs from 'fs';
 
 // Load your DDEX file
 const xmlContent = fs.readFileSync('path/to/your/ddex-file.xml', 'utf8');
 
 // Create parser instance
-const parser = new DDEXParser();
+const parser = new DdexParser();
 
 // Parse the XML
 const result = await parser.parse(xmlContent);
@@ -100,10 +100,10 @@ result.flat.deals[0].territories.push("US", "CA", "GB");
 ### Step 3: Build Back to XML
 
 ```typescript
-import { DDEXBuilder } from 'ddex-builder';
+import { DdexBuilder } from 'ddex-builder';
 
 // Create builder instance
-const builder = new DDEXBuilder();
+const builder = new DdexBuilder();
 
 // Convert back to XML
 const newXml = await builder.build(result.toBuildRequest());
@@ -118,7 +118,7 @@ Here's the same workflow in Python:
 
 ```python
 from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 
 # Parse DDEX XML
 parser = DDEXParser()
@@ -135,7 +135,7 @@ print(f"Artist: {result.flat.sound_recordings[0].artist}")
 result.flat.releases[0].title = "My Updated Release Title"
 
 # Build back to XML
-builder = DDEXBuilder()
+builder = DdexBuilder()
 new_xml = builder.build(result.to_build_request())
 
 # Save the result
@@ -182,7 +182,7 @@ DDEX Suite provides seamless integration with pandas DataFrames:
 ```python
 import pandas as pd
 from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 
 # Parse to DataFrame
 parser = DDEXParser()
@@ -196,7 +196,7 @@ print(df.sound_recordings.groupby('artist').count())
 df.releases.loc[0, 'title'] = 'Updated Title'
 
 # Build from DataFrame
-builder = DDEXBuilder()
+builder = DdexBuilder()
 xml = builder.from_dataframe(df, version='4.3')
 ```
 

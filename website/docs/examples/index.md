@@ -13,10 +13,10 @@ Real-world examples of using DDEX Suite for common music industry workflows.
 Parse, modify, and rebuild DDEX XML with perfect fidelity:
 
 ```typescript
-import { DDEXParser, DDEXBuilder } from 'ddex-suite';
+import { DdexParser, DdexBuilder } from 'ddex-suite';
 
 // Parse existing DDEX
-const parser = new DDEXParser();
+const parser = new DdexParser();
 const result = await parser.parse(originalXml);
 
 // Modify release information
@@ -27,7 +27,7 @@ result.flat.releases[0].releaseDate = '2024-01-01';
 result.flat.deals[0].territories.push('US', 'CA', 'GB');
 
 // Build back to XML
-const builder = new DDEXBuilder();
+const builder = new DdexBuilder();
 const newXml = await builder.build(result.toBuildRequest());
 ```
 
@@ -36,13 +36,13 @@ const newXml = await builder.build(result.toBuildRequest());
 Process multiple DDEX files efficiently:
 
 ```typescript
-import { DDEXParser, DDEXBuilder } from 'ddex-suite';
+import { DdexParser, DdexBuilder } from 'ddex-suite';
 import glob from 'glob';
 
 async function processBatch(pattern: string) {
   const files = glob.sync(pattern);
-  const parser = new DDEXParser();
-  const builder = new DDEXBuilder({ preset: 'youtube_album' });
+  const parser = new DdexParser();
+  const builder = new DdexBuilder({ preset: 'youtube_album' });
   
   const results = [];
   
@@ -134,8 +134,8 @@ def analyze_territory_coverage(ddex_files):
 
 ```typescript
 class LabelProcessor {
-  private parser = new DDEXParser();
-  private builder = new DDEXBuilder({ preset: 'generic_audio_album' });
+  private parser = new DdexParser();
+  private builder = new DdexBuilder({ preset: 'generic_audio_album' });
   
   async processRelease(xmlContent: string, labelRules: LabelRules) {
     // Parse the DDEX
@@ -176,7 +176,7 @@ class LabelProcessor {
     const outputs: Record<string, string> = {};
     
     for (const preset of presets) {
-      const partnerBuilder = new DDEXBuilder({ preset });
+      const partnerBuilder = new DdexBuilder({ preset });
       outputs[preset] = await partnerBuilder.build(result.toBuildRequest());
     }
     
@@ -190,8 +190,8 @@ class LabelProcessor {
 ```typescript
 class ComplianceValidator {
   async validateRelease(ddexXml: string): Promise<ComplianceReport> {
-    const parser = new DDEXParser({ validation: 'strict' });
-    const builder = new DDEXBuilder({ validation: 'strict' });
+    const parser = new DdexParser({ validation: 'strict' });
+    const builder = new DdexBuilder({ validation: 'strict' });
     
     try {
       // Parse and validate structure
@@ -259,11 +259,11 @@ class ComplianceValidator {
 
 ```typescript
 import express from 'express';
-import { DDEXParser, DDEXBuilder } from 'ddex-suite';
+import { DdexParser, DdexBuilder } from 'ddex-suite';
 
 const app = express();
-const parser = new DDEXParser();
-const builder = new DDEXBuilder();
+const parser = new DdexParser();
+const builder = new DdexBuilder();
 
 app.post('/parse', async (req, res) => {
   try {
@@ -310,14 +310,14 @@ app.post('/transform', async (req, res) => {
 ### Database Integration
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 import { Database } from 'your-db-library';
 
 class DDEXImporter {
   constructor(private db: Database) {}
   
   async importDDEXFile(filePath: string) {
-    const parser = new DDEXParser();
+    const parser = new DdexParser();
     const xml = fs.readFileSync(filePath, 'utf8');
     const result = await parser.parse(xml);
     
@@ -374,11 +374,11 @@ class DDEXImporter {
 ### Unit Testing
 
 ```typescript
-import { DDEXParser, DDEXBuilder } from 'ddex-suite';
+import { DdexParser, DdexBuilder } from 'ddex-suite';
 
 describe('DDEX Processing', () => {
-  const parser = new DDEXParser();
-  const builder = new DDEXBuilder();
+  const parser = new DdexParser();
+  const builder = new DdexBuilder();
   
   test('round-trip fidelity', async () => {
     const originalXml = fs.readFileSync('test-data/sample.xml', 'utf8');

@@ -28,9 +28,9 @@ releases.insert("release_1", release_data);
 All generated IDs are based on content hashes rather than random values:
 
 ```typescript
-import { DDEXBuilder } from 'ddex-builder';
+import { DdexBuilder } from 'ddex-builder';
 
-const builder = new DDEXBuilder({
+const builder = new DdexBuilder({
   deterministicIds: true, // Default: true
   idSeed: "stable-seed"   // Optional: for consistent IDs across runs
 });
@@ -51,9 +51,9 @@ The builder implements Database Canonical XML 1.0 for standardized output:
 ## Configuration
 
 ```python
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 
-builder = DDEXBuilder(
+builder = DdexBuilder(
     deterministic=True,      # Enable deterministic mode
     canonical=True,          # Use DB-C14N/1.0
     preserve_whitespace=False # Normalize whitespace
@@ -67,7 +67,7 @@ xml = builder.build(data)
 Verify deterministic output in your tests:
 
 ```javascript
-const builder = new DDEXBuilder();
+const builder = new DdexBuilder();
 const data = { /* your data */ };
 
 const output1 = builder.build(data);

@@ -39,7 +39,7 @@ const result = await parser.parse(xmlContent, {
 ### High-Performance Configuration
 
 ```typescript
-const parser = new DDEXParser({
+const parser = new DdexParser({
   // Pre-allocate buffers for better performance
   bufferSize: 128 * 1024,        // 128KB buffer
   
@@ -60,7 +60,7 @@ const parser = new DDEXParser({
 ### Memory-Optimized Configuration
 
 ```typescript
-const parser = new DDEXParser({
+const parser = new DdexParser({
   // Minimize memory footprint
   streaming: true,
   bufferSize: 32 * 1024,         // Smaller 32KB buffer
@@ -101,7 +101,7 @@ Process multiple files efficiently with controlled concurrency:
 
 ```typescript
 class ConcurrentDDEXProcessor {
-  private parser = new DDEXParser();
+  private parser = new DdexParser();
   private semaphore: Semaphore;
   
   constructor(maxConcurrency: number = 5) {
@@ -184,8 +184,8 @@ Implement intelligent caching to avoid re-parsing:
 ```typescript
 import { createHash } from 'crypto';
 
-class CachedDDEXParser {
-  private parser = new DDEXParser();
+class CachedDdexParser {
+  private parser = new DdexParser();
   private cache = new Map<string, any>();
   private maxCacheSize = 100;
   
@@ -240,7 +240,7 @@ Optimize batch processing workflows:
 
 ```typescript
 class OptimizedBatchProcessor {
-  private parser = new DDEXParser();
+  private parser = new DdexParser();
   private processed = 0;
   private startTime = Date.now();
   
@@ -316,7 +316,7 @@ Monitor memory usage during parsing operations:
 
 ```typescript
 class MemoryProfiledParser {
-  private parser = new DDEXParser();
+  private parser = new DdexParser();
   
   async parseWithProfiling(xmlContent: string): Promise<any> {
     const startMemory = process.memoryUsage();
@@ -407,10 +407,10 @@ Create comprehensive performance tests:
 
 ```typescript
 describe('DDEX Parser Performance', () => {
-  let parser: DDEXParser;
+  let parser: DdexParser;
   
   beforeEach(() => {
-    parser = new DDEXParser();
+    parser = new DdexParser();
   });
   
   test('should parse 10KB file under 5ms', async () => {

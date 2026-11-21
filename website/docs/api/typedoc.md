@@ -111,7 +111,7 @@ npm install --save-dev typedoc-plugin-markdown
  * 
  * @example
  * ```typescript
- * const parser = new DDEXParser();
+ * const parser = new DdexParser();
  * const result = await parser.parse(xmlContent, {
  *   includeRawExtensions: true,
  *   validateReferences: true
@@ -127,7 +127,7 @@ npm install --save-dev typedoc-plugin-markdown
  * 
  * @public
  */
-async parse(xml: string, options?: DDEXParserOptions): Promise<ParseResult> {
+async parse(xml: string, options?: DdexParserOptions): Promise<ParseResult> {
   // Implementation...
 }
 ```
@@ -144,7 +144,7 @@ async parse(xml: string, options?: DDEXParserOptions): Promise<ParseResult> {
  * 
  * @public
  */
-interface DDEXParserOptions {
+interface DdexParserOptions {
   /**
    * Include raw XML for extension elements.
    * 

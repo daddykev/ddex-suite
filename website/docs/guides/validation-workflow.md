@@ -33,7 +33,7 @@ The DDEX Suite integrates with validation tools to create a comprehensive valida
 ### Basic Integration Setup
 
 ```typescript
-import { DDEXParser, DdexBuilder } from 'ddex-suite';
+import { DdexParser, DdexBuilder } from 'ddex-suite';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { writeFileSync, readFileSync } from 'fs';
@@ -43,12 +43,12 @@ const execAsync = promisify(exec);
 
 class DDEXWorkbenchIntegration {
   private workbenchPath: string;
-  private parser: DDEXParser;
+  private parser: DdexParser;
   private builder: DdexBuilder;
 
   constructor(workbenchPath: string) {
     this.workbenchPath = workbenchPath;
-    this.parser = new DDEXParser();
+    this.parser = new DdexParser();
     this.builder = new DdexBuilder();
   }
 

@@ -7,24 +7,24 @@ Generate DDEX XML using our refined preset system with public specifications and
 DDEX Suite now uses a transparent, maintainable preset approach:
 
 ```typescript
-import { DDEXBuilder } from 'ddex-builder';
+import { DdexBuilder } from 'ddex-builder';
 
 // YouTube presets (based on public specification)
-const youtubeAlbumBuilder = new DDEXBuilder();
+const youtubeAlbumBuilder = new DdexBuilder();
 youtubeAlbumBuilder.applyPreset('youtube_album');
 
-const youtubeSingleBuilder = new DDEXBuilder();
+const youtubeSingleBuilder = new DdexBuilder();
 youtubeSingleBuilder.applyPreset('youtube_single');
 
 // Generic DDEX-compliant presets
-const genericAlbumBuilder = new DDEXBuilder();
+const genericAlbumBuilder = new DdexBuilder();
 genericAlbumBuilder.applyPreset('generic_audio_album');
 
-const genericSingleBuilder = new DDEXBuilder();
+const genericSingleBuilder = new DdexBuilder();
 genericSingleBuilder.applyPreset('generic_audio_single');
 
 // Custom preset for organization-specific requirements
-const customBuilder = new DDEXBuilder();
+const customBuilder = new DdexBuilder();
 customBuilder.loadCustomPreset('./my-label-preset.json');
 ```
 
@@ -34,7 +34,7 @@ customBuilder.loadCustomPreset('./my-label-preset.json');
 
 ```typescript
 class YouTubeMusicIntegration {
-  private builder = new DDEXBuilder();
+  private builder = new DdexBuilder();
   
   constructor() {
     this.builder.applyPreset('youtube_album');
@@ -171,7 +171,7 @@ interface SpotifyTrackData {
 
 ```typescript
 class YouTubeMusicIntegration {
-  private builder = new DDEXBuilder();
+  private builder = new DdexBuilder();
   
   constructor() {
     this.builder.applyPreset('youtube_music');
@@ -276,7 +276,7 @@ interface YouTubeTrackData {
 
 ```typescript
 class AmazonMusicIntegration {
-  private builder = new DDEXBuilder();
+  private builder = new DdexBuilder();
   
   constructor() {
     this.builder.applyPreset('amazon_music');
@@ -393,7 +393,7 @@ class MultiPlatformReleaseManager {
     const spotify = new SpotifyIntegration();
     const youtube = new YouTubeMusicIntegration();
     const amazon = new AmazonMusicIntegration();
-    const universal = new DDEXBuilder();
+    const universal = new DdexBuilder();
     universal.applyPreset('universal');
     
     // Generate platform-specific releases
@@ -478,16 +478,16 @@ console.log(`- Universal: ${releases.universal.length} characters`);
 ## Python Multi-Platform Support
 
 ```python
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 from typing import Dict, Any
 
 class MultiPlatformBuilder:
     def __init__(self):
         self.builders = {
-            'spotify': DDEXBuilder(preset='spotify'),
-            'youtube_music': DDEXBuilder(preset='youtube_music'),
-            'amazon_music': DDEXBuilder(preset='amazon_music'),
-            'universal': DDEXBuilder(preset='universal')
+            'spotify': DdexBuilder(preset='spotify'),
+            'youtube_music': DdexBuilder(preset='youtube_music'),
+            'amazon_music': DdexBuilder(preset='amazon_music'),
+            'universal': DdexBuilder(preset='universal')
         }
     
     def build_for_all_platforms(self, release_data: Dict[str, Any]) -> Dict[str, str]:

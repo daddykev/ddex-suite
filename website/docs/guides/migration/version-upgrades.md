@@ -21,9 +21,9 @@ DDEX Suite supports multiple schema versions and provides tools for:
 ## Version Detection
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 
-const parser = new DDEXParser();
+const parser = new DdexParser();
 
 async function detectAndParseVersion(xmlContent: string) {
   try {
@@ -57,12 +57,12 @@ async function parseWithExplicitVersion(xmlContent: string, version: string) {
 
 ```python
 from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 
 class DDEXVersionUpgrader:
     def __init__(self):
         self.parser = DDEXParser()
-        self.builder = DDEXBuilder()
+        self.builder = DdexBuilder()
     
     def upgrade_382_to_43(self, xml_content: str) -> str:
         """Upgrade DDEX 3.8.2 to 4.3"""
@@ -215,11 +215,11 @@ print("Successfully upgraded from DDEX 3.8.2 to 4.3")
 ### Downgrading for Compatibility
 
 ```typescript
-import { DDEXParser, DDEXBuilder } from 'ddex-suite';
+import { DdexParser, DdexBuilder } from 'ddex-suite';
 
 export class DDEXVersionDowngrader {
-  private parser = new DDEXParser();
-  private builder = new DDEXBuilder();
+  private parser = new DdexParser();
+  private builder = new DdexBuilder();
 
   async downgrade43To382(xmlContent: string): Promise<string> {
     // Parse 4.3 format

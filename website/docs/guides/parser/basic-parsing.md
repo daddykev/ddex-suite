@@ -7,9 +7,9 @@ Learn the fundamentals of parsing DDEX XML files with DDEX Suite.
 The simplest way to parse a DDEX XML file:
 
 ```typescript
-import { DDEXParser } from 'ddex-parser';
+import { DdexParser } from 'ddex-parser';
 
-const parser = new DDEXParser();
+const parser = new DdexParser();
 const result = await parser.parse(xmlContent);
 
 console.log('Release title:', result.flat.releases[0]?.title);

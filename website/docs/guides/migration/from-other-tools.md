@@ -17,7 +17,7 @@ This guide covers migration from:
 
 ```python
 from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 import json
 import xml.etree.ElementTree as ET
 
@@ -26,7 +26,7 @@ class CommercialToolMigrator:
     
     def __init__(self):
         self.parser = DDEXParser()
-        self.builder = DDEXBuilder()
+        self.builder = DdexBuilder()
     
     def migrate_from_tool_a(self, tool_a_output: dict) -> str:
         """Migrate from Tool A's proprietary format"""
@@ -117,7 +117,7 @@ class CommercialToolMigrator:
 ### Batch Migration Tool
 
 ```typescript
-import { DDEXParser, DDEXBuilder } from 'ddex-suite';
+import { DdexParser, DdexBuilder } from 'ddex-suite';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -131,8 +131,8 @@ export interface MigrationConfig {
 }
 
 export class BatchMigrationTool {
-  private parser = new DDEXParser();
-  private builder = new DDEXBuilder();
+  private parser = new DdexParser();
+  private builder = new DdexBuilder();
 
   async migrateBatch(config: MigrationConfig): Promise<MigrationReport> {
     const report: MigrationReport = {

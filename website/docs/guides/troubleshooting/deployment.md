@@ -121,7 +121,7 @@ echo "Development environment ready!"
 **Health Checks**:
 ```typescript
 // health-check.ts
-import { DDEXParser, DDEXBuilder } from 'ddex-suite';
+import { DdexParser, DdexBuilder } from 'ddex-suite';
 
 export async function healthCheck(): Promise<{
   status: 'healthy' | 'unhealthy';
@@ -137,13 +137,13 @@ export async function healthCheck(): Promise<{
 
   try {
     // Test parser
-    const parser = new DDEXParser();
+    const parser = new DdexParser();
     const testXml = '<test>minimal</test>';
     await parser.parse(testXml);
     checks.parser = true;
 
     // Test builder
-    const builder = new DDEXBuilder();
+    const builder = new DdexBuilder();
     const testData = { releases: [] };
     await builder.validate(testData);
     checks.builder = true;

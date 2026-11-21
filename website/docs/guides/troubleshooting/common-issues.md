@@ -222,7 +222,7 @@ FATAL ERROR: Ineffective mark-compacts near heap limit
 **Solution**: Ensure stable ordering of arrays and objects:
 
 ```typescript
-const builder = new DDEXBuilder({
+const builder = new DdexBuilder({
   deterministicOutput: true,
   stableArraySorting: true
 });
@@ -465,7 +465,7 @@ result.errors?.forEach(error => {
 
 1. **Enable verbose logging**:
    ```typescript
-   const parser = new DDEXParser({
+   const parser = new DdexParser({
      logLevel: 'debug',
      logOutput: './ddex-debug.log'
    });

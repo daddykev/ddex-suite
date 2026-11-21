@@ -17,12 +17,12 @@ Legacy system migration involves:
 
 ```python
 import pandas as pd
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 from typing import Dict, Any, List
 
 class CSVToDDEXMigrator:
     def __init__(self):
-        self.builder = DDEXBuilder()
+        self.builder = DdexBuilder()
         
     def migrate_csv_to_ddex(self, csv_file: str) -> str:
         """Convert CSV metadata to DDEX XML"""
@@ -213,16 +213,16 @@ print("Successfully migrated CSV to DDEX format")
 ### Database Migration
 
 ```typescript
-import { DDEXBuilder } from 'ddex-builder';
+import { DdexBuilder } from 'ddex-builder';
 import { Pool } from 'pg';
 
 export class DatabaseToDDEXMigrator {
   private pool: Pool;
-  private builder: DDEXBuilder;
+  private builder: DdexBuilder;
 
   constructor(connectionConfig: any) {
     this.pool = new Pool(connectionConfig);
-    this.builder = new DDEXBuilder();
+    this.builder = new DdexBuilder();
   }
 
   async migrateFromDatabase(): Promise<void> {
@@ -379,14 +379,14 @@ await migrator.close();
 ```python
 from flask import Flask, request, jsonify
 from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
+from ddex_builder import DdexBuilder
 
 class LegacyAPIAdapter:
     """Adapter to maintain legacy API compatibility while using DDEX Suite internally"""
     
     def __init__(self):
         self.parser = DDEXParser()
-        self.builder = DDEXBuilder()
+        self.builder = DdexBuilder()
         self.app = Flask(__name__)
         self._setup_routes()
     

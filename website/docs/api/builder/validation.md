@@ -155,7 +155,7 @@ interface ValidationSummary {
 ### Basic Validation
 
 ```typescript
-import { DDEXBuilder, DDEXValidator } from 'ddex-builder';
+import { DdexBuilder, DDEXValidator } from 'ddex-builder';
 
 const validator = new DDEXValidator({
   strictMode: true,
@@ -204,7 +204,7 @@ if (result.warnings.length > 0) {
 ### Integration with Builder
 
 ```typescript
-const builder = new DDEXBuilder({
+const builder = new DdexBuilder({
   validation: {
     enabled: true,
     strictMode: false,

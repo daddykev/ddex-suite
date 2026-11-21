@@ -11,23 +11,23 @@ npm install ddex-parser
 ## Imports
 
 ```typescript
-import { DDEXParser, DDEXParserOptions, ParseResult } from 'ddex-parser';
+import { DdexParser, DdexParserOptions, ParseResult } from 'ddex-parser';
 
 // Or using require (CommonJS)
-const { DDEXParser } = require('ddex-parser');
+const { DdexParser } = require('ddex-parser');
 ```
 
 ## Classes
 
-### DDEXParser
+### DdexParser
 
 High-level parser class with automatic WASM/Native detection.
 
 ```typescript
-class DDEXParser {
+class DdexParser {
   constructor();
-  parse(xml: string, options?: DDEXParserOptions): Promise<ParseResult>;
-  stream(source: ReadableStream | NodeJS.ReadableStream, options?: DDEXParserOptions): Promise<ParseResult>;
+  parse(xml: string, options?: DdexParserOptions): Promise<ParseResult>;
+  stream(source: ReadableStream | NodeJS.ReadableStream, options?: DdexParserOptions): Promise<ParseResult>;
   get version(): string;
 }
 ```
@@ -35,7 +35,7 @@ class DDEXParser {
 #### Constructor
 
 ```typescript
-const parser = new DDEXParser();
+const parser = new DdexParser();
 ```
 
 Creates a new DDEX parser instance. The parser automatically detects the best available implementation (native or WASM).
@@ -43,20 +43,20 @@ Creates a new DDEX parser instance. The parser automatically detects the best av
 #### parse()
 
 ```typescript
-parse(xml: string, options?: DDEXParserOptions): Promise<ParseResult>
+parse(xml: string, options?: DdexParserOptions): Promise<ParseResult>
 ```
 
 Parses DDEX XML content and returns structured data.
 
 **Parameters:**
 - `xml: string` - The DDEX XML content to parse
-- `options?: DDEXParserOptions` - Optional parsing configuration
+- `options?: DdexParserOptions` - Optional parsing configuration
 
 **Returns:** `Promise<ParseResult>` - Parsed DDEX message data
 
 **Example:**
 ```typescript
-const parser = new DDEXParser();
+const parser = new DdexParser();
 const result = await parser.parse(xmlContent, {
   includeRawExtensions: true,
   validateReferences: true
@@ -68,14 +68,14 @@ console.log(`Parsed ${result.flat.releases.length} releases`);
 #### stream() {#streaming}
 
 ```typescript
-stream(source: ReadableStream | NodeJS.ReadableStream, options?: DDEXParserOptions): Promise<ParseResult>
+stream(source: ReadableStream | NodeJS.ReadableStream, options?: DdexParserOptions): Promise<ParseResult>
 ```
 
 Streams DDEX XML from a readable source for memory-efficient processing.
 
 **Parameters:**
 - `source: ReadableStream | NodeJS.ReadableStream` - Input stream
-- `options?: DDEXParserOptions` - Optional parsing configuration
+- `options?: DdexParserOptions` - Optional parsing configuration
 
 **Returns:** `Promise<ParseResult>` - Parsed DDEX message data
 
@@ -83,7 +83,7 @@ Streams DDEX XML from a readable source for memory-efficient processing.
 ```typescript
 import { createReadStream } from 'fs';
 
-const parser = new DDEXParser();
+const parser = new DdexParser();
 const stream = createReadStream('large-catalog.xml');
 const result = await parser.stream(stream, {
   streaming: true
@@ -100,7 +100,7 @@ Returns the parser version string.
 
 **Example:**
 ```typescript
-const parser = new DDEXParser();
+const parser = new DdexParser();
 console.log(`Parser version: ${parser.version}`);
 ```
 
@@ -274,12 +274,12 @@ Gets current streaming progress information.
 
 ## Interfaces
 
-### DDEXParserOptions
+### DdexParserOptions
 
 High-level parser configuration options.
 
 ```typescript
-interface DDEXParserOptions {
+interface DdexParserOptions {
   includeRawExtensions?: boolean;
   includeComments?: boolean;
   validateReferences?: boolean;
@@ -303,7 +303,7 @@ interface DDEXParserOptions {
 
 **Example:**
 ```typescript
-const options: DDEXParserOptions = {
+const options: DdexParserOptions = {
   includeRawExtensions: true,
   validateReferences: false,
   streaming: true
@@ -551,7 +551,7 @@ try {
 
 ```typescript
 // For large files, use streaming
-const parser = new DDEXParser();
+const parser = new DdexParser();
 const result = await parser.parse(largeXml, { streaming: true });
 
 // Set memory limits for native parser
@@ -563,7 +563,7 @@ const result = nativeParser.parseSync(xml, { maxMemory: 50 * 1024 * 1024 });
 
 ```typescript
 // Process multiple files efficiently
-const parser = new DDEXParser();
+const parser = new DdexParser();
 const results = await Promise.all(
   xmlFiles.map(xml => parser.parse(xml, { validateReferences: false }))
 );

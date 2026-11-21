@@ -4,13 +4,13 @@ Common type definitions used across TypeScript and Python APIs for the DDEX Pars
 
 ## Core Configuration Types
 
-### DDEXParserOptions / ParseOptions {#parseoptions}
+### DdexParserOptions / ParseOptions {#parseoptions}
 
 Parser configuration interface with language-specific variations.
 
 #### TypeScript
 ```typescript
-interface DDEXParserOptions {
+interface DdexParserOptions {
   includeRawExtensions?: boolean;
   includeComments?: boolean;
   validateReferences?: boolean;

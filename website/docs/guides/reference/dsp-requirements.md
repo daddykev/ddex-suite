@@ -333,7 +333,7 @@ const commonErrors = {
 ### Validation Script
 
 ```typescript
-import { DDEXBuilder, PlatformValidator } from 'ddex-suite';
+import { DdexBuilder, PlatformValidator } from 'ddex-suite';
 
 async function validateForAllPlatforms(releaseData: any) {
   const platforms = ['spotify', 'youtube_music', 'amazon_music'];
@@ -341,7 +341,7 @@ async function validateForAllPlatforms(releaseData: any) {
   
   const results = await Promise.all(
     platforms.map(async platform => {
-      const builder = new DDEXBuilder();
+      const builder = new DdexBuilder();
       builder.applyPreset(platform);
       
       try {
@@ -387,7 +387,7 @@ results.forEach(result => {
 ### Python Platform Testing
 
 ```python
-from ddex_builder import DDEXBuilder, PlatformValidator
+from ddex_builder import DdexBuilder, PlatformValidator
 
 def test_platform_compatibility(release_data):
     """Test release compatibility across all platforms"""
@@ -397,7 +397,7 @@ def test_platform_compatibility(release_data):
     results = {}
     
     for platform in platforms:
-        builder = DDEXBuilder(preset=platform)
+        builder = DdexBuilder(preset=platform)
         
         try:
             xml = builder.build(release_data)
