@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Valid ERN files without `Deal/DealReference` no longer fail with "Missing required
+  DDEX field: Deal/DealReference" (#1). Thanks to @jontybrook for #2 (optional
+  `DealReference`), #3 (resources without `ReferenceTitle`, e.g. cover images) and
+  #4 (ERN 3.8.1 support).
+- ERN 3.8.1 (`http://ddex.net/xml/ern/381`) is detected and reported as 3.8.1 and parsed
+  with the 3.8.2 logic; the builder emits the 381 namespace for 3.8.1 targets and rejects
+  unsupported target versions instead of writing an invalid namespace.
+- Deals are linked to their releases: `ParsedDeal.releases` comes from the enclosing
+  `ReleaseDeal/DealReleaseReference` (it was always empty).
+- A `ReleaseDeal` containing several `<Deal>` elements now yields one deal per `<Deal>`
+  with its own terms; previously all of them were merged into a single deal.
+- ERN 4.x release and resource titles are read from `DisplayTitleText`; previously they
+  were replaced with placeholders such as "Release V4_3" / "Sound Recording V4_3".
+- Video, Image, Text and SheetMusic resources are parsed (previously only
+  SoundRecording); non-audio/video resources are not reported as tracks, and track
+  positions are not shifted by them.
+- Streaming parse mode (used for inputs over 10 MB) no longer fails on every document
+  with "No MessageHeader found", and streams deals instead of returning none.
+- Node.js: deals report their parsed territories instead of a hard-coded `["Worldwide"]`.
+- Python: DataFrame/dict values are `None` or real values instead of Rust debug strings
+  such as `Some(...)` / `"None"`.
+
+### Changed (breaking)
+Absent optional values are now reported as `None` / `null` instead of invented values:
+- `ParsedDeal.deal_id`: `String` → `Option<String>` (no more `DEAL_AUTO_{n}`)
+- `ParsedTrack.title`, `ParsedResource.title`: `String` → `Option<String>` (the resource
+  reference is no longer used as a title)
+- `ParsedTrack.duration`: `Duration` → `Option<Duration>`;
+  `ParsedTrack.duration_formatted`: `String` → `Option<String>` (no more `0` / `"0:00"`)
+- `ParsedRelease.default_title`: `String` → `Option<String>`
+- `ERNVersion` has a new `V3_8_1` variant (exhaustive matches need a new arm).
+- Node.js (`index.d.ts`): `JsRelease.title` / `defaultTitle`, `JsTrack.title`,
+  `JsResource.title`, `JsDeal.dealId` and `JsDeal.commercialModel` are optional;
+  `commercialModel` is `null` until the parser reports the deal's commercial model.
+- Python: track `duration` in DataFrames/dicts is seconds as a float (or `None`) instead
+  of a string such as `"200s"`.
+- Python builder round trip (`test_round_trip_fidelity`) rebuilds in the parsed ERN
+  version and fails with a clear error when a track has no ISRC, title or duration,
+  instead of filling in placeholder values.
+
 ### Documentation
 - Corrected class names in code examples for each language binding: Node.js uses
   `DdexParser` / `DdexBuilder` / `StreamingDdexBuilder`; Python uses `DDEXParser`
