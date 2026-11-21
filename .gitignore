@@ -30,7 +30,6 @@ PUBLISH.md
 target/
 **/*.rs.bk
 *.pdb
-Cargo.lock
 
 # Debug artifacts
 *.dSYM/
