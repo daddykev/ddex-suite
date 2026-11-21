@@ -132,9 +132,11 @@ impl<R: BufRead> StreamingParser<R> {
 
                     if e.name().as_ref() == b"MessageHeader" {
                         return self.parse_message_header_element();
-                    } else {
+                    } else if self.current_depth > 1 {
                         self.skip_element()?;
                     }
+                    // Depth 1 is the message root (e.g. NewReleaseMessage): descend into it
+                    // rather than skipping the whole document.
                 }
                 Ok(Event::End(_)) => {
                     self.current_depth = self.current_depth.saturating_sub(1);
@@ -591,16 +593,67 @@ impl<'a, R: BufRead> Iterator for PartyIterator<'a, R> {
     }
 }
 
+/// Streams the deals of the `DealList`.
+///
+/// Each `ReleaseDeal` is parsed with the same logic as the DOM path, so every `Deal` carries
+/// the `DealReleaseReference`s of its enclosing `ReleaseDeal`.
 pub struct DealIterator<'a, R: BufRead> {
-    _parser: &'a mut StreamingParser<R>,
-    _done: bool,
+    parser: &'a mut StreamingParser<R>,
+    done: bool,
+    in_deal_list: bool,
+    pending: std::collections::VecDeque<Deal>,
 }
 
 impl<'a, R: BufRead> DealIterator<'a, R> {
     fn new(parser: &'a mut StreamingParser<R>) -> Self {
         Self {
-            _parser: parser,
-            _done: false,
+            parser,
+            done: false,
+            in_deal_list: false,
+            pending: std::collections::VecDeque::new(),
+        }
+    }
+
+    /// Read up to the next `ReleaseDeal` and parse it into its deals.
+    fn read_next_release_deal(&mut self) -> Result<Option<Vec<Deal>>, ParseError> {
+        loop {
+            self.parser.buffer.clear();
+            let release_deal_start = match self.parser.reader.read_event_into(&mut self.parser.buffer) {
+                Ok(Event::Start(ref e)) => match e.name().as_ref() {
+                    b"DealList" => {
+                        self.parser.current_depth += 1;
+                        self.in_deal_list = true;
+                        continue;
+                    }
+                    b"ReleaseDeal" if self.in_deal_list => e.to_owned(),
+                    // Not yet inside the message root (stream_deals called at the start of the
+                    // document): descend into the root instead of skipping it.
+                    _ if self.parser.current_depth == 0 => {
+                        self.parser.current_depth += 1;
+                        continue;
+                    }
+                    _ => {
+                        self.parser.current_depth += 1;
+                        self.parser.skip_element()?;
+                        continue;
+                    }
+                },
+                Ok(Event::End(ref e)) if e.name().as_ref() == b"DealList" => {
+                    self.parser.current_depth = self.parser.current_depth.saturating_sub(1);
+                    return Ok(None);
+                }
+                Ok(Event::Eof) => return Ok(None),
+                Err(e) => return Err(ParseError::XmlError(e.to_string())),
+                _ => continue,
+            };
+
+            // The validator must see the ReleaseDeal start tag so the matching end tag balances.
+            let mut validator = crate::parser::xml_validator::XmlValidator::strict();
+            validator.validate_event(&Event::Start(release_deal_start), &self.parser.reader)?;
+            let builder = crate::transform::graph::GraphBuilder::new(self.parser._version);
+            return builder
+                .parse_release_deal(&mut self.parser.reader, &mut validator)
+                .map(Some);
         }
     }
 }
@@ -609,7 +662,22 @@ impl<'a, R: BufRead> Iterator for DealIterator<'a, R> {
     type Item = Result<Deal, ParseError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        None // Placeholder
+        loop {
+            if let Some(deal) = self.pending.pop_front() {
+                return Some(Ok(deal));
+            }
+            if self.done {
+                return None;
+            }
+            match self.read_next_release_deal() {
+                Ok(Some(deals)) => self.pending.extend(deals),
+                Ok(None) => self.done = true,
+                Err(e) => {
+                    self.done = true;
+                    return Some(Err(e));
+                }
+            }
+        }
     }
 }
 

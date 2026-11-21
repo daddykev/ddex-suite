@@ -73,12 +73,13 @@ impl ParsedElement {
             ParsedElement::Release(r) => {
                 !r.release_reference.is_empty() && !r.release_title.is_empty()
             }
-            ParsedElement::Resource(r) => {
-                !r.resource_reference.is_empty() && !r.reference_title.is_empty()
-            }
+            // ReferenceTitle is not defined for every resource type (e.g. Image), so only the
+            // ResourceReference is required.
+            ParsedElement::Resource(r) => !r.resource_reference.is_empty(),
             ParsedElement::Party(p) => !p.party_id.is_empty() && !p.party_name.is_empty(),
-            // DealReference is optional per DDEX ERN spec (minOccurs="0").
-            // A Deal is complete if it has release references linking it to releases.
+            // DealReference is optional (minOccurs="0"), so it doesn't affect completeness.
+            // A ReleaseDeal requires at least one DealReleaseReference, which every Deal inherits
+            // from its enclosing ReleaseDeal, so a complete Deal is linked to a release.
             ParsedElement::Deal(d) => !d.deal_release_reference.is_empty(),
             ParsedElement::EndOfStream => true,
         }

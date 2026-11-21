@@ -297,10 +297,11 @@ impl Flattener {
                     .find(|r| r.resource_reference == rref.resource_reference);
                 (rref, resource)
             })
-            // Skip non-audio/video resources (images, text, etc.) - they're not tracks.
-            // Filter before numbering so track positions are not shifted by skipped resources.
+            // Only references that resolve to a SoundRecording or Video are tracks. Images, text,
+            // etc. are skipped, and so are references to resources that weren't parsed, since
+            // their type is unknown. Filter before numbering so positions aren't shifted.
             .filter(|(_, resource)| {
-                resource.map_or(true, |r| {
+                resource.map_or(false, |r| {
                     matches!(r.resource_type, ResourceType::SoundRecording | ResourceType::Video)
                 })
             })

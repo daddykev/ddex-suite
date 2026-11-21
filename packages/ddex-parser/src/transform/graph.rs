@@ -113,8 +113,9 @@ impl GraphBuilder {
                                     )?);
                                 }
                                 b"ReleaseDeal" if in_deal_list => {
-                                    // Parse the ReleaseDeal and add it to deals
-                                    deals.push(
+                                    // A ReleaseDeal holds one or more Deals, all linked to its
+                                    // DealReleaseReferences
+                                    deals.extend(
                                         self.parse_release_deal(
                                             &mut xml_reader,
                                             &mut validator,
@@ -774,25 +775,71 @@ impl GraphBuilder {
         Ok(resource)
     }
 
-    fn parse_release_deal<R: BufRead>(
+    /// Parse a `ReleaseDeal` into its `Deal`s.
+    ///
+    /// ERN 3.8.x and 4.x share the structure
+    /// `ReleaseDeal { DealReleaseReference+, Deal+ { DealReference?, DealTerms } }`.
+    /// Each `Deal` becomes its own graph `Deal` with its own terms, linked to every
+    /// `DealReleaseReference` of the enclosing `ReleaseDeal`. A simplified layout with
+    /// `DealReference` / `DealTerms` directly under `ReleaseDeal` yields a single deal.
+    pub(crate) fn parse_release_deal<R: BufRead>(
         &self,
         reader: &mut Reader<R>,
         validator: &mut crate::parser::xml_validator::XmlValidator,
-    ) -> Result<ddex_core::models::graph::Deal, ParseError> {
+    ) -> Result<Vec<ddex_core::models::graph::Deal>, ParseError> {
         use ddex_core::models::common::ValidityPeriod;
-        use ddex_core::models::graph::{Deal, DealTerms, CommercialModelType, UseType};
+        use ddex_core::models::graph::{CommercialModelType, Deal, DealTerms, UseType};
         use chrono::{DateTime, Utc};
 
-        // Initialize all the fields we'll extract
-        let mut deal_reference: Option<String> = None;
-        let mut territory_codes = Vec::new();
-        let mut use_types = Vec::new();
-        let mut commercial_model_types = Vec::new();
-        let mut validity_period: Option<ValidityPeriod> = None;
-        let mut start_date: Option<DateTime<Utc>> = None;
+        /// Values collected for one deal.
+        #[derive(Default)]
+        struct DealAcc {
+            deal_reference: Option<String>,
+            territory_codes: Vec<String>,
+            use_types: Vec<UseType>,
+            commercial_model_types: Vec<CommercialModelType>,
+            validity_period: Option<ValidityPeriod>,
+            start_date: Option<DateTime<Utc>>,
+            seen: bool,
+        }
+
+        impl DealAcc {
+            fn into_deal(self, release_refs: &[String]) -> Deal {
+                Deal {
+                    deal_reference: self.deal_reference,
+                    deal_release_reference: release_refs.to_vec(),
+                    deal_terms: DealTerms {
+                        validity_period: self.validity_period,
+                        start_date: self.start_date,
+                        end_date: None,
+                        territory_code: self.territory_codes,
+                        excluded_territory_code: Vec::new(),
+                        distribution_channel: Vec::new(),
+                        excluded_distribution_channel: Vec::new(),
+                        commercial_model_type: self.commercial_model_types,
+                        use_type: self.use_types,
+                        price_information: Vec::new(),
+                        wholesale_price: Vec::new(),
+                        suggested_retail_price: Vec::new(),
+                        pre_order_date: None,
+                        pre_order_preview_date: None,
+                        instant_gratification_date: None,
+                        takedown_date: None,
+                    },
+                }
+            }
+        }
+
+        let mut release_refs: Vec<String> = Vec::new();
+        let mut finished: Vec<DealAcc> = Vec::new();
+        // Deal-level values: either inside the current <Deal>, or directly under <ReleaseDeal>
+        // for the simplified layout.
+        let mut current = DealAcc::default();
+        let mut in_deal_element = false;
         let mut current_text = String::new();
 
         // State tracking for nested elements
+        let mut in_release_ref = false;
         let mut in_deal_reference = false;
         let mut in_deal_terms = false;
         let mut in_territory_code = false;
@@ -801,7 +848,6 @@ impl GraphBuilder {
         let mut in_validity_period = false;
         let mut in_start_date = false;
 
-        // Parse the ReleaseDeal element and extract real data
         let mut buf = Vec::new();
         let mut depth = 1;
         while depth > 0 {
@@ -814,6 +860,18 @@ impl GraphBuilder {
                         Event::Start(ref e) => {
                             depth += 1;
                             match e.name().as_ref() {
+                                b"DealReleaseReference" if depth == 2 => {
+                                    in_release_ref = true;
+                                    current_text.clear();
+                                },
+                                b"Deal" if depth == 2 => {
+                                    // A new <Deal>; anything collected at ReleaseDeal level so far
+                                    // belongs to the simplified layout and is kept separately.
+                                    if current.seen {
+                                        finished.push(std::mem::take(&mut current));
+                                    }
+                                    in_deal_element = true;
+                                },
                                 b"DealReference" => {
                                     in_deal_reference = true;
                                     current_text.clear();
@@ -842,7 +900,7 @@ impl GraphBuilder {
                             }
                         },
                         Event::Text(ref e) => {
-                            if in_deal_reference || in_territory_code || in_use_type ||
+                            if in_release_ref || in_deal_reference || in_territory_code || in_use_type ||
                                in_commercial_model_type || in_start_date {
                                 current_text.push_str(&e.unescape().unwrap_or_default());
                             }
@@ -850,17 +908,33 @@ impl GraphBuilder {
                         Event::End(ref e) => {
                             depth -= 1;
                             match e.name().as_ref() {
+                                b"DealReleaseReference" if in_release_ref => {
+                                    if !current_text.trim().is_empty() {
+                                        release_refs.push(current_text.trim().to_string());
+                                    }
+                                    in_release_ref = false;
+                                    current_text.clear();
+                                },
+                                b"Deal" if in_deal_element && depth == 1 => {
+                                    current.seen = true;
+                                    finished.push(std::mem::take(&mut current));
+                                    in_deal_element = false;
+                                },
                                 b"DealReference" => {
                                     if !current_text.trim().is_empty() {
-                                        deal_reference = Some(current_text.trim().to_string());
+                                        current.deal_reference = Some(current_text.trim().to_string());
+                                        current.seen = true;
                                     }
                                     in_deal_reference = false;
                                     current_text.clear();
                                 },
-                                b"DealTerms" => in_deal_terms = false,
+                                b"DealTerms" => {
+                                    in_deal_terms = false;
+                                    current.seen = true;
+                                },
                                 b"TerritoryCode" if in_territory_code => {
                                     if !current_text.trim().is_empty() {
-                                        territory_codes.push(current_text.trim().to_string());
+                                        current.territory_codes.push(current_text.trim().to_string());
                                     }
                                     in_territory_code = false;
                                     current_text.clear();
@@ -874,7 +948,7 @@ impl GraphBuilder {
                                             "NonInteractiveStream" => UseType::NonInteractiveStream,
                                             other => UseType::Other(other.to_string()),
                                         };
-                                        use_types.push(use_type);
+                                        current.use_types.push(use_type);
                                     }
                                     in_use_type = false;
                                     current_text.clear();
@@ -887,24 +961,22 @@ impl GraphBuilder {
                                             "AdSupportedModel" => CommercialModelType::AdSupportedModel,
                                             other => CommercialModelType::Other(other.to_string()),
                                         };
-                                        commercial_model_types.push(commercial_model);
+                                        current.commercial_model_types.push(commercial_model);
                                     }
                                     in_commercial_model_type = false;
                                     current_text.clear();
                                 },
-                                b"ValidityPeriod" => {
-                                    // Create ValidityPeriod from collected start_date
-                                    validity_period = Some(ValidityPeriod {
-                                        start_date: start_date.clone(),
+                                b"ValidityPeriod" if in_validity_period => {
+                                    current.validity_period = Some(ValidityPeriod {
+                                        start_date: current.start_date,
                                         end_date: None, // Could be extended to parse EndDate if needed
                                     });
                                     in_validity_period = false;
                                 },
                                 b"StartDate" if in_start_date => {
                                     if !current_text.trim().is_empty() {
-                                        // Try to parse the date/time
                                         if let Ok(parsed_date) = DateTime::parse_from_rfc3339(current_text.trim()) {
-                                            start_date = Some(parsed_date.with_timezone(&Utc));
+                                            current.start_date = Some(parsed_date.with_timezone(&Utc));
                                         }
                                     }
                                     in_start_date = false;
@@ -924,32 +996,15 @@ impl GraphBuilder {
             buf.clear();
         }
 
-        let deal_terms = DealTerms {
-            validity_period,
-            start_date,
-            end_date: None,
-            territory_code: territory_codes,
-            excluded_territory_code: Vec::new(),
-            distribution_channel: Vec::new(),
-            excluded_distribution_channel: Vec::new(),
-            commercial_model_type: commercial_model_types,
-            use_type: use_types,
-            price_information: Vec::new(),
-            wholesale_price: Vec::new(),
-            suggested_retail_price: Vec::new(),
-            pre_order_date: None,
-            pre_order_preview_date: None,
-            instant_gratification_date: None,
-            takedown_date: None,
-        };
+        // Simplified layout: deal values directly under <ReleaseDeal>
+        if current.seen {
+            finished.push(current);
+        }
 
-        let deal = Deal {
-            deal_reference,
-            deal_release_reference: Vec::new(), // Could be extracted from parent context if needed
-            deal_terms,
-        };
-
-        Ok(deal)
+        Ok(finished
+            .into_iter()
+            .map(|acc| acc.into_deal(&release_refs))
+            .collect())
     }
 }
 
