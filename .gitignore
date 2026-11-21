@@ -30,6 +30,8 @@ PUBLISH.md
 target/
 **/*.rs.bk
 *.pdb
+# Standalone, unmaintained benchmark crate (not a workspace member); its lock is not kept
+benchmark-suite/rust/Cargo.lock
 
 # Debug artifacts
 *.dSYM/
