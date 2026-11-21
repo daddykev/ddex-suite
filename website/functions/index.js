@@ -297,6 +297,31 @@ class NativeDdexBuilderWrapper {
 const fs = require('fs');
 const path = require('path');
 
+// Read the version of an installed package from its own package.json.
+// The ddex packages' "exports" map doesn't expose ./package.json, so resolve the
+// entry point and walk up to the package root instead of require('<pkg>/package.json').
+function readInstalledVersion(pkgName) {
+  try {
+    let dir = path.dirname(require.resolve(pkgName));
+    while (dir !== path.dirname(dir)) {
+      const candidate = path.join(dir, 'package.json');
+      if (fs.existsSync(candidate)) {
+        const pkg = JSON.parse(fs.readFileSync(candidate, 'utf8'));
+        if (pkg.name === pkgName) return pkg.version;
+      }
+      dir = path.dirname(dir);
+    }
+  } catch (err) {
+    logger.warn(`Could not determine installed version of ${pkgName}: ${err.message}`);
+  }
+  return null;
+}
+
+const PACKAGE_VERSIONS = {
+  parser: readInstalledVersion('ddex-parser'),
+  builder: readInstalledVersion('ddex-builder'),
+};
+
 try {
   logger.info("=== NATIVE MODULE LOADING DIAGNOSTICS ===");
   logger.info("Environment:", {
@@ -731,7 +756,8 @@ exports.health = onRequest({
     success: true,
     message: 'DDEX Suite API is running',
     timestamp: new Date().toISOString(),
-    version: '0.4.3',
+    version: PACKAGE_VERSIONS.parser,
+    packageVersions: PACKAGE_VERSIONS,
     modules: {
       parser: !!DdexParser,
       builder: !!DdexBuilder,
@@ -751,7 +777,8 @@ exports.docs = onRequest({
 
   const docs = {
     title: 'DDEX Suite API',
-    version: '0.4.3',
+    version: PACKAGE_VERSIONS.parser,
+    packageVersions: PACKAGE_VERSIONS,
     description: 'REST API for DDEX XML parsing and building',
     parser: parserType,
     native: nativeModulesAvailable,

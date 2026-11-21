@@ -280,6 +280,9 @@ docs/_build/
 docs/api/generated/
 site/
 
+# Firebase deploy cache (rewritten on every `firebase deploy`)
+website/.firebase/
+
 # =========================
 # Miscellaneous
 # =========================
