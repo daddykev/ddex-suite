@@ -93,14 +93,24 @@ impl GraphBuilder {
                                         )?,
                                     );
                                 }
-                                b"SoundRecording" if in_resource_list => {
-                                    // Parse the SoundRecording and add it to resources
-                                    resources.push(
-                                        self.parse_sound_recording(
-                                            &mut xml_reader,
-                                            &mut validator,
-                                        )?,
-                                    );
+                                name @ (b"SoundRecording" | b"Video" | b"Image" | b"Text" | b"SheetMusic")
+                                    if in_resource_list =>
+                                {
+                                    use ddex_core::models::graph::ResourceType;
+                                    let resource_type = match name {
+                                        b"SoundRecording" => ResourceType::SoundRecording,
+                                        b"Video" => ResourceType::Video,
+                                        b"Image" => ResourceType::Image,
+                                        b"Text" => ResourceType::Text,
+                                        _ => ResourceType::SheetMusic,
+                                    };
+                                    // Record every resource type so releases can resolve their
+                                    // references (e.g. cover art) instead of failing or guessing.
+                                    resources.push(self.parse_resource(
+                                        &mut xml_reader,
+                                        &mut validator,
+                                        resource_type,
+                                    )?);
                                 }
                                 b"ReleaseDeal" if in_deal_list => {
                                     // Parse the ReleaseDeal and add it to deals
@@ -366,6 +376,7 @@ impl GraphBuilder {
         // State tracking for nested elements
         let mut in_release_title = false;
         let mut in_title_text = false;
+        let mut in_display_title_text = false;
         let mut in_release_type = false;
         let mut in_release_reference = false;
         let mut in_release_id = false;
@@ -408,9 +419,16 @@ impl GraphBuilder {
                                     in_grid = true;
                                     current_text.clear();
                                 },
+                                // ReleaseTitle (simplified format) or ReferenceTitle (3.8.x, direct child)
                                 b"ReleaseTitle" => in_release_title = true,
+                                b"ReferenceTitle" if depth == 2 => in_release_title = true,
                                 b"TitleText" if in_release_title => {
                                     in_title_text = true;
+                                    current_text.clear();
+                                },
+                                // DisplayTitleText (4.x, direct child)
+                                b"DisplayTitleText" if depth == 2 => {
+                                    in_display_title_text = true;
                                     current_text.clear();
                                 },
                                 b"ReleaseType" => {
@@ -434,7 +452,7 @@ impl GraphBuilder {
                             }
                         },
                         Event::Text(ref e) => {
-                            if in_title_text || in_release_type || in_release_reference ||
+                            if in_title_text || in_display_title_text || in_release_type || in_release_reference ||
                                in_icpn || in_grin || in_grid || in_artist_full_name || in_resource_reference {
                                 current_text.push_str(&e.unescape().unwrap_or_default());
                             }
@@ -483,12 +501,19 @@ impl GraphBuilder {
                                     in_grid = false;
                                     current_text.clear();
                                 },
-                                b"ReleaseTitle" => in_release_title = false,
+                                b"ReleaseTitle" | b"ReferenceTitle" => in_release_title = false,
                                 b"TitleText" if in_title_text => {
                                     if !current_text.trim().is_empty() {
                                         release_titles.push(LocalizedString::new(current_text.trim().to_string()));
                                     }
                                     in_title_text = false;
+                                    current_text.clear();
+                                },
+                                b"DisplayTitleText" if in_display_title_text => {
+                                    if !current_text.trim().is_empty() {
+                                        release_titles.push(LocalizedString::new(current_text.trim().to_string()));
+                                    }
+                                    in_display_title_text = false;
                                     current_text.clear();
                                 },
                                 b"ReleaseType" => {
@@ -552,11 +577,6 @@ impl GraphBuilder {
             buf.clear();
         }
 
-        // If no title was found, provide a fallback
-        if release_titles.is_empty() {
-            release_titles.push(LocalizedString::new(format!("Release {:?}", self.version)));
-        }
-
         let release = Release {
             release_reference,
             release_id: release_ids,
@@ -578,13 +598,18 @@ impl GraphBuilder {
         Ok(release)
     }
 
-    fn parse_sound_recording<R: BufRead>(
+    /// Parse a resource element (SoundRecording, Video, Image, Text or SheetMusic).
+    ///
+    /// Only values present in the XML are recorded: a resource without a title keeps an
+    /// empty `reference_title`, and one without a duration keeps `duration: None`.
+    fn parse_resource<R: BufRead>(
         &self,
         reader: &mut Reader<R>,
         validator: &mut crate::parser::xml_validator::XmlValidator,
+        resource_type: ddex_core::models::graph::ResourceType,
     ) -> Result<ddex_core::models::graph::Resource, ParseError> {
         use ddex_core::models::common::{LocalizedString, Identifier, IdentifierType};
-        use ddex_core::models::graph::{Resource, ResourceType};
+        use ddex_core::models::graph::Resource;
         use std::time::Duration;
 
         // Initialize all the fields we'll extract
@@ -600,12 +625,13 @@ impl GraphBuilder {
         let mut in_isrc = false;
         let mut in_title = false;
         let mut in_title_text = false;
+        let mut in_display_title_text = false;
         let mut in_duration = false;
         let mut in_display_artist = false;
         let mut in_artist_party_name = false;
         let mut in_artist_full_name = false;
 
-        // Parse the SoundRecording element and extract real data
+        // Parse the resource element and extract real data
         let mut buf = Vec::new();
         let mut depth = 1;
         while depth > 0 {
@@ -622,14 +648,22 @@ impl GraphBuilder {
                                     in_resource_reference = true;
                                     current_text.clear();
                                 },
-                                b"SoundRecordingId" => in_sound_recording_id = true,
+                                // SoundRecordingId / VideoId (3.8.x) or ResourceId (4.x)
+                                b"SoundRecordingId" | b"VideoId" | b"ResourceId" => in_sound_recording_id = true,
                                 b"ISRC" if in_sound_recording_id => {
                                     in_isrc = true;
                                     current_text.clear();
                                 },
+                                // ReferenceTitle (3.8.x, direct child) or Title (details by territory)
+                                b"ReferenceTitle" if depth == 2 => in_title = true,
                                 b"Title" => in_title = true,
                                 b"TitleText" if in_title => {
                                     in_title_text = true;
+                                    current_text.clear();
+                                },
+                                // DisplayTitleText (4.x, direct child)
+                                b"DisplayTitleText" if depth == 2 => {
+                                    in_display_title_text = true;
                                     current_text.clear();
                                 },
                                 b"Duration" => {
@@ -648,7 +682,7 @@ impl GraphBuilder {
                             }
                         },
                         Event::Text(ref e) => {
-                            if in_resource_reference || in_isrc || in_title_text ||
+                            if in_resource_reference || in_isrc || in_title_text || in_display_title_text ||
                                in_duration || in_artist_full_name {
                                 current_text.push_str(&e.unescape().unwrap_or_default());
                             }
@@ -663,7 +697,7 @@ impl GraphBuilder {
                                     in_resource_reference = false;
                                     current_text.clear();
                                 },
-                                b"SoundRecordingId" => in_sound_recording_id = false,
+                                b"SoundRecordingId" | b"VideoId" | b"ResourceId" => in_sound_recording_id = false,
                                 b"ISRC" if in_isrc => {
                                     if !current_text.trim().is_empty() {
                                         resource_ids.push(Identifier {
@@ -675,12 +709,19 @@ impl GraphBuilder {
                                     in_isrc = false;
                                     current_text.clear();
                                 },
-                                b"Title" => in_title = false,
+                                b"ReferenceTitle" | b"Title" => in_title = false,
                                 b"TitleText" if in_title_text => {
                                     if !current_text.trim().is_empty() {
                                         reference_titles.push(LocalizedString::new(current_text.trim().to_string()));
                                     }
                                     in_title_text = false;
+                                    current_text.clear();
+                                },
+                                b"DisplayTitleText" if in_display_title_text => {
+                                    if !current_text.trim().is_empty() {
+                                        reference_titles.push(LocalizedString::new(current_text.trim().to_string()));
+                                    }
+                                    in_display_title_text = false;
                                     current_text.clear();
                                 },
                                 b"Duration" => {
@@ -711,20 +752,15 @@ impl GraphBuilder {
                     }
                 }
                 Err(e) => {
-                    return Err(ParseError::XmlError(format!("XML parsing error in sound recording: {}", e)));
+                    return Err(ParseError::XmlError(format!("XML parsing error in resource: {}", e)));
                 }
             }
             buf.clear();
         }
 
-        // If no title was found, provide a fallback
-        if reference_titles.is_empty() {
-            reference_titles.push(LocalizedString::new(format!("Sound Recording {:?}", self.version)));
-        }
-
         let resource = Resource {
             resource_reference,
-            resource_type: ResourceType::SoundRecording,
+            resource_type,
             resource_id: resource_ids,
             reference_title: reference_titles,
             duration,

@@ -49,10 +49,11 @@ pub enum PartyDescriptorVersion {
 impl VersionDifferences {
     pub fn for_version(version: ERNVersion) -> Self {
         match version {
-            ERNVersion::V3_8_2 => Self {
+            // 3.8.1 and 3.8.2 share the same feature set; only the namespace differs.
+            ERNVersion::V3_8_1 | ERNVersion::V3_8_2 => Self {
                 version,
-                namespace_uri: "http://ddex.net/xml/ern/382".to_string(),
-                schema_location: "http://ddex.net/xml/ern/382/release-notification.xsd".to_string(),
+                namespace_uri: version.namespace().to_string(),
+                schema_location: format!("{}/release-notification.xsd", version.namespace()),
                 features: VersionFeatures {
                     supports_message_audit_trail: false,
                     supports_release_profile: false,

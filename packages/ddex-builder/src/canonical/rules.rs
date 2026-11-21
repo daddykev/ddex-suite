@@ -51,6 +51,21 @@ impl NamespacePrefixLock {
             "xs".to_string(),
         );
         ern_382_prefixes.insert("http://ddex.net/xml/gc".to_string(), "gc".to_string());
+        // ERN 3.8.1 uses the same prefixes as 3.8.2 with its own ERN namespace
+        let mut ern_381_prefixes = IndexMap::new();
+        for (uri, prefix) in &ern_382_prefixes {
+            let uri = if uri == "http://ddex.net/xml/ern/382" {
+                "http://ddex.net/xml/ern/381".to_string()
+            } else {
+                uri.clone()
+            };
+            ern_381_prefixes.insert(uri, prefix.clone());
+        }
+        self.version_locks
+            .insert("3.8.1".to_string(), ern_381_prefixes.clone());
+        self.version_locks
+            .insert("381".to_string(), ern_381_prefixes);
+
         self.version_locks
             .insert("3.8.2".to_string(), ern_382_prefixes.clone());
         self.version_locks
@@ -204,6 +219,11 @@ impl ElementOrder {
         let mut ern_382_order = IndexMap::new();
         self.add_common_orders(&mut ern_382_order);
         self.add_ern_382_specific_orders(&mut ern_382_order);
+        // ERN 3.8.1 shares the 3.8.2 element structure
+        self.version_orders
+            .insert("3.8.1".to_string(), ern_382_order.clone());
+        self.version_orders
+            .insert("381".to_string(), ern_382_order.clone());
         self.version_orders
             .insert("3.8.2".to_string(), ern_382_order.clone());
         self.version_orders.insert("382".to_string(), ern_382_order);

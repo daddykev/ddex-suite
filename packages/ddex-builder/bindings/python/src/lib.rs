@@ -4,6 +4,7 @@ use ::ddex_builder::builder::{
 };
 use ::ddex_parser::DDEXParser;
 use ddex_core::models::flat::ParsedERNMessage;
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyList};
 use std::collections::HashMap;
@@ -1436,54 +1437,70 @@ impl DdexBuilder {
         &self,
         parsed_result: &ParsedERNMessage,
     ) -> PyResult<BuildRequest> {
-        // Convert parsed result back to build request (simplified implementation)
+        // Convert parsed result back to build request (simplified implementation).
+        // Values come from the parsed message; nothing is filled in when the source lacks it.
+        let party = |org: &ddex_core::models::flat::Organization| PartyRequest {
+            party_name: vec![LocalizedStringRequest {
+                text: org.name.clone(),
+                language_code: None,
+            }],
+            party_id: Some(org.id.clone()).filter(|id| !id.is_empty()),
+            party_reference: None,
+        };
         let header = MessageHeaderRequest {
             message_id: Some(parsed_result.flat.message_id.clone()),
-            message_sender: PartyRequest {
-                party_name: vec![LocalizedStringRequest {
-                    text: format!("{:?}", parsed_result.flat.sender),
-                    language_code: None,
-                }],
-                party_id: None,
-                party_reference: None,
-            },
-            message_recipient: PartyRequest {
-                party_name: vec![LocalizedStringRequest {
-                    text: "Recipient".to_string(),
-                    language_code: None,
-                }],
-                party_id: None,
-                party_reference: None,
-            },
+            message_sender: party(&parsed_result.flat.sender),
+            message_recipient: party(&parsed_result.flat.recipient),
             message_control_type: Some(parsed_result.flat.message_type.clone()),
             message_created_date_time: Some(parsed_result.flat.message_date.to_rfc3339()),
         };
 
         let mut releases = Vec::new();
         for release in &parsed_result.flat.releases {
+            // The builder needs an ISRC, title and duration for every track. If the parsed
+            // message doesn't have one, fail with a clear error instead of inventing a value.
+            let missing = |field: &str, track_id: &str| {
+                PyValueError::new_err(format!(
+                    "cannot rebuild track '{}': the parsed message has no {}",
+                    track_id, field
+                ))
+            };
             let tracks: Vec<TrackRequest> = release
                 .tracks
                 .iter()
-                .map(|track| TrackRequest {
-                    track_id: track.track_id.clone(),
-                    resource_reference: Some(track.track_id.clone()),
-                    isrc: track
-                        .isrc
-                        .clone()
-                        .unwrap_or_else(|| "TEMP00000000".to_string()),
-                    title: track.title.clone(),
-                    duration: format!("PT{}S", track.duration.as_secs()),
-                    artist: track.display_artist.clone(),
+                .map(|track| {
+                    Ok(TrackRequest {
+                        track_id: track.track_id.clone(),
+                        resource_reference: Some(track.track_id.clone()),
+                        isrc: track
+                            .isrc
+                            .clone()
+                            .ok_or_else(|| missing("ISRC", &track.track_id))?,
+                        title: track
+                            .title
+                            .clone()
+                            .ok_or_else(|| missing("title", &track.track_id))?,
+                        duration: track
+                            .duration
+                            .map(|d| format!("PT{}S", d.as_secs()))
+                            .ok_or_else(|| missing("duration", &track.track_id))?,
+                        artist: track.display_artist.clone(),
+                    })
                 })
-                .collect();
+                .collect::<PyResult<_>>()?;
 
             releases.push(ReleaseRequest {
                 release_id: release.release_id.clone(),
                 release_reference: Some(release.release_id.clone()),
-                title: vec![LocalizedStringRequest {
-                    text: release.default_title.clone(),
-                    language_code: None,
-                }],
+                // Empty when the parsed release has no title; builder validation decides.
+                title: release
+                    .default_title
+                    .iter()
+                    .map(|text| LocalizedStringRequest {
+                        text: text.clone(),
+                        language_code: None,
+                    })
+                    .collect(),
                 artist: release.display_artist.clone(),
                 label: None,        // Simplified
                 release_date: None, // Simplified
@@ -1497,8 +1514,9 @@ impl DdexBuilder {
 
         Ok(BuildRequest {
             header,
-            version: "4.3".to_string(),
-            profile: Some("AudioAlbum".to_string()),
+            // Rebuild in the version that was parsed (e.g. 3.8.1 stays 3.8.1).
+            version: parsed_result.graph.version.as_str().to_string(),
+            profile: parsed_result.flat.profile.clone(),
             releases,
             deals: vec![],
             extensions: None,

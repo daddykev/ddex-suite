@@ -106,7 +106,9 @@ impl DB_C14N {
 
     /// Detect ERN version from XML content
     fn detect_version(&self, xml: &str) -> String {
-        if xml.contains("http://ddex.net/xml/ern/382") {
+        if xml.contains("http://ddex.net/xml/ern/381") {
+            "3.8.1".to_string()
+        } else if xml.contains("http://ddex.net/xml/ern/382") {
             "3.8.2".to_string()
         } else if xml.contains("http://ddex.net/xml/ern/42") {
             "4.2".to_string()

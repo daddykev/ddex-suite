@@ -181,6 +181,7 @@ fn parse_error_to_napi(err: ParseError) -> napi::Error {
 /// Convert ERNVersion to string
 fn version_to_string(version: ERNVersion) -> String {
     match version {
+        ERNVersion::V3_8_1 => "V3_8_1".to_string(),
         ERNVersion::V3_8_2 => "V3_8_2".to_string(),
         ERNVersion::V4_2 => "V4_2".to_string(),
         ERNVersion::V4_3 => "V4_3".to_string(),
@@ -191,7 +192,7 @@ fn version_to_string(version: ERNVersion) -> String {
 fn convert_release(release: ParsedRelease) -> JsRelease {
     JsRelease {
         release_id: release.release_id,
-        title: release.title.first().map(|t| t.text.clone()).unwrap_or_default(),
+        title: release.title.first().map(|t| t.text.clone()),
         default_title: release.default_title,
         subtitle: release.default_subtitle,
         display_artist: release.display_artist,
@@ -213,7 +214,7 @@ fn convert_track(track: ddex_core::models::flat::ParsedTrack) -> JsTrack {
         track_id: track.track_id,
         title: track.title,
         artist: track.display_artist,
-        duration: Some(track.duration_formatted), // Use the pre-formatted duration
+        duration: track.duration_formatted,
         position: Some(track.position as u32),
         disc_number: track.disc_number.map(|d| d as u32),
         isrc: track.isrc,
@@ -243,10 +244,11 @@ fn convert_deal(deal: ParsedDeal) -> JsDeal {
         releases: deal.releases,
         start_date: deal.validity.start.map(|d| d.to_rfc3339()),
         end_date: deal.validity.end.map(|d| d.to_rfc3339()),
-        territories: vec!["Worldwide".to_string()], // Simplified for now - actual field structure is complex
+        territories: deal.territories.included,
         usage_rights: deal.usage_rights,
         restrictions: deal.restrictions,
-        commercial_model: "Streaming".to_string(), // Simplified for now - actual field structure is complex
+        // The flat model does not carry the deal's CommercialModelType yet; report null rather than a guess.
+        commercial_model: None,
     }
 }
 
@@ -354,8 +356,8 @@ fn convert_parsed_message(
 #[derive(serde::Serialize)]
 pub struct JsRelease {
     pub release_id: String,
-    pub title: String,
-    pub default_title: String,
+    pub title: Option<String>,
+    pub default_title: Option<String>,
     pub subtitle: Option<String>,
     pub display_artist: String,
     pub release_type: String,
@@ -373,7 +375,7 @@ pub struct JsRelease {
 #[derive(serde::Serialize)]
 pub struct JsTrack {
     pub track_id: String,
-    pub title: String,
+    pub title: Option<String>,
     pub artist: String,
     pub duration: Option<String>,
     pub position: Option<u32>,
@@ -387,7 +389,7 @@ pub struct JsTrack {
 pub struct JsResource {
     pub resource_id: String,
     pub resource_type: String,
-    pub title: String,
+    pub title: Option<String>,
     pub duration_seconds: Option<f64>,
     pub duration_string: Option<String>,
     pub file_format: Option<String>,
@@ -399,14 +401,14 @@ pub struct JsResource {
 #[napi(object)]
 #[derive(serde::Serialize)]
 pub struct JsDeal {
-    pub deal_id: String,
+    pub deal_id: Option<String>,
     pub releases: Vec<String>,
     pub start_date: Option<String>,
     pub end_date: Option<String>,
     pub territories: Vec<String>,
     pub usage_rights: Vec<String>,
     pub restrictions: Vec<String>,
-    pub commercial_model: String,
+    pub commercial_model: Option<String>,
 }
 
 #[napi(js_name = "DdexParser")]

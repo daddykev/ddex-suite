@@ -501,6 +501,7 @@ pub mod utils {
     /// Check if a namespace URI is a known DDEX namespace
     pub fn is_ddex_namespace(namespace_uri: &str) -> bool {
         const DDEX_NAMESPACES: &[&str] = &[
+            "http://ddex.net/xml/ern/381",
             "http://ddex.net/xml/ern/382",
             "http://ddex.net/xml/ern/42",
             "http://ddex.net/xml/ern/43",

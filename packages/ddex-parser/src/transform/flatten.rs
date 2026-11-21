@@ -65,7 +65,7 @@ impl Flattener {
                 release_id: release.release_reference.clone(),
                 identifiers: Self::extract_identifiers(&release.release_id),
                 title: release.release_title.clone(),
-                default_title: Self::get_primary_title(&release.release_title, "Release/Title/TitleText")?,
+                default_title: Self::get_primary_title_optional(&release.release_title),
                 subtitle: release.release_subtitle.clone(),
                 default_subtitle: release
                     .release_subtitle
@@ -109,11 +109,10 @@ impl Flattener {
                 let parsed = ParsedResource {
                     resource_id: resource.resource_reference.clone(),
                     resource_type: format!("{:?}", resource.resource_type),
-                    // ReferenceTitle is not present on all resource types (e.g., Image in ERN 3.8.2).
-                    // Use optional getter and fallback to resource reference if not present.
+                    // ReferenceTitle is not present on all resource types (e.g. Image), so it stays None
+                    // when absent rather than being filled in.
                     title: Self::get_primary_title_optional(&resource.reference_title)
-                        .filter(|t| !t.is_empty())
-                        .unwrap_or_else(|| resource.resource_reference.clone()),
+                        .filter(|t| !t.is_empty()),
                     duration: resource.duration,
                     technical_details: TechnicalInfo {
                         file_format: resource
@@ -136,14 +135,9 @@ impl Flattener {
     fn flatten_deals(deals: &[Deal]) -> Result<Vec<ParsedDeal>> {
         deals
             .iter()
-            .enumerate()
-            .map(|(idx, deal)| Ok(ParsedDeal {
+            .map(|deal| Ok(ParsedDeal {
                 // DealReference is optional per DDEX ERN spec (minOccurs="0").
-                // Generate an auto-ID if not present.
-                deal_id: deal
-                    .deal_reference
-                    .clone()
-                    .unwrap_or_else(|| format!("DEAL_AUTO_{}", idx + 1)),
+                deal_id: deal.deal_reference.clone(),
                 releases: deal.deal_release_reference.clone(),
                 validity: DealValidity {
                     start: deal.deal_terms.start_date,
@@ -297,32 +291,29 @@ impl Flattener {
 
     fn build_tracks(refs: &[ReleaseResourceReference], resources: &[Resource]) -> Result<Vec<ParsedTrack>> {
         refs.iter()
-            .enumerate()
-            .filter_map(|(idx, rref)| {
+            .map(|rref| {
                 let resource = resources
                     .iter()
                     .find(|r| r.resource_reference == rref.resource_reference);
-
-                // Skip non-audio resources (images, text, etc.) - they're not tracks
-                if let Some(r) = resource {
-                    if !matches!(r.resource_type, ResourceType::SoundRecording | ResourceType::Video) {
-                        return None;
-                    }
-                }
-
-                // For tracks, get title (fall back to resource reference if empty/missing)
+                (rref, resource)
+            })
+            // Skip non-audio/video resources (images, text, etc.) - they're not tracks.
+            // Filter before numbering so track positions are not shifted by skipped resources.
+            .filter(|(_, resource)| {
+                resource.map_or(true, |r| {
+                    matches!(r.resource_type, ResourceType::SoundRecording | ResourceType::Video)
+                })
+            })
+            .enumerate()
+            .map(|(idx, (rref, resource))| {
+                // Title and duration are optional in the source; absent values stay None.
                 let title = resource
                     .and_then(|r| Self::get_primary_title_optional(&r.reference_title))
-                    .filter(|t| !t.is_empty())
-                    .unwrap_or_else(|| rref.resource_reference.clone());
-
-                // Duration is optional for tracks (some valid DDEX files don't include it)
+                    .filter(|t| !t.is_empty());
                 let duration = resource.and_then(|r| r.duration);
-                let duration_formatted = duration
-                    .map(ParsedTrack::format_duration)
-                    .unwrap_or_else(|| "0:00".to_string());
+                let duration_formatted = duration.map(ParsedTrack::format_duration);
 
-                Some(Ok(ParsedTrack {
+                Ok(ParsedTrack {
                     track_id: rref.resource_reference.clone(),
                     isrc: resource.and_then(|r| {
                         r.resource_id
@@ -344,7 +335,7 @@ impl Flattener {
                     subtitle: None,
                     display_artist: String::new(),
                     artists: Vec::new(),
-                    duration: duration.unwrap_or_default(),
+                    duration,
                     duration_formatted,
                     file_format: None,
                     bitrate: None,
@@ -353,7 +344,7 @@ impl Flattener {
                     is_bonus: rref.is_bonus,
                     is_explicit: false,
                     is_instrumental: false,
-                }))
+                })
             })
             .collect()
     }

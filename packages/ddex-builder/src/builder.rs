@@ -403,6 +403,35 @@ impl Default for BuildStatistics {
     }
 }
 
+/// Resolve a `BuildRequest::version` string to the ERN version the builder will target.
+///
+/// Accepts `"3.8.1"`, `"381"` and `"ern/381"` style spellings for 3.8.1, 3.8.2, 4.2 and 4.3.
+/// Anything else is rejected so an unsupported target never produces a made-up namespace.
+pub fn parse_target_version(
+    version: &str,
+) -> Result<ddex_core::models::versions::ERNVersion, super::error::BuildError> {
+    use ddex_core::models::versions::ERNVersion;
+    let compact: String = version
+        .trim()
+        .trim_start_matches("ern/")
+        .chars()
+        .filter(|c| *c != '.')
+        .collect();
+    match compact.as_str() {
+        "381" => Ok(ERNVersion::V3_8_1),
+        "382" => Ok(ERNVersion::V3_8_2),
+        "42" => Ok(ERNVersion::V4_2),
+        "43" => Ok(ERNVersion::V4_3),
+        _ => Err(super::error::BuildError::InvalidFormat {
+            field: "version".to_string(),
+            message: format!(
+                "unsupported ERN version '{}'; the builder can target 3.8.1, 3.8.2, 4.2 or 4.3",
+                version
+            ),
+        }),
+    }
+}
+
 /// Main DDEX Builder
 pub struct DDEXBuilder {
     _inner: super::Builder,
@@ -424,6 +453,9 @@ impl DDEXBuilder {
     ) -> Result<BuildResult, super::error::BuildError> {
         let start = std::time::Instant::now();
         let mut warnings = Vec::new();
+
+        // 0. Reject target versions the builder cannot emit, instead of writing a bogus namespace.
+        parse_target_version(&request.version)?;
 
         // 1. Enhanced preflight checks with new validator
         let validator =

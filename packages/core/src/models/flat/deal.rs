@@ -7,7 +7,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ParsedDeal {
-    pub deal_id: String,
+    /// `DealReference`; optional in ERN (minOccurs="0"), so `None` when absent.
+    pub deal_id: Option<String>,
     pub releases: Vec<String>,
     pub validity: DealValidity,
     pub territories: TerritoryComplexity,

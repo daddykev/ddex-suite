@@ -2,6 +2,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ERNVersion {
+    /// ERN 3.8.1. Parsed with the 3.8.2 logic (compatible structure), but reported and
+    /// preserved as 3.8.1.
+    V3_8_1,
     V3_8_2, // Changed from ERN382
     V4_2,   // Changed from ERN42
     V4_3,   // Changed from ERN43
@@ -10,6 +13,7 @@ pub enum ERNVersion {
 impl ERNVersion {
     pub fn as_str(&self) -> &'static str {
         match self {
+            ERNVersion::V3_8_1 => "3.8.1",
             ERNVersion::V3_8_2 => "3.8.2",
             ERNVersion::V4_2 => "4.2",
             ERNVersion::V4_3 => "4.3",
@@ -18,10 +22,16 @@ impl ERNVersion {
 
     pub fn namespace(&self) -> &'static str {
         match self {
+            ERNVersion::V3_8_1 => "http://ddex.net/xml/ern/381",
             ERNVersion::V3_8_2 => "http://ddex.net/xml/ern/382",
             ERNVersion::V4_2 => "http://ddex.net/xml/ern/42",
             ERNVersion::V4_3 => "http://ddex.net/xml/ern/43",
         }
+    }
+
+    /// True for the ERN 3.8.x family (3.8.1 and 3.8.2), which share the same parsing logic.
+    pub fn is_3_8_x(&self) -> bool {
+        matches!(self, ERNVersion::V3_8_1 | ERNVersion::V3_8_2)
     }
 }
 

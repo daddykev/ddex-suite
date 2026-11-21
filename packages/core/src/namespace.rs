@@ -102,6 +102,15 @@ impl NamespaceRegistry {
     fn initialize_ddex_namespaces(&mut self) {
         // ERN namespaces
         self.register_namespace(NamespaceInfo {
+            uri: "http://ddex.net/xml/ern/381".to_string(),
+            preferred_prefix: "ern".to_string(),
+            alternative_prefixes: vec!["ern381".to_string()],
+            standard: DDEXStandard::ERN,
+            version: Some("3.8.1".to_string()),
+            required: true,
+        });
+
+        self.register_namespace(NamespaceInfo {
             uri: "http://ddex.net/xml/ern/382".to_string(),
             preferred_prefix: "ern".to_string(),
             alternative_prefixes: vec!["ern382".to_string()],
@@ -242,8 +251,8 @@ impl NamespaceRegistry {
     /// Detect DDEX version from namespace URI
     pub fn detect_version(&self, namespace_uri: &str) -> Option<ERNVersion> {
         match namespace_uri {
-            // ERN 3.8.1 is treated as 3.8.2 (minor differences, compatible structure)
-            "http://ddex.net/xml/ern/381" | "http://ddex.net/xml/ern/382" => Some(ERNVersion::V3_8_2),
+            "http://ddex.net/xml/ern/381" => Some(ERNVersion::V3_8_1),
+            "http://ddex.net/xml/ern/382" => Some(ERNVersion::V3_8_2),
             "http://ddex.net/xml/ern/42" => Some(ERNVersion::V4_2),
             "http://ddex.net/xml/ern/43" => Some(ERNVersion::V4_3),
             _ => None,
@@ -255,11 +264,7 @@ impl NamespaceRegistry {
         let mut namespaces = vec![];
 
         // Add the main ERN namespace
-        match version {
-            ERNVersion::V3_8_2 => namespaces.push("http://ddex.net/xml/ern/382".to_string()),
-            ERNVersion::V4_2 => namespaces.push("http://ddex.net/xml/ern/42".to_string()),
-            ERNVersion::V4_3 => namespaces.push("http://ddex.net/xml/ern/43".to_string()),
-        }
+        namespaces.push(version.namespace().to_string());
 
         // Add common supporting namespaces
         namespaces.push("http://ddex.net/xml/avs".to_string());

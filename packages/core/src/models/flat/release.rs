@@ -14,7 +14,8 @@ pub struct ParsedRelease {
     pub release_id: String,
     pub identifiers: ReleaseIdentifiers,
     pub title: Vec<LocalizedString>,
-    pub default_title: String,
+    /// First release title (`ReferenceTitle` in 3.8.x, `DisplayTitleText` in 4.x); `None` when absent.
+    pub default_title: Option<String>,
     pub subtitle: Option<Vec<LocalizedString>>,
     pub default_subtitle: Option<String>,
     pub display_artist: String,

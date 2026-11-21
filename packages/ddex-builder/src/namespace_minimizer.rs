@@ -198,11 +198,7 @@ impl NamespaceMinimizer {
         &self,
         declarations: &IndexMap<String, String>,
     ) -> Result<IndexMap<String, String>, String> {
-        let version_str = match self.version {
-            ERNVersion::V3_8_2 => "3.8.2",
-            ERNVersion::V4_2 => "4.2",
-            ERNVersion::V4_3 => "4.3",
-        };
+        let version_str = self.version.as_str();
 
         Ok(self
             .canonical_manager

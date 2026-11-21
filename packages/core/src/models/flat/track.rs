@@ -13,12 +13,15 @@ pub struct ParsedTrack {
     pub track_number: Option<i32>,
     pub disc_number: Option<i32>,
     pub side: Option<String>,
-    pub title: String,
+    /// `ReferenceTitle/TitleText` of the underlying resource; `None` when the source has none.
+    pub title: Option<String>,
     pub subtitle: Option<String>,
     pub display_artist: String,
     pub artists: Vec<ArtistInfo>,
-    pub duration: Duration,
-    pub duration_formatted: String,
+    /// `Duration` of the underlying resource; `None` when the source has none.
+    pub duration: Option<Duration>,
+    /// `duration` formatted as `m:ss`; `None` when `duration` is `None`.
+    pub duration_formatted: Option<String>,
     pub file_format: Option<String>,
     pub bitrate: Option<i32>,
     pub sample_rate: Option<i32>,
@@ -43,7 +46,8 @@ impl ParsedTrack {
 pub struct ParsedResource {
     pub resource_id: String,
     pub resource_type: String,
-    pub title: String,
+    /// `ReferenceTitle/TitleText`; `None` for resources without one (e.g. images).
+    pub title: Option<String>,
     pub duration: Option<Duration>,
     pub technical_details: TechnicalInfo,
 }

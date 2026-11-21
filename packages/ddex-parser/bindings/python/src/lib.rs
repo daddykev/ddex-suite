@@ -190,8 +190,8 @@ impl PyDDEXParser {
                     release_dict.set_item("release_id", &release.release_id)?;
                     release_dict.set_item("title", &release.default_title)?;
                     release_dict.set_item("artist", &release.display_artist)?;
-                    release_dict.set_item("p_line", format!("{:?}", &release.p_line))?;
-                    release_dict.set_item("genre", format!("{:?}", &release.genre))?;
+                    release_dict.set_item("p_line", release.p_line.as_ref().map(|c| c.text.clone()))?;
+                    release_dict.set_item("genre", &release.genre)?;
                     release_dict.set_item("track_count", release.track_count)?;
                     records.push(release_dict.into_any());
                 }
@@ -208,10 +208,10 @@ impl PyDDEXParser {
                     dict.set_item("release_id", &release.release_id)?;
                     dict.set_item("title", &release.default_title)?;
                     dict.set_item("artist", &release.display_artist)?;
-                    dict.set_item("p_line", format!("{:?}", &release.p_line))?;
-                    dict.set_item("genre", format!("{:?}", &release.genre))?;
+                    dict.set_item("p_line", release.p_line.as_ref().map(|c| c.text.clone()))?;
+                    dict.set_item("genre", &release.genre)?;
                     dict.set_item("track_count", release.track_count)?;
-                    dict.set_item("release_date", format!("{:?}", &release.release_date))?;
+                    dict.set_item("release_date", release.release_date.map(|d| d.to_rfc3339()))?;
                     records.push(dict.into_any());
                 }
 
@@ -232,8 +232,8 @@ impl PyDDEXParser {
                         dict.set_item("track_id", &track.track_id)?;
                         dict.set_item("track_title", &track.title)?;
                         dict.set_item("artist", &track.display_artist)?;
-                        dict.set_item("duration", format!("{:?}", &track.duration))?;
-                        dict.set_item("isrc", format!("{:?}", &track.isrc))?;
+                        dict.set_item("duration", track.duration.map(|d| d.as_secs_f64()))?;
+                        dict.set_item("isrc", &track.isrc)?;
                         records.push(dict.into_any());
                     }
                 }
@@ -601,8 +601,8 @@ impl PyParsedERNMessage {
             row.set_item("release_id", &release.release_id)?;
             row.set_item("title", &release.default_title)?;
             row.set_item("artist", &release.display_artist)?;
-            row.set_item("p_line", format!("{:?}", &release.p_line))?;
-            row.set_item("genre", format!("{:?}", &release.genre))?;
+            row.set_item("p_line", release.p_line.as_ref().map(|c| c.text.clone()))?;
+            row.set_item("genre", &release.genre)?;
             row.set_item("track_count", release.track_count)?;
             rows.push(row.into_any().into());
         }
@@ -617,10 +617,10 @@ impl PyParsedERNMessage {
             row.set_item("release_id", &release.release_id)?;
             row.set_item("title", &release.default_title)?;
             row.set_item("artist", &release.display_artist)?;
-            row.set_item("p_line", format!("{:?}", &release.p_line))?;
-            row.set_item("genre", format!("{:?}", &release.genre))?;
+            row.set_item("p_line", release.p_line.as_ref().map(|c| c.text.clone()))?;
+            row.set_item("genre", &release.genre)?;
             row.set_item("track_count", release.track_count)?;
-            row.set_item("release_date", format!("{:?}", &release.release_date))?;
+            row.set_item("release_date", release.release_date.map(|d| d.to_rfc3339()))?;
             rows.push(row.into_any().into());
         }
         Ok(rows)
@@ -638,8 +638,8 @@ impl PyParsedERNMessage {
                 row.set_item("track_id", &track.track_id)?;
                 row.set_item("track_title", &track.title)?;
                 row.set_item("artist", &track.display_artist)?;
-                row.set_item("duration", format!("{:?}", &track.duration))?;
-                row.set_item("isrc", format!("{:?}", &track.isrc))?;
+                row.set_item("duration", track.duration.map(|d| d.as_secs_f64()))?;
+                row.set_item("isrc", &track.isrc)?;
                 rows.push(row.into_any().into());
             }
         }
@@ -657,7 +657,7 @@ pub struct StreamIterator {
 #[derive(Clone)]
 struct StreamRelease {
     release_id: String,
-    title: String,
+    title: Option<String>,
     artist: String,
     track_count: u32,
 }

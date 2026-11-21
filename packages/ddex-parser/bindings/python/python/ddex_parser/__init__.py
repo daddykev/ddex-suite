@@ -144,6 +144,8 @@ class DDEXParser:
                 return '4.3'
             elif 'ern/42' in xml_str or 'xml/ern/42' in xml_str:
                 return '4.2'
+            elif 'ern/381' in xml_str or 'xml/ern/381' in xml_str:
+                return '3.8.1'
             elif 'ern/382' in xml_str or 'xml/ern/382' in xml_str:
                 return '3.8.2'
             return 'Unknown'

@@ -5,8 +5,8 @@
 
 export interface JsRelease {
   releaseId: string
-  title: string
-  defaultTitle: string
+  title?: string
+  defaultTitle?: string
   subtitle?: string
   displayArtist: string
   releaseType: string
@@ -21,7 +21,7 @@ export interface JsRelease {
 }
 export interface JsTrack {
   trackId: string
-  title: string
+  title?: string
   artist: string
   duration?: string
   position?: number
@@ -32,7 +32,7 @@ export interface JsTrack {
 export interface JsResource {
   resourceId: string
   resourceType: string
-  title: string
+  title?: string
   durationSeconds?: number
   durationString?: string
   fileFormat?: string
@@ -41,14 +41,14 @@ export interface JsResource {
   fileSize?: string
 }
 export interface JsDeal {
-  dealId: string
+  dealId?: string
   releases: Array<string>
   startDate?: string
   endDate?: string
   territories: Array<string>
   usageRights: Array<string>
   restrictions: Array<string>
-  commercialModel: string
+  commercialModel?: string
 }
 export interface ParseOptions {
   mode?: string

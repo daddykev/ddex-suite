@@ -243,8 +243,7 @@ export class DDEXParser {
     } else if (xmlStr.includes('ern/42') || xmlStr.includes('xml/ern/42')) {
       return 'V4_2';
     } else if (xmlStr.includes('ern/381') || xmlStr.includes('xml/ern/381')) {
-      // ERN 3.8.1 treated as 3.8.2 (compatible structure)
-      return 'V3_8_2';
+      return 'V3_8_1';
     } else if (xmlStr.includes('ern/382') || xmlStr.includes('xml/ern/382')) {
       return 'V3_8_2';
     }
