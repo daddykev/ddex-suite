@@ -63,7 +63,8 @@ impl VersionDetector {
 
         // Check for DDEX ERN version in namespace URIs
         for uri in &namespace_uris {
-            if uri.contains("http://ddex.net/xml/ern/382") {
+            // ERN 3.8.1 is treated as 3.8.2 (minor differences, compatible structure)
+            if uri.contains("http://ddex.net/xml/ern/381") || uri.contains("http://ddex.net/xml/ern/382") {
                 return Ok(ERNVersion::V3_8_2);
             } else if uri.contains("http://ddex.net/xml/ern/42") {
                 return Ok(ERNVersion::V4_2);

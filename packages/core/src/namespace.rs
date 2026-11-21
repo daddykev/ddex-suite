@@ -242,7 +242,8 @@ impl NamespaceRegistry {
     /// Detect DDEX version from namespace URI
     pub fn detect_version(&self, namespace_uri: &str) -> Option<ERNVersion> {
         match namespace_uri {
-            "http://ddex.net/xml/ern/382" => Some(ERNVersion::V3_8_2),
+            // ERN 3.8.1 is treated as 3.8.2 (minor differences, compatible structure)
+            "http://ddex.net/xml/ern/381" | "http://ddex.net/xml/ern/382" => Some(ERNVersion::V3_8_2),
             "http://ddex.net/xml/ern/42" => Some(ERNVersion::V4_2),
             "http://ddex.net/xml/ern/43" => Some(ERNVersion::V4_3),
             _ => None,
