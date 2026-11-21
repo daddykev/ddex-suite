@@ -5,23 +5,69 @@ All notable changes to the DDEX Suite project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.5] - 2025-01-22
+## [Unreleased]
+
+### Documentation
+- Corrected class names in code examples for each language binding: Node.js uses
+  `DdexParser` / `DdexBuilder` / `StreamingDdexBuilder`; Python uses `DDEXParser`
+  (parser) and `DdexBuilder` (builder); Rust uses `ddex_parser::DDEXParser` and
+  `ddex_builder::DDEXBuilder`. An earlier blanket rename had applied the Node.js names
+  to Python and Rust examples too.
+- Added a Use Cases page with illustrative scenarios, written against the APIs the
+  0.4.5 bindings export.
+
+### Changed
+- Cloud Functions `/health` and `/docs` endpoints report the installed `ddex-parser` /
+  `ddex-builder` versions instead of a hard-coded `0.4.3`.
+- Stopped tracking the Firebase deploy cache (`website/.firebase/`); removed stray
+  interrupted-copy test files and an accidental nested copy of the Node builder binding.
+
+### Known issues
+- PyPI 0.4.5 ships only a macOS arm64 wheel (`cp38-abi3-macosx_11_0_arm64`) and no
+  sdist, so `pip install` cannot install 0.4.5 on Linux, Windows or Intel Macs.
+- npm 0.4.5 ships native binaries for `darwin-arm64` and `linux-x64-gnu` only; there are
+  no Windows or Intel Mac (`darwin-x64`) binaries.
+
+## [0.4.5] - 2025-09-21
 
 ### Fixed
-- Critical bug fixes for production stability
-- Enhanced error handling across all bindings
-- Memory leak fixes in streaming parser
-- Improved cross-platform binary compatibility
+- Removed debug output from library code paths: `eprintln!` calls in
+  `xml_validator.rs` (element push / tag-mismatch tracing), `extension_capture.rs`,
+  `streaming/comprehensive.rs` and `streaming/aligned_comprehensive.rs`, and the
+  `println!` progress output in the builder's schema generator.
+- Performance metrics in `fast_streaming_parser.rs` are now printed only with the new
+  opt-in `performance-debug` Cargo feature (added to `ddex-parser` and `ddex-builder`).
+- Message sender / recipient `PartyId` values are now captured during graph
+  transformation (they were previously not parsed), fixing the playground regression
+  introduced with 0.4.4's stricter validation.
 
-### Improved
-- Better error messages with context
-- Enhanced validation for DDEX compliance
-- Optimized memory usage for large files
-- More robust binary loading on Linux
+### Added
+- `playground_regression_test.rs` covering the playground sample documents.
+- `scripts/audit-parsing-bugs.sh` and `scripts/fix-debug-logging.sh` maintenance scripts.
+
+## [0.4.4] - 2025-09-21
+
+### Breaking Changes
+- The parser now returns an error (`ParseError::MissingField` with a DDEX field path,
+  e.g. `Release/Title/TitleText`) when required data is missing, instead of
+  substituting placeholder values. Removed fallbacks include `"Unknown"`,
+  `"Untitled"`, `"Unknown Sender"` / `"Unknown Recipient"`, `"Test Recipient"` and
+  auto-generated `REL_*` / `RES_*` / `PARTY_*` references.
+
+### Fixed
+- Release titles from 0.4.3 that came back as placeholder text (e.g. "Test Release V4_3").
+- Streaming parser no longer invents references for elements without IDs.
+- Errors propagate through the Node.js bindings with categorized, field-specific messages.
+- XML well-formedness and namespace errors are returned as `ParseError::XmlError`
+  (for example "No DDEX ERN namespace found").
 
 ### Security
-- Input sanitization improvements
-- Buffer overflow protections enhanced
+- Node.js parser binding rejects input larger than 100 MB with a message suggesting
+  streaming mode.
+
+### Known regressions (fixed in 0.4.5)
+- Documents using the simplified `<PartyName>` form and sender/recipient `PartyId`
+  failed to parse in the playground ("Missing required DDEX field").
 
 ## [0.4.3] - 2025-09-20
 
