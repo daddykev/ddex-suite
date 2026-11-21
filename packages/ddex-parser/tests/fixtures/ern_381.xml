@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Minimal fixture written for ddex-suite regression tests. All identifiers are fictional. -->
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/381" MessageSchemaVersionId="ern/381">
+  <MessageHeader>
+    <MessageThreadId>THREAD-MSG-ERN-381</MessageThreadId>
+    <MessageId>MSG-ERN-381</MessageId>
+    <MessageSender>
+      <PartyId>PADPIDA0000000001X</PartyId>
+      <PartyName><FullName>Example Sender</FullName></PartyName>
+    </MessageSender>
+    <MessageRecipient>
+      <PartyId>PADPIDA0000000002X</PartyId>
+      <PartyName><FullName>Example Recipient</FullName></PartyName>
+    </MessageRecipient>
+    <MessageCreatedDateTime>2026-01-01T00:00:00Z</MessageCreatedDateTime>
+  </MessageHeader>
+  <ResourceList>
+    <SoundRecording>
+      <ResourceReference>A1</ResourceReference>
+      <SoundRecordingId><ISRC>ZZ0000000003</ISRC></SoundRecordingId>
+      <ReferenceTitle><TitleText>ERN 3.8.1 Track</TitleText></ReferenceTitle>
+      <Duration>PT2M5S</Duration>
+    </SoundRecording>
+  </ResourceList>
+  <ReleaseList>
+    <Release>
+      <ReleaseReference>R1</ReleaseReference>
+      <ReferenceTitle><TitleText>ERN 3.8.1 Release</TitleText></ReferenceTitle>
+      <ReleaseType>Single</ReleaseType>
+      <ReleaseResourceReferenceList>
+        <ReleaseResourceReference>A1</ReleaseResourceReference>
+      </ReleaseResourceReferenceList>
+    </Release>
+  </ReleaseList>
+</ern:NewReleaseMessage>

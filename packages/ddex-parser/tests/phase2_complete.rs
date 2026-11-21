@@ -7,10 +7,11 @@ fn test_phase2_version_support() {
     let mut parser = DDEXParser::new();
 
     // Test all supported versions
-    for version in &[ERNVersion::V3_8_2, ERNVersion::V4_2, ERNVersion::V4_3] {
+    for version in &[ERNVersion::V3_8_1, ERNVersion::V3_8_2, ERNVersion::V4_2, ERNVersion::V4_3] {
         println!("Testing version: {:?}", version);
 
         let xml = match version {
+            ERNVersion::V3_8_1 => include_str!("fixtures/ern_381.xml"),
             ERNVersion::V3_8_2 => {
                 include_str!("../../../test-suite/valid/ern-382/basic_release.xml")
             }

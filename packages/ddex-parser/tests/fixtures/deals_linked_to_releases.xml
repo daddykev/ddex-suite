@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Minimal fixture written for ddex-suite regression tests. All identifiers are fictional. -->
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43" MessageSchemaVersionId="ern/43">
+  <MessageHeader>
+    <MessageThreadId>THREAD-MSG-DEALS-LINKED</MessageThreadId>
+    <MessageId>MSG-DEALS-LINKED</MessageId>
+    <MessageSender>
+      <PartyId>PADPIDA0000000001X</PartyId>
+      <PartyName><FullName>Example Sender</FullName></PartyName>
+    </MessageSender>
+    <MessageRecipient>
+      <PartyId>PADPIDA0000000002X</PartyId>
+      <PartyName><FullName>Example Recipient</FullName></PartyName>
+    </MessageRecipient>
+    <MessageCreatedDateTime>2026-01-01T00:00:00Z</MessageCreatedDateTime>
+  </MessageHeader>
+  <ReleaseList>
+    <Release>
+      <ReleaseReference>R1</ReleaseReference>
+      <ReleaseType>Album</ReleaseType>
+      <DisplayTitleText>Linked Release One</DisplayTitleText>
+    </Release>
+    <Release>
+      <ReleaseReference>R2</ReleaseReference>
+      <ReleaseType>Single</ReleaseType>
+      <DisplayTitleText>Linked Release Two</DisplayTitleText>
+    </Release>
+  </ReleaseList>
+  <DealList>
+    <ReleaseDeal>
+      <DealReleaseReference>R1</DealReleaseReference>
+      <DealReleaseReference>R2</DealReleaseReference>
+      <Deal>
+        <DealReference>D1</DealReference>
+        <DealTerms>
+          <TerritoryCode>US</TerritoryCode>
+          <UseType>Download</UseType>
+        </DealTerms>
+      </Deal>
+      <Deal>
+        <DealTerms>
+          <TerritoryCode>GB</TerritoryCode>
+          <UseType>OnDemandStream</UseType>
+        </DealTerms>
+      </Deal>
+    </ReleaseDeal>
+    <ReleaseDeal>
+      <DealReleaseReference>R2</DealReleaseReference>
+      <Deal>
+        <DealReference>D3</DealReference>
+        <DealTerms>
+          <TerritoryCode>DE</TerritoryCode>
+        </DealTerms>
+      </Deal>
+    </ReleaseDeal>
+  </DealList>
+</ern:NewReleaseMessage>

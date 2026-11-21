@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Minimal fixture written for ddex-suite regression tests. All identifiers are fictional. -->
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/382" MessageSchemaVersionId="ern/382">
+  <MessageHeader>
+    <MessageThreadId>THREAD-MSG-NO-DURATION</MessageThreadId>
+    <MessageId>MSG-NO-DURATION</MessageId>
+    <MessageSender>
+      <PartyId>PADPIDA0000000001X</PartyId>
+      <PartyName><FullName>Example Sender</FullName></PartyName>
+    </MessageSender>
+    <MessageRecipient>
+      <PartyId>PADPIDA0000000002X</PartyId>
+      <PartyName><FullName>Example Recipient</FullName></PartyName>
+    </MessageRecipient>
+    <MessageCreatedDateTime>2026-01-01T00:00:00Z</MessageCreatedDateTime>
+  </MessageHeader>
+  <ResourceList>
+    <SoundRecording>
+      <ResourceReference>A1</ResourceReference>
+      <SoundRecordingId><ISRC>ZZ0000000002</ISRC></SoundRecordingId>
+      <ReferenceTitle><TitleText>Track Without Duration</TitleText></ReferenceTitle>
+    </SoundRecording>
+  </ResourceList>
+  <ReleaseList>
+    <Release>
+      <ReleaseReference>R1</ReleaseReference>
+      <ReferenceTitle><TitleText>No Duration Release</TitleText></ReferenceTitle>
+      <ReleaseType>Single</ReleaseType>
+      <ReleaseResourceReferenceList>
+        <ReleaseResourceReference>A1</ReleaseResourceReference>
+      </ReleaseResourceReferenceList>
+    </Release>
+  </ReleaseList>
+</ern:NewReleaseMessage>

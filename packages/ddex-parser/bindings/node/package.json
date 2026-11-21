@@ -40,7 +40,7 @@
     "prepublishOnly": "napi prepublish -t npm",
     "artifacts": "napi artifacts",
     "version": "napi version",
-    "test": "node test-manual.js"
+    "test": "node test-manual.js && node test-community-prs.js"
   },
   "engines": {
     "node": ">=18.0.0"

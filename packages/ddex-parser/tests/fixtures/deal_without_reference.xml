@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Minimal fixture written for ddex-suite regression tests. All identifiers are fictional. -->
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43" MessageSchemaVersionId="ern/43">
+  <MessageHeader>
+    <MessageThreadId>THREAD-MSG-DEAL-NO-REFERENCE</MessageThreadId>
+    <MessageId>MSG-DEAL-NO-REFERENCE</MessageId>
+    <MessageSender>
+      <PartyId>PADPIDA0000000001X</PartyId>
+      <PartyName><FullName>Example Sender</FullName></PartyName>
+    </MessageSender>
+    <MessageRecipient>
+      <PartyId>PADPIDA0000000002X</PartyId>
+      <PartyName><FullName>Example Recipient</FullName></PartyName>
+    </MessageRecipient>
+    <MessageCreatedDateTime>2026-01-01T00:00:00Z</MessageCreatedDateTime>
+  </MessageHeader>
+  <ReleaseList>
+    <Release>
+      <ReleaseReference>R1</ReleaseReference>
+      <ReleaseType>Album</ReleaseType>
+      <ReleaseId><ICPN>0000000000017</ICPN></ReleaseId>
+      <DisplayTitleText>Deal Without Reference</DisplayTitleText>
+    </Release>
+  </ReleaseList>
+  <DealList>
+    <ReleaseDeal>
+      <DealReleaseReference>R1</DealReleaseReference>
+      <Deal>
+        <DealTerms>
+          <TerritoryCode>Worldwide</TerritoryCode>
+          <CommercialModelType>SubscriptionModel</CommercialModelType>
+          <UseType>OnDemandStream</UseType>
+        </DealTerms>
+      </Deal>
+    </ReleaseDeal>
+  </DealList>
+</ern:NewReleaseMessage>
