@@ -198,12 +198,12 @@ impl DDEXParser {
             message_type: "NewReleaseMessage".to_string(),
             message_date: chrono::Utc::now(),
             sender: Organization {
-                name: "Fast Streaming Parser".to_string(),
+                name: Some("Fast Streaming Parser".to_string()),
                 id: "FAST_PARSER".to_string(),
                 extensions: None,
             },
             recipient: Organization {
-                name: "Streaming Service Recipient".to_string(),
+                name: Some("Streaming Service Recipient".to_string()),
                 id: "STREAMING_SERVICE_RECIPIENT".to_string(),
                 extensions: None,
             },
@@ -277,6 +277,7 @@ impl DDEXParser {
             extensions: None,
             legacy_extensions: None,
             comments: None,
+            track_releases: Vec::new(),
         };
 
         let message = ParsedERNMessage {

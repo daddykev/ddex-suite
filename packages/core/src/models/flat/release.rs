@@ -18,7 +18,8 @@ pub struct ParsedRelease {
     pub default_title: Option<String>,
     pub subtitle: Option<Vec<LocalizedString>>,
     pub default_subtitle: Option<String>,
-    pub display_artist: String,
+    /// Display artist; `None` when the source has none.
+    pub display_artist: Option<String>,
     pub artists: Vec<ArtistInfo>,
     pub release_type: String,
     pub genre: Option<String>,

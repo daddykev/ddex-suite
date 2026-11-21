@@ -178,6 +178,10 @@ impl ToCore for ReleaseBuilder {
             attributes: self.attributes,
             extensions: self.extensions,
             comments: self.comments,
+            display_title_text: Vec::new(),
+            display_title: Vec::new(),
+            display_artist_name: Vec::new(),
+            resource_group: None,
         })
     }
 }
@@ -277,6 +281,10 @@ impl ToCore for ResourceBuilder {
             p_line: self.p_line,
             c_line: self.c_line,
             extensions: self.extensions,
+            display_title_text: Vec::new(),
+            display_title: Vec::new(),
+            display_artist_name: Vec::new(),
+            display_artist: Vec::new(),
         })
     }
 }
@@ -351,6 +359,7 @@ impl ToCore for PartyBuilder {
             party_name: self.party_name,
             party_role: self.party_role,
             contact_details: self.contact_details,
+            party_reference: None,
         })
     }
 }

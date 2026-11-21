@@ -211,14 +211,26 @@ fn convert_release(release: ParsedRelease) -> JsRelease {
 /// Convert ParsedTrack to JavaScript-compatible structure
 fn convert_track(track: ddex_core::models::flat::ParsedTrack) -> JsTrack {
     JsTrack {
-        track_id: track.track_id,
+        track_id: track.track_id.clone(),
         title: track.title,
         artist: track.display_artist,
         duration: track.duration_formatted,
         position: Some(track.position as u32),
         disc_number: track.disc_number.map(|d| d as u32),
+        track_number: track.track_number,
         isrc: track.isrc,
-        resource_reference: None, // ParsedTrack doesn't have resource_reference directly
+        // ParsedTrack.track_id is the track's ResourceReference.
+        resource_reference: Some(track.track_id),
+        track_release_reference: track.track_release_reference,
+        track_release_id: track.track_release_id,
+        group_path: track
+            .group_path
+            .into_iter()
+            .map(|g| JsTrackGroup {
+                group_type: g.group_type,
+                sequence_number: g.sequence_number,
+            })
+            .collect(),
     }
 }
 
@@ -366,7 +378,7 @@ pub struct JsRelease {
     pub title: Option<String>,
     pub default_title: Option<String>,
     pub subtitle: Option<String>,
-    pub display_artist: String,
+    pub display_artist: Option<String>,
     pub release_type: String,
     pub genre: Option<String>,
     pub sub_genre: Option<String>,
@@ -383,12 +395,27 @@ pub struct JsRelease {
 pub struct JsTrack {
     pub track_id: String,
     pub title: Option<String>,
-    pub artist: String,
+    pub artist: Option<String>,
     pub duration: Option<String>,
     pub position: Option<u32>,
     pub disc_number: Option<u32>,
+    /// Item `SequenceNumber` as written (ERN 4.x).
+    pub track_number: Option<i32>,
     pub isrc: Option<String>,
     pub resource_reference: Option<String>,
+    /// ERN 4.x: `ReleaseReference` of the TrackRelease for this track (deals use it).
+    pub track_release_reference: Option<String>,
+    /// ERN 4.x: first identifier of that TrackRelease's `ReleaseId`.
+    pub track_release_id: Option<String>,
+    /// ERN 4.x: enclosing nested ResourceGroups, outermost first.
+    pub group_path: Vec<JsTrackGroup>,
+}
+
+#[napi(object)]
+#[derive(serde::Serialize)]
+pub struct JsTrackGroup {
+    pub group_type: Option<String>,
+    pub sequence_number: Option<i32>,
 }
 
 #[napi(object)]
@@ -680,9 +707,9 @@ pub struct ParsedMessage {
     pub message_id: String,
     pub message_type: String,
     pub message_date: String,
-    pub sender_name: String,
+    pub sender_name: Option<String>,
     pub sender_id: String,
-    pub recipient_name: String,
+    pub recipient_name: Option<String>,
     pub recipient_id: String,
     pub version: String,
     pub profile: Option<String>,

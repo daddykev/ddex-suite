@@ -56,7 +56,8 @@ pub struct FlattenedMessage {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Organization {
-    pub name: String,
+    /// `PartyName/FullName`; optional per the XSD (`None` when absent).
+    pub name: Option<String>,
     pub id: String,
     /// Extensions for organization
     pub extensions: Option<Extensions>,

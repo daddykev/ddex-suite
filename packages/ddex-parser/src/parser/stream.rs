@@ -491,6 +491,10 @@ impl<'a, R: BufRead> ReleaseIterator<'a, R> {
             extensions: None,
             attributes: None,
             comments: None,
+            display_title_text: Vec::new(),
+            display_title: Vec::new(),
+            display_artist_name: Vec::new(),
+            resource_group: None,
         };
 
         self.parser.buffer.clear();
@@ -751,6 +755,7 @@ pub fn parse_streaming<R: BufRead>(
         legacy_extensions: None,
         comments: None,
         attributes: None,
+        track_releases: Vec::new(),
     };
 
     // Flatten to developer-friendly model

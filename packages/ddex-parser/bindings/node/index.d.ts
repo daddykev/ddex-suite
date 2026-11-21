@@ -8,7 +8,7 @@ export interface JsRelease {
   title?: string
   defaultTitle?: string
   subtitle?: string
-  displayArtist: string
+  displayArtist?: string
   releaseType: string
   genre?: string
   subGenre?: string
@@ -22,12 +22,24 @@ export interface JsRelease {
 export interface JsTrack {
   trackId: string
   title?: string
-  artist: string
+  artist?: string
   duration?: string
   position?: number
   discNumber?: number
+  /** Item `SequenceNumber` as written (ERN 4.x). */
+  trackNumber?: number
   isrc?: string
   resourceReference?: string
+  /** ERN 4.x: `ReleaseReference` of the TrackRelease for this track (deals use it). */
+  trackReleaseReference?: string
+  /** ERN 4.x: first identifier of that TrackRelease's `ReleaseId`. */
+  trackReleaseId?: string
+  /** ERN 4.x: enclosing nested ResourceGroups, outermost first. */
+  groupPath: Array<JsTrackGroup>
+}
+export interface JsTrackGroup {
+  groupType?: string
+  sequenceNumber?: number
 }
 export interface JsResource {
   resourceId: string
@@ -83,9 +95,9 @@ export interface ParsedMessage {
   messageId: string
   messageType: string
   messageDate: string
-  senderName: string
+  senderName?: string
   senderId: string
-  recipientName: string
+  recipientName?: string
   recipientId: string
   version: string
   profile?: string

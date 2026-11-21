@@ -165,7 +165,8 @@ impl PyDDEXParser {
                 // Extract message-level info with all columns
                 let message_dict = PyDict::new(py);
                 message_dict.set_item("message_id", &parsed.flat.message_id)?;
-                message_dict.set_item("sender", format!("{:?}", &parsed.flat.sender))?;
+                // Sender PartyName is optional per the XSD: None (not "None") when absent.
+                message_dict.set_item("sender", &parsed.flat.sender.name)?;
                 message_dict.set_item("created_date", &parsed.flat.message_date.to_rfc3339())?;
                 message_dict.set_item("message_type", &parsed.flat.message_type)?;
                 message_dict.set_item("type", "message")?;
@@ -235,6 +236,7 @@ impl PyDDEXParser {
                         dict.set_item("artist", &track.display_artist)?;
                         dict.set_item("duration", track.duration.map(|d| d.as_secs_f64()))?;
                         dict.set_item("isrc", &track.isrc)?;
+                        set_track_position_items(py, &dict, track)?;
                         records.push(dict.into_any());
                     }
                 }
@@ -577,7 +579,8 @@ impl PyParsedERNMessage {
         // Add message-level row with all columns (None for release-specific fields)
         let msg_row = PyDict::new(py);
         msg_row.set_item("message_id", &self.inner.flat.message_id)?;
-        msg_row.set_item("sender", format!("{:?}", &self.inner.flat.sender))?;
+        // Sender PartyName is optional per the XSD: None (not "None") when absent.
+        msg_row.set_item("sender", &self.inner.flat.sender.name)?;
         msg_row.set_item("created_date", &self.inner.flat.message_date.to_rfc3339())?;
         msg_row.set_item("message_type", &self.inner.flat.message_type)?;
         msg_row.set_item("type", "message")?;
@@ -641,6 +644,7 @@ impl PyParsedERNMessage {
                 row.set_item("artist", &track.display_artist)?;
                 row.set_item("duration", track.duration.map(|d| d.as_secs_f64()))?;
                 row.set_item("isrc", &track.isrc)?;
+                set_track_position_items(py, &row, track)?;
                 rows.push(row.into_any().into());
             }
         }
@@ -659,7 +663,7 @@ pub struct StreamIterator {
 struct StreamRelease {
     release_id: String,
     title: Option<String>,
-    artist: String,
+    artist: Option<String>,
     track_count: u32,
 }
 
@@ -716,6 +720,28 @@ impl StreamIterator {
 }
 
 // Helper types and functions
+
+/// Track layout and TrackRelease columns for the tracks DataFrame. Absent values are None.
+fn set_track_position_items(
+    py: Python,
+    row: &Bound<'_, PyDict>,
+    track: &ddex_core::models::flat::ParsedTrack,
+) -> PyResult<()> {
+    row.set_item("position", track.position)?;
+    row.set_item("disc_number", track.disc_number)?;
+    row.set_item("track_number", track.track_number)?;
+    row.set_item("track_release_reference", &track.track_release_reference)?;
+    row.set_item("track_release_id", &track.track_release_id)?;
+    let path = PyList::empty(py);
+    for group in &track.group_path {
+        let entry = PyDict::new(py);
+        entry.set_item("group_type", &group.group_type)?;
+        entry.set_item("sequence_number", group.sequence_number)?;
+        path.append(entry)?;
+    }
+    row.set_item("group_path", path)?;
+    Ok(())
+}
 
 fn rust_parse_options_from_dict(dict: &Bound<'_, PyDict>) -> PyResult<CoreParseOptions> {
     let mut options = CoreParseOptions::default();

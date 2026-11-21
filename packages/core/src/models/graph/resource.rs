@@ -1,6 +1,7 @@
 // core/src/models/graph/resource.rs
 //! Resource types
 
+use super::{Artist, DisplayText};
 use crate::models::{
     common::{Copyright, Identifier, LocalizedString},
     Extensions,
@@ -20,6 +21,19 @@ pub struct Resource {
     pub c_line: Vec<Copyright>,
     /// Extensions for resource
     pub extensions: Option<Extensions>,
+    /// ERN 4.x `DisplayTitleText` entries (empty for 3.8.x).
+    #[serde(default)]
+    pub display_title_text: Vec<DisplayText>,
+    /// ERN 4.x `DisplayTitle/TitleText` entries (empty for 3.8.x).
+    #[serde(default)]
+    pub display_title: Vec<DisplayText>,
+    /// ERN 4.x `DisplayArtistName` entries (empty for 3.8.x).
+    #[serde(default)]
+    pub display_artist_name: Vec<DisplayText>,
+    /// ERN 4.x `DisplayArtist` entries, referencing parties via `party_reference`
+    /// (empty for 3.8.x).
+    #[serde(default)]
+    pub display_artist: Vec<Artist>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

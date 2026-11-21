@@ -1,7 +1,7 @@
 // core/src/models/graph/message.rs
 //! ERN Message types
 
-use super::{Deal, MessageHeader, Party, Release, Resource};
+use super::{Deal, MessageHeader, Party, Release, Resource, TrackRelease};
 use crate::models::{versions::ERNVersion, AttributeMap, Comment, Extensions};
 use serde::{Deserialize, Serialize};
 
@@ -11,6 +11,9 @@ pub struct ERNMessage {
     pub parties: Vec<Party>,
     pub resources: Vec<Resource>,
     pub releases: Vec<Release>,
+    /// ERN 4.x `TrackRelease`s, in document order (empty for 3.8.x).
+    #[serde(default)]
+    pub track_releases: Vec<TrackRelease>,
     pub deals: Vec<Deal>,
     pub version: ERNVersion,
     pub profile: Option<ERNProfile>,

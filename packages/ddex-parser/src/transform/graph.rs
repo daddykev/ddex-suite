@@ -3,6 +3,7 @@
 use crate::error::ParseError;
 use crate::parser::namespace_detector::NamespaceContext;
 use crate::parser::xml_validator::XmlValidator;
+use crate::transform::ern4;
 use ddex_core::models::graph::{
     ERNMessage, MessageHeader, MessageRecipient, MessageSender, MessageType, Release,
 };
@@ -10,6 +11,22 @@ use ddex_core::models::versions::ERNVersion;
 use quick_xml::events::Event;
 use quick_xml::Reader;
 use std::io::BufRead;
+
+/// Which list the main loop is currently inside (ERN 4.x dispatch).
+#[derive(Clone, Copy)]
+struct Ern4Context {
+    in_release_list: bool,
+    in_resource_list: bool,
+    in_party_list: bool,
+}
+
+/// Where ERN 4.x elements are collected.
+struct Ern4Sinks<'a> {
+    releases: &'a mut Vec<Release>,
+    track_releases: &'a mut Vec<ddex_core::models::graph::TrackRelease>,
+    resources: &'a mut Vec<ddex_core::models::graph::Resource>,
+    parties: &'a mut Vec<ddex_core::models::graph::Party>,
+}
 
 pub struct GraphBuilder {
     version: ERNVersion,
@@ -55,8 +72,13 @@ impl GraphBuilder {
         let mut validator = XmlValidator::strict();
         let mut releases = Vec::new();
         let mut resources = Vec::new(); // Made mutable to collect parsed resources
-        let parties = Vec::new(); // Remove mut
+        let mut parties = Vec::new();
+        let mut track_releases = Vec::new();
         let mut deals = Vec::new(); // Made mutable to collect parsed deals
+                                    // ERN 4.x structures (TrackRelease, PartyList, ResourceGroup trees, display texts)
+                                    // are read by `ern4`; 3.8.x keeps its original code path unchanged.
+        let is_ern4 = matches!(self.version, ERNVersion::V4_2 | ERNVersion::V4_3);
+        let mut in_party_list = false;
 
         // Parse with XML validation and depth tracking
         let mut buf = Vec::new();
@@ -79,8 +101,27 @@ impl GraphBuilder {
                     }
 
                     match event {
+                        Event::Start(ref e)
+                            if is_ern4
+                                && self.handle_ern4_start(
+                                    e,
+                                    &mut xml_reader,
+                                    &mut validator,
+                                    Ern4Context {
+                                        in_release_list,
+                                        in_resource_list,
+                                        in_party_list,
+                                    },
+                                    Ern4Sinks {
+                                        releases: &mut releases,
+                                        track_releases: &mut track_releases,
+                                        resources: &mut resources,
+                                        parties: &mut parties,
+                                    },
+                                )? => {}
                         Event::Start(ref e) => {
                             match e.name().as_ref() {
+                                b"PartyList" if is_ern4 => in_party_list = true,
                                 b"ReleaseList" => in_release_list = true,
                                 b"ResourceList" => in_resource_list = true,
                                 b"DealList" => in_deal_list = true,
@@ -124,6 +165,7 @@ impl GraphBuilder {
                             }
                         }
                         Event::End(ref e) => match e.name().as_ref() {
+                            b"PartyList" => in_party_list = false,
                             b"ReleaseList" => in_release_list = false,
                             b"ResourceList" => in_resource_list = false,
                             b"DealList" => in_deal_list = false,
@@ -153,7 +195,53 @@ impl GraphBuilder {
             legacy_extensions: None,
             comments: None,
             attributes: None,
+            track_releases,
         })
+    }
+
+    /// Handle an ERN 4.x start tag that `ern4` owns (Release, TrackRelease, Party, resources).
+    /// Returns `false` for anything else so the shared loop handles it.
+    fn handle_ern4_start<R: BufRead>(
+        &self,
+        e: &quick_xml::events::BytesStart,
+        reader: &mut Reader<R>,
+        validator: &mut XmlValidator,
+        ctx: Ern4Context,
+        sinks: Ern4Sinks<'_>,
+    ) -> Result<bool, ParseError> {
+        use ddex_core::models::graph::ResourceType;
+        let local = e.local_name();
+        let name = local.as_ref();
+        if ctx.in_release_list && (name == b"Release" || name == b"TrackRelease") {
+            let node = ern4::read_subtree(reader, validator, e)?;
+            if name == b"Release" {
+                sinks.releases.push(ern4::release(&node, self.version));
+            } else if let Some(tr) = ern4::track_release(&node) {
+                sinks.track_releases.push(tr);
+            }
+            return Ok(true);
+        }
+        if ctx.in_party_list && name == b"Party" {
+            let node = ern4::read_subtree(reader, validator, e)?;
+            sinks.parties.push(ern4::party(&node));
+            return Ok(true);
+        }
+        if ctx.in_resource_list {
+            let resource_type = match name {
+                b"SoundRecording" => ResourceType::SoundRecording,
+                b"Video" => ResourceType::Video,
+                b"Image" => ResourceType::Image,
+                b"Text" => ResourceType::Text,
+                b"SheetMusic" => ResourceType::SheetMusic,
+                _ => return Ok(false),
+            };
+            let node = ern4::read_subtree(reader, validator, e)?;
+            sinks
+                .resources
+                .push(ern4::resource(&node, resource_type, self.version));
+            return Ok(true);
+        }
+        Ok(false)
     }
 
     /// Build graph model from XML with namespace context
@@ -621,6 +709,10 @@ impl GraphBuilder {
             extensions: None,
             attributes: None,
             comments: None,
+            display_title_text: Vec::new(),
+            display_title: Vec::new(),
+            display_artist_name: Vec::new(),
+            resource_group: None,
         };
 
         Ok(release)
@@ -815,6 +907,10 @@ impl GraphBuilder {
             p_line: Vec::new(),
             c_line: Vec::new(),
             extensions: None,
+            display_title_text: Vec::new(),
+            display_title: Vec::new(),
+            display_artist_name: Vec::new(),
+            display_artist: Vec::new(),
         };
 
         Ok(resource)
@@ -1074,7 +1170,9 @@ impl GraphBuilder {
 }
 
 // Helper function to parse duration strings
-fn parse_duration(duration_str: &str) -> Result<std::time::Duration, std::time::Duration> {
+pub(crate) fn parse_duration(
+    duration_str: &str,
+) -> Result<std::time::Duration, std::time::Duration> {
     use std::time::Duration;
     // Handle ISO 8601 duration format (PT3M30S)
     if duration_str.starts_with("PT") {

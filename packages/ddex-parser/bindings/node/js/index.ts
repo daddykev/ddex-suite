@@ -117,7 +117,7 @@ export interface SanityCheckResult {
 export interface ParsedRelease {
   releaseId: string;
   title: string;
-  artist: string;
+  artist?: string;
   trackCount: number;
 }
 

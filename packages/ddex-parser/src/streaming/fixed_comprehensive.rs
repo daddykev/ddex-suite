@@ -154,6 +154,10 @@ impl<R: BufRead> FixedStreamingParser<R> {
             attributes: None,
             extensions: None,
             comments: None,
+            display_title_text: Vec::new(),
+            display_title: Vec::new(),
+            display_artist_name: Vec::new(),
+            resource_group: None,
         };
 
         FixedStreamingElement::Release(release)
@@ -187,6 +191,10 @@ impl<R: BufRead> FixedStreamingParser<R> {
             p_line: vec![],
             c_line: vec![],
             extensions: None,
+            display_title_text: Vec::new(),
+            display_title: Vec::new(),
+            display_artist_name: Vec::new(),
+            display_artist: Vec::new(),
         };
 
         FixedStreamingElement::Resource(resource)

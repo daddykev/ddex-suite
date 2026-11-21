@@ -395,6 +395,10 @@ impl MultiReleaseParser {
             extensions: None,
             attributes: None,
             comments: None,
+            display_title_text: Vec::new(),
+            display_title: Vec::new(),
+            display_artist_name: Vec::new(),
+            resource_group: None,
         }
     }
 

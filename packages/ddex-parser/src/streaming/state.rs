@@ -206,6 +206,10 @@ impl PartialRelease {
             attributes: None,
             extensions: None,
             comments: None,
+            display_title_text: Vec::new(),
+            display_title: Vec::new(),
+            display_artist_name: Vec::new(),
+            resource_group: None,
         }
     }
 }
@@ -239,6 +243,10 @@ impl PartialResource {
             p_line: self.p_line,
             c_line: self.c_line,
             extensions: None,
+            display_title_text: Vec::new(),
+            display_title: Vec::new(),
+            display_artist_name: Vec::new(),
+            display_artist: Vec::new(),
         }
     }
 }

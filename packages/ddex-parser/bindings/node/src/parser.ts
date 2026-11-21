@@ -48,9 +48,9 @@ export interface ParsedERNMessage {
   messageId: string;
   messageType: string;
   messageDate: string;
-  senderName: string;
+  senderName?: string;
   senderId: string;
-  recipientName: string;
+  recipientName?: string;
   recipientId: string;
   version: string;
   profile?: string;

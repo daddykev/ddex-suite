@@ -8,12 +8,13 @@ use ddex_core::models::common::{Identifier, LocalizedString};
 use ddex_core::models::flat::{
     ArtistInfo, DealValidity, DistributionComplexity, FlattenedMessage, MessageStats, Organization,
     ParsedDeal, ParsedRelease, ParsedResource, ParsedTrack, PriceTier, PriceType, ProprietaryId,
-    ReleaseIdentifiers, TechnicalInfo, TerritoryComplexity, TerritoryInfo,
+    ReleaseIdentifiers, TechnicalInfo, TerritoryComplexity, TerritoryInfo, TrackGroup,
 };
 use ddex_core::models::graph::{
-    Artist, Deal, DealTerms, ERNMessage, Party, Release, ReleaseResourceReference, Resource,
-    ResourceType,
+    Artist, Deal, DealTerms, DisplayText, ERNMessage, Party, Release, ReleaseResourceReference,
+    Resource, ResourceGroup, ResourceType, TrackRelease,
 };
+use ddex_core::models::versions::ERNVersion;
 use indexmap::IndexMap;
 use std::collections::HashMap;
 
@@ -21,14 +22,18 @@ pub struct Flattener;
 
 impl Flattener {
     pub fn flatten(graph: ERNMessage) -> Result<FlattenedMessage> {
-        let releases = Self::flatten_releases(&graph.releases, &graph.resources)?;
+        let releases = if matches!(graph.version, ERNVersion::V4_2 | ERNVersion::V4_3) {
+            Self::flatten_releases_ern4(&graph)?
+        } else {
+            Self::flatten_releases(&graph.releases, &graph.resources)?
+        };
         let resources = Self::flatten_resources(&graph.resources)?;
         let deals = Self::flatten_deals(&graph.deals)?;
         let parties = Self::flatten_parties(&graph.parties)?;
 
         let stats = MessageStats {
-            release_count: graph.releases.len(),
-            track_count: 0, // Set to 0 if no tracks
+            release_count: releases.len(),
+            track_count: releases.iter().map(|r| r.tracks.len()).sum(),
             deal_count: graph.deals.len(),
             total_duration: 0, // Set to 0 if no duration
         };
@@ -38,10 +43,10 @@ impl Flattener {
             message_type: format!("{:?}", graph.message_header.message_type),
             message_date: graph.message_header.message_created_date_time,
             sender: Organization {
-                name: Self::get_primary_name(
+                // PartyName is optional per the XSD (MessagingParty: PartyName [0..1]).
+                name: Self::get_primary_name_optional(
                     &graph.message_header.message_sender.party_name,
-                    "MessageSender/PartyName",
-                )?,
+                ),
                 id: Self::get_primary_id(
                     &graph.message_header.message_sender.party_id,
                     "MessageSender/PartyId",
@@ -49,10 +54,9 @@ impl Flattener {
                 extensions: None,
             },
             recipient: Organization {
-                name: Self::get_primary_name(
+                name: Self::get_primary_name_optional(
                     &graph.message_header.message_recipient.party_name,
-                    "MessageRecipient/PartyName",
-                )?,
+                ),
                 id: Self::get_primary_id(
                     &graph.message_header.message_recipient.party_id,
                     "MessageRecipient/PartyId",
@@ -88,7 +92,8 @@ impl Flattener {
                         .as_ref()
                         .map(|s| Self::get_primary_title_optional(s))
                         .flatten(),
-                    display_artist: Self::format_display_artist(&release.display_artist)?,
+                    display_artist: Some(Self::format_display_artist(&release.display_artist)?)
+                        .filter(|s| !s.is_empty()),
                     artists: Self::extract_artists(&release.display_artist)?,
                     release_type: release
                         .release_type
@@ -197,12 +202,22 @@ impl Flattener {
             .collect()
     }
 
+    /// Key parties by `PartyReference`, falling back to the first `PartyId`. A party with
+    /// neither violates the schema and is reported as an error (no key is invented).
     fn flatten_parties(parties: &[Party]) -> Result<IndexMap<String, Party>> {
         parties
             .iter()
             .map(|party| {
-                let id = Self::get_primary_id(&party.party_id, "Party/PartyId")?;
-                Ok((id, party.clone()))
+                let key = party
+                    .party_reference
+                    .clone()
+                    .or_else(|| Self::get_primary_id_optional(&party.party_id))
+                    .ok_or_else(|| {
+                        ParseError::MissingField(
+                            "Party/PartyReference (or Party/PartyId)".to_string(),
+                        )
+                    })?;
+                Ok((key, party.clone()))
             })
             .collect()
     }
@@ -212,13 +227,6 @@ impl Flattener {
         names
             .first()
             .map(|n| n.text.clone())
-            .ok_or_else(|| ParseError::MissingField(field_path.to_string()))
-    }
-
-    fn get_primary_title(titles: &[LocalizedString], field_path: &str) -> Result<String> {
-        titles
-            .first()
-            .map(|t| t.text.clone())
             .ok_or_else(|| ParseError::MissingField(field_path.to_string()))
     }
 
@@ -369,7 +377,7 @@ impl Flattener {
                     side: rref.side.clone(),
                     title,
                     subtitle: None,
-                    display_artist: String::new(),
+                    display_artist: None,
                     artists: Vec::new(),
                     duration,
                     duration_formatted,
@@ -380,6 +388,9 @@ impl Flattener {
                     is_bonus: rref.is_bonus,
                     is_explicit: false,
                     is_instrumental: false,
+                    track_release_reference: None,
+                    track_release_id: None,
+                    group_path: Vec::new(),
                 })
             })
             .collect()
@@ -444,5 +455,343 @@ impl Flattener {
         }
 
         tiers
+    }
+}
+
+/// Lookups shared while flattening an ERN 4.x message.
+struct Ern4Index<'a> {
+    resources: IndexMap<&'a str, &'a Resource>,
+    /// Resource reference -> first `TrackRelease` (document order) releasing it.
+    track_release_by_resource: IndexMap<&'a str, &'a TrackRelease>,
+    /// `PartyReference` -> first `PartyName/FullName`.
+    party_names: IndexMap<&'a str, &'a str>,
+}
+
+impl<'a> Ern4Index<'a> {
+    fn new(graph: &'a ERNMessage) -> Self {
+        let resources = graph
+            .resources
+            .iter()
+            .map(|r| (r.resource_reference.as_str(), r))
+            .collect();
+        let mut track_release_by_resource = IndexMap::new();
+        for tr in &graph.track_releases {
+            track_release_by_resource
+                .entry(tr.release_resource_reference.as_str())
+                .or_insert(tr);
+        }
+        let party_names = graph
+            .parties
+            .iter()
+            .filter_map(|p| {
+                Some((
+                    p.party_reference.as_deref()?,
+                    p.party_name.first()?.text.as_str(),
+                ))
+            })
+            .collect();
+        Self {
+            resources,
+            track_release_by_resource,
+            party_names,
+        }
+    }
+
+    /// `DisplayArtistName` (IsDefault, else first); otherwise the names of the
+    /// `DisplayArtist` parties joined with ", "; otherwise `None`.
+    fn display_artist(&self, names: &[DisplayText], artists: &[Artist]) -> Option<String> {
+        DisplayText::pick_default(names)
+            .map(|t| t.text.clone())
+            .or_else(|| {
+                let resolved: Vec<&str> = artists
+                    .iter()
+                    .filter_map(|a| self.party_name(a.party_reference.as_deref()?))
+                    .collect();
+                (!resolved.is_empty()).then(|| resolved.join(", "))
+            })
+    }
+
+    /// `DisplayArtist` entries whose party resolves to a name and that carry a role.
+    fn artist_infos(&self, artists: &[Artist]) -> Vec<ArtistInfo> {
+        artists
+            .iter()
+            .filter_map(|a| {
+                let reference = a.party_reference.as_deref()?;
+                Some(ArtistInfo {
+                    name: self.party_name(reference)?.to_string(),
+                    role: a.artist_role.first()?.clone(),
+                    party_id: Some(reference.to_string()),
+                })
+            })
+            .collect()
+    }
+
+    fn party_name(&self, reference: &str) -> Option<&'a str> {
+        self.party_names.get(reference).copied()
+    }
+
+    /// The resource behind a reference, if it is track-eligible (SoundRecording / Video).
+    fn track_resource(&self, reference: &str) -> Option<&'a Resource> {
+        self.resources.get(reference).copied().filter(|r| {
+            matches!(
+                r.resource_type,
+                ResourceType::SoundRecording | ResourceType::Video
+            )
+        })
+    }
+
+    fn track(
+        &self,
+        resource: &Resource,
+        position: usize,
+        track_number: Option<i32>,
+        disc_number: Option<i32>,
+        group_path: Vec<TrackGroup>,
+    ) -> ParsedTrack {
+        let track_release = self
+            .track_release_by_resource
+            .get(resource.resource_reference.as_str());
+        let duration = resource.duration;
+        ParsedTrack {
+            track_id: resource.resource_reference.clone(),
+            isrc: resource
+                .resource_id
+                .iter()
+                .find(|id| matches!(id.id_type, ddex_core::models::common::IdentifierType::ISRC))
+                .map(|id| id.value.clone()),
+            iswc: None,
+            position,
+            track_number,
+            disc_number,
+            side: None,
+            title: display_title(
+                &resource.display_title_text,
+                &resource.display_title,
+                &resource.reference_title,
+            ),
+            subtitle: None,
+            display_artist: self
+                .display_artist(&resource.display_artist_name, &resource.display_artist),
+            artists: self.artist_infos(&resource.display_artist),
+            duration,
+            duration_formatted: duration.map(ParsedTrack::format_duration),
+            file_format: None,
+            bitrate: None,
+            sample_rate: None,
+            is_hidden: false,
+            is_bonus: false,
+            is_explicit: false,
+            is_instrumental: false,
+            track_release_reference: track_release.map(|tr| tr.release_reference.clone()),
+            track_release_id: track_release
+                .and_then(|tr| tr.release_id.first())
+                .map(|id| id.value.clone()),
+            group_path,
+        }
+    }
+}
+
+/// `DisplayTitleText` (IsDefault, else first), falling back to `DisplayTitle/TitleText`
+/// (IsDefault, else first), then to the first legacy title. Empty strings count as absent.
+fn display_title(
+    display_title_text: &[DisplayText],
+    display_title: &[DisplayText],
+    legacy: &[LocalizedString],
+) -> Option<String> {
+    DisplayText::pick_default(display_title_text)
+        .or_else(|| DisplayText::pick_default(display_title))
+        .map(|t| t.text.clone())
+        .or_else(|| legacy.first().map(|t| t.text.clone()))
+        .filter(|t| !t.is_empty())
+}
+
+/// Disc anchor for position numbering: the group that defines the disc.
+#[derive(Clone, Copy)]
+struct DiscAnchor {
+    /// Unique id of the anchoring group within this release walk.
+    id: usize,
+    sequence_number: Option<i32>,
+}
+
+/// Walks a release's `ResourceGroup` tree in document order and builds its tracks.
+///
+/// * `disc_number`: `SequenceNumber` of the nearest enclosing `Component` group; if there
+///   is none, of the nearest `ReleaseComponent`. `MultiWorkPart` / `Side` never set it.
+/// * `position`: 1-based order among tracks within that disc (or the release if no disc).
+/// * `track_number`: the item's own `SequenceNumber`, as written.
+struct TrackWalker<'i, 'a> {
+    index: &'i Ern4Index<'a>,
+    tracks: Vec<ParsedTrack>,
+    /// Anchor id -> tracks numbered so far (id 0 = the release itself).
+    positions: IndexMap<usize, usize>,
+    next_group_id: usize,
+}
+
+impl<'i, 'a> TrackWalker<'i, 'a> {
+    fn walk(
+        &mut self,
+        group: &ResourceGroup,
+        path: &mut Vec<TrackGroup>,
+        component: Option<DiscAnchor>,
+        release_component: Option<DiscAnchor>,
+    ) {
+        // Nested groups precede content items in the XSD, so this is document order.
+        for sub in &group.resource_groups {
+            self.next_group_id += 1;
+            let anchor = DiscAnchor {
+                id: self.next_group_id,
+                sequence_number: sub.sequence_number,
+            };
+            let (component, release_component) = match sub.resource_group_type.as_deref() {
+                Some("Component") => (Some(anchor), release_component),
+                Some("ReleaseComponent") => (component, Some(anchor)),
+                _ => (component, release_component),
+            };
+            path.push(TrackGroup {
+                group_type: sub.resource_group_type.clone(),
+                sequence_number: sub.sequence_number,
+            });
+            self.walk(sub, path, component, release_component);
+            path.pop();
+        }
+        for item in &group.content_items {
+            let Some(resource) = self.index.track_resource(&item.release_resource_reference) else {
+                continue; // images, text, unknown references: not tracks
+            };
+            let disc = component.or(release_component);
+            let counter = self.positions.entry(disc.map_or(0, |d| d.id)).or_insert(0);
+            *counter += 1;
+            let position = *counter;
+            self.tracks.push(self.index.track(
+                resource,
+                position,
+                item.sequence_number,
+                disc.and_then(|d| d.sequence_number),
+                path.clone(),
+            ));
+        }
+    }
+}
+
+impl Flattener {
+    /// ERN 4.x: one flat release per main `Release` (TrackReleases are linked to tracks,
+    /// not emitted as releases). In 4.3, when there is no `Release`, each `TrackRelease`
+    /// with `IsMainRelease="true"` becomes the flat release instead.
+    fn flatten_releases_ern4(graph: &ERNMessage) -> Result<Vec<ParsedRelease>> {
+        let index = Ern4Index::new(graph);
+        let mut releases = graph
+            .releases
+            .iter()
+            .map(|release| Self::flatten_release_ern4(release, &index))
+            .collect::<Result<Vec<_>>>()?;
+        if graph.releases.is_empty() {
+            releases.extend(
+                graph
+                    .track_releases
+                    .iter()
+                    .filter(|tr| tr.is_main_release == Some(true))
+                    .map(|tr| Self::flatten_main_track_release(tr, &index)),
+            );
+        }
+        Ok(releases)
+    }
+
+    fn flatten_release_ern4(release: &Release, index: &Ern4Index) -> Result<ParsedRelease> {
+        let mut walker = TrackWalker {
+            index,
+            tracks: Vec::new(),
+            positions: IndexMap::new(),
+            next_group_id: 0,
+        };
+        if let Some(group) = &release.resource_group {
+            walker.walk(group, &mut Vec::new(), None, None);
+        }
+        let discs = walker.positions.keys().filter(|id| **id != 0).count();
+        let tracks = walker.tracks;
+        Ok(ParsedRelease {
+            release_id: release.release_reference.clone(),
+            identifiers: Self::extract_identifiers(&release.release_id),
+            title: release.release_title.clone(),
+            default_title: display_title(
+                &release.display_title_text,
+                &release.display_title,
+                &release.release_title,
+            ),
+            subtitle: release.release_subtitle.clone(),
+            default_subtitle: release
+                .release_subtitle
+                .as_ref()
+                .and_then(|s| Self::get_primary_title_optional(s)),
+            display_artist: index
+                .display_artist(&release.display_artist_name, &release.display_artist),
+            artists: index.artist_infos(&release.display_artist),
+            release_type: release
+                .release_type
+                .as_ref()
+                .map(|t| format!("{:?}", t))
+                .ok_or_else(|| ParseError::MissingField("Release/ReleaseType".to_string()))?,
+            genre: release.genre.first().map(|g| g.genre_text.clone()),
+            sub_genre: release.genre.first().and_then(|g| g.sub_genre.clone()),
+            track_count: tracks.len(),
+            disc_count: (discs > 0).then_some(discs),
+            tracks,
+            videos: Vec::new(),
+            images: Vec::new(),
+            cover_art: None,
+            release_date: release.release_date.first().and_then(|e| e.event_date),
+            original_release_date: None,
+            territories: Self::build_territories(
+                &release.territory_code,
+                &release.excluded_territory_code,
+            ),
+            p_line: None,
+            c_line: None,
+            parent_release: None,
+            child_releases: Vec::new(),
+            extensions: None,
+        })
+    }
+
+    /// A 4.3 `TrackRelease IsMainRelease="true"` standing in for the absent `Release`.
+    /// `release_type` is the AVS term `TrackRelease`; the release's one track is its
+    /// resource. A TrackRelease has no display artist in the XSD, so that stays `None`.
+    fn flatten_main_track_release(tr: &TrackRelease, index: &Ern4Index) -> ParsedRelease {
+        let tracks: Vec<ParsedTrack> = index
+            .track_resource(&tr.release_resource_reference)
+            .map(|resource| index.track(resource, 1, None, None, Vec::new()))
+            .into_iter()
+            .collect();
+        let title: Vec<LocalizedString> = tr
+            .display_title_text
+            .iter()
+            .map(|t| LocalizedString::new(t.text.clone()))
+            .collect();
+        ParsedRelease {
+            release_id: tr.release_reference.clone(),
+            identifiers: Self::extract_identifiers(&tr.release_id),
+            default_title: display_title(&tr.display_title_text, &tr.display_title, &title),
+            title,
+            subtitle: None,
+            default_subtitle: None,
+            display_artist: None,
+            artists: Vec::new(),
+            release_type: "TrackRelease".to_string(),
+            genre: None,
+            sub_genre: None,
+            track_count: tracks.len(),
+            disc_count: None,
+            tracks,
+            videos: Vec::new(),
+            images: Vec::new(),
+            cover_art: None,
+            release_date: None,
+            original_release_date: None,
+            territories: Vec::new(),
+            p_line: None,
+            c_line: None,
+            parent_release: None,
+            child_releases: Vec::new(),
+            extensions: None,
+        }
     }
 }

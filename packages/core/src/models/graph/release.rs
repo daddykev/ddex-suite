@@ -1,7 +1,7 @@
 // core/src/models/graph/release.rs
 //! Release types
 
-use super::Artist;
+use super::{Artist, DisplayText, ResourceGroup};
 use crate::models::{
     common::{Identifier, LocalizedString},
     AttributeMap, Comment, Extensions,
@@ -23,6 +23,18 @@ pub struct Release {
     pub release_date: Vec<ReleaseEvent>,
     pub territory_code: Vec<String>,
     pub excluded_territory_code: Vec<String>,
+    /// ERN 4.x `DisplayTitleText` entries (empty for 3.8.x).
+    #[serde(default)]
+    pub display_title_text: Vec<DisplayText>,
+    /// ERN 4.x `DisplayTitle/TitleText` entries (empty for 3.8.x).
+    #[serde(default)]
+    pub display_title: Vec<DisplayText>,
+    /// ERN 4.x `DisplayArtistName` entries (empty for 3.8.x).
+    #[serde(default)]
+    pub display_artist_name: Vec<DisplayText>,
+    /// ERN 4.x `ResourceGroup` tree (`None` for 3.8.x).
+    #[serde(default)]
+    pub resource_group: Option<ResourceGroup>,
     /// All XML attributes (standard and custom)
     pub attributes: Option<AttributeMap>,
     /// Extensions for release

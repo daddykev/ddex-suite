@@ -6,6 +6,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Party {
+    /// `PartyReference` (ERN 4.x PartyList); `None` when absent.
+    #[serde(default)]
+    pub party_reference: Option<String>,
     pub party_id: Vec<Identifier>,
     pub isni: Option<String>,
     pub ipi: Option<String>,

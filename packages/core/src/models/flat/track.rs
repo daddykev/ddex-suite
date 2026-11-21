@@ -16,7 +16,8 @@ pub struct ParsedTrack {
     /// `ReferenceTitle/TitleText` of the underlying resource; `None` when the source has none.
     pub title: Option<String>,
     pub subtitle: Option<String>,
-    pub display_artist: String,
+    /// Display artist; `None` when the source has none.
+    pub display_artist: Option<String>,
     pub artists: Vec<ArtistInfo>,
     /// `Duration` of the underlying resource; `None` when the source has none.
     pub duration: Option<Duration>,
@@ -29,6 +30,25 @@ pub struct ParsedTrack {
     pub is_bonus: bool,
     pub is_explicit: bool,
     pub is_instrumental: bool,
+    /// ERN 4.x: `ReleaseReference` of the `TrackRelease` that releases this track's resource.
+    /// Deals reference track releases by this value.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub track_release_reference: Option<String>,
+    /// ERN 4.x: first identifier in that `TrackRelease`'s `ReleaseId`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub track_release_id: Option<String>,
+    /// ERN 4.x: the nested `ResourceGroup`s enclosing this track, outermost first
+    /// (the release's top-level group is not included). Empty for 3.8.x.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub group_path: Vec<TrackGroup>,
+}
+
+/// One nested `ResourceGroup` on a track's `group_path`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TrackGroup {
+    /// `@ResourceGroupType` (required on nested groups by the XSD).
+    pub group_type: Option<String>,
+    pub sequence_number: Option<i32>,
 }
 
 use crate::models::flat::release::ArtistInfo;

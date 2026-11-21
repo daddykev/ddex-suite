@@ -1440,10 +1440,15 @@ impl DdexBuilder {
         // Convert parsed result back to build request (simplified implementation).
         // Values come from the parsed message; nothing is filled in when the source lacks it.
         let party = |org: &ddex_core::models::flat::Organization| PartyRequest {
-            party_name: vec![LocalizedStringRequest {
-                text: org.name.clone(),
-                language_code: None,
-            }],
+            // PartyName is optional in the parsed message; no name is added when absent.
+            party_name: org
+                .name
+                .iter()
+                .map(|text| LocalizedStringRequest {
+                    text: text.clone(),
+                    language_code: None,
+                })
+                .collect(),
             party_id: Some(org.id.clone()).filter(|id| !id.is_empty()),
             party_reference: None,
         };
@@ -1484,7 +1489,8 @@ impl DdexBuilder {
                             .duration
                             .map(|d| format!("PT{}S", d.as_secs()))
                             .ok_or_else(|| missing("duration", &track.track_id))?,
-                        artist: track.display_artist.clone(),
+                        // Empty when the parsed track has no artist; builder validation decides.
+                        artist: track.display_artist.clone().unwrap_or_default(),
                     })
                 })
                 .collect::<PyResult<_>>()?;
@@ -1501,7 +1507,8 @@ impl DdexBuilder {
                         language_code: None,
                     })
                     .collect(),
-                artist: release.display_artist.clone(),
+                // Empty when the parsed release has no artist; builder validation decides.
+                artist: release.display_artist.clone().unwrap_or_default(),
                 label: None,        // Simplified
                 release_date: None, // Simplified
                 upc: None,          // Simplified
