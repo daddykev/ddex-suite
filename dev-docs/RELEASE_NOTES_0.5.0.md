@@ -54,7 +54,8 @@ Read "Upgrading" before you update.
 - `displayArtist`, `artist`, `senderName` and `recipientName` are optional.
 
 ### Python
-- Python 3.9 or newer is required (0.4.5 allowed 3.8).
+- Drops Python 3.8 and 3.9: Python 3.10 or newer is required (0.4.5 allowed 3.8). Python 3.9
+  reached end of life on 2025-10-31. The abi3 wheels are tagged `cp310-abi3`.
 - `import ddex_parser` / `import ddex_builder` raise `ImportError` if the native extension
   cannot load. The message names the cause and the fix: reinstall a wheel for your
   platform, or run `maturin develop` in a checkout.
@@ -102,7 +103,7 @@ The most visible ones:
 
 - CI on the release branch:
   - Rust: fmt, clippy, workspace tests, XSD validation.
-  - Bindings: Node, Python 3.9–3.13.
+  - Bindings: Node, Python 3.10–3.14.
   - The ERN 4 oracle.
 - The **Release build** workflow builds every published artifact and install-tests each
   one on a matching runner. See `PUBLISH.md` for the publishing order.

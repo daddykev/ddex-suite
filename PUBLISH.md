@@ -17,7 +17,7 @@ and publish by hand in the order below.
 - [ ] `CHANGELOG.md` has a dated section for the version; release notes in
       `dev-docs/RELEASE_NOTES_<version>.md`.
 - [ ] CI is green on the release branch (`.github/workflows/ci.yml`: fmt, clippy, tests,
-      XSD, Node, Python 3.9–3.13, ERN 4 oracle).
+      XSD, Node, Python 3.10–3.14, ERN 4 oracle).
 
 ## 2. Build the artifacts
 

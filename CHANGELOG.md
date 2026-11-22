@@ -391,8 +391,9 @@ Node parser:
   hard-coded "Test Release" objects. Use `parse` / `parseSync`.
 
 Python (ddex-parser, ddex-builder):
-- Python 3.9 or newer (`requires-python = ">=3.9"`, abi3 wheels tagged `cp39-abi3`); 0.4.5
-  allowed 3.8. CI tests 3.9 to 3.13.
+- Drops Python 3.8 and 3.9: Python 3.10 or newer is required (`requires-python = ">=3.10"`,
+  abi3 wheels tagged `cp310-abi3`); 0.4.5 allowed 3.8. Python 3.9 reached end of life on
+  2025-10-31. CI tests 3.10 to 3.14.
 - Importing the package without its native extension raises `ImportError` naming the
   cause and how to fix it. There is no mock fallback any more: the builder's mock classes
   (which printed a warning and could not build) and the parser's mock results (fixed
@@ -431,7 +432,7 @@ Tests:
   (`#![doc = include_str!("../README.md")]`), so their examples are doctests.
 - Manifests: consistent description, keywords, `homepage = "https://ddex-suite.org"`,
   repository, bugs and license; `rust-version = "1.82"`; PyPI `project.urls` (the parser's
-  were invalid top-level keys and did not show) and classifiers for Python 3.9 to 3.13.
+  were invalid top-level keys and did not show) and classifiers for Python 3.10 to 3.14.
 - Smaller packages: the crates ship only `src`, `README.md` and `LICENSE` (ddex-core 45 →
   40 files, ddex-parser 96 → 48, ddex-builder 128 → 69: no tests, fixtures, benches,
   logs or status documents); the npm builder package no longer ships the stale `dist/`
@@ -456,7 +457,7 @@ Tests:
   listed in `optionalDependencies`; the main packages no longer ship `*.node` files. The
   unbuilt targets (musl, Linux arm64, Android, armv7) were dropped from the napi config.
 - CI (`.github/workflows/ci.yml`) restored: fmt, clippy, workspace tests, XSD
-  validation, Node, Python 3.9–3.13 and the ERN 4 oracle.
+  validation, Node, Python 3.10–3.14 and the ERN 4 oracle.
 
 ### Documentation
 - Performance claims in the README, the package READMEs and the website are replaced by
