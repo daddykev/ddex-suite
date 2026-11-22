@@ -4,15 +4,16 @@
 use crate::error::ParseError;
 
 type Result<T> = std::result::Result<T, ParseError>;
-use ddex_core::models::common::{Identifier, LocalizedString};
+use ddex_core::models::common::{Copyright, Identifier, LocalizedString, TerritoryScope};
 use ddex_core::models::flat::{
-    ArtistInfo, DealValidity, DistributionComplexity, FlattenedMessage, MessageStats, Organization,
-    ParsedDeal, ParsedRelease, ParsedResource, ParsedTrack, PriceTier, PriceType, ProprietaryId,
-    ReleaseIdentifiers, TechnicalInfo, TerritoryComplexity, TerritoryInfo, TrackGroup,
+    ArtistInfo, DateInfo, DealValidity, DistributionComplexity, FlattenedMessage, GenreInfo,
+    MessageStats, Organization, ParsedDeal, ParsedRelease, ParsedResource, ParsedTrack, PriceTier,
+    PriceType, ProprietaryId, ReleaseIdentifiers, TechnicalInfo, TerritoryComplexity,
+    TerritoryInfo, TrackGroup,
 };
 use ddex_core::models::graph::{
-    Artist, Deal, DealTerms, DisplayText, ERNMessage, Party, Release, ReleaseResourceReference,
-    Resource, ResourceGroup, ResourceType, TrackRelease,
+    Artist, Deal, DealTerms, DisplayText, ERNMessage, Genre, MessageControlType, Party, Release,
+    ReleaseEvent, ReleaseResourceReference, Resource, ResourceGroup, ResourceType, TrackRelease,
 };
 use ddex_core::models::versions::ERNVersion;
 use indexmap::IndexMap;
@@ -71,6 +72,13 @@ impl Flattener {
             profile: graph.profile.map(|p| format!("{:?}", p)),
             stats,
             extensions: None,
+            message_control_type: graph.message_header.message_control_type.as_ref().map(
+                |t| match t {
+                    MessageControlType::LiveMessage => "LiveMessage".to_string(),
+                    MessageControlType::TestMessage => "TestMessage".to_string(),
+                    MessageControlType::Other(v) => v.clone(),
+                },
+            ),
         })
     }
 
@@ -81,7 +89,7 @@ impl Flattener {
         releases
             .iter()
             .map(|release| {
-                Ok(ParsedRelease {
+                let mut parsed = ParsedRelease {
                     release_id: release.release_reference.clone(),
                     identifiers: Self::extract_identifiers(&release.release_id),
                     title: release.release_title.clone(),
@@ -124,7 +132,15 @@ impl Flattener {
                     parent_release: None,
                     child_releases: Vec::new(),
                     extensions: None,
-                })
+                    genres: Vec::new(),
+                    label_name: None,
+                    original_release_dates: Vec::new(),
+                    parental_warning: None,
+                    parental_warnings: Vec::new(),
+                    release_dates: Vec::new(),
+                };
+                fill_release_details(&mut parsed, release, None);
+                Ok(parsed)
             })
             .collect()
     }
@@ -133,7 +149,7 @@ impl Flattener {
         resources
             .iter()
             .map(|resource| {
-                let parsed = ParsedResource {
+                let mut parsed = ParsedResource {
                     resource_id: resource.resource_reference.clone(),
                     resource_type: format!("{:?}", resource.resource_type),
                     // ReferenceTitle is not present on all resource types (e.g. Image), so it stays None
@@ -153,7 +169,20 @@ impl Flattener {
                             .and_then(|t| t.sample_rate),
                         file_size: resource.technical_details.first().and_then(|t| t.file_size),
                     },
+                    genre: None,
+                    sub_genre: None,
+                    parental_warning: None,
+                    p_line: None,
+                    c_line: None,
+                    label_name: None,
                 };
+                let details = ResourceDetails::of(resource);
+                parsed.genre = details.genre;
+                parsed.sub_genre = details.sub_genre;
+                parsed.parental_warning = details.parental_warning;
+                parsed.p_line = details.p_line;
+                parsed.c_line = details.c_line;
+                parsed.label_name = details.label_name;
                 Ok((resource.resource_reference.clone(), parsed))
             })
             .collect()
@@ -270,6 +299,7 @@ impl Flattener {
             catalog_number: None,
             grid: None,
             proprietary: Vec::new(),
+            isrc: None,
         };
 
         for id in ids {
@@ -282,6 +312,9 @@ impl Flattener {
                 }
                 ddex_core::models::common::IdentifierType::GRID => {
                     identifiers.grid = Some(id.value.clone())
+                }
+                ddex_core::models::common::IdentifierType::ISRC => {
+                    identifiers.isrc = Some(id.value.clone())
                 }
                 ddex_core::models::common::IdentifierType::Proprietary => {
                     if let Some(ns) = &id.namespace {
@@ -356,6 +389,7 @@ impl Flattener {
                     .filter(|t| !t.is_empty());
                 let duration = resource.and_then(|r| r.duration);
                 let duration_formatted = duration.map(ParsedTrack::format_duration);
+                let details = resource.map(ResourceDetails::of).unwrap_or_default();
 
                 Ok(ParsedTrack {
                     track_id: rref.resource_reference.clone(),
@@ -391,6 +425,14 @@ impl Flattener {
                     track_release_reference: None,
                     track_release_id: None,
                     group_path: Vec::new(),
+                    c_line: details.c_line,
+                    genre: details.genre,
+                    label_name: details.label_name,
+                    p_line: details.p_line,
+                    parental_warning: details.parental_warning,
+                    sub_genre: details.sub_genre,
+                    track_release_genre: None,
+                    track_release_sub_genre: None,
                 })
             })
             .collect()
@@ -552,6 +594,9 @@ impl<'a> Ern4Index<'a> {
             .track_release_by_resource
             .get(resource.resource_reference.as_str());
         let duration = resource.duration;
+        let details = ResourceDetails::of(resource);
+        let track_release_genre =
+            track_release.and_then(|tr| TerritoryScope::pick_default(&tr.genre, |g| &g.scope));
         ParsedTrack {
             track_id: resource.resource_reference.clone(),
             isrc: resource
@@ -587,6 +632,14 @@ impl<'a> Ern4Index<'a> {
                 .and_then(|tr| tr.release_id.first())
                 .map(|id| id.value.clone()),
             group_path,
+            c_line: details.c_line,
+            genre: details.genre,
+            label_name: details.label_name,
+            p_line: details.p_line,
+            parental_warning: details.parental_warning,
+            sub_genre: details.sub_genre,
+            track_release_genre: track_release_genre.map(|g| g.genre_text.clone()),
+            track_release_sub_genre: track_release_genre.and_then(|g| g.sub_genre.clone()),
         }
     }
 }
@@ -708,7 +761,7 @@ impl Flattener {
         }
         let discs = walker.positions.keys().filter(|id| **id != 0).count();
         let tracks = walker.tracks;
-        Ok(ParsedRelease {
+        let mut parsed = ParsedRelease {
             release_id: release.release_reference.clone(),
             identifiers: Self::extract_identifiers(&release.release_id),
             title: release.release_title.clone(),
@@ -749,7 +802,20 @@ impl Flattener {
             parent_release: None,
             child_releases: Vec::new(),
             extensions: None,
-        })
+            genres: Vec::new(),
+            label_name: None,
+            original_release_dates: Vec::new(),
+            parental_warning: None,
+            parental_warnings: Vec::new(),
+            release_dates: Vec::new(),
+        };
+        let label = release
+            .release_label_reference
+            .first()
+            .and_then(|r| index.party_name(r))
+            .map(str::to_string);
+        fill_release_details(&mut parsed, release, label);
+        Ok(parsed)
     }
 
     /// A 4.3 `TrackRelease IsMainRelease="true"` standing in for the absent `Release`.
@@ -766,6 +832,7 @@ impl Flattener {
             .iter()
             .map(|t| LocalizedString::new(t.text.clone()))
             .collect();
+        let genre = TerritoryScope::pick_default(&tr.genre, |g| &g.scope);
         ParsedRelease {
             release_id: tr.release_reference.clone(),
             identifiers: Self::extract_identifiers(&tr.release_id),
@@ -776,8 +843,8 @@ impl Flattener {
             display_artist: None,
             artists: Vec::new(),
             release_type: "TrackRelease".to_string(),
-            genre: None,
-            sub_genre: None,
+            genre: genre.map(|g| g.genre_text.clone()),
+            sub_genre: genre.and_then(|g| g.sub_genre.clone()),
             track_count: tracks.len(),
             disc_count: None,
             tracks,
@@ -792,6 +859,98 @@ impl Flattener {
             parent_release: None,
             child_releases: Vec::new(),
             extensions: None,
+            genres: tr.genre.iter().map(genre_info).collect(),
+            label_name: tr
+                .release_label_reference
+                .first()
+                .and_then(|r| index.party_name(r))
+                .map(str::to_string),
+            original_release_dates: Vec::new(),
+            parental_warning: None,
+            parental_warnings: Vec::new(),
+            release_dates: Vec::new(),
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Territorial values: defaults and full lists
+// ---------------------------------------------------------------------------
+
+fn genre_info(g: &Genre) -> GenreInfo {
+    GenreInfo {
+        genre: g.genre_text.clone(),
+        sub_genre: g.sub_genre.clone(),
+        scope: g.scope.clone(),
+    }
+}
+
+fn date_info(e: &ReleaseEvent) -> Option<DateInfo> {
+    Some(DateInfo {
+        date: e.date.clone()?,
+        is_approximate: e.is_approximate,
+        scope: e.scope.clone(),
+    })
+}
+
+/// Default (see [`TerritoryScope::pick_default`]) and full-list values of a release.
+/// `label` is the 4.x label resolved from `ReleaseLabelReference`; a 3.8.x `LabelName`
+/// takes precedence when present.
+fn fill_release_details(r: &mut ParsedRelease, release: &Release, label: Option<String>) {
+    let genre = TerritoryScope::pick_default(&release.genre, |g| &g.scope);
+    r.genre = genre.map(|g| g.genre_text.clone());
+    r.sub_genre = genre.and_then(|g| g.sub_genre.clone());
+    r.genres = release.genre.iter().map(genre_info).collect();
+    r.parental_warning = TerritoryScope::pick_default(&release.parental_warnings, |w| &w.scope)
+        .map(|w| w.value.clone());
+    r.parental_warnings = release
+        .parental_warnings
+        .iter()
+        .map(|w| w.value.clone())
+        .collect();
+    r.p_line = TerritoryScope::pick_default(&release.p_line, |c| &c.scope).cloned();
+    r.c_line = TerritoryScope::pick_default(&release.c_line, |c| &c.scope).cloned();
+    r.release_date = TerritoryScope::pick_default(&release.release_date, |e| &e.scope)
+        .and_then(|e| e.event_date);
+    r.original_release_date =
+        TerritoryScope::pick_default(&release.original_release_date, |e| &e.scope)
+            .and_then(|e| e.event_date);
+    r.release_dates = release.release_date.iter().filter_map(date_info).collect();
+    r.original_release_dates = release
+        .original_release_date
+        .iter()
+        .filter_map(date_info)
+        .collect();
+    r.label_name = TerritoryScope::pick_default(&release.label_name, |l| &l.scope)
+        .map(|l| l.name.clone())
+        .or(label);
+}
+
+/// Default values of a resource, shared by `ParsedResource` and `ParsedTrack`.
+#[derive(Default)]
+struct ResourceDetails {
+    genre: Option<String>,
+    sub_genre: Option<String>,
+    parental_warning: Option<String>,
+    p_line: Option<Copyright>,
+    c_line: Option<Copyright>,
+    label_name: Option<String>,
+}
+
+impl ResourceDetails {
+    fn of(resource: &Resource) -> Self {
+        let genre = TerritoryScope::pick_default(&resource.genre, |g| &g.scope);
+        Self {
+            genre: genre.map(|g| g.genre_text.clone()),
+            sub_genre: genre.and_then(|g| g.sub_genre.clone()),
+            parental_warning: TerritoryScope::pick_default(&resource.parental_warnings, |w| {
+                &w.scope
+            })
+            .map(|w| w.value.clone()),
+            p_line: TerritoryScope::pick_default(&resource.p_line, |c| &c.scope).cloned(),
+            c_line: TerritoryScope::pick_default(&resource.c_line, |c| &c.scope).cloned(),
+            label_name: TerritoryScope::pick_default(&resource.label_name, |l| &l.scope)
+                .map(|l| l.name.clone()),
         }
     }
 }

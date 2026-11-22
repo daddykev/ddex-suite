@@ -185,6 +185,11 @@ impl ToCore for ReleaseBuilder {
             release_type_user_defined_value: None,
             parental_warning_type: Vec::new(),
             release_label_reference: Vec::new(),
+            c_line: Vec::new(),
+            label_name: Vec::new(),
+            original_release_date: Vec::new(),
+            p_line: Vec::new(),
+            parental_warnings: Vec::new(),
         })
     }
 }
@@ -291,6 +296,9 @@ impl ToCore for ResourceBuilder {
             type_value: None,
             type_user_defined_value: None,
             parental_warning_type: Vec::new(),
+            genre: Vec::new(),
+            label_name: Vec::new(),
+            parental_warnings: Vec::new(),
         })
     }
 }
@@ -507,6 +515,7 @@ pub mod builders {
             attributes: None,
             extensions: None,
             comments: None,
+            scope: Default::default(),
         }
     }
 

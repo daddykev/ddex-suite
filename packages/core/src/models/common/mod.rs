@@ -7,4 +7,4 @@ mod territory;
 
 pub use identifier::{Identifier, IdentifierType};
 pub use localized::LocalizedString;
-pub use territory::{Copyright, Price, TerritoryCode, ValidityPeriod};
+pub use territory::{Copyright, Price, TerritoryCode, TerritoryScope, ValidityPeriod};

@@ -10,10 +10,13 @@
 
 use crate::error::ParseError;
 use crate::parser::xml_validator::XmlValidator;
-use ddex_core::models::common::{Identifier, IdentifierType, LocalizedString};
+use ddex_core::models::common::{
+    Copyright, Identifier, IdentifierType, LocalizedString, TerritoryScope,
+};
 use ddex_core::models::graph::{
-    Artist, DisplayText, Genre, LinkedReleaseResourceReference, Party, Release, ReleaseType,
-    Resource, ResourceGroup, ResourceGroupContentItem, ResourceType, TrackRelease,
+    Artist, DisplayText, Genre, LinkedReleaseResourceReference, ParentalWarning, Party, Release,
+    ReleaseEvent, ReleaseType, Resource, ResourceGroup, ResourceGroupContentItem, ResourceType,
+    TrackRelease,
 };
 use ddex_core::models::versions::ERNVersion;
 use quick_xml::events::{BytesStart, Event};
@@ -50,22 +53,25 @@ impl XNode {
         })
     }
 
-    fn child(&self, name: &str) -> Option<&XNode> {
+    pub(crate) fn child(&self, name: &str) -> Option<&XNode> {
         self.children.iter().find(|c| c.name == name)
     }
 
-    fn children_named<'a>(&'a self, name: &'a str) -> impl Iterator<Item = &'a XNode> + 'a {
+    pub(crate) fn children_named<'a>(
+        &'a self,
+        name: &'a str,
+    ) -> impl Iterator<Item = &'a XNode> + 'a {
         self.children.iter().filter(move |c| c.name == name)
     }
 
-    fn attr(&self, name: &str) -> Option<&str> {
+    pub(crate) fn attr(&self, name: &str) -> Option<&str> {
         self.attrs
             .iter()
             .find(|(k, _)| k == name)
             .map(|(_, v)| v.as_str())
     }
 
-    fn attr_bool(&self, name: &str) -> Option<bool> {
+    pub(crate) fn attr_bool(&self, name: &str) -> Option<bool> {
         match self.attr(name)?.trim() {
             "true" | "1" => Some(true),
             "false" | "0" => Some(false),
@@ -74,17 +80,23 @@ impl XNode {
     }
 
     /// Trimmed text content, `None` when empty.
-    fn value(&self) -> Option<String> {
+    pub(crate) fn value(&self) -> Option<String> {
         let t = self.text.trim();
         (!t.is_empty()).then(|| t.to_string())
     }
 
-    fn child_value(&self, name: &str) -> Option<String> {
+    pub(crate) fn child_value(&self, name: &str) -> Option<String> {
         self.child(name).and_then(XNode::value)
     }
 
-    fn child_i32(&self, name: &str) -> Option<i32> {
-        self.child_value(name).and_then(|v| v.parse().ok())
+    pub(crate) fn child_i32(&self, name: &str) -> Option<i32> {
+        self.child(name).and_then(XNode::parsed)
+    }
+
+    /// The text parsed as a typed (`xs:integer`, `xs:gYear`, ...) value. These types collapse
+    /// whitespace, so surrounding whitespace is ignored.
+    pub(crate) fn parsed<T: std::str::FromStr>(&self) -> Option<T> {
+        self.text.trim().parse().ok()
     }
 }
 
@@ -154,7 +166,8 @@ pub(crate) fn root_attributes(
 ) -> Result<ddex_core::models::AttributeMap, ParseError> {
     let mut map = ddex_core::models::AttributeMap::new();
     for attr in e.attributes() {
-        let attr = attr.map_err(|err| ParseError::XmlError(format!("Invalid attribute: {}", err)))?;
+        let attr =
+            attr.map_err(|err| ParseError::XmlError(format!("Invalid attribute: {}", err)))?;
         let key = String::from_utf8_lossy(attr.key.as_ref()).into_owned();
         if key == "xmlns" || key.starts_with("xmlns:") {
             continue;
@@ -278,8 +291,35 @@ fn resource_group(node: &XNode) -> ResourceGroup {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Territorial values (shared with the 3.8.x reader)
+// ---------------------------------------------------------------------------
+
+/// The territory scope of `node`.
+///
+/// `block` is the scope of the 3.8.x `...DetailsByTerritory` block holding `node` (`None` in
+/// 4.x, and for 3.8.x values written directly on a Release or resource). The node's own
+/// `ApplicableTerritoryCode` (4.x) or `TerritoryCode` (3.8.x `EventDate`) attribute narrows
+/// it to that territory; `IsDefault` and `LanguageAndScriptCode` come from the node, the
+/// language falling back to the block's.
+pub(crate) fn scope_of(node: &XNode, block: Option<&TerritoryScope>) -> TerritoryScope {
+    let mut scope = block.cloned().unwrap_or_default();
+    if let Some(code) = node
+        .attr("ApplicableTerritoryCode")
+        .or_else(|| node.attr("TerritoryCode"))
+    {
+        scope.territory_codes = vec![code.to_string()];
+        scope.excluded_territory_codes.clear();
+    }
+    scope.is_default = node.attr_bool("IsDefault");
+    if let Some(lang) = node.attr("LanguageAndScriptCode") {
+        scope.language_and_script_code = Some(lang.to_string());
+    }
+    scope
+}
+
 /// `Genre` entries (`GenreText` is mandatory; a `Genre` without one is skipped).
-fn genres(parent: &XNode) -> Vec<Genre> {
+pub(crate) fn genres(parent: &XNode, block: Option<&TerritoryScope>) -> Vec<Genre> {
     parent
         .children_named("Genre")
         .filter_map(|g| {
@@ -289,14 +329,96 @@ fn genres(parent: &XNode) -> Vec<Genre> {
                 attributes: None,
                 extensions: None,
                 comments: None,
+                scope: scope_of(g, block),
             })
         })
         .collect()
 }
 
+/// `PLine` (`kind` = "P") or `CLine` (`kind` = "C") entries. `PLineText`/`CLineText` is
+/// mandatory; an entry without it is skipped. `Year` is an `xs:gYear`: a value that is not a
+/// plain year stays `None`.
+pub(crate) fn copyrights(
+    parent: &XNode,
+    kind: &str,
+    block: Option<&TerritoryScope>,
+) -> Vec<Copyright> {
+    let element = format!("{kind}Line");
+    let text = format!("{kind}LineText");
+    let company = format!("{kind}LineCompany");
+    parent
+        .children_named(&element)
+        .filter_map(|line| {
+            Some(Copyright {
+                text: line.child_value(&text)?,
+                year: line.child("Year").and_then(XNode::parsed),
+                owner: line.child_value(&company),
+                scope: scope_of(line, block),
+            })
+        })
+        .collect()
+}
+
+/// `ParentalWarningType` entries with their attributes.
+pub(crate) fn parental_warnings(
+    parent: &XNode,
+    block: Option<&TerritoryScope>,
+) -> Vec<ParentalWarning> {
+    parent
+        .children_named("ParentalWarningType")
+        .filter_map(|w| {
+            Some(ParentalWarning {
+                value: w.value()?,
+                namespace: w.attr("Namespace").map(str::to_string),
+                user_defined_value: w.attr("UserDefinedValue").map(str::to_string),
+                scope: scope_of(w, block),
+            })
+        })
+        .collect()
+}
+
+/// Date elements named `name` (`ddex_IsoDate`: `YYYY`, `YYYY-MM` or `YYYY-MM-DD`). The text
+/// is kept as written; `event_date` is set only for a full date (midnight UTC).
+pub(crate) fn events(
+    parent: &XNode,
+    name: &str,
+    block: Option<&TerritoryScope>,
+) -> Vec<ReleaseEvent> {
+    parent
+        .children_named(name)
+        .filter_map(|d| {
+            let date = d.value()?;
+            let scope = scope_of(d, block);
+            Some(ReleaseEvent {
+                release_event_type: name.to_string(),
+                event_date: full_date(&date),
+                territory: (scope.territory_codes.len() == 1)
+                    .then(|| scope.territory_codes[0].clone()),
+                date: Some(date),
+                is_approximate: d.attr_bool("IsApproximate"),
+                scope,
+                extensions: None,
+                comments: None,
+            })
+        })
+        .collect()
+}
+
+/// A full `YYYY-MM-DD` date (surrounding whitespace collapsed, as for any `xs:` typed value)
+/// at midnight UTC; `None` for partial or invalid dates.
+pub(crate) fn full_date(text: &str) -> Option<chrono::DateTime<chrono::Utc>> {
+    chrono::NaiveDate::parse_from_str(text.trim(), "%Y-%m-%d")
+        .ok()
+        .and_then(|d| d.and_hms_opt(0, 0, 0))
+        .map(|dt| dt.and_utc())
+}
+
 /// Text values of the direct children named `name`, in document order.
 fn values(parent: &XNode, name: &str) -> Vec<String> {
-    parent.children_named(name).filter_map(XNode::value).collect()
+    parent
+        .children_named(name)
+        .filter_map(XNode::value)
+        .collect()
 }
 
 fn to_localized(texts: &[DisplayText]) -> Vec<LocalizedString> {
@@ -332,11 +454,11 @@ pub(crate) fn release(node: &XNode, version: ERNVersion) -> Release {
             "Compilation" => ReleaseType::Compilation,
             _ => ReleaseType::Other(t),
         }),
-        genre: genres(node),
+        genre: genres(node, None),
         release_resource_reference_list: Vec::new(),
         display_artist: display_artists(node),
         party_list: Vec::new(),
-        release_date: Vec::new(),
+        release_date: events(node, "ReleaseDate", None),
         territory_code: Vec::new(),
         excluded_territory_code: Vec::new(),
         display_title_text,
@@ -352,6 +474,11 @@ pub(crate) fn release(node: &XNode, version: ERNVersion) -> Release {
         attributes: None,
         extensions: None,
         comments: None,
+        c_line: copyrights(node, "C", None),
+        label_name: Vec::new(),
+        original_release_date: events(node, "OriginalReleaseDate", None),
+        p_line: copyrights(node, "P", None),
+        parental_warnings: parental_warnings(node, None),
     }
 }
 
@@ -369,7 +496,7 @@ pub(crate) fn track_release(node: &XNode) -> Option<TrackRelease> {
         release_resource_reference: node.child_value("ReleaseResourceReference")?,
         linked_release_resource_references: linked_references(node),
         release_label_reference: values(node, "ReleaseLabelReference"),
-        genre: genres(node),
+        genre: genres(node, None),
         is_main_release: node.attr_bool("IsMainRelease"),
     })
 }
@@ -460,6 +587,14 @@ pub(crate) fn resource(node: &XNode, resource_type: ResourceType, version: ERNVe
         }
     }
     let display_title_text = display_texts(node, "DisplayTitleText");
+    // P/C lines: on the resource (4.2, and 4.3 Image/Text/SheetMusic), or in the 4.3
+    // SoundRecordingEdition / VideoEdition.
+    let mut p_line = copyrights(node, "P", None);
+    let mut c_line = copyrights(node, "C", None);
+    for edition in node.children.iter().filter(|c| c.name.ends_with("Edition")) {
+        p_line.extend(copyrights(edition, "P", None));
+        c_line.extend(copyrights(edition, "C", None));
+    }
     Resource {
         // Same fallback as the 3.8.x path for the (schema-mandatory) reference.
         resource_reference: node
@@ -473,8 +608,8 @@ pub(crate) fn resource(node: &XNode, resource_type: ResourceType, version: ERNVe
             .and_then(|d| super::graph::parse_duration(&d).ok()),
         technical_details: Vec::new(),
         rights_controller: Vec::new(),
-        p_line: Vec::new(),
-        c_line: Vec::new(),
+        p_line,
+        c_line,
         extensions: None,
         display_title_text,
         display_title: display_titles(node),
@@ -486,5 +621,8 @@ pub(crate) fn resource(node: &XNode, resource_type: ResourceType, version: ERNVe
             .and_then(|t| t.attr("UserDefinedValue"))
             .map(str::to_string),
         parental_warning_type: values(node, "ParentalWarningType"),
+        genre: Vec::new(),
+        label_name: Vec::new(),
+        parental_warnings: parental_warnings(node, None),
     }
 }

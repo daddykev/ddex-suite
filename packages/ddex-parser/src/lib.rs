@@ -220,6 +220,7 @@ impl DDEXParser {
                 total_duration: 0,
             },
             extensions: None,
+            message_control_type: None,
         };
 
         // Create minimal graph message (placeholder)

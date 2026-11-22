@@ -5,7 +5,8 @@ use crate::parser::namespace_detector::NamespaceContext;
 use crate::parser::xml_validator::XmlValidator;
 use crate::transform::ern4;
 use ddex_core::models::graph::{
-    ERNMessage, MessageHeader, MessageRecipient, MessageSender, MessageType, Release,
+    ERNMessage, MessageControlType, MessageHeader, MessageRecipient, MessageSender, MessageType,
+    Release,
 };
 use ddex_core::models::versions::ERNVersion;
 use quick_xml::events::Event;
@@ -285,6 +286,7 @@ impl GraphBuilder {
 
         let mut message_id = format!("MSG_{:?}", self.version); // fallback
         let mut message_thread_id: Option<String> = None;
+        let mut message_control_type: Option<String> = None;
         let mut message_created_date_time = Utc::now();
         let mut sender_party_names = Vec::new();
         let mut recipient_party_names = Vec::new();
@@ -306,6 +308,7 @@ impl GraphBuilder {
                     b"MessageHeader" => in_message_header = true,
                     b"MessageId" if in_message_header => current_text.clear(),
                     b"MessageThreadId" if in_message_header => current_text.clear(),
+                    b"MessageControlType" if in_message_header => current_text.clear(),
                     b"MessageCreatedDateTime" if in_message_header => current_text.clear(),
                     b"MessageSender" if in_message_header => in_message_sender = true,
                     b"MessageRecipient" if in_message_header => in_message_recipient = true,
@@ -340,6 +343,10 @@ impl GraphBuilder {
                             if !current_text.trim().is_empty() {
                                 message_id = current_text.trim().to_string();
                             }
+                            current_text.clear();
+                        }
+                        b"MessageControlType" if in_message_header => {
+                            message_control_type = Some(current_text.clone());
                             current_text.clear();
                         }
                         b"MessageThreadId" if in_message_header => {
@@ -450,7 +457,11 @@ impl GraphBuilder {
                 attributes: None,
                 comments: None,
             },
-            message_control_type: None,
+            message_control_type: message_control_type.map(|t| match t.as_str() {
+                "LiveMessage" => MessageControlType::LiveMessage,
+                "TestMessage" => MessageControlType::TestMessage,
+                _ => MessageControlType::Other(t),
+            }),
             message_thread_id,
             extensions: None,
             attributes: None,
@@ -723,6 +734,11 @@ impl GraphBuilder {
             release_type_user_defined_value: None,
             parental_warning_type: Vec::new(),
             release_label_reference: Vec::new(),
+            c_line: Vec::new(),
+            label_name: Vec::new(),
+            original_release_date: Vec::new(),
+            p_line: Vec::new(),
+            parental_warnings: Vec::new(),
         };
 
         Ok(release)
@@ -924,6 +940,9 @@ impl GraphBuilder {
             type_value: None,
             type_user_defined_value: None,
             parental_warning_type: Vec::new(),
+            genre: Vec::new(),
+            label_name: Vec::new(),
+            parental_warnings: Vec::new(),
         };
 
         Ok(resource)
@@ -954,6 +973,7 @@ impl GraphBuilder {
             commercial_model_types: Vec<CommercialModelType>,
             validity_period: Option<ValidityPeriod>,
             start_date: Option<DateTime<Utc>>,
+            end_date: Option<DateTime<Utc>>,
             seen: bool,
         }
 
@@ -965,7 +985,7 @@ impl GraphBuilder {
                     deal_terms: DealTerms {
                         validity_period: self.validity_period,
                         start_date: self.start_date,
-                        end_date: None,
+                        end_date: self.end_date,
                         territory_code: self.territory_codes,
                         excluded_territory_code: Vec::new(),
                         distribution_channel: Vec::new(),
@@ -1001,6 +1021,7 @@ impl GraphBuilder {
         let mut in_commercial_model_type = false;
         let mut in_validity_period = false;
         let mut in_start_date = false;
+        let mut in_end_date = false;
 
         let mut buf = Vec::new();
         let mut depth = 1;
@@ -1050,6 +1071,10 @@ impl GraphBuilder {
                                     in_start_date = true;
                                     current_text.clear();
                                 }
+                                b"EndDate" if in_validity_period => {
+                                    in_end_date = true;
+                                    current_text.clear();
+                                }
                                 _ => {}
                             }
                         }
@@ -1060,6 +1085,7 @@ impl GraphBuilder {
                                 || in_use_type
                                 || in_commercial_model_type
                                 || in_start_date
+                                || in_end_date
                             {
                                 current_text.push_str(&e.unescape().unwrap_or_default());
                             }
@@ -1137,23 +1163,22 @@ impl GraphBuilder {
                                 b"ValidityPeriod" if in_validity_period => {
                                     current.validity_period = Some(ValidityPeriod {
                                         start_date: current.start_date,
-                                        end_date: None, // Could be extended to parse EndDate if needed
+                                        end_date: current.end_date,
                                     });
                                     in_validity_period = false;
                                 }
                                 b"StartDate" if in_start_date => {
-                                    let text = current_text.trim();
-                                    if let Ok(parsed_date) = DateTime::parse_from_rfc3339(text) {
-                                        current.start_date = Some(parsed_date.with_timezone(&Utc));
-                                    } else if let Ok(date) =
-                                        chrono::NaiveDate::parse_from_str(text, "%Y-%m-%d")
-                                    {
-                                        // xs:date (the 4.x StartDate type): midnight UTC
-                                        current.start_date = date
-                                            .and_hms_opt(0, 0, 0)
-                                            .map(|dt| dt.and_utc());
+                                    if let Some(date) = deal_date(&current_text) {
+                                        current.start_date = Some(date);
                                     }
                                     in_start_date = false;
+                                    current_text.clear();
+                                }
+                                b"EndDate" if in_end_date => {
+                                    if let Some(date) = deal_date(&current_text) {
+                                        current.end_date = Some(date);
+                                    }
+                                    in_end_date = false;
                                     current_text.clear();
                                 }
                                 _ => {}
@@ -1183,6 +1208,16 @@ impl GraphBuilder {
             .map(|acc| acc.into_deal(&release_refs))
             .collect())
     }
+}
+
+/// A deal `StartDate` / `EndDate`: an RFC 3339 date-time, or a full `YYYY-MM-DD` date at
+/// midnight UTC. Partial dates (`YYYY`, `YYYY-MM`) are not completed: `None`.
+fn deal_date(text: &str) -> Option<chrono::DateTime<chrono::Utc>> {
+    let text = text.trim();
+    chrono::DateTime::parse_from_rfc3339(text)
+        .map(|d| d.with_timezone(&chrono::Utc))
+        .ok()
+        .or_else(|| ern4::full_date(text))
 }
 
 // Helper function to parse duration strings

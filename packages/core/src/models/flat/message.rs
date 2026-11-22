@@ -49,6 +49,9 @@ pub struct FlattenedMessage {
     pub parties: IndexMap<String, Party>,
     pub version: String,
     pub profile: Option<String>,
+    /// `MessageHeader/MessageControlType` as written.
+    #[serde(default)]
+    pub message_control_type: Option<String>,
     pub stats: MessageStats,
     /// Extensions for flattened message
     pub extensions: Option<Extensions>,

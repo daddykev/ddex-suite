@@ -36,6 +36,8 @@ pub enum MessageType {
 pub enum MessageControlType {
     LiveMessage,
     TestMessage,
+    /// Any other value, kept verbatim (the AVS lists only the two above).
+    Other(String),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

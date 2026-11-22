@@ -1,7 +1,7 @@
 // core/src/models/graph/resource.rs
 //! Resource types
 
-use super::{Artist, DisplayText};
+use super::{Artist, DisplayText, Genre, LabelName, ParentalWarning};
 use crate::models::{
     common::{Copyright, Identifier, LocalizedString},
     Extensions,
@@ -43,6 +43,15 @@ pub struct Resource {
     /// ERN 4.x `ParentalWarningType` values, in document order (empty for 3.8.x).
     #[serde(default)]
     pub parental_warning_type: Vec<String>,
+    /// `ParentalWarningType` entries with their attributes / territory scope.
+    #[serde(default)]
+    pub parental_warnings: Vec<ParentalWarning>,
+    /// 3.8.x `...DetailsByTerritory/Genre` entries (4.x resources carry no genre).
+    #[serde(default)]
+    pub genre: Vec<Genre>,
+    /// 3.8.x `...DetailsByTerritory/LabelName` entries.
+    #[serde(default)]
+    pub label_name: Vec<LabelName>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

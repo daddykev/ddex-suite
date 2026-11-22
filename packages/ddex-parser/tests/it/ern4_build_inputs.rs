@@ -40,7 +40,11 @@ fn release_genre_parental_warning_and_label_reference() {
         let release = &g.releases[0];
         assert_eq!(release.genre.len(), 1, "{dir}");
         assert_eq!(release.genre[0].genre_text, "J-Pop", "{dir}");
-        assert_eq!(release.parental_warning_type, ["NoAdviceAvailable"], "{dir}");
+        assert_eq!(
+            release.parental_warning_type,
+            ["NoAdviceAvailable"],
+            "{dir}"
+        );
         assert_eq!(release.release_label_reference, ["PEMI"], "{dir}");
         // The label reference resolves to a PartyList party with a name
         let label = g
@@ -72,7 +76,10 @@ fn track_release_genre() {
     assert_eq!(tr.release_reference, "R1");
     assert_eq!(tr.release_label_reference, ["PEMI"]);
     assert_eq!(
-        tr.genre.iter().map(|g| g.genre_text.as_str()).collect::<Vec<_>>(),
+        tr.genre
+            .iter()
+            .map(|g| g.genre_text.as_str())
+            .collect::<Vec<_>>(),
         ["J-Pop"]
     );
 }
@@ -80,7 +87,10 @@ fn track_release_genre() {
 #[test]
 fn root_language_and_avs_version() {
     let g = graph(&sample_text("Samples43", "1 Audio.xml"));
-    assert_eq!(root_attr(&g, "LanguageAndScriptCode").as_deref(), Some("en"));
+    assert_eq!(
+        root_attr(&g, "LanguageAndScriptCode").as_deref(),
+        Some("en")
+    );
     assert_eq!(root_attr(&g, "AvsVersionId").as_deref(), Some("3"));
     // Namespace declarations are not attributes
     assert_eq!(root_attr(&g, "xmlns:ern"), None);
@@ -120,9 +130,8 @@ fn resource_proprietary_ids() {
         .filter(|id| matches!(id.id_type, IdentifierType::Proprietary))
         .collect();
     assert!(
-        ids.iter()
-            .any(|id| id.value == "12UMGIM13040"
-                && id.namespace.as_deref() == Some("PADPIDA2012031302R")),
+        ids.iter().any(|id| id.value == "12UMGIM13040"
+            && id.namespace.as_deref() == Some("PADPIDA2012031302R")),
         "{ids:?}"
     );
 }

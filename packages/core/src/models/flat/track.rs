@@ -1,6 +1,7 @@
 // core/src/models/flat/track.rs
 //! Parsed track types
 
+use crate::models::common::Copyright;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
@@ -41,6 +42,27 @@ pub struct ParsedTrack {
     /// (the release's top-level group is not included). Empty for 3.8.x.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub group_path: Vec<TrackGroup>,
+    /// The resource's default genre (3.8.x; 4.x resources carry none).
+    #[serde(default)]
+    pub genre: Option<String>,
+    #[serde(default)]
+    pub sub_genre: Option<String>,
+    /// The resource's default `ParentalWarningType`.
+    #[serde(default)]
+    pub parental_warning: Option<String>,
+    /// The resource's default P line / C line.
+    #[serde(default)]
+    pub p_line: Option<Copyright>,
+    #[serde(default)]
+    pub c_line: Option<Copyright>,
+    /// The resource's default label name (3.8.x).
+    #[serde(default)]
+    pub label_name: Option<String>,
+    /// ERN 4.x: the default genre of this track's TrackRelease.
+    #[serde(default)]
+    pub track_release_genre: Option<String>,
+    #[serde(default)]
+    pub track_release_sub_genre: Option<String>,
 }
 
 /// One nested `ResourceGroup` on a track's `group_path`.
@@ -70,6 +92,22 @@ pub struct ParsedResource {
     pub title: Option<String>,
     pub duration: Option<Duration>,
     pub technical_details: TechnicalInfo,
+    /// Default genre (3.8.x; 4.x resources carry none).
+    #[serde(default)]
+    pub genre: Option<String>,
+    #[serde(default)]
+    pub sub_genre: Option<String>,
+    /// Default `ParentalWarningType`.
+    #[serde(default)]
+    pub parental_warning: Option<String>,
+    /// Default P line / C line.
+    #[serde(default)]
+    pub p_line: Option<Copyright>,
+    #[serde(default)]
+    pub c_line: Option<Copyright>,
+    /// Default label name (3.8.x).
+    #[serde(default)]
+    pub label_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
