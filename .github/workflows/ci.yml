@@ -167,6 +167,64 @@ jobs:
       - name: Release smoke test (python; the release build runs it on each installed wheel)
         run: python scripts/release_smoke.py "examples/Samples43/1 Audio.xml"
 
+  docs-examples:
+    name: Website docs examples (Node, Python, Rust)
+    runs-on: ubuntu-latest
+    env:
+      SAMPLE: examples/Samples43/1 Audio.xml
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Build the Node packages and install them into an empty app
+        run: |
+          for pkg in ddex-parser ddex-builder; do
+            (cd "packages/$pkg/bindings/node" && npm install --no-audit --no-fund && npx napi build --platform --release)
+          done
+          mkdir -p "$RUNNER_TEMP/app" && cd "$RUNNER_TEMP/app" && npm init -y >/dev/null
+          npm install --no-audit --no-fund "$GITHUB_WORKSPACE/packages/ddex-parser/bindings/node" "$GITHUB_WORKSPACE/packages/ddex-builder/bindings/node"
+      # Every js / python / rust block in the docs, and the landing page's example files
+      # (src/examples). --strict fails on a code block whose tag the extractor would skip.
+      - name: Run the js examples
+        run: python scripts/readme_examples.py --lang js --strict --workdir "$RUNNER_TEMP/app" --sample "$SAMPLE" website/docs/*.md website/docs/*.mdx website/src/examples/*
+      - name: Build and install the Python packages
+        run: |
+          python -m pip install --upgrade pip maturin pandas
+          for pkg in ddex-parser ddex-builder; do
+            (cd "packages/$pkg/bindings/python" && maturin build --release --out "$RUNNER_TEMP/wheels")
+          done
+          python -m pip install "$RUNNER_TEMP"/wheels/*.whl
+      - name: Run the python examples
+        run: python scripts/readme_examples.py --lang python --strict --workdir "$RUNNER_TEMP/py" --sample "$SAMPLE" website/docs/*.md website/docs/*.mdx website/src/examples/*
+      - name: Compile and run the rust examples (a docs-examples crate on the workspace crates)
+        env:
+          # Share the workspace target directory, which rust-cache restores.
+          CARGO_TARGET_DIR: ${{ github.workspace }}/target
+        run: python scripts/readme_examples.py --lang rust --strict --repo . --workdir "$RUNNER_TEMP/docs-examples" --sample "$SAMPLE" website/docs/*.md website/docs/*.mdx website/src/examples/*
+
+  website:
+    name: Website build (broken links fail)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run build
+
   xsd:
     name: XSD validation of builder output
     runs-on: ubuntu-latest
