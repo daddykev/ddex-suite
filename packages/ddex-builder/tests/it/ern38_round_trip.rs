@@ -36,12 +36,12 @@ const EXPECTED_FAILURES: &[(&str, &str, &str)] = &[
     (
         "youtube/721620118165_",
         "requires an identifier in Release/ReleaseId (track release)",
-        "parser: the 3.8 path does not read ReleaseId/ProprietaryId, the only identifier of the TrackReleases",
+        "builder: ReleaseIdRequest has no ISRC; the TrackReleases' only identifier is ReleaseId/ISRC (parsed since 0.5.0)",
     ),
     (
         "youtube/USGCV1172318_",
         "requires an identifier in Release/ReleaseId (releases[0].release_ids)",
-        "parser: the 3.8 path does not read ReleaseId/ISRC (and ProprietaryId), the release's identifiers",
+        "builder: ReleaseIdRequest has no ISRC; the release's only identifier is ReleaseId/ISRC (parsed since 0.5.0)",
     ),
     (
         "youtube/QZ6RS1700001_music_video",
@@ -69,11 +69,6 @@ const EXPECTED_FAILURES: &[(&str, &str, &str)] = &[
         "fixtures/sound_recording_without_duration.xml",
         "requires SoundRecording/Duration (releases[0].tracks[0].duration)",
         "fixture: no ReleaseId, no Duration",
-    ),
-    (
-        "builder/multi-track album",
-        "requires an identifier in Release/ReleaseId (track release)",
-        "parser: the 3.8 path does not read ReleaseId/ProprietaryId, the only identifier of the TrackReleases",
     ),
 ];
 
@@ -370,8 +365,8 @@ fn compare(original: &FlattenedMessage, rebuilt: &FlattenedMessage) -> Vec<Strin
 // Test
 // ---------------------------------------------------------------------------
 
-/// `multi_track_album` with GRids instead of proprietary IDs on the track releases (the
-/// 3.8.x parser reads release GRids, not release ProprietaryIds).
+/// `multi_track_album` with GRids instead of proprietary IDs on the track releases (both
+/// identifier kinds must survive the 3.8.2 round trip).
 fn album_with_grid_track_releases(version: &str) -> BuildRequest {
     let mut r = multi_track_album(version);
     for (n, track) in r.releases[0].tracks.iter_mut().enumerate() {

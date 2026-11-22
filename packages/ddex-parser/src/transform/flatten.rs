@@ -115,6 +115,7 @@ impl Flattener {
                     tracks: Self::build_tracks(
                         &release.release_resource_reference_list,
                         resources,
+                        release.resource_group.as_ref(),
                     )?,
                     track_count: release.release_resource_reference_list.len(),
                     disc_count: Self::count_discs(&release.release_resource_reference_list),
@@ -362,7 +363,15 @@ impl Flattener {
     fn build_tracks(
         refs: &[ReleaseResourceReference],
         resources: &[Resource],
+        resource_group: Option<&ResourceGroup>,
     ) -> Result<Vec<ParsedTrack>> {
+        // ERN 3.8.x: item SequenceNumber and enclosing groups from the ResourceGroup tree
+        // (first occurrence of each reference). 3.8.2 groups carry no ResourceGroupType, so
+        // no disc number is derived from them.
+        let mut layout: IndexMap<&str, (Option<i32>, Vec<TrackGroup>)> = IndexMap::new();
+        if let Some(group) = resource_group {
+            group_layout(group, &mut Vec::new(), &mut layout);
+        }
         refs.iter()
             .map(|rref| {
                 let resource = resources
@@ -406,13 +415,43 @@ impl Flattener {
                     }),
                     iswc: None,
                     position: idx + 1,
-                    track_number: rref.track_number,
+                    track_number: rref.track_number.or_else(|| {
+                        layout
+                            .get(rref.resource_reference.as_str())
+                            .and_then(|(n, _)| *n)
+                    }),
                     disc_number: rref.disc_number,
                     side: rref.side.clone(),
                     title,
                     subtitle: None,
-                    display_artist: None,
-                    artists: Vec::new(),
+                    display_artist: resource.and_then(|r| {
+                        DisplayText::pick_default(&r.display_artist_name)
+                            .map(|t| t.text.clone())
+                            .or_else(|| {
+                                let names: Vec<&str> = r
+                                    .display_artist
+                                    .iter()
+                                    .filter_map(|a| a.display_artist_name.first())
+                                    .map(|n| n.text.as_str())
+                                    .collect();
+                                (!names.is_empty()).then(|| names.join(", "))
+                            })
+                    }),
+                    // Artists with both a name and a role (nothing is filled in).
+                    artists: resource
+                        .map(|r| {
+                            r.display_artist
+                                .iter()
+                                .filter_map(|a| {
+                                    Some(ArtistInfo {
+                                        name: a.display_artist_name.first()?.text.clone(),
+                                        role: a.artist_role.first()?.clone(),
+                                        party_id: a.party_reference.clone(),
+                                    })
+                                })
+                                .collect()
+                        })
+                        .unwrap_or_default(),
                     duration,
                     duration_formatted,
                     file_format: None,
@@ -424,7 +463,10 @@ impl Flattener {
                     is_instrumental: false,
                     track_release_reference: None,
                     track_release_id: None,
-                    group_path: Vec::new(),
+                    group_path: layout
+                        .get(rref.resource_reference.as_str())
+                        .map(|(_, path)| path.clone())
+                        .unwrap_or_default(),
                     c_line: details.c_line,
                     genre: details.genre,
                     label_name: details.label_name,
@@ -876,6 +918,27 @@ impl Flattener {
 // ---------------------------------------------------------------------------
 // Territorial values: defaults and full lists
 // ---------------------------------------------------------------------------
+
+/// Reference -> (item SequenceNumber, enclosing nested groups) for a 3.8.x ResourceGroup
+/// tree; the top-level group is not part of the path (as for 4.x).
+fn group_layout<'a>(
+    group: &'a ResourceGroup,
+    path: &mut Vec<TrackGroup>,
+    out: &mut IndexMap<&'a str, (Option<i32>, Vec<TrackGroup>)>,
+) {
+    for sub in &group.resource_groups {
+        path.push(TrackGroup {
+            group_type: sub.resource_group_type.clone(),
+            sequence_number: sub.sequence_number,
+        });
+        group_layout(sub, path, out);
+        path.pop();
+    }
+    for item in &group.content_items {
+        out.entry(item.release_resource_reference.as_str())
+            .or_insert_with(|| (item.sequence_number, path.clone()));
+    }
+}
 
 fn genre_info(g: &Genre) -> GenreInfo {
     GenreInfo {

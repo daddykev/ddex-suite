@@ -6,7 +6,7 @@
 //! value, e.g. 4.3 `SoundRecordingEdition/ResourceId/ISRC`). Only values present in the XML
 //! are recorded; nothing is synthesized.
 //!
-//! ERN 3.8.x documents never reach this module.
+//! The XML helpers and territorial-value mappers are shared with the 3.8.x reader (`ern38`).
 
 use crate::error::ParseError;
 use crate::parser::xml_validator::XmlValidator;
@@ -224,7 +224,7 @@ fn display_artists(parent: &XNode) -> Vec<Artist> {
 }
 
 /// Identifiers in a `ReleaseId` element.
-fn release_identifiers(release_id: &XNode) -> Vec<Identifier> {
+pub(crate) fn release_identifiers(release_id: &XNode) -> Vec<Identifier> {
     release_id
         .children
         .iter()
@@ -263,7 +263,7 @@ fn linked_references(parent: &XNode) -> Vec<LinkedReleaseResourceReference> {
         .collect()
 }
 
-fn resource_group(node: &XNode) -> ResourceGroup {
+pub(crate) fn resource_group(node: &XNode) -> ResourceGroup {
     ResourceGroup {
         resource_group_type: node.attr("ResourceGroupType").map(str::to_string),
         sequence_number: node.child_i32("SequenceNumber"),
