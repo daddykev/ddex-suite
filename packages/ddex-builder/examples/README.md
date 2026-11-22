@@ -4,113 +4,29 @@ This directory contains comprehensive, real-world examples demonstrating how to 
 
 ## 📚 Available Examples
 
-### 🎵 [Generic Album Example](generic_album_example.rs)
-**Complete album release using generic preset**
-
-Learn how to create a multi-track album for broad distributor compatibility:
-- ERN 4.3 schema compliance
-- High-quality audio specifications (FLAC source)
-- Worldwide streaming licensing
-- Proper ISRC and UPC codes
-- Album artwork and metadata
+### 🎵 [Spotify Album Example](spotify_album_example.rs)
+**Multi-track album release built with `DDEXBuilder`**
 
 ```bash
-cargo run --example generic_album_example
+cargo run --example spotify_album_example
 ```
-
-**What you'll learn:**
-- Generic preset configuration
-- Album structure and track ordering
-- Audio quality requirements
-- Streaming deal configuration
-- Compliance validation
-
-### 🎬 [YouTube Video Example](youtube_video_example.rs)
-**Music video release for YouTube distribution**
-
-Demonstrates video content delivery with synchronized audio:
-- Video resource specifications
-- Audio synchronization metadata
-- YouTube-specific requirements
-- Content ID optimization
-- Multi-format delivery
-
-```bash
-cargo run --example youtube_video_example
-```
-
-**What you'll learn:**
-- Video DDEX message structure
-- Audio/video resource linking
-- YouTube platform requirements
-- Content protection metadata
-- Multi-format encoding specs
 
 ### 📡 [Streaming Catalog Example](streaming_catalog_example.rs)
-**Large-scale catalog delivery for streaming platforms**
+**Large-catalog delivery with `ddex_builder::streaming::StreamingBuilder`**
 
-Shows how to efficiently process large catalogs:
-- Batch processing techniques
-- Memory optimization
-- Progress tracking
-- Error recovery patterns
-- Performance monitoring
+Writes thousands of resources and releases straight to a file without holding
+the whole message in memory, with a progress callback and final statistics:
 
 ```bash
-cargo run --example streaming_catalog_example
+cargo run --example streaming_catalog_example -- 5000   # number of releases
 ```
 
-**What you'll learn:**
-- Batch processing patterns
-- Memory management for large catalogs
-- Progress reporting and monitoring
-- Error handling and recovery
-- Performance optimization techniques
-
-### 🔄 [Diff Comparison Example](diff_comparison_example.rs)
-**Version comparison and change detection**
-
-Demonstrates how to compare DDEX releases and detect changes:
-- XML diff generation
-- Metadata change detection
-- Version migration assistance
-- Release update workflows
-- Change impact analysis
+### 🔒 [Error Sanitization Demo](error_sanitization_demo.rs)
+**How build errors are sanitized for production vs development**
 
 ```bash
-cargo run --example diff_comparison_example
+cargo run --example error_sanitization_demo
 ```
-
-**What you'll learn:**
-- Release version comparison
-- Change detection algorithms
-- Migration workflow patterns
-- Update validation
-- Impact analysis reporting
-
-## 🏗️ Example Architecture
-
-Each example follows a consistent structure for easy learning:
-
-```text
-Example Structure
-├── Header Documentation     # What this example teaches
-├── Real-World Scenario      # Fictional but realistic use case
-├── Step-by-Step Process     # Detailed implementation
-├── Error Handling          # Production-ready error patterns
-├── Validation & Testing    # Compliance verification
-├── Output & Analysis       # Results and insights
-└── Next Steps             # How to extend the example
-```
-
-## 🎯 Learning Progression
-
-We recommend following the examples in this order:
-
-1. **Start with Generic Album** - Learn basic DDEX concepts
-2. **Explore YouTube Video** - Understand video content delivery  
-3. **Try Streaming Catalog** - Learn batch processing patterns
-4. **Finish with Diff Comparison** - Master version management
 
 ## 🚀 Running Examples
 
@@ -133,9 +49,9 @@ cargo run --example spotify_album_example
 cargo run --release --example spotify_album_example
 
 # Run all examples
-for example in spotify_album youtube_video streaming_catalog diff_comparison; do
+for example in spotify_album_example streaming_catalog_example error_sanitization_demo; do
     echo "Running $example..."
-    cargo run --example "${example}_example"
+    cargo run --example "$example"
 done
 ```
 
