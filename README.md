@@ -41,7 +41,7 @@ pip install ddex-parser ddex-builder
 Prebuilt binaries:
 
 - **npm**: macOS arm64 and x64, Linux x64 (glibc), Windows x64. Node.js 18 or newer.
-- **PyPI**: abi3 wheels for Python 3.9 or newer on Linux x86_64 and aarch64 (glibc
+- **PyPI**: abi3 wheels for Python 3.10 or newer on Linux x86_64 and aarch64 (glibc
   2.28+), Linux x86_64 (musl), macOS x86_64 and arm64, and Windows x64. Other platforms
   build from the source distribution, which needs a Rust toolchain.
 - **Rust**: 1.82 or newer.

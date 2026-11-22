@@ -20,7 +20,7 @@ doc = false
 ddex-builder = { path = "../..", features = ["ffi"] }
 ddex-parser = { path = "../../../ddex-parser" }
 ddex-core = { path = "../../../core" }
-pyo3 = { version = "0.24.1", features = ["extension-module", "abi3-py39"] }
+pyo3 = { version = "0.24.1", features = ["extension-module", "abi3-py310"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 pythonize = "0.24"

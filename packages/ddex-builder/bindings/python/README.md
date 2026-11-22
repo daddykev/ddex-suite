@@ -18,7 +18,7 @@ pip install ddex-builder
 pip install "ddex-builder[pandas]"   # for from_dataframe()
 ```
 
-Wheels (abi3, Python 3.9 or newer) are published for Linux x86_64 and aarch64 (glibc
+Wheels (abi3, Python 3.10 or newer) are published for Linux x86_64 and aarch64 (glibc
 2.28+), Linux x86_64 (musl), macOS x86_64 and arm64, and Windows x64. On other platforms
 pip builds from the source distribution, which needs a Rust toolchain. If the native
 extension cannot be loaded, `import ddex_builder` raises an `ImportError` that names the
