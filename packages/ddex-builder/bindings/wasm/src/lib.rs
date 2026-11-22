@@ -74,8 +74,11 @@ fn build_request(request: &JsValue) -> Result<ddex_builder::builder::BuildReques
     object
         .entry("releases")
         .or_insert_with(|| serde_json::json!([]));
-    object.entry("deals").or_insert_with(|| serde_json::json!([]));
-    serde_json::from_value(value).map_err(|e| JsError::new(&format!("Invalid build request: {}", e)))
+    object
+        .entry("deals")
+        .or_insert_with(|| serde_json::json!([]));
+    serde_json::from_value(value)
+        .map_err(|e| JsError::new(&format!("Invalid build request: {}", e)))
 }
 
 /// The package version.

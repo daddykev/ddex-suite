@@ -165,7 +165,11 @@ pub fn multi_track_album(version: &str) -> BuildRequest {
         vec![
             deal(&["R0"], "PayAsYouGoModel", "PermanentDownload"),
             deal(&["R0"], "SubscriptionModel", "OnDemandStream"),
-            deal(&["R1", "R2", "R3", "R4"], "PayAsYouGoModel", "PermanentDownload"),
+            deal(
+                &["R1", "R2", "R3", "R4"],
+                "PayAsYouGoModel",
+                "PermanentDownload",
+            ),
         ],
     )
 }
@@ -173,7 +177,10 @@ pub fn multi_track_album(version: &str) -> BuildRequest {
 /// Two discs (disc_number + sequence_number per track).
 pub fn multi_disc_album(version: &str) -> BuildRequest {
     let mut tracks = Vec::new();
-    for (n, (disc, seq)) in [(1, 1), (1, 2), (1, 3), (2, 1), (2, 2)].into_iter().enumerate() {
+    for (n, (disc, seq)) in [(1, 1), (1, 2), (1, 3), (2, 1), (2, 2)]
+        .into_iter()
+        .enumerate()
+    {
         tracks.push(TrackRequest {
             disc_number: Some(disc),
             sequence_number: Some(seq),
@@ -226,7 +233,10 @@ pub fn xsd_skipped() -> bool {
 fn ensure_xsd_tooling() -> &'static PathBuf {
     static SCHEMAS: OnceLock<PathBuf> = OnceLock::new();
     SCHEMAS.get_or_init(|| {
-        let ok = Command::new("xmllint").arg("--version").output().is_ok_and(|o| o.status.success());
+        let ok = Command::new("xmllint")
+            .arg("--version")
+            .output()
+            .is_ok_and(|o| o.status.success());
         assert!(
             ok,
             "xmllint not found. Install libxml2 (macOS: it ships with the system or `brew install \
@@ -235,7 +245,11 @@ fn ensure_xsd_tooling() -> &'static PathBuf {
         );
         let root = repo_root();
         let schemas = root.join("schemas");
-        let have = |v: &str| schemas.join(format!("ern/{v}/release-notification.xsd")).is_file();
+        let have = |v: &str| {
+            schemas
+                .join(format!("ern/{v}/release-notification.xsd"))
+                .is_file()
+        };
         let have_all = || have("382") && have("42") && have("43");
         if !have_all() {
             let script = root.join("scripts/fetch_ddex_schemas.sh");
@@ -263,7 +277,10 @@ pub fn validate_xsd(xml: &str, version: &str) -> Result<(), String> {
         return Ok(());
     }
     let schemas = ensure_xsd_tooling();
-    let xsd = schemas.join(format!("ern/{}/release-notification.xsd", version.replace('.', "")));
+    let xsd = schemas.join(format!(
+        "ern/{}/release-notification.xsd",
+        version.replace('.', "")
+    ));
     let mut file = tempfile::NamedTempFile::new().expect("temp file");
     std::io::Write::write_all(&mut file, xml.as_bytes()).expect("write temp file");
     let out = Command::new("xmllint")
@@ -294,7 +311,8 @@ pub fn assert_xsd_valid(xml: &str, version: &str, what: &str) {
 pub fn ern4_test_data(mut r: BuildRequest) -> BuildRequest {
     let is_43 = ddex_builder::builder::parse_target_version(&r.version)
         .is_ok_and(|v| v == ddex_core::models::versions::ERNVersion::V4_3);
-    r.language_and_script_code.get_or_insert_with(|| "en".to_string());
+    r.language_and_script_code
+        .get_or_insert_with(|| "en".to_string());
     if is_43 {
         r.avs_version_id.get_or_insert_with(|| "12".to_string());
     }
@@ -316,7 +334,9 @@ pub fn ern4_test_data(mut r: BuildRequest) -> BuildRequest {
         release
             .parental_warning_type
             .get_or_insert_with(|| "NotExplicit".to_string());
-        release.label.get_or_insert_with(|| "Test Label".to_string());
+        release
+            .label
+            .get_or_insert_with(|| "Test Label".to_string());
         for track in &mut release.tracks {
             track
                 .resource_type
@@ -337,8 +357,8 @@ use ddex_builder::builder::{ResourceGroupContentItemRequest, ResourceGroupReques
 use ddex_core::models::common::{Identifier, IdentifierType};
 use ddex_core::models::flat::ParsedERNMessage;
 use ddex_core::models::graph::{
-    Artist, CommercialModelType, DisplayText, ERNMessage, ReleaseType, ResourceGroup,
-    ResourceType, UseType,
+    Artist, CommercialModelType, DisplayText, ERNMessage, ReleaseType, ResourceGroup, ResourceType,
+    UseType,
 };
 
 pub fn iso_duration(seconds: u64) -> String {
@@ -464,20 +484,20 @@ pub fn request_from_parsed(parsed: &ParsedERNMessage, version: &str) -> BuildReq
     let graph = &parsed.graph;
     let flat = &parsed.flat;
     let header = &graph.message_header;
-    let party = |ids: &[Identifier], names: &[ddex_core::models::common::LocalizedString]| {
-        PartyRequest {
-            party_name: names
-                .first()
-                .map(|n| text(&n.text))
-                .unwrap_or_default(),
+    let party =
+        |ids: &[Identifier], names: &[ddex_core::models::common::LocalizedString]| PartyRequest {
+            party_name: names.first().map(|n| text(&n.text)).unwrap_or_default(),
             party_id: ids.first().map(|i| i.value.clone()),
             party_reference: None,
-        }
-    };
+        };
 
     let release = &graph.releases[0];
     let flat_release = &flat.releases[0];
-    let track_refs: Vec<String> = flat_release.tracks.iter().map(|t| t.track_id.clone()).collect();
+    let track_refs: Vec<String> = flat_release
+        .tracks
+        .iter()
+        .map(|t| t.track_id.clone())
+        .collect();
 
     let mut seen = Vec::new();
     let tracks = flat_release
@@ -516,7 +536,10 @@ pub fn request_from_parsed(parsed: &ParsedERNMessage, version: &str) -> BuildReq
                 resource_reference: Some(t.track_id.clone()),
                 isrc: t.isrc.clone().unwrap_or_default(),
                 title: t.title.clone().unwrap_or_default(),
-                duration: t.duration.map(|d| iso_duration(d.as_secs())).unwrap_or_default(),
+                duration: t
+                    .duration
+                    .map(|d| iso_duration(d.as_secs()))
+                    .unwrap_or_default(),
                 artist: t.display_artist.clone().unwrap_or_default(),
                 resource_kind: match resource.resource_type {
                     ResourceType::Video => ResourceKind::Video,
@@ -567,7 +590,10 @@ pub fn request_from_parsed(parsed: &ParsedERNMessage, version: &str) -> BuildReq
                     .map(commercial_model_name)
                     .unwrap_or_default(),
                 territory_code: d.deal_terms.territory_code.clone(),
-                start_date: d.deal_terms.start_date.map(|s| s.format("%Y-%m-%d").to_string()),
+                start_date: d
+                    .deal_terms
+                    .start_date
+                    .map(|s| s.format("%Y-%m-%d").to_string()),
                 end_date: None,
                 use_types: d.deal_terms.use_type.iter().map(use_type_name).collect(),
             },
@@ -583,7 +609,10 @@ pub fn request_from_parsed(parsed: &ParsedERNMessage, version: &str) -> BuildReq
     BuildRequest {
         header: MessageHeaderRequest {
             message_id: Some(header.message_id.clone()),
-            message_sender: party(&header.message_sender.party_id, &header.message_sender.party_name),
+            message_sender: party(
+                &header.message_sender.party_id,
+                &header.message_sender.party_name,
+            ),
             message_recipient: party(
                 &header.message_recipient.party_id,
                 &header.message_recipient.party_name,

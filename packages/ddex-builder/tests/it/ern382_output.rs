@@ -4,8 +4,8 @@
 //! official 3.8.2 XSD as well (`ern38_xsd`).
 
 use ddex_builder::builder::{
-    DealRequest, DealTerms, IdStrategy, LocalizedStringRequest, MessageHeaderRequest,
-    PartyRequest, ReleaseRequest, TrackRequest,
+    DealRequest, DealTerms, IdStrategy, LocalizedStringRequest, MessageHeaderRequest, PartyRequest,
+    ReleaseRequest, TrackRequest,
 };
 use ddex_builder::determinism::{CanonMode, DeterminismConfig};
 use ddex_builder::{BuildOptions, BuildRequest, DDEXBuilder};

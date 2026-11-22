@@ -116,7 +116,8 @@ fn streaming_writer_rejects_ern4_targets() {
             .start_message(&request(version).header, version)
             .expect_err("4.x must be rejected");
         assert!(
-            err.to_string().contains("not yet supported by the streaming writer"),
+            err.to_string()
+                .contains("not yet supported by the streaming writer"),
             "{version}: {err}"
         );
     }

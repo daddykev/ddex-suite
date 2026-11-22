@@ -1138,9 +1138,8 @@ impl DdexBuilder {
 pub fn batch_build(requests: Vec<Bound<'_, PyAny>>) -> PyResult<Vec<String>> {
     let mut results = Vec::new();
     for (i, item) in requests.into_iter().enumerate() {
-        let request = request_from_py(&item).map_err(|e| {
-            PyValueError::new_err(format!("batch request {}: {}", i, e))
-        })?;
+        let request = request_from_py(&item)
+            .map_err(|e| PyValueError::new_err(format!("batch request {}: {}", i, e)))?;
         let result = DDEXBuilder::new()
             .build(request, BuildOptions::default())
             .map_err(|e| {
@@ -1367,7 +1366,9 @@ fn request_from_json(mut value: serde_json::Value) -> PyResult<BuildRequest> {
     object
         .entry("releases")
         .or_insert_with(|| serde_json::json!([]));
-    object.entry("deals").or_insert_with(|| serde_json::json!([]));
+    object
+        .entry("deals")
+        .or_insert_with(|| serde_json::json!([]));
     serde_json::from_value(value)
         .map_err(|e| PyValueError::new_err(format!("Invalid build request: {}", e)))
 }
@@ -1422,10 +1423,12 @@ fn cell_u32(record: &Bound<'_, PyDict>, key: &str) -> PyResult<Option<u32>> {
 /// A release date: kept as given, or the date part of an RFC 3339 date-time (the parser's
 /// DataFrames carry date-times).
 fn date_cell(record: &Bound<'_, PyDict>, key: &str) -> PyResult<Option<String>> {
-    Ok(cell(record, key)?.map(|v| match chrono::DateTime::parse_from_rfc3339(&v) {
-        Ok(dt) => dt.format("%Y-%m-%d").to_string(),
-        Err(_) => v,
-    }))
+    Ok(
+        cell(record, key)?.map(|v| match chrono::DateTime::parse_from_rfc3339(&v) {
+            Ok(dt) => dt.format("%Y-%m-%d").to_string(),
+            Err(_) => v,
+        }),
+    )
 }
 
 /// A duration: kept as given (ISO 8601), or numeric seconds (the parser's DataFrames)
@@ -1462,8 +1465,7 @@ fn release_from_row(record: &Bound<'_, PyDict>, prefix: &str) -> PyResult<Releas
             .unwrap_or_default(),
         artist: cell(record, &col("artist"))?.unwrap_or_default(),
         label: cell(record, &col("label"))?,
-        release_date: date_cell(record, &col("date"))?
-            .or(date_cell(record, "release_date")?),
+        release_date: date_cell(record, &col("date"))?.or(date_cell(record, "release_date")?),
         upc: cell(record, &col("upc"))?.or(cell(record, "upc")?),
         release_type: cell(record, "release_type")?.map(Into::into),
         genre: cell(record, &col("genre"))?,

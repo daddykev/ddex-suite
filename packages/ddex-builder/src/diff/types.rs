@@ -189,33 +189,23 @@ impl DiffPath {
         segments.push(PathSegment::Index(index));
         Self { segments }
     }
-
-    /// Get the path as a slash-separated string
-    pub fn to_string(&self) -> String {
-        if self.segments.is_empty() {
-            return "/".to_string();
-        }
-
-        let mut path = String::new();
-        for segment in &self.segments {
-            path.push('/');
-            match segment {
-                PathSegment::Element(name) => path.push_str(name),
-                PathSegment::Attribute(name) => {
-                    path.push('@');
-                    path.push_str(name);
-                }
-                PathSegment::Text => path.push_str("#text"),
-                PathSegment::Index(idx) => path.push_str(&format!("[{}]", idx)),
-            }
-        }
-        path
-    }
 }
 
+/// The path as a slash-separated string (`/Release/Title/@lang`, `/` for the root).
 impl fmt::Display for DiffPath {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.to_string())
+        if self.segments.is_empty() {
+            return f.write_str("/");
+        }
+        for segment in &self.segments {
+            match segment {
+                PathSegment::Element(name) => write!(f, "/{}", name)?,
+                PathSegment::Attribute(name) => write!(f, "/@{}", name)?,
+                PathSegment::Text => f.write_str("/#text")?,
+                PathSegment::Index(idx) => write!(f, "/[{}]", idx)?,
+            }
+        }
+        Ok(())
     }
 }
 

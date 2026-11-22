@@ -64,16 +64,32 @@ fn parser_reads_back_what_the_builder_wrote() {
 
         assert_eq!(flat.message_id, "RT-MSG-001", "{version}");
         assert_eq!(flat.sender.id, "PADPIDA0000000001", "{version}");
-        assert_eq!(flat.sender.name.as_deref(), Some("Round Trip Label"), "{version}");
+        assert_eq!(
+            flat.sender.name.as_deref(),
+            Some("Round Trip Label"),
+            "{version}"
+        );
         assert_eq!(flat.recipient.id, "PADPIDA0000000002", "{version}");
         assert_eq!(flat.releases.len(), 1, "{version}");
 
         let release = &flat.releases[0];
-        assert_eq!(release.default_title.as_deref(), Some("Round Trip Album"), "{version}");
-        assert_eq!(release.display_artist.as_deref(), Some("Round Trip Artist"), "{version}");
+        assert_eq!(
+            release.default_title.as_deref(),
+            Some("Round Trip Album"),
+            "{version}"
+        );
+        assert_eq!(
+            release.display_artist.as_deref(),
+            Some("Round Trip Artist"),
+            "{version}"
+        );
         assert_eq!(release.release_type, "Album", "{version}");
         assert_eq!(release.genre.as_deref(), Some("Pop"), "{version}");
-        assert_eq!(release.identifiers.upc.as_deref(), Some("123456789012"), "{version}");
+        assert_eq!(
+            release.identifiers.upc.as_deref(),
+            Some("123456789012"),
+            "{version}"
+        );
 
         let tracks: Vec<_> = release
             .tracks

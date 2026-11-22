@@ -9,8 +9,6 @@ use std::io::Cursor;
 use ddex_core::models::flat::{ParsedDeal, ParsedERNMessage, ParsedRelease, ParsedResource};
 use ddex_core::models::versions::ERNVersion;
 use ddex_parser::{error::ParseError, DDEXParser as RustDDEXParser};
-use indexmap;
-use serde_json;
 
 /// Convert a JavaScript string to a BufRead + Seek cursor for the parser
 fn string_to_cursor(xml: String) -> Cursor<Vec<u8>> {
@@ -426,27 +424,23 @@ fn convert_parsed_message(
     };
 
     // Generate fidelity info based on options
-    let fidelity_info = if let Some(opts) = options {
-        Some(FidelityInfo {
-            fidelity_level: opts
-                .fidelity_level
-                .clone()
-                .unwrap_or_else(|| "balanced".to_string()),
-            canonicalization_algorithm: opts
-                .canonicalization
-                .clone()
-                .unwrap_or_else(|| "db_c14n".to_string()),
-            comments_preserved: opts.preserve_comments.unwrap_or(false),
-            extensions_preserved: opts.preserve_extensions.unwrap_or(true),
-            processing_instructions_preserved: opts
-                .preserve_processing_instructions
-                .unwrap_or(false),
-            attribute_order_preserved: opts.preserve_attribute_order.unwrap_or(true),
-            namespace_prefixes_preserved: opts.preserve_namespace_prefixes.unwrap_or(true),
-        })
-    } else {
-        None
-    };
+    let fidelity_info = options.map(|opts| FidelityInfo {
+        fidelity_level: opts
+            .fidelity_level
+            .clone()
+            .unwrap_or_else(|| "balanced".to_string()),
+        canonicalization_algorithm: opts
+            .canonicalization
+            .clone()
+            .unwrap_or_else(|| "db_c14n".to_string()),
+        comments_preserved: opts.preserve_comments.unwrap_or(false),
+        extensions_preserved: opts.preserve_extensions.unwrap_or(true),
+        processing_instructions_preserved: opts
+            .preserve_processing_instructions
+            .unwrap_or(false),
+        attribute_order_preserved: opts.preserve_attribute_order.unwrap_or(true),
+        namespace_prefixes_preserved: opts.preserve_namespace_prefixes.unwrap_or(true),
+    });
 
     ParsedMessage {
         message_id: flat.message_id.clone(),
@@ -669,6 +663,12 @@ pub struct DdexParser {
     inner: RustDDEXParser,
 }
 
+impl Default for DdexParser {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[napi]
 impl DdexParser {
     #[napi(constructor)]
@@ -778,6 +778,10 @@ impl DdexParser {
         }
     }
 
+    /// # Safety
+    ///
+    /// napi-rs requires `unsafe` for an async method taking `&mut self`: the caller (JS)
+    /// must not call methods of the same parser concurrently with this one.
     #[napi]
     pub async unsafe fn parse(
         &mut self,

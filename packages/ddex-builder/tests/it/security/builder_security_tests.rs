@@ -152,8 +152,14 @@ fn test_illegal_xml_chars_never_reach_builder_output() {
         let text = format!("Test{}Song", c);
         match DDEXBuilder::new().build(build_request_with_metadata(&text), Default::default()) {
             Err(ddex_builder::BuildError::InvalidFormat { field, message }) => {
-                assert!(field.starts_with("header.") || field.starts_with("releases["), "{field}");
-                assert!(message.contains(&format!("U+{:04X}", c as u32)), "{message}");
+                assert!(
+                    field.starts_with("header.") || field.starts_with("releases["),
+                    "{field}"
+                );
+                assert!(
+                    message.contains(&format!("U+{:04X}", c as u32)),
+                    "{message}"
+                );
             }
             Err(e) => panic!("unexpected error for U+{:04X}: {e}", c as u32),
             Ok(_) => accepted.push(c),
@@ -183,8 +189,14 @@ fn script_metadata_is_escaped_in_builder_output() {
 /// `xml` (builder output for script metadata) holds no raw script/img element and does
 /// hold the escaped text.
 fn assert_script_escaped(xml: &str) {
-    assert!(!xml.contains("<script"), "raw <script> element in builder output:\n{xml}");
-    assert!(!xml.contains("<img"), "raw <img> element in builder output:\n{xml}");
+    assert!(
+        !xml.contains("<script"),
+        "raw <script> element in builder output:\n{xml}"
+    );
+    assert!(
+        !xml.contains("<img"),
+        "raw <img> element in builder output:\n{xml}"
+    );
     assert!(
         xml.contains("&lt;script&gt;") || xml.contains("&lt;img "),
         "escaped script text missing from builder output:\n{xml}"

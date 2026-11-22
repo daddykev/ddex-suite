@@ -57,8 +57,8 @@ pub(crate) fn is_illegal_xml_char(c: char) -> bool {
 pub(crate) fn check_request_chars(
     request: &crate::builder::BuildRequest,
 ) -> Result<(), BuildError> {
-    let value = serde_json::to_value(request)
-        .map_err(|e| BuildError::Serialization(e.to_string()))?;
+    let value =
+        serde_json::to_value(request).map_err(|e| BuildError::Serialization(e.to_string()))?;
     check_value(&value, &mut String::new())
 }
 
@@ -128,10 +128,22 @@ mod tests {
 
     #[test]
     fn illegal_characters() {
-        for c in ['\u{0}', '\u{1}', '\u{8}', '\u{B}', '\u{C}', '\u{E}', '\u{1F}', '\u{FFFE}', '\u{FFFF}'] {
+        for c in [
+            '\u{0}', '\u{1}', '\u{8}', '\u{B}', '\u{C}', '\u{E}', '\u{1F}', '\u{FFFE}', '\u{FFFF}',
+        ] {
             assert!(is_illegal_xml_char(c), "{:?}", c);
         }
-        for c in ['\t', '\n', '\r', ' ', '\u{7F}', '\u{85}', '\u{FFFD}', '\u{10FFFF}', '🎵'] {
+        for c in [
+            '\t',
+            '\n',
+            '\r',
+            ' ',
+            '\u{7F}',
+            '\u{85}',
+            '\u{FFFD}',
+            '\u{10FFFF}',
+            '🎵',
+        ] {
             assert!(!is_illegal_xml_char(c), "{:?}", c);
         }
     }

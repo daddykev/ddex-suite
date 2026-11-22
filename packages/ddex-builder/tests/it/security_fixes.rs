@@ -427,7 +427,6 @@ mod security_integration_tests {
 
         println!("✅ Security edge cases test passed");
     }
-
 }
 
 /// Integration test for memory safety and resource cleanup

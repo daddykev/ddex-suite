@@ -59,7 +59,11 @@ fn version_specific_resource_id_placement() {
 #[test]
 fn multi_disc_tracks_are_grouped_per_disc() {
     let xml = build(multi_disc_album("4.3"));
-    assert_eq!(xml.matches("ResourceGroupType=\"Component\"").count(), 2, "{xml}");
+    assert_eq!(
+        xml.matches("ResourceGroupType=\"Component\"").count(),
+        2,
+        "{xml}"
+    );
 }
 
 #[test]
@@ -70,7 +74,10 @@ fn party_references_follow_input_order() {
     let artist = xml[p1..].find("Example Artist").unwrap();
     let label = xml[p1..].find("Example Records").unwrap();
     assert!(artist < label, "{xml}");
-    assert!(!xml.contains("<PartyReference>P3</PartyReference>"), "{xml}");
+    assert!(
+        !xml.contains("<PartyReference>P3</PartyReference>"),
+        "{xml}"
+    );
     // Same request, same bytes
     assert_eq!(xml, build(multi_track_album("4.3")));
 }

@@ -487,7 +487,8 @@ impl DB_C14N {
                             // Mixed content (not produced by the builder): kept exactly
                             let child_indent = "  ".repeat(indent_level + 1);
                             output.extend_from_slice(child_indent.as_bytes());
-                            output.extend_from_slice(crate::xml_escape::escape_text(text).as_bytes());
+                            output
+                                .extend_from_slice(crate::xml_escape::escape_text(text).as_bytes());
                             output.push(b'\n');
                         }
                         XmlNode::Comment(comment) => {
