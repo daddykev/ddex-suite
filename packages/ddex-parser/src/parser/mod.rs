@@ -24,7 +24,9 @@ use std::io::BufRead;
 /// Main parser options
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParseOptions {
+    /// `Dom` (default, complete) or the experimental, opt-in `Stream` path.
     pub mode: mode::ParseMode,
+    /// Unused since 0.5.0: `Auto` no longer switches to `Stream` above a size threshold.
     pub auto_threshold: u64,
     pub resolve_references: bool,
     pub include_raw: bool,
@@ -40,7 +42,7 @@ pub struct ParseOptions {
 impl Default for ParseOptions {
     fn default() -> Self {
         Self {
-            mode: mode::ParseMode::Auto,
+            mode: mode::ParseMode::Dom,
             auto_threshold: 10 * 1024 * 1024, // 10MB
             resolve_references: true,
             include_raw: false,
@@ -55,7 +57,8 @@ impl Default for ParseOptions {
     }
 }
 
-/// Parse DDEX XML with automatic mode selection
+/// Parse DDEX XML with the complete (DOM) parser, or with the experimental streaming path
+/// when `options.mode` is `ParseMode::Stream`.
 pub fn parse<R: BufRead + std::io::Seek>(
     mut reader: R,
     options: ParseOptions,
@@ -72,11 +75,11 @@ pub fn parse<R: BufRead + std::io::Seek>(
 
     match selected_mode {
         mode::ParseMode::Dom => {
-            // Use DOM parser for smaller files
+            // Complete parser, for any input size
             dom::parse_dom(reader, version, options, security_config)
         }
         mode::ParseMode::Stream => {
-            // Use streaming parser for larger files
+            // Experimental streaming path, only when requested explicitly
             stream::parse_streaming(reader, version, options, security_config)
         }
         mode::ParseMode::Auto => unreachable!(), // Already resolved

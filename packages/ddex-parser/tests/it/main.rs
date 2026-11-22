@@ -11,6 +11,7 @@ mod ern4_build_inputs;
 mod ern4_tracks;
 mod error_contract;
 mod fast_streaming;
+mod large_file;
 mod malformed_xml;
 mod parse_options;
 mod playground_regression;

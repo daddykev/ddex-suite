@@ -707,7 +707,8 @@ impl<'a, R: BufRead> Iterator for DealIterator<'a, R> {
     }
 }
 
-/// Parse using streaming for large files
+/// **Experimental**: parse with the memory-bounded streaming path (`ParseMode::Stream`,
+/// opt-in only). It reads a subset of the fields that the default DOM path reads.
 pub fn parse_streaming<R: BufRead>(
     reader: R,
     version: ERNVersion,
