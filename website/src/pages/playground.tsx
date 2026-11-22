@@ -1,546 +1,396 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import Layout from '@theme/Layout';
 import BrowserOnly from '@docusaurus/BrowserOnly';
+import { useColorMode } from '@docusaurus/theme-common';
 import { Allotment } from 'allotment';
 import Editor from '@monaco-editor/react';
 import 'allotment/dist/style.css';
+import { PARSE_SAMPLES, BUILD_SAMPLES } from '../data/playgroundSamples';
 
-// API response handling for DDEX operations
+// Must match MAX_BODY_BYTES in functions/index.js.
+const MAX_BODY_BYTES = 5 * 1024 * 1024;
+const NARROW_QUERY = '(max-width: 768px)';
 
-// Sample DDEX XML files for testing
-const SAMPLE_FILES = {
-  'ERN 4.3 Simple': `<?xml version="1.0" encoding="UTF-8"?>
-<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43" MessageSchemaVersionId="ern/43" LanguageAndScriptCode="en">
-  <MessageHeader>
-    <MessageThreadId>PLAYGROUND_MSG_001</MessageThreadId>
-    <MessageId>MSG_PLAYGROUND_2024</MessageId>
-    <MessageSender>
-      <PartyId>PLAYGROUND_LABEL</PartyId>
-      <PartyName><FullName>Playground Record Label</FullName></PartyName>
-    </MessageSender>
-    <MessageRecipient>
-      <PartyId>PLAYGROUND_DSP</PartyId>
-      <PartyName><FullName>Playground Streaming Platform</FullName></PartyName>
-    </MessageRecipient>
-    <MessageCreatedDateTime>2024-01-15T10:00:00Z</MessageCreatedDateTime>
-  </MessageHeader>
-  <ReleaseList>
-    <Release>
-      <ReleaseReference>R1</ReleaseReference>
-      <ReleaseType>Single</ReleaseType>
-      <ReleaseId>
-        <GRid>A1-PLAYGROUND-GRID-001</GRid>
-      </ReleaseId>
-      <ReferenceTitle>
-        <TitleText>Sample Track Release</TitleText>
-      </ReferenceTitle>
-    </Release>
-  </ReleaseList>
-  <ResourceList>
-    <SoundRecording>
-      <ResourceReference>A1</ResourceReference>
-      <SoundRecordingId>
-        <ISRC>USPLAYG240001</ISRC>
-      </SoundRecordingId>
-      <ReferenceTitle>
-        <TitleText>Sample Track</TitleText>
-      </ReferenceTitle>
-    </SoundRecording>
-  </ResourceList>
-  <DealList>
-    <ReleaseDeal>
-      <DealReleaseReference>R1</DealReleaseReference>
-      <Deal>
-        <DealReference>D1</DealReference>
-        <TerritoryCode>Worldwide</TerritoryCode>
-        <StartDate>2024-01-15</StartDate>
-      </Deal>
-    </ReleaseDeal>
-  </DealList>
-</ern:NewReleaseMessage>`,
-  
-  'ERN 4.2 Example': `<?xml version="1.0" encoding="UTF-8"?>
-<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/42" MessageSchemaVersionId="ern/42" LanguageAndScriptCode="en">
-  <MessageHeader>
-    <MessageThreadId>PLAYGROUND_MSG_42</MessageThreadId>
-    <MessageId>MSG_PLAYGROUND_42_2024</MessageId>
-    <MessageSender>
-      <PartyId>INDIE_LABEL_42</PartyId>
-      <PartyName><FullName>Indie Music Label 4.2</FullName></PartyName>
-    </MessageSender>
-    <MessageRecipient>
-      <PartyId>STREAMING_SERVICE_42</PartyId>
-      <PartyName><FullName>Streaming Platform 4.2</FullName></PartyName>
-    </MessageRecipient>
-    <MessageCreatedDateTime>2024-01-15T11:00:00Z</MessageCreatedDateTime>
-  </MessageHeader>
-  <ReleaseList>
-    <Release>
-      <ReleaseReference>R1</ReleaseReference>
-      <ReleaseType>Album</ReleaseType>
-      <ReleaseId>
-        <GRid>A1-INDIE-GRID-001</GRid>
-      </ReleaseId>
-      <ReferenceTitle>
-        <TitleText>Indie Rock Album</TitleText>
-      </ReferenceTitle>
-    </Release>
-  </ReleaseList>
-  <ResourceList>
-    <SoundRecording>
-      <ResourceReference>A1</ResourceReference>
-      <SoundRecordingId>
-        <ISRC>USIND240001</ISRC>
-      </SoundRecordingId>
-      <ReferenceTitle>
-        <TitleText>Indie Rock Anthem</TitleText>
-      </ReferenceTitle>
-    </SoundRecording>
-    <SoundRecording>
-      <ResourceReference>A2</ResourceReference>
-      <SoundRecordingId>
-        <ISRC>USIND240002</ISRC>
-      </SoundRecordingId>
-      <ReferenceTitle>
-        <TitleText>Alternative Dreams</TitleText>
-      </ReferenceTitle>
-    </SoundRecording>
-  </ResourceList>
-  <DealList>
-    <ReleaseDeal>
-      <DealReleaseReference>R1</DealReleaseReference>
-      <Deal>
-        <DealReference>D1</DealReference>
-        <TerritoryCode>US</TerritoryCode>
-        <StartDate>2024-02-01</StartDate>
-      </Deal>
-    </ReleaseDeal>
-  </DealList>
-</ern:NewReleaseMessage>`,
+type Mode = 'parser' | 'builder';
+type ApiStatus = 'checking' | 'online' | 'offline';
 
-  'Builder Template': JSON.stringify({
-    messageHeader: {
-      messageId: "MSG_BUILD_001",
-      messageSenderName: "My Record Label",
-      messageRecipientName: "Streaming Platform",
-      messageCreatedDateTime: new Date().toISOString()
-    },
-    releases: [{
-      releaseId: "REL_001",
-      title: "My New Album",
-      artist: "Amazing Artist",
-      releaseType: "Album",
-      label: "My Record Label",
-      upc: "123456789012",
-      releaseDate: "2024-03-01",
-      territories: ["US", "CA", "GB"],
-      genres: ["Pop", "Electronic"],
-      trackIds: ["TR_001", "TR_002"]
-    }],
-    resources: [{
-      resourceId: "TR_001",
-      resourceType: "SoundRecording",
-      title: "Hit Single",
-      artist: "Amazing Artist",
-      isrc: "US-AWE-24-00001",
-      duration: "PT3M30S",
-      trackNumber: 1
-    }, {
-      resourceId: "TR_002", 
-      resourceType: "SoundRecording",
-      title: "Another Track",
-      artist: "Amazing Artist",
-      isrc: "US-AWE-24-00002",
-      duration: "PT4M15S",
-      trackNumber: 2
-    }],
-    deals: [{
-      dealId: "DEAL_001",
-      releaseId: "REL_001",
-      territories: ["US", "CA", "GB"],
-      useTypes: ["Stream", "PermanentDownload"],
-      commercialModelType: "Subscription",
-      dealStartDate: "2024-03-01"
-    }]
-  }, null, 2),
-
-};
-
-interface PlaygroundState {
-  mode: 'parser' | 'builder';
-  input: string;
-  output: string;
-  loading: boolean;
-  error: string;
-  selectedPreset: string;
-  apiStatus: 'checking' | 'online' | 'offline';
+interface Versions {
+  ddexParser: string | null;
+  ddexBuilder: string | null;
 }
 
-function PlaygroundComponent() {
-  const [state, setState] = useState<PlaygroundState>({
-    mode: 'parser',
-    input: SAMPLE_FILES['ERN 4.3 Simple'],
-    output: '',
-    loading: false,
-    error: '',
-    selectedPreset: 'none',
-    apiStatus: 'checking'
+const DEFAULT_PARSE_SAMPLE = Object.keys(PARSE_SAMPLES)[0];
+const DEFAULT_BUILD_SAMPLE = Object.keys(BUILD_SAMPLES)[0];
+
+function samplesFor(mode: Mode): Record<string, string> {
+  return mode === 'parser' ? PARSE_SAMPLES : BUILD_SAMPLES;
+}
+
+function formatMB(bytes: number): string {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// POST a JSON body to the API and return the parsed JSON response, or throw an Error whose
+// message is fit to show to the user.
+async function postJson(url: string, body: string): Promise<any> {
+  const size = new Blob([body]).size;
+  if (size > MAX_BODY_BYTES) {
+    throw new Error(
+      `The input is ${formatMB(size)}; the playground accepts up to 5 MB. ` +
+        'Install ddex-parser or ddex-builder to process larger files locally.',
+    );
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body,
   });
 
-  // Check API health on component mount
+  let data: any = null;
+  try {
+    data = await response.json();
+  } catch {
+    // Not JSON (e.g. a proxy error page); handled below.
+  }
+
+  if (!response.ok) {
+    if (response.status === 413) {
+      throw new Error('The input is larger than the 5 MB limit.');
+    }
+    const message = data && typeof data.error === 'string' ? data.error : `Request failed (HTTP ${response.status}).`;
+    throw new Error(message);
+  }
+  if (data === null) {
+    throw new Error('The API returned an unexpected response.');
+  }
+  return data;
+}
+
+function useIsNarrow(): boolean {
+  const [narrow, setNarrow] = useState(() => window.matchMedia(NARROW_QUERY).matches);
   useEffect(() => {
-    async function checkApiHealth() {
+    const query = window.matchMedia(NARROW_QUERY);
+    const onChange = () => setNarrow(query.matches);
+    query.addEventListener('change', onChange);
+    return () => query.removeEventListener('change', onChange);
+  }, []);
+  return narrow;
+}
+
+const paneHeaderStyle: React.CSSProperties = {
+  padding: '0.5rem 1rem',
+  borderBottom: '1px solid var(--ifm-color-emphasis-200)',
+  backgroundColor: 'var(--ifm-color-emphasis-100)',
+  fontSize: '0.9rem',
+  fontWeight: 'bold',
+};
+
+function PlaygroundComponent() {
+  const { colorMode } = useColorMode();
+  const editorTheme = colorMode === 'dark' ? 'vs-dark' : 'light';
+  const isNarrow = useIsNarrow();
+
+  const [mode, setMode] = useState<Mode>('parser');
+  const [sample, setSample] = useState<string>(DEFAULT_PARSE_SAMPLE);
+  const [input, setInput] = useState<string>(PARSE_SAMPLES[DEFAULT_PARSE_SAMPLE]);
+  const [output, setOutput] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [apiStatus, setApiStatus] = useState<ApiStatus>('checking');
+  const [versions, setVersions] = useState<Versions | null>(null);
+
+  // "Online" only when /api/health answers with the expected JSON.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
       try {
-        const response = await fetch('/health');
-        if (response.ok) {
-          setState(prev => ({ ...prev, apiStatus: 'online' }));
-          console.log('DDEX API is online and ready');
-        } else {
-          setState(prev => ({ ...prev, apiStatus: 'offline' }));
+        const response = await fetch('/api/health', { headers: { Accept: 'application/json' } });
+        const contentType = response.headers.get('content-type') || '';
+        if (!response.ok || !contentType.includes('application/json')) {
+          throw new Error('unhealthy');
         }
-      } catch (error) {
-        console.error('API health check failed:', error);
-        setState(prev => ({ ...prev, apiStatus: 'offline' }));
+        const data = await response.json();
+        if (data?.status !== 'ok') {
+          throw new Error('unhealthy');
+        }
+        if (!cancelled) {
+          setVersions({ ddexParser: data.ddexParser ?? null, ddexBuilder: data.ddexBuilder ?? null });
+          setApiStatus('online');
+        }
+      } catch {
+        if (!cancelled) setApiStatus('offline');
       }
-    }
-
-    checkApiHealth();
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
-
-  const parseXML = useCallback(async (xml: string): Promise<any> => {
-    try {
-      const response = await fetch('/api/parse', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ xml: xml })
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const parsedData = await response.json();
-      // parsedData is the direct object with messageId, releases, etc.
-      return parsedData;
-    } catch (error) {
-      console.error('Error parsing XML:', error);
-      throw error;
-    }
-  }, []);
-
-  const buildXML = useCallback(async (json: string): Promise<string> => {
-    const trimmedInput = json.trim();
-    if (trimmedInput.startsWith('<?xml') || trimmedInput.startsWith('<')) {
-      throw new Error('Builder mode requires JSON input. Please switch to Parser mode or load the "Builder Template" sample.');
-    }
-
-    try {
-      const parsedData = JSON.parse(json);
-
-      const response = await fetch('/api/build', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(parsedData) // Send the parsed data directly
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Build failed' }));
-        throw new Error(error.error || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const { xml } = await response.json();
-      // xml is the string containing the built DDEX XML
-      return xml;
-    } catch (error) {
-      if (error instanceof SyntaxError) {
-        throw new Error('Invalid JSON input. Please check your JSON syntax.');
-      }
-      throw error;
-    }
-  }, [state.selectedPreset]);
-
 
   const handleProcess = useCallback(async () => {
-    if (!state.input.trim()) {
-      setState(prev => ({ ...prev, error: 'Please provide input data', output: '' }));
+    if (!input.trim()) {
+      setError('Please provide input.');
+      setOutput('');
       return;
     }
 
-    setState(prev => ({ ...prev, loading: true, error: '', output: '' }));
+    setLoading(true);
+    setError('');
+    setOutput('');
 
     try {
-      let result: string;
-      
-      if (state.mode === 'parser') {
-        const parsed = await parseXML(state.input);
-        result = JSON.stringify(parsed, null, 2);
+      if (mode === 'parser') {
+        const parsed = await postJson('/api/parse', JSON.stringify({ xml: input }));
+        setOutput(JSON.stringify(parsed, null, 2));
       } else {
-        result = await buildXML(state.input);
+        const trimmed = input.trim();
+        if (trimmed.startsWith('<')) {
+          throw new Error('Builder mode takes a JSON build request. Switch to Parser mode to parse XML.');
+        }
+        let request: unknown;
+        try {
+          request = JSON.parse(trimmed);
+        } catch {
+          throw new Error('The input is not valid JSON.');
+        }
+        const { xml } = await postJson('/api/build', JSON.stringify(request));
+        setOutput(xml);
       }
-      
-      setState(prev => ({ ...prev, output: result, loading: false }));
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      setState(prev => ({ 
-        ...prev, 
-        loading: false, 
-        error: errorMessage,
-        output: `Error: ${errorMessage}`
-      }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong.');
+    } finally {
+      setLoading(false);
     }
-  }, [state.input, state.mode, parseXML, buildXML]);
+  }, [input, mode]);
 
-  const handleModeChange = useCallback((newMode: 'parser' | 'builder') => {
-    // Reset input to appropriate default when switching modes
-    let defaultInput = SAMPLE_FILES['ERN 4.3 Simple'];
-    if (newMode === 'builder') {
-      defaultInput = SAMPLE_FILES['Builder Template'];
-    }
-
-    setState(prev => ({
-      ...prev,
-      mode: newMode,
-      input: defaultInput,
-      output: '',
-      error: ''
-    }));
+  const handleModeChange = useCallback((newMode: Mode) => {
+    const name = newMode === 'parser' ? DEFAULT_PARSE_SAMPLE : DEFAULT_BUILD_SAMPLE;
+    setMode(newMode);
+    setSample(name);
+    setInput(samplesFor(newMode)[name]);
+    setOutput('');
+    setError('');
   }, []);
 
-  const loadSample = useCallback((sampleName: keyof typeof SAMPLE_FILES) => {
-    const sampleContent = SAMPLE_FILES[sampleName];
-    const isXmlSample = sampleName.startsWith('ERN');
-    const isJsonSample = sampleName === 'Builder Template';
-
-    // Warn if loading incompatible sample type
-    let warning = '';
-    if (state.mode === 'builder' && isXmlSample) {
-      warning = 'XML samples are for Parser mode. Switch to Parser mode or choose a JSON template.';
-    } else if (state.mode === 'parser' && isJsonSample) {
-      warning = 'JSON templates are for Builder mode. Switch modes or choose an ERN sample.';
-    }
-    
-    setState(prev => ({
-      ...prev,
-      input: sampleContent,
-      output: '',
-      error: warning
-    }));
-  }, [state.mode]);
+  const loadSample = useCallback(
+    (name: string) => {
+      const content = samplesFor(mode)[name];
+      if (content === undefined) return;
+      setSample(name);
+      setInput(content);
+      setOutput('');
+      setError('');
+    },
+    [mode],
+  );
 
   const exportOutput = useCallback(() => {
-    if (!state.output) return;
-    
-    const isJsonOutput = state.mode === 'parser';
-    
-    const blob = new Blob([state.output], { 
-      type: isJsonOutput ? 'application/json' : 'application/xml' 
-    });
+    if (!output) return;
+    const isJson = mode === 'parser';
+    const blob = new Blob([output], { type: isJson ? 'application/json' : 'application/xml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-
-    let filename = 'output';
-    if (state.mode === 'parser') {
-      filename = 'parsed-data.json';
-    } else {
-      filename = 'generated.xml';
-    }
-    
-    a.download = filename;
+    a.download = isJson ? 'parsed-data.json' : 'generated.xml';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [state.output, state.mode]);
+  }, [output, mode]);
+
+  const inputLanguage = mode === 'parser' ? 'xml' : 'json';
+  const outputLanguage = mode === 'parser' ? 'json' : 'xml';
+  const editorOptions = {
+    minimap: { enabled: false },
+    lineNumbers: 'on' as const,
+    wordWrap: 'on' as const,
+    automaticLayout: true,
+    scrollBeyondLastLine: false,
+    fontSize: 14,
+  };
+
+  const inputPane = (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={paneHeaderStyle}>
+        Input ({mode === 'parser' ? 'ERN XML' : 'JSON build request'})
+      </div>
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <Editor
+          language={inputLanguage}
+          value={input}
+          onChange={(value) => setInput(value || '')}
+          options={{ ...editorOptions, ariaLabel: 'Input editor' }}
+          theme={editorTheme}
+        />
+      </div>
+    </div>
+  );
+
+  const outputPane = (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={paneHeaderStyle}>
+        Output ({mode === 'parser' ? 'parsed JSON' : 'ERN XML'})
+      </div>
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <Editor
+          language={outputLanguage}
+          value={output}
+          options={{ ...editorOptions, readOnly: true, ariaLabel: 'Output (read only)' }}
+          theme={editorTheme}
+        />
+      </div>
+    </div>
+  );
+
+  const statusText =
+    apiStatus === 'online' ? 'API online' : apiStatus === 'offline' ? 'API offline' : 'Checking API…';
+  const statusColor =
+    apiStatus === 'online'
+      ? 'var(--ifm-color-success)'
+      : apiStatus === 'offline'
+        ? 'var(--ifm-color-danger)'
+        : 'var(--ifm-color-warning)';
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: isNarrow ? 'auto' : 'calc(100vh - var(--ifm-navbar-height))',
+      }}
+    >
       {/* Header */}
-      <div style={{ 
-        padding: '1rem', 
-        borderBottom: '1px solid var(--ifm-color-emphasis-200)',
-        backgroundColor: 'var(--ifm-background-color)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-          <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Playground v0.4.5</h1>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+      <div
+        style={{
+          padding: '1rem',
+          borderBottom: '1px solid var(--ifm-color-emphasis-200)',
+          backgroundColor: 'var(--ifm-background-color)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+          <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Playground</h1>
+          <div style={{ display: 'flex', gap: '0.5rem' }} role="group" aria-label="Mode">
             <button
-              className={`button ${state.mode === 'parser' ? 'button--primary' : 'button--secondary'}`}
+              type="button"
+              className={`button ${mode === 'parser' ? 'button--primary' : 'button--secondary'}`}
+              aria-pressed={mode === 'parser'}
               onClick={() => handleModeChange('parser')}
             >
-              Parser Mode
+              Parser
             </button>
             <button
-              className={`button ${state.mode === 'builder' ? 'button--primary' : 'button--secondary'}`}
+              type="button"
+              className={`button ${mode === 'builder' ? 'button--primary' : 'button--secondary'}`}
+              aria-pressed={mode === 'builder'}
               onClick={() => handleModeChange('builder')}
             >
-              Builder Mode
+              Builder
             </button>
-
-            <div style={{ marginLeft: 'auto', fontSize: '0.9rem', fontWeight: '500' }}>
-              {state.apiStatus === 'online' && (
-                <span style={{ color: '#28a745' }}>● API Online</span>
-              )}
-              {state.apiStatus === 'offline' && (
-                <span style={{ color: '#dc3545' }}>● API Offline</span>
-              )}
-              {state.apiStatus === 'checking' && (
-                <span style={{ color: '#ffc107' }}>● Checking API...</span>
-              )}
-            </div>
+          </div>
+          <div
+            role="status"
+            aria-live="polite"
+            style={{ marginLeft: 'auto', fontSize: '0.9rem', fontWeight: 500 }}
+          >
+            <span aria-hidden="true" style={{ color: statusColor }}>
+              ●{' '}
+            </span>
+            {statusText}
           </div>
         </div>
-        
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
           <div>
-            <label style={{ marginRight: '0.5rem', fontSize: '0.9rem' }}>Load Sample:</label>
-            <select 
-              onChange={(e) => loadSample(e.target.value as keyof typeof SAMPLE_FILES)}
-              value=""
-            >
-              <option value="">Choose a sample...</option>
-              {Object.keys(SAMPLE_FILES).map(name => {
-                const isXmlSample = name.startsWith('ERN');
-                const isJsonSample = name === 'Builder Template';
-                const isCompatible = (state.mode === 'parser' && isXmlSample) ||
-                                   (state.mode === 'builder' && isJsonSample);
-                return (
-                  <option key={name} value={name} disabled={!isCompatible}>
-                    {name} {!isCompatible ? `(for ${isXmlSample ? 'Parser' : 'Builder'} mode)` : ''}
-                  </option>
-                );
-              })}
+            <label htmlFor="playground-sample" style={{ marginRight: '0.5rem', fontSize: '0.9rem' }}>
+              Sample:
+            </label>
+            <select id="playground-sample" value={sample} onChange={(e) => loadSample(e.target.value)}>
+              {Object.keys(samplesFor(mode)).map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
             </select>
           </div>
 
-          {state.mode === 'builder' && (
-            <div>
-              <label style={{ marginRight: '0.5rem', fontSize: '0.9rem' }}>Preset:</label>
-              <select
-                value={state.selectedPreset}
-                onChange={(e) => setState(prev => ({ ...prev, selectedPreset: e.target.value }))}
-              >
-                <option value="none">No Preset</option>
-                <option value="generic">Generic</option>
-                <option value="youtube_music">YouTube Music</option>
-              </select>
-            </div>
-          )}
-          
           <button
+            type="button"
             className="button button--primary"
             onClick={handleProcess}
-            disabled={state.loading || state.apiStatus !== 'online'}
+            disabled={loading || apiStatus !== 'online'}
           >
-            {state.loading ? 'Processing...' :
-             state.apiStatus === 'checking' ? 'Checking API...' :
-             state.apiStatus === 'offline' ? 'API Offline' :
-             state.mode === 'parser' ? 'Parse XML' :
- 'Build XML'}
+            {loading
+              ? 'Processing…'
+              : apiStatus === 'checking'
+                ? 'Checking API…'
+                : apiStatus === 'offline'
+                  ? 'API offline'
+                  : mode === 'parser'
+                    ? 'Parse XML'
+                    : 'Build XML'}
           </button>
-          
-          {state.output && (
-            <button
-              className="button button--secondary"
-              onClick={exportOutput}
-            >
-              Export {state.mode === 'parser' ? 'JSON' : 'XML'}
+
+          {output && (
+            <button type="button" className="button button--secondary" onClick={exportOutput}>
+              Export {mode === 'parser' ? 'JSON' : 'XML'}
             </button>
           )}
         </div>
 
-        {state.error && (
-          <div style={{ 
-            marginTop: '1rem', 
-            padding: '0.5rem', 
-            backgroundColor: 'var(--ifm-color-danger-contrast-background)',
-            color: 'var(--ifm-color-danger)',
-            borderRadius: '4px',
-            fontSize: '0.9rem'
-          }}>
-            {state.error}
-          </div>
-        )}
+        <div role="alert" aria-live="assertive">
+          {error && (
+            <div
+              style={{
+                marginTop: '1rem',
+                padding: '0.5rem',
+                backgroundColor: 'var(--ifm-color-danger-contrast-background)',
+                color: 'var(--ifm-color-danger-contrast-foreground)',
+                borderRadius: '4px',
+                fontSize: '0.9rem',
+              }}
+            >
+              {error}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Main content area with split panes */}
-      <div style={{ flex: 1, overflow: 'hidden' }}>
-        <Allotment defaultSizes={[50, 50]}>
-          <Allotment.Pane>
-            <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ 
-                padding: '0.5rem 1rem', 
-                borderBottom: '1px solid var(--ifm-color-emphasis-200)',
-                backgroundColor: 'var(--ifm-color-emphasis-100)',
-                fontSize: '0.9rem',
-                fontWeight: 'bold'
-              }}>
-                Input ({state.mode === 'parser' ? 'XML' : 'JSON'})
-              </div>
-              <div style={{ flex: 1 }}>
-                <Editor
-                  language={state.mode === 'parser' ? 'xml' : 'json'}
-                  value={state.input}
-                  onChange={(value) => setState(prev => ({ ...prev, input: value || '' }))}
-                  options={{
-                    minimap: { enabled: false },
-                    lineNumbers: 'on',
-                    wordWrap: 'on',
-                    automaticLayout: true,
-                    scrollBeyondLastLine: false,
-                    fontSize: 14
-                  }}
-                  theme="vs-dark"
-                />
-              </div>
-            </div>
-          </Allotment.Pane>
-          
-          <Allotment.Pane>
-            <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ 
-                padding: '0.5rem 1rem', 
-                borderBottom: '1px solid var(--ifm-color-emphasis-200)',
-                backgroundColor: 'var(--ifm-color-emphasis-100)',
-                fontSize: '0.9rem',
-                fontWeight: 'bold'
-              }}>
-                Output ({state.mode === 'parser' ? 'JSON' : 'XML'})
-              </div>
-              <div style={{ flex: 1 }}>
-                <Editor
-                  language={state.mode === 'parser' ? 'json' : 'xml'}
-                  value={state.output}
-                  options={{
-                    readOnly: true,
-                    minimap: { enabled: false },
-                    lineNumbers: 'on',
-                    wordWrap: 'on',
-                    automaticLayout: true,
-                    scrollBeyondLastLine: false,
-                    fontSize: 14
-                  }}
-                  theme="vs-dark"
-                />
-              </div>
-            </div>
-          </Allotment.Pane>
-        </Allotment>
-      </div>
+      {/* Editors: side by side, or stacked on narrow screens */}
+      {isNarrow ? (
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ height: '50vh', minHeight: '320px' }}>{inputPane}</div>
+          <div style={{ height: '50vh', minHeight: '320px' }}>{outputPane}</div>
+        </div>
+      ) : (
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <Allotment defaultSizes={[50, 50]}>
+            <Allotment.Pane>{inputPane}</Allotment.Pane>
+            <Allotment.Pane>{outputPane}</Allotment.Pane>
+          </Allotment>
+        </div>
+      )}
 
-      {/* Footer with info */}
-      <div style={{ 
-        padding: '0.5rem 1rem', 
-        borderTop: '1px solid var(--ifm-color-emphasis-200)',
-        backgroundColor: 'var(--ifm-background-color)',
-        fontSize: '0.8rem',
-        color: 'var(--ifm-color-emphasis-600)'
-      }}>
-        <strong>DDEX Suite v0.4.5</strong> - Using Firebase Functions API with ddex-parser and ddex-builder v0.4.5
-        <br/>
-        <strong>Features:</strong> Real-time parsing • Deterministic XML building •
-        Preset configurations • Round-trip compatibility • Google Cloud Linux binaries • Cloud-powered performance
+      {/* Footer */}
+      <div
+        style={{
+          padding: '0.5rem 1rem',
+          borderTop: '1px solid var(--ifm-color-emphasis-200)',
+          backgroundColor: 'var(--ifm-background-color)',
+          fontSize: '0.8rem',
+          color: 'var(--ifm-color-emphasis-700)',
+        }}
+      >
+        {versions ? (
+          <>
+            Running ddex-parser {versions.ddexParser ?? 'unknown'} and ddex-builder{' '}
+            {versions.ddexBuilder ?? 'unknown'} on Firebase Cloud Functions.
+          </>
+        ) : (
+          <>Runs ddex-parser and ddex-builder on Firebase Cloud Functions.</>
+        )}{' '}
+        Requests are limited to 5 MB. The build request format is the ddex-builder{' '}
+        <code>BuildRequest</code> type (snake_case fields; <code>header</code> and{' '}
+        <code>version</code> are required).
       </div>
     </div>
   );
@@ -548,8 +398,11 @@ function PlaygroundComponent() {
 
 export default function Playground() {
   return (
-    <Layout title="Playground v0.4.5" description="Interactive DDEX Suite playground with v0.4.5 features and enhanced performance optimizations">
-      <BrowserOnly fallback={<div>Loading playground...</div>}>
+    <Layout
+      title="Playground"
+      description="Try ddex-parser and ddex-builder in the browser: parse DDEX ERN XML to JSON, or build ERN XML from a build request."
+    >
+      <BrowserOnly fallback={<div style={{ padding: '1rem' }}>Loading playground…</div>}>
         {() => <PlaygroundComponent />}
       </BrowserOnly>
     </Layout>
