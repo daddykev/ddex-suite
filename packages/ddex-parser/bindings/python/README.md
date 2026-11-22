@@ -1,204 +1,76 @@
-# DDEX Parser - Python Bindings
+# ddex-parser (Python)
 
-[![PyPI version](https://img.shields.io/pypi/v/ddex-parser.svg)](https://pypi.org/project/ddex-parser/)
-[![Python versions](https://img.shields.io/pypi/pyversions/ddex-parser.svg)](https://pypi.org/project/ddex-parser/)
-[![Downloads](https://img.shields.io/pypi/dm/ddex-parser.svg)](https://pypi.org/project/ddex-parser/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+DDEX ERN XML parser for Python, a native extension over the Rust
+[`ddex-parser`](https://crates.io/crates/ddex-parser) crate. Part of
+[DDEX Suite](https://github.com/daddykev/ddex-suite). It reads ERN 3.8.1, 3.8.2, 4.2 and
+4.3 messages and exports them to pandas DataFrames.
 
-High-performance DDEX XML parser for Python with built-in security features and comprehensive metadata extraction. Native Rust core, with support for all DDEX versions and profiles.
+> **0.5.0 has breaking changes.** Importing without the native extension raises
+> `ImportError` (the mock fallback is gone), text is kept exactly as written, and the
+> DataFrames gained columns. See the
+> [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md).
 
 ## Installation
 
 ```bash
 pip install ddex-parser
-# or for specific version
-pip install ddex-parser==0.5.0
+pip install "ddex-parser[pandas]"   # for to_dataframe()
 ```
 
-The package needs its native extension (included in the wheels for Linux, macOS and
-Windows). If it cannot be loaded, `import ddex_parser` raises an `ImportError` that names
-the cause and how to fix it; there is no pure-Python fallback.
+Wheels (abi3, Python 3.9 or newer) are published for Linux x86_64 and aarch64 (glibc
+2.28+), Linux x86_64 (musl), macOS x86_64 and arm64, and Windows x64. On other platforms
+pip builds from the source distribution, which needs a Rust toolchain. If the native
+extension cannot be loaded, `import ddex_parser` raises an `ImportError` that names the
+cause.
 
-## Version Notes
-**v0.4.4**: Enhanced validation - Parser now properly fails on missing required fields instead of using placeholder values. Ensure your error handling can catch ValidationError exceptions for incomplete DDEX files.
-
-**v0.4.1**: Enhanced data structure implementation with complete data access.
-Built on v0.4.0's security fixes (RUSTSEC-2025-0020) with PyO3 0.24 compatibility.
-
-## Quick Start
+## Example
 
 ```python
-from ddex_parser import DDEXParser
-import pandas as pd
-
-# Parse DDEX file
-parser = DDEXParser()
-result = parser.parse_file("release.xml")
-
-# Access parsed data
-print(f"Release: {result.release_title}")
-print(f"Artist: {result.main_artist}")
-print(f"Tracks: {len(result.tracks)}")
-
-# Convert to DataFrame for analysis
-tracks_df = result.to_dataframe()
-print(tracks_df.head())
-```
-
-## Features
-
-### 🚀 High Performance
-- Rust core: a typical ERN 4.3 album (75 KB) parses in about 3.4 ms (measured, Apple M1 Pro)
-- Streaming support for large files (>100MB)
-- Memory-efficient processing
-- Native Rust implementation with Python bindings
-
-### 🔒 Security Built-in
-- XXE (XML External Entity) attack protection
-- Entity expansion limits
-- Memory-bounded parsing
-- Deep nesting protection
-
-### 📊 Data Science Ready
-- Direct pandas DataFrame export
-- Structured metadata extraction
-- JSON serialization support
-- Type hints for better IDE experience
-
-### 🎵 Music Industry Focused
-- Support for all DDEX versions (3.2, 3.3, 4.0+)
-- Release, track, and artist metadata
-- Rights and usage information
-- Territory and deal terms
-- Image and audio resource handling
-
-## API Reference
-
-### DDEXParser
-
-```python
-from ddex_parser import DDEXParser
-
-parser = DDEXParser(
-    max_entity_expansions=1000,  # Limit entity expansions for security
-    max_depth=100,               # Maximum XML nesting depth
-    streaming=True               # Enable streaming for large files
-)
-```
-
-### Parsing Methods
-
-#### `parse_file(path: str) -> DDEXResult`
-
-Parse a DDEX XML file from disk.
-
-```python
-result = parser.parse_file("path/to/release.xml")
-```
-
-#### `parse_string(xml: str) -> DDEXResult`
-
-Parse DDEX XML from a string.
-
-```python
-with open("release.xml", "r") as f:
-    xml_content = f.read()
-result = parser.parse_string(xml_content)
-```
-
-#### `parse_async(path: str) -> Awaitable[DDEXResult]`
-
-Asynchronous parsing for non-blocking operations.
-
-```python
-import asyncio
-
-async def parse_ddex():
-    result = await parser.parse_async("release.xml")
-    return result
-
-# Usage
-result = asyncio.run(parse_ddex())
-```
-
-## DataFrame Integration
-
-Perfect for data analysis workflows:
-
-```python
-import pandas as pd
 from ddex_parser import DDEXParser
 
 parser = DDEXParser()
-result = parser.parse_file("catalog.xml")
+with open("release.xml", encoding="utf-8") as f:
+    message = parser.parse(f.read())
 
-# Get tracks as DataFrame
-tracks_df = result.to_dataframe("tracks")
-print(tracks_df.columns)
-# ['track_id', 'title', 'artist', 'duration', 'isrc', 'genre', ...]
+print(message.message_id(), message.version(), message.message_control_type())
+print(message.release_count(), "release(s)")
+for deal in message.deals():
+    print(deal["deal_id"], deal["releases"], deal["start_date"], deal["end_date"], deal["territories"])
 
-# Analyze your catalog
-genre_counts = tracks_df['genre'].value_counts()
-avg_duration = tracks_df['duration'].mean()
+releases = message.to_dataframe("releases")
+print(releases[["release_id", "title", "artist", "genre", "label_name", "release_dates"]])
 
-# Export for further analysis
-tracks_df.to_csv("catalog_analysis.csv")
-tracks_df.to_parquet("catalog_analysis.parquet")
+tracks = message.to_dataframe("tracks")
+print(tracks[["track_index", "track_title", "isrc", "duration", "disc_number", "group_path"]])
 ```
 
-## Performance Benchmarks
+- `parse(xml)` accepts `str` or `bytes` and returns a `ParsedERNMessage`:
+  `message_id()`, `version()`, `release_count()`, `message_control_type()`, `deals()`
+  (one dict per deal) and `to_dataframe(schema)`. These are methods.
+- `to_dataframe` schemas: `"flat"` (a message row, then one row per release),
+  `"releases"` and `"tracks"`. Columns include release dates as written, P and C lines,
+  genres, parental warnings, labels, and each track's position, disc and track numbers
+  and enclosing groups. Absent values are `None` or empty lists, never invented.
+  Durations are in seconds.
+- `parse_async(xml)` is the awaitable version; `detect_version(xml)` returns the enum
+  spelling (`"V4_3"`).
+- `stream(xml)` parses the whole document and then yields its releases one by one; it
+  does not reduce memory use.
 
-Performance comparison on a MacBook Pro M2:
+## Security
 
-| File Size | ddex-parser | lxml | xml.etree | Speedup |
-|-----------|-------------|------|-----------|----------|
-| 10KB      | 0.8ms       | 8ms  | 12ms      | 10x-15x |
-| 100KB     | 3ms         | 45ms | 78ms      | 15x-26x |
-| 1MB       | 28ms        | 380ms| 650ms     | 13x-23x |
-| 10MB      | 180ms       | 3.2s | 5.8s      | 18x-32x |
+The parser rejects DTDs and external entities (XXE), limits entity expansion, element
+depth and input size, and never fetches from the network. It does not validate against
+the DDEX XSD or the AVS business rules.
 
-Memory usage is consistently 60-80% lower than traditional parsers.
+## Links
 
-## Integration with ddex-builder
-
-Round-trip compatibility with ddex-builder for complete workflows:
-
-```python
-from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
-
-# Parse existing DDEX file
-parser = DDEXParser()
-original = parser.parse_file("input.xml")
-
-# Modify data
-modified_data = original.to_dict()
-modified_data['tracks'][0]['title'] = "New Title"
-
-# Build new DDEX file
-builder = DDEXBuilder()
-new_xml = builder.build_from_dict(modified_data)
-
-# Verify round-trip integrity
-new_result = parser.parse_string(new_xml)
-assert new_result.tracks[0].title == "New Title"
-```
-
-## Requirements
-- Python 3.8+
-- pandas (optional, for DataFrame support)
-- PyO3 0.24 compatible runtime
+- Documentation: [ddex-suite.org](https://ddex-suite.org/docs/parser)
+- [Changelog](https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md)
+- [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md)
+- [Known issues](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md)
+- [Report an issue](https://github.com/daddykev/ddex-suite/issues)
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/daddykev/ddex-suite/blob/main/LICENSE) file for details.
-
-## Related Projects
-
-- **[ddex-builder](https://pypi.org/project/ddex-builder/)** - Build deterministic DDEX XML files
-- **[ddex-parser (npm)](https://www.npmjs.com/package/ddex-parser)** - JavaScript/TypeScript bindings
-- **[DDEX Suite](https://ddex-suite.org)** - Complete DDEX processing toolkit
-
----
-
-Built for the music industry. Powered by Rust for maximum performance and safety.
+MIT, see [LICENSE](https://github.com/daddykev/ddex-suite/blob/main/LICENSE).

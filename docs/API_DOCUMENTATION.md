@@ -20,7 +20,7 @@
 
 #### DDEX Parser
 - **Package**: `ddex-parser` on [npm](https://www.npmjs.com/package/ddex-parser)
-- **Documentation**: [TypeScript Docs](../packages/ddex-parser/bindings/node/docs/index.html)
+- **Documentation**: [TypeScript types](../packages/ddex-parser/bindings/node/index.d.ts) and [ddex-suite.org](https://ddex-suite.org/docs/parser)
 - **Types**: Full TypeScript definitions included
 - **GitHub**: [Source Code](../packages/ddex-parser/bindings/node/)
 
@@ -33,7 +33,7 @@ const result: ParsedERNMessage = await parser.parse(xmlContent);
 
 #### DDEX Builder  
 - **Package**: `ddex-builder` on [npm](https://www.npmjs.com/package/ddex-builder)
-- **Documentation**: [TypeScript Docs](../packages/ddex-builder/bindings/node/docs/index.html)
+- **Documentation**: [TypeScript types](../packages/ddex-builder/bindings/node/index.d.ts) and [ddex-suite.org](https://ddex-suite.org/docs/builder)
 - **Types**: Full TypeScript definitions included
 - **GitHub**: [Source Code](../packages/ddex-builder/bindings/node/)
 

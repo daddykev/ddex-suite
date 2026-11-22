@@ -1,158 +1,149 @@
-# DDEX Builder - Python Bindings
+# ddex-builder (Python)
 
-[![PyPI version](https://img.shields.io/pypi/v/ddex-builder.svg)](https://pypi.org/project/ddex-builder/)
-[![Python versions](https://img.shields.io/pypi/pyversions/ddex-builder.svg)](https://pypi.org/project/ddex-builder/)
-[![Downloads](https://img.shields.io/pypi/dm/ddex-builder.svg)](https://pypi.org/project/ddex-builder/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+Deterministic DDEX ERN XML builder for Python, a native extension over the Rust
+[`ddex-builder`](https://crates.io/crates/ddex-builder) crate. Part of
+[DDEX Suite](https://github.com/daddykev/ddex-suite). It writes ERN 4.3, 4.2, 3.8.2 and
+3.8.1 from a build request (a dict) or a pandas DataFrame, canonicalized with
+DB-C14N/1.0 so the same request always produces the same bytes.
 
-Generate deterministic, industry-compliant DDEX XML files from Python data structures with consistent reproducibility. Build DDEX messages from dictionaries, DataFrames, or parsed objects with built-in validation and partner-specific presets.
+> **0.5.0 has breaking changes.** `build(request)` and `from_dataframe(df, schema,
+> request)` run the core builder (nothing is filled in), and importing without the native
+> extension raises `ImportError`. See the
+> [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md).
 
 ## Installation
 
 ```bash
 pip install ddex-builder
-# or for specific version
-pip install ddex-builder==0.5.0
+pip install "ddex-builder[pandas]"   # for from_dataframe()
 ```
 
-The package needs its native extension (included in the wheels for Linux, macOS and
-Windows). If it cannot be loaded, `import ddex_builder` raises an `ImportError` that names
-the cause and how to fix it; there is no pure-Python fallback.
+Wheels (abi3, Python 3.9 or newer) are published for Linux x86_64 and aarch64 (glibc
+2.28+), Linux x86_64 (musl), macOS x86_64 and arm64, and Windows x64. On other platforms
+pip builds from the source distribution, which needs a Rust toolchain. If the native
+extension cannot be loaded, `import ddex_builder` raises an `ImportError` that names the
+cause.
 
-## Version Notes
-**v0.4.4**: Enhanced compatibility with ddex-parser v0.4.4's strict validation. Improved round-trip workflows with better error handling.
-
-**v0.4.0**: PyO3 0.24 upgrade for enhanced security and compatibility.
-
-## Quick Start
+## Example
 
 ```python
-from ddex_builder import DDEXBuilder
-import pandas as pd
+from ddex_builder import DdexBuilder
 
-# Create builder with validation
-builder = DDEXBuilder(validate=True)
 
-# Build from dictionary
-release_data = {
-    'message_header': {
-        'sender_name': 'My Label',
-        'message_id': 'MSG123',
+def party(name, party_id):
+    return {"party_name": [{"text": name}], "party_id": party_id}
+
+
+request = {
+    "header": {
+        "message_id": "MSG-001",
+        "message_sender": party("Example Label", "PADPIDA0000000001"),
+        "message_recipient": party("Example DSP", "PADPIDA0000000002"),
+        "message_created_date_time": "2024-01-01T00:00:00Z",
     },
-    'releases': [{
-        'title': 'My Album',
-        'main_artist': 'Great Artist',
-        'tracks': [{
-            'title': 'Track 1',
-            'duration': 180,
-            'isrc': 'US1234567890'
-        }]
-    }]
+    "version": "4.3",
+    "avs_version_id": "12",
+    "releases": [
+        {
+            "release_id": "A1-ABCDE-0000000001-M",
+            "title": [{"text": "Example Single"}],
+            "artist": "Example Artist",
+            "release_type": "Single",
+            "genre": "Pop",
+            "parental_warning_type": "NotExplicit",
+            "tracks": [
+                {
+                    "track_id": "T1",
+                    "isrc": "ZZ0000000001",
+                    "title": "Example Track",
+                    "duration": "PT3M42S",
+                    "artist": "Example Artist",
+                    "resource_type": "MusicalWorkSoundRecording",
+                    "parental_warning_type": "NotExplicit",
+                }
+            ],
+        }
+    ],
+    "deals": [],
 }
 
-xml_output = builder.build_from_dict(release_data, version='4.3')
-print(xml_output[:100] + '...')
+xml = DdexBuilder().build(request)
+print(xml)
 ```
 
-## Features
+The request has the fields of the Rust `BuildRequest`; `ddex_builder.BuildRequest` and
+the other `TypedDict`s in `ddex_builder.build_request` describe them for type checkers.
+`header` and `version` are required. When the target version's schema requires a value
+the request does not carry, `build` raises an error naming the field, for example
+`ERN 4.3 requires Release/ReleaseType (releases[0].release_type)`.
 
-### 🎯 Deterministic Output
-- **100% reproducible** XML generation with stable hash IDs
-- DB-C14N/1.0 canonicalization for deterministic consistency
-- IndexMap-based ordering ensures identical output across runs
-- Content-addressable resource IDs for reliable references
+### From a DataFrame
 
-### 🏭 Industry Presets
-- **YouTube Music**: Content ID and monetization standards
-- **Generic**: Default preset suitable for most distributors
-
-### 📊 DataFrame Integration
-- Build directly from pandas DataFrames
-- Automatic schema detection and validation
-- Support for hierarchical data structures
-- Export/import workflows with CSV and Parquet
-
-### 🔒 Built-in Validation
-- Comprehensive DDEX schema validation
-- Business rule enforcement
-- Reference integrity checking
-- Territory and rights validation
-
-### 🚀 High Performance
-- Native Rust implementation with Python bindings
-- Streaming generation for large catalogs
-- Memory-efficient processing
-- Parallel resource processing
-
-## API Reference
-
-### DDEXBuilder
+`from_dataframe(df, schema, request)` builds one release from the rows (the column names
+of ddex-parser's DataFrames); `request` supplies the header, version and the other
+message-level values:
 
 ```python
-from ddex_builder import DDEXBuilder
+import pandas as pd
+from ddex_builder import DdexBuilder
 
-builder = DDEXBuilder(
-    validate=True,           # Enable validation (recommended)
-    preset='generic',        # Use generic industry preset
-    canonical=True,          # Generate canonical XML
-    streaming=False,         # Enable streaming mode for large data
-    max_memory=100_000_000   # Memory limit in bytes
+message = {
+    "header": {
+        "message_sender": {"party_name": [{"text": "Example Label"}], "party_id": "PADPIDA0000000001"},
+        "message_recipient": {"party_name": [{"text": "Example DSP"}], "party_id": "PADPIDA0000000002"},
+    },
+    "version": "4.3",
+    "avs_version_id": "12",
+}
+df = pd.DataFrame(
+    [
+        {
+            "release_id": "A1-ABCDE-0000000003-M",
+            "release_reference": "R0",
+            "release_title": "Frame Album",
+            "release_artist": "Example Artist",
+            "release_label": "Example Records",
+            "release_genre": "Pop",
+            "release_type": "Album",
+            "release_parental_warning_type": "NotExplicit",
+            "track_index": i,
+            "track_title": f"Track {i + 1}",
+            "artist": "Example Artist",
+            "isrc": f"ZZ000000010{i}",
+            "duration": 201.0,  # seconds
+            "resource_type": "MusicalWorkSoundRecording",
+            "parental_warning_type": "NotExplicit",
+        }
+        for i in range(3)
+    ]
 )
+xml = DdexBuilder().from_dataframe(df, schema="tracks", request=message)
+print(len(xml), "bytes")
 ```
 
-## Performance Benchmarks
+## Supported versions
 
-Building performance on different dataset sizes:
+| `version` | Output |
+|---|---|
+| `"4.3"`, `"4.2"` | Validated against the official XSDs in CI |
+| `"3.8.2"` | Validated against the official XSD in CI; video resources are not supported yet |
+| `"3.8.1"` | The 3.8.2 document in the 3.8.1 namespace; not checked against an official XSD (none is available) |
 
-| Dataset Size | Build Time | Memory Usage | Output Size |
-|--------------|------------|-------------|------------|
-| Single release (10 tracks) | 2ms | 5MB | 25KB |
-| Album catalog (100 releases) | 15ms | 25MB | 2.5MB |
-| Label catalog (1000 releases) | 120ms | 80MB | 25MB |
-| Large catalog (10000 releases) | 1.2s | 200MB | 250MB |
+## Scope
 
-Memory usage scales linearly, with streaming mode keeping usage constant for any dataset size.
+- Use `build(request)` or `from_dataframe(...)`. The preset methods (`apply_preset`, ...)
+  do not change the output in 0.5.0; see the known issues.
+- Text is XML-escaped on output. `build` checks the fields the target version requires;
+  it does not validate the output against the XSD or the AVS business rules at runtime.
 
-## Integration with ddex-parser
+## Links
 
-Round-trip compatibility with ddex-parser for complete workflows:
-
-```python
-from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
-
-# Parse existing DDEX file
-parser = DDEXParser()
-original = parser.parse_file("input.xml")
-
-# Modify data
-modified_data = original.to_dict()
-modified_data['tracks'][0]['title'] = "New Title"
-
-# Build new DDEX file
-builder = DDEXBuilder()
-new_xml = builder.build_from_dict(modified_data)
-
-# Verify round-trip integrity
-new_result = parser.parse_string(new_xml)
-assert new_result.tracks[0].title == "New Title"
-```
-
-## Requirements
-- Python 3.8+
-- pandas (optional, for DataFrame support)
-- PyO3 0.24 compatible runtime
+- Documentation: [ddex-suite.org](https://ddex-suite.org/docs/builder)
+- [Changelog](https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md)
+- [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md)
+- [Known issues](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md)
+- [Report an issue](https://github.com/daddykev/ddex-suite/issues)
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/daddykev/ddex-suite/blob/main/LICENSE) file for details.
-
-## Related Projects
-
-- **[ddex-parser](https://pypi.org/project/ddex-parser/)** - Parse DDEX XML files to Python structures
-- **[ddex-builder (npm)](https://www.npmjs.com/package/ddex-builder)** - JavaScript/TypeScript bindings
-- **[DDEX Suite](https://ddex-suite.org)** - Complete DDEX processing toolkit
-
----
-
-Built with ❤️ for the music industry. Engineered for deterministic, industry-grade DDEX generation.
+MIT, see [LICENSE](https://github.com/daddykev/ddex-suite/blob/main/LICENSE).

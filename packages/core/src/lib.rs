@@ -1,4 +1,4 @@
-//! DDEX Core - Shared models and types for DDEX Suite
+#![doc = include_str!("../README.md")]
 
 pub mod error;
 pub mod ffi;

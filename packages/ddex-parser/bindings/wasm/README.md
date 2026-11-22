@@ -1,25 +1,24 @@
-# @ddex-parser-wasm
+# ddex-parser-wasm
 
-Ultra-lightweight DDEX parser for browsers (37KB).
+The DDEX Suite parser compiled to WebAssembly for browsers. It is **not published to
+npm**; build it from this directory with [wasm-pack](https://rustwasm.github.io/wasm-pack/):
 
-## Installation
 ```bash
-npm install @ddex/parser-wasm@0.4.1
+wasm-pack build --target web --release   # → pkg/
 ```
 
-## Usage
-```javascript
-import init, { DDEXParser } from '@ddex/parser-wasm';
+```text
+import init, { DDEXParser } from './pkg/ddex_parser_wasm.js';
 
 await init();
 const parser = new DDEXParser();
-const result = parser.parse(xmlString);
+const message = parser.parse(xmlString, undefined); // the parsed message (serde form of ParsedERNMessage)
 ```
 
-## Bundle Size
-- WASM: 37KB (gzipped: ~12KB)
-- Works in all modern browsers
-- TypeScript definitions included
+The `options` argument of `parse` is ignored. For Node.js use the native
+[`ddex-parser`](https://www.npmjs.com/package/ddex-parser) package.
 
-## License
-Apache-2.0
+[Changelog](https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md),
+[known issues](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md).
+
+MIT license.

@@ -1,5 +1,5 @@
-// core/src/lib.rs
-/// DDEX Parser Core Library
+#![doc = include_str!("../README.md")]
+
 pub mod error;
 pub mod parser;
 pub mod streaming;

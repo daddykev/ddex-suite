@@ -338,7 +338,7 @@ impl XPathSelector {
         Ok(components)
     }
 
-    /// Parse filter expression like "element[filter]"
+    /// Parse filter expression like `element[filter]`
     fn parse_filter(input: &str) -> Result<(String, String), ParseError> {
         if let Some(bracket_start) = input.find('[') {
             if let Some(bracket_end) = input.rfind(']') {
