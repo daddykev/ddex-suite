@@ -668,13 +668,6 @@ struct StreamRelease {
 }
 
 impl StreamIterator {
-    fn new() -> Self {
-        StreamIterator {
-            position: 0,
-            releases: Vec::new(),
-        }
-    }
-
     fn from_parsed_result(parsed_result: ddex_core::models::flat::ParsedERNMessage) -> Self {
         let releases = parsed_result
             .flat
