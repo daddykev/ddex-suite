@@ -526,13 +526,15 @@ impl DdexBuilder {
         data: Option<serde_json::Value>,
     ) -> Result<ddex_builder::builder::BuildRequest> {
         let mut value = data.unwrap_or_else(|| serde_json::json!({}));
-        let object = value.as_object_mut().ok_or_else(|| {
-            Error::new(Status::InvalidArg, "the build request must be an object")
-        })?;
+        let object = value
+            .as_object_mut()
+            .ok_or_else(|| Error::new(Status::InvalidArg, "the build request must be an object"))?;
         object
             .entry("releases")
             .or_insert_with(|| serde_json::json!([]));
-        object.entry("deals").or_insert_with(|| serde_json::json!([]));
+        object
+            .entry("deals")
+            .or_insert_with(|| serde_json::json!([]));
         let mut request: ddex_builder::builder::BuildRequest = serde_json::from_value(value)
             .map_err(|e| Error::new(Status::InvalidArg, format!("Invalid build request: {}", e)))?;
         if request.releases.is_empty() {
@@ -543,7 +545,9 @@ impl DdexBuilder {
 
     /// Releases added with `addRelease`/`addResource`, using only the values given.
     fn stored_releases(&self) -> Result<Vec<ddex_builder::builder::ReleaseRequest>> {
-        use ddex_builder::builder::{LocalizedStringRequest, ReleaseRequest, ResourceKind, TrackRequest};
+        use ddex_builder::builder::{
+            LocalizedStringRequest, ReleaseRequest, ResourceKind, TrackRequest,
+        };
         let mut releases = Vec::new();
         for release in &self.releases {
             let mut tracks = Vec::new();

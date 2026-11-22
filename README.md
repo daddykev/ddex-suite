@@ -1,459 +1,173 @@
 # DDEX Suite
 
-![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange?logo=rust)
-![Node.js](https://img.shields.io/badge/Node.js-18%20|%2020%20|%2022-green?logo=node.js)
-![Python](https://img.shields.io/badge/Python-3.8%20|%203.9%20|%203.10%20|%203.11%20|%203.12-blue?logo=python)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-blue?logo=typescript)
-![Platform](https://img.shields.io/badge/Platform-Linux%20|%20macOS%20|%20Windows-lightgrey)
-[![npm ddex-builder](https://img.shields.io/npm/v/ddex-builder?label=npm%20ddex-builder)](https://www.npmjs.com/package/ddex-builder)
-[![npm ddex-parser](https://img.shields.io/npm/v/ddex-parser?label=npm%20ddex-parser)](https://www.npmjs.com/package/ddex-parser)
-[![PyPI ddex-builder](https://img.shields.io/pypi/v/ddex-builder?label=PyPI%20ddex-builder)](https://pypi.org/project/ddex-builder/)
-[![PyPI ddex-parser](https://img.shields.io/pypi/v/ddex-parser?label=PyPI%20ddex-parser)](https://pypi.org/project/ddex-parser/)
-[![crates.io ddex-core](https://img.shields.io/crates/v/ddex-core?label=crates.io%20ddex-core)](https://crates.io/crates/ddex-core)
 [![crates.io ddex-parser](https://img.shields.io/crates/v/ddex-parser?label=crates.io%20ddex-parser)](https://crates.io/crates/ddex-parser)
 [![crates.io ddex-builder](https://img.shields.io/crates/v/ddex-builder?label=crates.io%20ddex-builder)](https://crates.io/crates/ddex-builder)
+[![npm ddex-parser](https://img.shields.io/npm/v/ddex-parser?label=npm%20ddex-parser)](https://www.npmjs.com/package/ddex-parser)
+[![npm ddex-builder](https://img.shields.io/npm/v/ddex-builder?label=npm%20ddex-builder)](https://www.npmjs.com/package/ddex-builder)
+[![PyPI ddex-parser](https://img.shields.io/pypi/v/ddex-parser?label=PyPI%20ddex-parser)](https://pypi.org/project/ddex-parser/)
+[![PyPI ddex-builder](https://img.shields.io/pypi/v/ddex-builder?label=PyPI%20ddex-builder)](https://pypi.org/project/ddex-builder/)
 
-> High-performance DDEX XML builder and parser with native bindings for TypeScript/JavaScript and Python. Built on a single Rust core for consistent behavior across all platforms.
+DDEX ERN XML parsing and deterministic building from one Rust core, with native bindings
+for Node.js and Python.
 
-DDEX Suite brings together powerful tools for music industry data exchange, combining the robust `ddex-parser` library for reading and transforming DDEX messages with the `ddex-builder` library for deterministic XML generation, creating a complete round-trip solution for DDEX processing.
+- **ddex-parser** reads ERN 3.8.1, 3.8.2, 4.2 and 4.3 into a developer-friendly flat model
+  and a graph that follows the message structure.
+- **ddex-builder** writes ERN 4.3, 4.2, 3.8.2 and 3.8.1 from a typed build request,
+  canonicalized with DB-C14N/1.0 so the same request always produces the same bytes.
+- **ddex-core** holds the shared data models.
 
-## 🎯 Why DDEX Suite?
+> **0.5.0 has breaking changes**: text is kept exactly as written, `parse` no longer
+> switches to streaming above 10 MB, the Node parse options throw, the Python packages
+> need their native extension, and the build request is the core's. Read the
+> [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md)
+> before upgrading.
 
-Working with DDEX XML shouldn't feel like archaeology. The suite transforms complex DDEX messages into clean, strongly-typed data structures that are as easy to work with as JSON.
+## Packages
 
-### Core Value Proposition
-- **Single Rust Core**: One implementation to rule them all - consistent behavior across JavaScript, Python, and Rust
-- **Dual Model Architecture**: Choose between faithful graph representation or developer-friendly flattened view  
-- **Production Ready**: Built-in XXE protection, memory-bounded streaming, and comprehensive security hardening
-- **Deterministic Output**: Consistent, reproducible XML generation with smart normalization
+| Package | Rust | Node.js | Python |
+|---|---|---|---|
+| Parser | [`ddex-parser`](https://crates.io/crates/ddex-parser) | [`ddex-parser`](https://www.npmjs.com/package/ddex-parser) | [`ddex-parser`](https://pypi.org/project/ddex-parser/) |
+| Builder | [`ddex-builder`](https://crates.io/crates/ddex-builder) | [`ddex-builder`](https://www.npmjs.com/package/ddex-builder) | [`ddex-builder`](https://pypi.org/project/ddex-builder/) |
+| Models | [`ddex-core`](https://crates.io/crates/ddex-core) | | |
 
-## 👨🏻‍💻 Developer Statement
-
-I'm building **DDEX Suite** as a rigorous, end-to-end learning project to deepen my Rust skills while unifying my JavaScript and Python experience into a production-grade toolkit for music metadata. The intent is to ship a **single Rust core** that serves both a high-performance, security-hardened DDEX XML parser library (`ddex-parser`) and a consistent, deterministic builder library (`ddex-builder`). This core is exposed through **napi-rs** for Node/TypeScript and **PyO3** for Python, showcasing not just cross-language API design but also deep ecosystem integration, including a **declarative DataFrame mapping DSL** for Python users. The project is deliberately "industry-shaped," tackling the complementary challenges of transforming complex DDEX XML into clean models (parsing) and generating canonical, reproducible XML from those models. This is achieved through a dual **graph+flattened** data model for developer UX and an uncompromising approach to determinism, centered on a custom canonicalization specification, **DB-C14N/1.0**, and a **stable, content-addressable ID generation** engine.
-
-Beyond the core implementation, this is a showcase of **software craftsmanship and platform thinking**. The suite provides consistent APIs, painless installation via prebuilt binaries, a hardened CI/CD pipeline, and robust supply-chain safety (SBOM, `cargo-deny`, and **Sigstore artifact signing**). Every feature reflects production wisdom—from the parser's XXE protection to the builder's versioned **partner presets system** with safety locks. Paired with my validator work (DDEX Workbench), DDEX Suite delivers a credible, end-to-end **Parse → Modify → Build** processing pipeline, complete with enterprise-grade features like **preflight validation**, a **semantic diff engine**, and a comprehensive CLI. It illustrates how to design interoperable components that are fast, safe, and easy to adopt in real-world systems.
-
-## 🚧 Development Status
-
-**Latest Release**: Suite v0.4.5 🎉  
-**Current Development Phase**: 5.1 - Performance & Scale  
-**Target Release**: Suite v1.0.0 in Q1 2026
-
-### 📦 Available Packages
-
-All packages published across npm, PyPI, and **crates.io**! ✅
-
-| Package | npm | PyPI | crates.io | Version |
-|---------|-----|------|-----------|---------|
-| **ddex-core** | - | - | ✅ [Published](https://crates.io/crates/ddex-core) | v0.4.5 |
-| **ddex-parser** | ✅ [Published](https://www.npmjs.com/package/ddex-parser) | ✅ [Published](https://pypi.org/project/ddex-parser/) | ✅ [Published](https://crates.io/crates/ddex-parser) | v0.4.5 |
-| **ddex-builder** | ✅ [Published](https://www.npmjs.com/package/ddex-builder) | ✅ [Published](https://pypi.org/project/ddex-builder/) | ✅ [Published](https://crates.io/crates/ddex-builder) | v0.4.5 |
-
-### Progress Overview
-
-✅ **Phase 1-3: Complete** - Core foundation, parser, and builder are fully implemented  
-✅ **Phase 4.1: Integration Testing** - Round-trip functionality validated with 94 tests passing  
-✅ **crates.io Publishing** - **NEW!** All Rust crates published to the official registry  
-✅ **Phase 4.2: Documentation** - [Docusaurus](https://ddex-suite.org) site in React  
-✅ **Phase 4.3: Smart Normalization Engine** - Round-trip, deterministic output  
-✅ **Phase 4.3.5: Core Stabilization** - Stability and performance upgrades  
-✅ **Phase 4.4: Streaming Parser** - High-performance XML parser
-
-For detailed development progress and technical implementation details, see [blueprint.md](./blueprint.md).
-
-## 🎭 Dual Model Architecture
-
-The suite provides two complementary views of the same data with full round-trip data integrity:
-
-### Graph Model (Faithful)
-Preserves the exact DDEX structure with references and extensions - perfect for compliance and round-trip operations:
-```typescript
-interface ERNMessage {
-  messageHeader: MessageHeader;
-  parties: Party[];               // All parties with IDs
-  resources: Resource[];          // Audio, video, image resources
-  releases: Release[];            // Release metadata with references
-  deals: Deal[];                  // Commercial terms
-  extensions?: Map<string, XmlFragment>;  // Preserved for round-trip
-  toBuildRequest(): BuildRequest; // Convert to builder input
-}
-```
-
-### Flattened Model (Developer-Friendly)
-Denormalized and resolved for easy consumption - ideal for applications while maintaining round-trip capability:
-```typescript
-interface ParsedRelease {
-  releaseId: string;
-  title: string;
-  displayArtist: string;
-  tracks: ParsedTrack[];          // Fully resolved with resources merged
-  coverArt?: ParsedImage;
-  _graph?: Release;               // Reference to original for full data integrity
-  extensions?: Map<string, XmlFragment>; // Extensions preserved
-}
-```
-
-## 🧹 Smart Normalization & Clean Output
-
-The DDEX Suite provides powerful normalization capabilities that transform inconsistent, messy DDEX files into clean, compliant output.
-
-### Why Normalization Matters
-
-Real-world DDEX files come from many sources with varying quality:
-- Different namespace conventions (ern:Title vs Title vs ns2:Title)
-- Inconsistent element ordering
-- Mixed DDEX versions and dialects
-- Redundant whitespace and formatting issues
-- Non-standard extensions and attributes
-
-DDEX Builder solves this by:
-- **Normalizing** all input to clean DDEX 4.3 structure
-- **Standardizing** element and attribute ordering
-- **Optimizing** output for compliance and size
-- **Preserving** all semantic data and business information
-
-### Build & Normalization Features
-
-```typescript
-// Build DDEX
-const { DdexBuilder } = require('ddex-builder');
-const builder = new DdexBuilder();
-builder.applyPreset('audio_album'); // Apply baseline preset
-
-// Configuration options
-builder.setConfig({
-  canonical: true,           // Consistent, deterministic output
-  validate: true,            // Ensure DDEX compliance
-  version: '4.3',           // Target DDEX version
-  optimize_size: true       // Remove redundant whitespace
-});
-
-// Parse messy vendor DDEX → Output clean DDEX
-const { DdexParser } = require('ddex-parser');
-const parser = new DdexParser();
-const parsed = await parser.parse(messyVendorFile);
-const cleanDdex = await builder.build(parsed);
-// Result: Beautiful, compliant DDEX 4.3
-```
-
-### What Gets Normalized
-
-| Input Chaos | Output Order |
-|------------|--------------|
-| Mixed namespace prefixes | Consistent DDEX namespaces |
-| Random element ordering | Specification-compliant order |
-| Whitespace soup | Clean, minimal formatting |
-| Legacy DDEX versions | Modern DDEX 4.3 |
-| Vendor-specific quirks | Standard-compliant structure |
-
-### 🔒 Data Integrity Guarantees
-
-The DDEX Suite ensures your business data is always preserved:
-
-#### **Guarantee 1: Semantic Preservation**
-All business-critical data (ISRCs, titles, artists, deals) is preserved with 100% accuracy.
-
-#### **Guarantee 2: Deterministic Output**
-Building the same data always produces identical output - perfect for testing and validation.
-
-#### **Guarantee 3: Extension Support**
-Partner extensions (YouTube, generic) are preserved and properly namespaced.
-
-#### **Guarantee 4: Round-Trip Data Integrity**
-Parse → Modify → Build workflows maintain all your data, with beneficial normalization applied.
-
-## 🚀 Features
-
-### ✅ Error Refactoring (v0.4.5)
-- Enhanced error handling across all bindings
-- Critical bug fixes for production stability
-- Memory leak fixes in streaming parser
-- Improved cross-platform binary compatibility
-
-### ✅ Stability Improvements (v0.4.4)
-- Enhanced error handling for missing required fields
-- Improved validation messages with specific field paths
-- Removed placeholder data generation
-- Fixed validation to reject incomplete DDEX documents
-
-### ✅ Enhanced Parser Performance (v0.4.3)
-- **ENHANCED**: Improved parser graph structure optimization
-- **IMPROVED**: Enhanced memory management for large DDEX files
-- **OPTIMIZED**: Better resource allocation patterns for streaming
-- **UPDATED**: Refined error handling and validation routines
-
-### ✅ Linux x64 Node.js Binaries Added (v0.4.2)
-- **Native**: Linux x64 GNU binaries for Node.js (Node 18+ compatible)
-- Cloud deployment support for Google Cloud, AWS, Azure
-- Server-side rendering and cloud function compatibility
-- Added `ddex-parser-node.linux-x64-gnu.node` binary
-- Added `ddex-builder-node.linux-x64-gnu.node` binary
-
-### ✅ Streaming Parser with SIMD Optimization (v0.4.0)
-- **⚡ SIMD-Accelerated**: FastStreamingParser using memchr for 25-30 MB/s production throughput
-- **🎯 Peak Performance**: 500-700 MB/s for uniform XML, up to 1,265 MB/s in optimal conditions
-- **💾 Memory Efficient**: 90% reduction - 100MB files with <50MB peak memory (O(1) streaming)
-- **🔍 Selective Parsing**: 11-12x faster with XPath-like selectors for targeted extraction
-- **⚙️ Parallel Processing**: 6.25x speedup on 8 cores with 78% efficiency
-- **🌐 Cross-Language**: Native streaming in Rust, Python (16M+ elements/sec), Node.js (100K elements/sec)
-- **📊 Production Ready**: 96.3% score across all validation metrics
-
-### ✅ Smart Normalization (v0.4.0)
-- **🧹 Clean Output**: Transform messy vendor DDEX into compliant DDEX 4.3
-- **📐 Consistent Structure**: Standardized element ordering and namespaces
-- **✨ Optimized Size**: Remove redundant whitespace and formatting
-- **🔄 Data Preservation**: 100% semantic accuracy maintained
-- **🎯 Deterministic**: Same input always produces same output
-
-### ✅ Native Python Bindings (v0.3.0)
-- **🐍 Production-Ready Python**: Native PyO3 bindings with full DataFrame integration
-- **📊 DataFrame Support**: Three schema options (flat, releases, tracks) for pandas integration
-- **⚡ Native Performance**: <50ms parsing for 10MB files with Python
-- **🔄 Round-Trip Python**: Complete Parse → DataFrame → Build workflow support
-- **🔗 PyPI Available**: Install with `pip install ddex-parser ddex-builder`
-
-### ✅ Core Features
-- **🔄 Round-Trip Workflow**: Parse → Modify → Build with 100% data preservation
-- **🎭 Dual Model Architecture**: Graph (faithful) and flattened (developer-friendly) views
-- **🛡️ Enterprise Security**: XXE protection, entity expansion limits, memory bounds
-- **⚡ High Performance**: Sub-millisecond processing for typical files
-- **🌐 Multi-Platform**: Native bindings for Node.js, Python, WASM, and Rust
-- **🔗 Reference Linking**: Automatic relationship resolution between entities
-- **🆔 Stable Hash IDs**: Content-based deterministic ID generation
-- **✨ Multi-Version Support**: ERN 3.8.2, 4.2, and 4.3 with automatic detection
-
-### 🔄 In Development
-- **Streaming**: Handle massive catalogs with backpressure and progress callbacks
-- **Semantic Diff**: Track changes between DDEX message versions
-- **Additional Bindings**: C#/.NET and Go language bindings
-
-## 📦 Installation
+All packages are released together at the same version (0.5.0).
 
 ```bash
-# JavaScript/TypeScript
-npm install ddex-parser  # ✅ Latest: v0.4.4
-npm install ddex-builder # ✅ Latest: v0.4.4
-
-# Python
-pip install ddex-parser  # ✅ Latest: v0.4.4
-pip install ddex-builder # ✅ Latest: v0.4.4
-
-# Rust
-cargo add ddex-core      # ✅ Latest: v0.4.4
-cargo add ddex-parser    # ✅ Latest: v0.4.4
-cargo add ddex-builder   # ✅ Latest: v0.4.4
+cargo add ddex-parser ddex-builder
+npm install ddex-parser ddex-builder
+pip install ddex-parser ddex-builder
 ```
 
-### Browser/WASM
-```html
-<script type="module">
-import init, { DdexParser, DdexBuilder } from '@ddex/wasm';
-await init();
-const parser = new DdexParser();
-const builder = new DdexBuilder();
-</script>
-```
+Prebuilt binaries:
 
-Bundle sizes (v0.4.0):
-- Parser: 37KB (gzipped: ~12KB)
-- Builder: 420KB (gzipped: ~140KB)
+- **npm**: macOS arm64 and x64, Linux x64 (glibc), Windows x64. Node.js 18 or newer.
+- **PyPI**: abi3 wheels for Python 3.10 or newer on Linux x86_64 and aarch64 (glibc
+  2.28+), Linux x86_64 (musl), macOS x86_64 and arm64, and Windows x64. Other platforms
+  build from the source distribution, which needs a Rust toolchain.
+- **Rust**: 1.82 or newer.
 
-## 💻 Usage Examples
+The WASM builds (`packages/*/bindings/wasm`) are not published; build them with
+`wasm-pack`.
 
-### JavaScript/TypeScript
-```typescript
-// Parse DDEX
+## Examples
+
+Parse with Node.js (`release.xml` is any ERN message):
+
+```js
+const fs = require('node:fs');
 const { DdexParser } = require('ddex-parser');
-const parser = new DdexParser();
-const result = await parser.parse(xmlContent);
 
-// Modify the parsed data
-result.flat.releases[0].title = "Updated Title";
-
-// Build DDEX
-const { DdexBuilder } = require('ddex-builder');
-const builder = new DdexBuilder();
-builder.applyPreset('audio_album'); // optional
-const xml = await builder.build(result.toBuildRequest());
-
-// Round-trip with beneficial normalization
-const reparsed = await parser.parse(xml);
-assert.deepEqual(reparsed.graph, result.graph); // ✅ Identical
+const message = new DdexParser().parseSync(fs.readFileSync('release.xml', 'utf8'));
+for (const release of message.releases) {
+  console.log(release.releaseId, release.title, release.releaseDates.map((d) => d.date));
+  for (const track of release.tracks) {
+    console.log(`  ${track.position}. ${track.title} [${track.isrc}]`);
+  }
+}
 ```
 
-### Python (v0.4.0 - Native Implementation)
+Build with Python:
+
 ```python
-from ddex_parser import DdexParser
 from ddex_builder import DdexBuilder
-import pandas as pd
 
-# Parse DDEX message with native performance
-parser = DdexParser()
-message = parser.parse(xml_content)
 
-# Export to DataFrame for analysis (NEW!)
-df = message.to_dataframe(schema='releases')  # 'flat', 'releases', or 'tracks'
-print(f"Found {len(df)} releases")
+def party(name, party_id):
+    return {"party_name": [{"text": name}], "party_id": party_id}
 
-# Modify DataFrame data
-df.loc[0, 'title'] = 'Updated Album Title'
 
-# Build from DataFrame (Round-trip support)
-builder = DdexBuilder()
-xml = builder.from_dataframe(df, version='4.3')
-
-# Traditional object-based building also supported
-xml = builder.build({
-    'header': {
-        'message_sender': {'party_name': [{'text': 'My Label'}]},
-        'message_recipient': {'party_name': [{'text': 'YouTube'}]}
+xml = DdexBuilder().build({
+    "header": {
+        "message_sender": party("Example Label", "PADPIDA0000000001"),
+        "message_recipient": party("Example DSP", "PADPIDA0000000002"),
     },
-    'version': '4.3',
-    'releases': [{
-        'release_id': '1234567890123',
-        'title': [{'text': 'Amazing Album'}],
-        'display_artist': 'Great Artist',
-        'tracks': [
-            {'position': 1, 'isrc': 'USXYZ2600001', 'title': 'Track 1', 'duration': 180}
-        ]
-    }]
+    "version": "4.3",
+    "avs_version_id": "12",
+    "language_and_script_code": "en",
+    "releases": [{
+        "release_id": "A1-ABCDE-0000000001-M",
+        "title": [{"text": "Example Single"}],
+        "artist": "Example Artist",
+        "label": "Example Label",
+        "release_type": "Single",
+        "genre": "Pop",
+        "parental_warning_type": "NotExplicit",
+        "tracks": [{
+            "track_id": "T1",
+            "isrc": "ZZ0000000001",
+            "title": "Example Track",
+            "duration": "PT3M42S",
+            "artist": "Example Artist",
+            "resource_type": "MusicalWorkSoundRecording",
+            "parental_warning_type": "NotExplicit",
+        }],
+    }],
+    "deals": [],
 })
+print(xml)
 ```
 
-### Rust
-```rust
-use ddex_parser::DdexParser;
-use ddex_builder::DdexBuilder;
+Each package README has the full example for its language:
+[Rust parser](https://github.com/daddykev/ddex-suite/blob/main/packages/ddex-parser/README.md),
+[Rust builder](https://github.com/daddykev/ddex-suite/blob/main/packages/ddex-builder/README.md),
+[Node parser](https://github.com/daddykev/ddex-suite/blob/main/packages/ddex-parser/bindings/node/README.md),
+[Node builder](https://github.com/daddykev/ddex-suite/blob/main/packages/ddex-builder/bindings/node/README.md),
+[Python parser](https://github.com/daddykev/ddex-suite/blob/main/packages/ddex-parser/bindings/python/README.md),
+[Python builder](https://github.com/daddykev/ddex-suite/blob/main/packages/ddex-builder/bindings/python/README.md).
 
-// Parse DDEX message
-let parser = DdexParser::new();
-let result = parser.parse(&xml_content)?;
+## What to expect
 
-// Modify the parsed data
-let mut build_request = result.to_build_request();
-build_request.releases[0].title = "Updated Title".to_string();
+- **Parsing**: absent values stay empty, nothing is invented, and text keeps its
+  whitespace following the XSD. Release dates, P and C lines, genres, parental warnings,
+  labels, track groups and deal dates are read in every ERN version that has them.
+- **Building**: nothing is filled in. A value the target version requires but the request
+  lacks fails the build with an error naming the field. ERN 4.3, 4.2 and 3.8.2 output is
+  validated against the official XSDs in CI. ERN 3.8.1 output is the 3.8.2 document in
+  the 3.8.1 namespace and is not checked against an official XSD (none is available).
+  There is no built-in conversion from a parsed message to a build request yet.
+- **Security**: the parser rejects DTDs and external entities (XXE), limits entity
+  expansion, depth and size, and never fetches from the network. Neither package
+  validates against the XSD or the AVS business rules at runtime.
+- **Streaming**: `parse` reads the whole document. The Rust streaming APIs are
+  experimental and opt-in, and read a subset of the fields. The parallel streaming
+  iterator does not currently scale with the thread count (planned for 0.6.0).
+- **Presets**: the builder's preset APIs do not change the output in 0.5.0.
 
-// Build deterministic XML
-let builder = DdexBuilder::new();
-let xml = builder.build(&build_request)?;
+Open bugs are listed in
+[KNOWN_ISSUES.md](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md).
 
-// Round-trip with beneficial normalization and type safety
-let reparsed = parser.parse(&xml)?;
-assert_eq!(reparsed.graph, result.graph); // ✅ Identical
-```
+## Performance
 
-## 🏗️ Architecture
+Criterion benches on an Apple M1 Pro, release profile
+([details and commands](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md)):
 
-Built as a monorepo with shared core components:
+| Operation | Measured |
+|---|---:|
+| Parse an official ERN 4.3 sample (10–330 KB) | 0.5–14 ms (about 20–24 MiB/s) |
+| Parse `1 Audio.xml` (75 KB, a typical album) | 3.4 ms |
+| Parse a ~10 MB ERN 4.3 catalog | 441 ms (22.7 MiB/s) |
+| Build ERN 4.3, 1 / 12 / 100 tracks | 2.7 / 11.4 / 80 ms |
 
-```
-┌───────────────────────────────────────┐
-│            DDEX Suite                 │
-├─────────────────┬─────────────────────┤
-│   DDEX Parser   │   DDEX Builder      │
-│  Read & Parse   │  Generate & Build   │
-├─────────────────┴─────────────────────┤
-│           Shared Core                 │
-│    Models │ Errors │ FFI │ Utils      │
-├───────────────────────────────────────┤
-│         Language Bindings             │
-│   napi-rs │ PyO3 │ WASM │ CLI         │
-└───────────────────────────────────────┘
-```
+## Repository layout
 
-## 🔒 Security
+- `packages/core`: `ddex-core`
+- `packages/ddex-parser`, `packages/ddex-builder`: the crates, with their bindings in
+  `bindings/node`, `bindings/python` and `bindings/wasm`
+- `website`: the documentation site, [ddex-suite.org](https://ddex-suite.org)
+- `examples`: the official DDEX ERN 4.2 and 4.3 sample messages
 
-- XXE (XML External Entity) protection
-- Entity expansion limits (billion laughs protection)
-- Deep nesting protection
-- Size and timeout limits
-- Memory-bounded streaming
-- Supply chain security with cargo-deny and SBOM
+## Links
 
-## 📊 Performance Metrics
+- Documentation: [ddex-suite.org](https://ddex-suite.org), [docs.rs/ddex-parser](https://docs.rs/ddex-parser), [docs.rs/ddex-builder](https://docs.rs/ddex-builder)
+- [Changelog](https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md)
+- [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md)
+- [Known issues](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md)
+- [Report an issue](https://github.com/daddykev/ddex-suite/issues)
 
-### Streaming Parser Performance
+DDEX Suite complements [DDEX Workbench](https://ddex-workbench.org), which handles XSD
+validation and business rules. External contributions are not accepted yet; issue
+reports and feedback are welcome.
 
-| Operation | Performance | Memory | Notes |
-|-----------|------------|--------|-------|
-| **Production Files** | 25-30 MB/s | <50MB | Complex DDEX files with varied content |
-| **Uniform XML** | 500-700 MB/s | <50MB | Repetitive patterns, SIMD sweet spot |
-| **Peak Throughput** | 1,265 MB/s | <50MB | Optimal conditions, cached data |
-| **100MB File** | ~3.6s | <10MB | 90% memory reduction achieved |
-| **1GB File** | ~36s | <50MB | Maintains constant memory |
-| **Selective Parsing** | 11-12x faster | <5MB | Extract specific elements only |
-| **Parallel (8 cores)** | 6.25x speedup | ~6MB/thread | 78% efficiency |
+## License
 
-### Language Binding Performance
-
-| Language | Throughput | Memory | Async Support | Notes |
-|----------|------------|--------|---------------|-------|
-| **Rust** | 50K elem/ms | Native | Yes (tokio) | Baseline |
-| **Python** | 16M elem/s | <100MB | Yes (asyncio) | PyO3 native |
-| **Node.js** | 100K elem/s | <100MB | Yes (streams) | Native streams + backpressure |
-| **WASM** | 10K elem/s | Browser | Yes (Promise) | 37KB bundle size |
-
-### Parser Performance by File Size
-
-| File Size | Parse Time | Memory Usage | Mode | Notes |
-|-----------|------------|--------------|------|-------|
-| 10KB | <5ms | <2MB | DOM | Single release |
-| 100KB | <10ms | <5MB | DOM | Small catalog |
-| 1MB | <50ms | <20MB | DOM | Medium catalog |
-| 10MB | <400ms | <100MB | Auto | Threshold for streaming |
-| 100MB | <3.6s | <10MB | Stream | 90% memory reduction |
-| 1GB | <36s | <50MB | Stream | Constant memory usage |
-
-
-### Package Sizes
-
-| Component | Size | Target | Status |
-|-----------|------|--------|--------|
-| Rust Core | 9.4MB | - | ✅ Development artifact |
-| Node.js (npm) | 347KB | <1MB | ✅ Excellent |
-| Python wheel | 235KB | <1MB | ✅ Compact |
-| WASM bundle | 114KB | <500KB | ✅ 77% under target! |
-| **crates.io** ✅ **NEW!** | | | |
-| ddex-core | 57.2KiB (34 files) | <10MB | ✅ Compact |
-| ddex-parser | 197.9KiB (43 files) | <10MB | ✅ Efficient |
-| ddex-builder | 1.1MiB (81 files) | <10MB | ✅ Under limit |
-
-## 📚 Documentation
-
-
-### 📖 Core Documentation
-- [Blueprint](./blueprint.md) - Detailed architecture, roadmap, and technical implementation
-- [Parser API](./packages/ddex-parser/docs/API.md) - Parser documentation
-- [Builder API](./packages/ddex-builder/docs/API.md) - Builder documentation
-- [Round-Trip Guide](./docs/ROUND_TRIP.md) - Parse → Modify → Build guide
-- [Error Handbook](./docs/ERROR_HANDBOOK.md) - Understanding and handling errors
-
-### 🦀 Rust Documentation ✅ **NEW!**
-- [ddex-core](https://docs.rs/ddex-core) - Core data models and utilities
-- [ddex-parser](https://docs.rs/ddex-parser) - Parser API reference
-- [ddex-builder](https://docs.rs/ddex-builder) - Builder API reference
-
-### 🔧 Developer Resources
-- [Contributing Guide](./CONTRIBUTING.md) - Development setup and guidelines
-- [API Changelog](./CHANGELOG.md) - Version history and breaking changes
-
-## 🤝 Contributing
-
-This project is in active development. While external contributions aren't yet accepted, we welcome feedback and issue reports. Follow the project for updates!
-
-## 📜 License
-
-MIT License - see [LICENSE](./LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-DDEX Suite is designed to complement [DDEX Workbench](https://ddex-workbench.org) by providing structural parsing and deterministic generation while Workbench handles XSD validation and business rules.
-
----
-
-**Repository**: https://github.com/daddykev/ddex-suite  
-**Status**: Phase 5.1 - Performance & Scale  
-**Parser**: v0.4.5 on [npm](https://www.npmjs.com/package/ddex-parser) and [PyPI](https://pypi.org/project/ddex-parser/)
-**Builder**: v0.4.5 on [npm](https://www.npmjs.com/package/ddex-builder) and [PyPI](https://pypi.org/project/ddex-builder/)  
-**Suite Target**: v1.0.0 in Q1 2026  
-**Last Updated**: September 21, 2025
+MIT, see [LICENSE](https://github.com/daddykev/ddex-suite/blob/main/LICENSE).

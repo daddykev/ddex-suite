@@ -33,13 +33,13 @@ pub enum PathComponent {
     Wildcard,
     /// Descendant-or-self axis (//)
     DescendantOrSelf,
-    /// Attribute selector ([@attr="value"])
+    /// Attribute selector (`[@attr="value"]`)
     AttributeFilter {
         element: String,
         attribute: String,
         value: Option<String>,
     },
-    /// Index selector ([1], [2], etc.)
+    /// Index selector (`[1]`, `[2]`, etc.)
     IndexFilter { element: String, index: usize },
 }
 
@@ -338,7 +338,7 @@ impl XPathSelector {
         Ok(components)
     }
 
-    /// Parse filter expression like "element[filter]"
+    /// Parse filter expression like `element[filter]`
     fn parse_filter(input: &str) -> Result<(String, String), ParseError> {
         if let Some(bracket_start) = input.find('[') {
             if let Some(bracket_end) = input.rfind(']') {

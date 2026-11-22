@@ -9,6 +9,9 @@ AGENTS.md
 
 dev-docs/*
 !dev-docs/TEST_TRIAGE.md
+!dev-docs/WARNINGS.md
+!dev-docs/PERFORMANCE.md
+!dev-docs/RELEASE_NOTES_0.5.0.md
 
 # Archive directories
 archive/
@@ -16,12 +19,10 @@ test-archive/
 test-suite/
 test-assets/
 
-.cargo/
+.cargo/*
+!/.cargo/config.toml
 .claude/
-.github/
 .dockerignore
-
-PUBLISH.md
 
 # =========================
 # Rust / Cargo
@@ -307,3 +308,5 @@ temp/
 /schemas/
 # YouTube's ERN 3.8.2 sample messages, fetched by scripts/fetch_ern382_samples.sh (not redistributed)
 /samples/
+**/bindings/wasm/pkg-node/
+packages/*/bindings/node/docs/

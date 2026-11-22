@@ -113,9 +113,9 @@ function HomepageHeader() {
 
 function PerformanceBenchmarks() {
   const benchmarks = [
-    { label: 'Production Parse Speed', value: '25-30 MB/s (complex files)', icon: <FontAwesomeIcon icon={faRocket} />, color: 'var(--ifm-color-primary)' },
-    { label: 'Peak Throughput', value: '1,265 MB/s (optimal)', icon: <FontAwesomeIcon icon={faBolt} />, color: 'var(--ifm-color-primary)' },
-    { label: 'Memory Efficiency', value: '90% reduction (100MB→9.4MB)', icon: <FontAwesomeIcon icon={faSave} />, color: 'var(--ifm-color-success)' },
+    { label: 'Parse a typical album', value: '3.4 ms (ERN 4.3, 75 KB)', icon: <FontAwesomeIcon icon={faRocket} />, color: 'var(--ifm-color-primary)' },
+    { label: 'Parser throughput', value: '20-24 MiB/s (real ERN 4.3)', icon: <FontAwesomeIcon icon={faBolt} />, color: 'var(--ifm-color-primary)' },
+    { label: 'Build a 12-track album', value: '11.4 ms (ERN 4.3)', icon: <FontAwesomeIcon icon={faSave} />, color: 'var(--ifm-color-success)' },
     { label: 'WASM Bundle', value: '114KB (77% under target)', icon: <FontAwesomeIcon icon={faBox} />, color: 'var(--ifm-color-primary)' }
   ];
 
@@ -138,22 +138,19 @@ function PerformanceBenchmarks() {
         </div>
         <div className={styles.chartContainer}>
           <div className={styles.performanceChart}>
-            <h3>v0.4.1 Enhanced Performance</h3>
+            <h3>Measured parse times (M1 Pro, criterion)</h3>
             <div className={styles.chartBars}>
-              <div className={styles.chartBar} style={{ height: '15%' }}>
-                <span>10KB<br/>&lt;5ms</span>
+              <div className={styles.chartBar} style={{ height: '10%' }}>
+                <span>10KB<br/>0.5ms</span>
               </div>
-              <div className={styles.chartBar} style={{ height: '25%' }}>
-                <span>1MB<br/>&lt;50ms</span>
+              <div className={styles.chartBar} style={{ height: '20%' }}>
+                <span>75KB<br/>3.4ms</span>
               </div>
-              <div className={styles.chartBar} style={{ height: '40%' }}>
-                <span>10MB<br/>&lt;400ms</span>
-              </div>
-              <div className={styles.chartBar} style={{ height: '65%' }}>
-                <span>100MB<br/>&lt;3.6s</span>
+              <div className={styles.chartBar} style={{ height: '30%' }}>
+                <span>330KB<br/>14ms</span>
               </div>
               <div className={styles.chartBar} style={{ height: '100%' }}>
-                <span>1GB<br/>&lt;36s</span>
+                <span>10MB<br/>441ms</span>
               </div>
             </div>
           </div>
@@ -336,7 +333,7 @@ function WhyDDEXSuite() {
   const comparisons = [
     {
       feature: 'Performance',
-      ddexSuite: '15x faster than XML parsers',
+      ddexSuite: 'Rust core: a typical album parses in about 3 ms',
       alternatives: 'Slow, memory-intensive parsing',
       icon: <FontAwesomeIcon icon={faRocket} />
     },

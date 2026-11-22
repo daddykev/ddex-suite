@@ -538,7 +538,7 @@ dependencies = [
 
 [[package]]
 name = "ddex-builder"
-version = "0.4.5"
+version = "0.5.0"
 dependencies = [
  "blake3",
  "chrono",
@@ -584,12 +584,13 @@ dependencies = [
  "url",
  "urlencoding",
  "uuid",
+ "web-time",
  "xmltree",
 ]
 
 [[package]]
 name = "ddex-builder-node"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "chrono",
  "ddex-builder",
@@ -607,7 +608,7 @@ dependencies = [
 
 [[package]]
 name = "ddex-builder-python"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "chrono",
  "ddex-builder",
@@ -625,29 +626,24 @@ dependencies = [
 
 [[package]]
 name = "ddex-builder-wasm"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "chrono",
  "console_error_panic_hook",
  "ddex-builder",
- "ddex-core",
  "getrandom 0.3.3",
  "html-escape",
  "indexmap",
  "js-sys",
  "serde",
- "serde-wasm-bindgen",
  "serde_json",
- "uuid",
  "wasm-bindgen",
- "wasm-bindgen-futures",
  "wasm-bindgen-test",
- "web-sys",
 ]
 
 [[package]]
 name = "ddex-core"
-version = "0.4.5"
+version = "0.5.0"
 dependencies = [
  "chrono",
  "html-escape",
@@ -662,7 +658,7 @@ dependencies = [
 
 [[package]]
 name = "ddex-parser"
-version = "0.4.5"
+version = "0.5.0"
 dependencies = [
  "ahash",
  "anyhow",
@@ -707,7 +703,7 @@ dependencies = [
 
 [[package]]
 name = "ddex-parser-node"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "chrono",
  "ddex-core",
@@ -723,7 +719,7 @@ dependencies = [
 
 [[package]]
 name = "ddex-parser-python"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "chrono",
  "ddex-core",
@@ -740,7 +736,7 @@ dependencies = [
 
 [[package]]
 name = "ddex-parser-wasm"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "console_error_panic_hook",
  "ddex-core",
@@ -2805,8 +2801,6 @@ dependencies = [
  "cfg-if",
  "once_cell",
  "rustversion",
- "serde",
- "serde_json",
  "wasm-bindgen-macro",
  "wasm-bindgen-shared",
 ]

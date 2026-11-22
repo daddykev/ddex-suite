@@ -14,11 +14,13 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.4.5"
+version = "0.5.0"
 edition = "2021"
-authors = ["Kevin Marques Moo <daddykev.com>"]
+authors = ["Kevin Marques Moo"]
 license = "MIT"
 repository = "https://github.com/daddykev/ddex-suite"
+homepage = "https://ddex-suite.org"
+rust-version = "1.82"
 
 [workspace.dependencies]
 # Core dependencies

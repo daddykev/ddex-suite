@@ -4,8 +4,7 @@ use ddex_parser::{parser::stream::StreamingParser, ERNVersion};
 use std::io::Cursor;
 
 fn benchmark_streaming(c: &mut Criterion) {
-    // Go up TWO levels from core/benches/ to reach test-suite/
-    let xml = include_str!("../../../test-suite/valid/ern-4.3/simple_release.xml");
+    let xml = include_str!("../tests/fixtures/ern43_basic.xml");
 
     c.bench_function("stream_releases", |b| {
         b.iter(|| {

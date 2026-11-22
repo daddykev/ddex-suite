@@ -1,0 +1,38 @@
+{
+  "name": "ddex-parser-darwin-x64",
+  "version": "0.5.0",
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "main": "ddex-parser-node.darwin-x64.node",
+  "files": [
+    "ddex-parser-node.darwin-x64.node"
+  ],
+  "description": "The darwin-x64 native binary of ddex-parser (installed automatically by ddex-parser)",
+  "keywords": [
+    "ddex",
+    "ern",
+    "xml",
+    "parser",
+    "music",
+    "metadata",
+    "native"
+  ],
+  "author": "Kevin Marques Moo",
+  "homepage": "https://ddex-suite.org",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/daddykev/ddex-suite.git",
+    "directory": "packages/ddex-parser/bindings/node/npm/darwin-x64"
+  },
+  "bugs": {
+    "url": "https://github.com/daddykev/ddex-suite/issues"
+  }
+}

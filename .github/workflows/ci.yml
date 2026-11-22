@@ -1,0 +1,258 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  fmt:
+    name: cargo fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+
+  clippy:
+    name: cargo clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      # Errors fail the job; warnings are reported. ddex-builder's determinism lint
+      # (disallowed HashMap/HashSet, `[lints.clippy] disallowed_types = "deny"`) still fails
+      # in existing code, so it is allowed here and enforced in `clippy-builder-determinism`.
+      - run: cargo clippy --workspace --all-targets -- -A clippy::disallowed_types
+
+  clippy-builder-determinism:
+    name: cargo clippy ddex-builder (disallowed HashMap/HashSet; allowed to fail until 0.6.0)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      # TODO(0.6.0): replace the remaining HashMap/HashSet uses in ddex-builder (about 50
+      # errors) and fold this into the clippy job.
+      # continue-on-error on the step, not the job: on the job it keeps the workflow green
+      # but the PR still lists the check as failed. On the step, the errors stay in this
+      # step's log (marked failed) and the job's check passes.
+      - run: cargo clippy -p ddex-builder --all-targets
+        continue-on-error: true
+
+  test:
+    name: cargo test (-D warnings)
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -D warnings
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install xmllint
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+      - name: Fetch the DDEX schemas and YouTube's ERN 3.8.2 samples
+        run: |
+          sh scripts/fetch_ddex_schemas.sh
+          sh scripts/fetch_ern382_samples.sh
+      - name: cargo test --workspace
+        run: cargo test --workspace
+      - name: Build all targets with --features perf-tests
+        run: cargo build --workspace --all-targets --features ddex-builder/perf-tests,ddex-parser/perf-tests
+
+  docs:
+    name: cargo doc (-D warnings, docs.rs features)
+    runs-on: ubuntu-latest
+    env:
+      # The crate READMEs are the crate docs (#![doc = include_str!("../README.md")]), so
+      # broken links or HTML in a README fail here. Default features, as declared in each
+      # crate's [package.metadata.docs.rs]; --lib, as docs.rs documents the library only.
+      RUSTDOCFLAGS: -D warnings
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # The Python bindings' libs share their names with the crates they wrap (ddex_parser,
+      # ddex_builder: the Python module names), and rustdoc writes both to the same path;
+      # --lib overrides their `doc = false`, so they are excluded here.
+      - run: cargo doc --no-deps --workspace --lib --exclude ddex-parser-python --exclude ddex-builder-python
+
+  msrv:
+    name: MSRV (rust-version 1.82)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.82
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check --locked -p ddex-core -p ddex-parser -p ddex-builder
+
+  package:
+    name: cargo package (the published crates build from their packaged files)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # Packages the three crates together (ddex-parser and ddex-builder resolve the
+      # unpublished ddex-core 0.5.0 from the local packages) and builds each one from its
+      # .crate file, so a file missing from `include` fails here.
+      - run: cargo package -p ddex-core -p ddex-parser -p ddex-builder
+      - name: Packaged files
+        run: |
+          for c in ddex-core ddex-parser ddex-builder; do
+            echo "$c: $(cargo package --list -p "$c" | wc -l) files"
+          done
+
+  readme-examples:
+    name: README examples (Node and Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build the Node packages
+        run: |
+          for pkg in ddex-parser ddex-builder; do
+            (cd "packages/$pkg/bindings/node" && npm install --no-audit --no-fund && npx napi build --platform --release)
+          done
+      - name: Install them into an empty app
+        run: |
+          mkdir -p "$RUNNER_TEMP/app" && cd "$RUNNER_TEMP/app" && npm init -y >/dev/null
+          npm install --no-audit --no-fund "$GITHUB_WORKSPACE/packages/ddex-parser/bindings/node" "$GITHUB_WORKSPACE/packages/ddex-builder/bindings/node"
+      - name: Run the js examples (README.md and the Node READMEs)
+        run: >-
+          python scripts/readme_examples.py --lang js --workdir "$RUNNER_TEMP/app"
+          --sample "examples/Samples43/1 Audio.xml"
+          README.md packages/ddex-parser/bindings/node/README.md packages/ddex-builder/bindings/node/README.md
+      - name: Build and install the Python packages
+        run: |
+          python -m pip install --upgrade pip maturin pandas
+          for pkg in ddex-parser ddex-builder; do
+            (cd "packages/$pkg/bindings/python" && maturin build --release --out "$RUNNER_TEMP/wheels")
+          done
+          python -m pip install "$RUNNER_TEMP"/wheels/*.whl
+      - name: Run the python examples (README.md and the Python READMEs)
+        run: >-
+          python scripts/readme_examples.py --lang python --workdir "$RUNNER_TEMP/py"
+          --sample "examples/Samples43/1 Audio.xml"
+          README.md packages/ddex-parser/bindings/python/README.md packages/ddex-builder/bindings/python/README.md
+
+  xsd:
+    name: XSD validation of builder output
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install xmllint
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+      - name: Fetch the DDEX schemas
+        run: sh scripts/fetch_ddex_schemas.sh
+      - name: Builder XSD tests (Rust)
+        run: cargo test -p ddex-builder --test it -- xsd round_trip samples escaping
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --locked
+      - name: WASM builder output (XSD-validated)
+        working-directory: packages/ddex-builder/bindings/wasm
+        run: npm test
+      - name: WASM parser builds
+        working-directory: packages/ddex-parser/bindings/wasm
+        run: wasm-pack build --target web --release
+
+  node:
+    name: Node bindings
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: ddex-parser (build, test)
+        working-directory: packages/ddex-parser/bindings/node
+        run: |
+          npm install --no-audit --no-fund  # package-lock.json is not tracked
+          npm run build
+          npm test
+      - name: ddex-builder (build; tests build ERN 4.3 / 3.8.2 and read it back with the parser)
+        working-directory: packages/ddex-builder/bindings/node
+        run: |
+          npm install --no-audit --no-fund  # package-lock.json is not tracked
+          npm run build
+          npm test
+
+  python:
+    name: Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install build and test tools
+        run: python -m pip install --upgrade pip maturin pytest pytest-asyncio pandas
+      - name: ddex-parser (maturin build, pytest)
+        working-directory: packages/ddex-parser/bindings/python
+        run: |
+          maturin build --release --out dist-ci
+          python -m pip install --force-reinstall dist-ci/*.whl
+          cd tests && python -m pytest -v
+      - name: ddex-builder (maturin build, pytest)
+        working-directory: packages/ddex-builder/bindings/python
+        run: |
+          maturin build --release --out dist-ci
+          python -m pip install --force-reinstall dist-ci/*.whl
+          mkdir -p /tmp/builder-tests && cp test_*.py /tmp/builder-tests/
+          cd /tmp/builder-tests && python -m pytest -v
+
+  oracle:
+    name: ERN 4.x oracle comparison
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install lxml
+      - run: cargo build --release -p ddex-parser --bin ddex-parser
+      - name: Compare the parser with the lxml oracle (official 4.2 / 4.3 samples)
+        run: python scripts/compare_ern4_oracle.py --parser target/release/ddex-parser examples/Samples42/*.xml examples/Samples43/*.xml

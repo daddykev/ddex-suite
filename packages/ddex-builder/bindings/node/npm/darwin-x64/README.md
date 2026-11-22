@@ -1,0 +1,8 @@
+# ddex-builder-darwin-x64
+
+The macOS x64 (Intel) native binary of [`ddex-builder`](https://www.npmjs.com/package/ddex-builder), part of
+[DDEX Suite](https://github.com/daddykev/ddex-suite).
+
+Do not install this package directly: `npm install ddex-builder` installs it as an optional
+dependency on matching systems. Documentation, changelog and issues:
+https://www.npmjs.com/package/ddex-builder

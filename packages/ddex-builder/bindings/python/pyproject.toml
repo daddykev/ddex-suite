@@ -4,28 +4,32 @@ build-backend = "maturin"
 
 [project]
 name = "ddex-builder"
-version = "0.4.5"
-description = "High-performance DDEX XML builder with deterministic output and smart normalization"
+version = "0.5.0"
+description = "Deterministic DDEX ERN XML builder (ERN 4.3, 4.2, 3.8.2) for Python, from dicts or pandas DataFrames"
 readme = "README.md"
 authors = [{name = "Kevin Marques Moo"}]
 license = {text = "MIT"}
-keywords = ["ddex", "xml", "builder", "music", "deterministic", "canonicalization"]
+keywords = ["ddex", "ern", "xml", "builder", "music", "metadata", "deterministic"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Rust",
     "Topic :: Multimedia :: Sound/Audio",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Text Processing :: Markup :: XML",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = []
 
 [project.optional-dependencies]
@@ -34,12 +38,17 @@ pandas = ["pandas>=1.0", "numpy>=1.20"]
 test = ["pytest>=6.0", "pytest-asyncio>=0.18"]
 
 [project.urls]
-homepage = "https://github.com/daddykev/ddex-suite"
-repository = "https://github.com/daddykev/ddex-suite"
-documentation = "https://github.com/daddykev/ddex-suite/tree/main/packages/ddex-builder"
+Homepage = "https://ddex-suite.org"
+Documentation = "https://ddex-suite.org/docs/builder"
+Repository = "https://github.com/daddykev/ddex-suite"
+Changelog = "https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md"
+"Migration notes (0.5.0)" = "https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md"
+Issues = "https://github.com/daddykev/ddex-suite/issues"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
 python-source = "python"
 module-name = "ddex_builder._internal"
 strip = true
+# Never package local build leftovers (wheels are built from a clean checkout in CI).
+exclude = ["**/__pycache__/**", "**/*.pyc"]

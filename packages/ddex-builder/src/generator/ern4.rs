@@ -127,13 +127,18 @@ impl Checker {
             );
         }
         if self.version == Ern4Version::V43 && request.avs_version_id.is_none() {
-            self.p.missing("NewReleaseMessage/@AvsVersionId", "avs_version_id");
+            self.p
+                .missing("NewReleaseMessage/@AvsVersionId", "avs_version_id");
         }
 
         let header = &request.header;
         for (party, element, field) in [
             (&header.message_sender, "MessageSender", "message_sender"),
-            (&header.message_recipient, "MessageRecipient", "message_recipient"),
+            (
+                &header.message_recipient,
+                "MessageRecipient",
+                "message_recipient",
+            ),
         ] {
             match party.party_id.as_deref() {
                 None => self.p.missing(
@@ -160,7 +165,8 @@ impl Checker {
             }
         }
         if let Some(created) = &header.message_created_date_time {
-            self.p.date_time(created, "header.message_created_date_time");
+            self.p
+                .date_time(created, "header.message_created_date_time");
         }
 
         match request.releases.len() {
@@ -198,22 +204,42 @@ impl Checker {
         let at = "releases[0]";
         match release.release_reference.as_deref() {
             Some(r) => self.p.reference(r, 'R', &format!("{at}.release_reference")),
-            None => self.p.missing("Release/ReleaseReference", &format!("{at}.release_reference")),
+            None => self.p.missing(
+                "Release/ReleaseReference",
+                &format!("{at}.release_reference"),
+            ),
         }
-        self.p.require_some(&release.release_type, "Release/ReleaseType", &format!("{at}.release_type"));
+        self.p.require_some(
+            &release.release_type,
+            "Release/ReleaseType",
+            &format!("{at}.release_type"),
+        );
         if let Some(t) = &release.release_type {
             self.p.avs_value(t, &format!("{at}.release_type"));
         }
         self.p.release_identifier(release, at);
         if release.title.iter().all(|t| t.text.is_empty()) {
-            self.p.missing("Release/DisplayTitleText", &format!("{at}.title"));
+            self.p
+                .missing("Release/DisplayTitleText", &format!("{at}.title"));
         }
-        self.p.require_text(&release.artist, "Release/DisplayArtistName", &format!("{at}.artist"));
+        self.p.require_text(
+            &release.artist,
+            "Release/DisplayArtistName",
+            &format!("{at}.artist"),
+        );
         if let Some(role) = &release.artist_role {
             self.p.avs_value(role, &format!("{at}.artist_role"));
         }
-        self.p.require_some(&release.label, "Release/ReleaseLabelReference", &format!("{at}.label"));
-        self.p.require_some(&release.genre, "Release/Genre/GenreText", &format!("{at}.genre"));
+        self.p.require_some(
+            &release.label,
+            "Release/ReleaseLabelReference",
+            &format!("{at}.label"),
+        );
+        self.p.require_some(
+            &release.genre,
+            "Release/Genre/GenreText",
+            &format!("{at}.genre"),
+        );
         self.p.require_some(
             &release.parental_warning_type,
             "Release/ParentalWarningType",
@@ -255,10 +281,19 @@ impl Checker {
             ResourceKind::Video => "Video",
         };
         match track.resource_reference.as_deref() {
-            Some(r) => self.p.reference(r, 'A', &format!("{at}.resource_reference")),
-            None => self.p.missing(&format!("{kind}/ResourceReference"), &format!("{at}.resource_reference")),
+            Some(r) => self
+                .p
+                .reference(r, 'A', &format!("{at}.resource_reference")),
+            None => self.p.missing(
+                &format!("{kind}/ResourceReference"),
+                &format!("{at}.resource_reference"),
+            ),
         }
-        self.p.require_some(&track.resource_type, &format!("{kind}/Type"), &format!("{at}.resource_type"));
+        self.p.require_some(
+            &track.resource_type,
+            &format!("{kind}/Type"),
+            &format!("{at}.resource_type"),
+        );
         if let Some(t) = &track.resource_type {
             self.p.avs_value(t, &format!("{at}.resource_type"));
         }
@@ -270,15 +305,30 @@ impl Checker {
         }
         for (i, p) in track.proprietary_ids.iter().enumerate() {
             if p.namespace.is_empty() {
-                self.p.missing("ProprietaryId/@Namespace", &format!("{at}.proprietary_ids[{i}].namespace"));
+                self.p.missing(
+                    "ProprietaryId/@Namespace",
+                    &format!("{at}.proprietary_ids[{i}].namespace"),
+                );
             }
         }
-        self.p.require_text(&track.title, &format!("{kind}/DisplayTitleText"), &format!("{at}.title"));
-        self.p.require_text(&track.artist, &format!("{kind}/DisplayArtistName"), &format!("{at}.artist"));
+        self.p.require_text(
+            &track.title,
+            &format!("{kind}/DisplayTitleText"),
+            &format!("{at}.title"),
+        );
+        self.p.require_text(
+            &track.artist,
+            &format!("{kind}/DisplayArtistName"),
+            &format!("{at}.artist"),
+        );
         if let Some(role) = &track.artist_role {
             self.p.avs_value(role, &format!("{at}.artist_role"));
         }
-        self.p.duration(&track.duration, &format!("{kind}/Duration"), &format!("{at}.duration"));
+        self.p.duration(
+            &track.duration,
+            &format!("{kind}/Duration"),
+            &format!("{at}.duration"),
+        );
         self.p.require_some(
             &track.parental_warning_type,
             &format!("{kind}/ParentalWarningType"),
@@ -286,20 +336,39 @@ impl Checker {
         );
         if let Some(tr) = &track.track_release {
             let at = format!("{at}.track_release");
-            self.p.reference(&tr.release_reference, 'R', &format!("{at}.release_reference"));
+            self.p.reference(
+                &tr.release_reference,
+                'R',
+                &format!("{at}.release_reference"),
+            );
             if tr.release_ids.is_empty() {
-                self.p.missing("an identifier in TrackRelease/ReleaseId", &format!("{at}.release_ids"));
+                self.p.missing(
+                    "an identifier in TrackRelease/ReleaseId",
+                    &format!("{at}.release_ids"),
+                );
             }
-            self.p.proprietary_ids(&tr.release_ids, &format!("{at}.release_ids"));
-            self.p.require_some(&tr.label, "TrackRelease/ReleaseLabelReference", &format!("{at}.label"));
-            self.p.require_some(&tr.genre, "TrackRelease/Genre/GenreText", &format!("{at}.genre"));
+            self.p
+                .proprietary_ids(&tr.release_ids, &format!("{at}.release_ids"));
+            self.p.require_some(
+                &tr.label,
+                "TrackRelease/ReleaseLabelReference",
+                &format!("{at}.label"),
+            );
+            self.p.require_some(
+                &tr.genre,
+                "TrackRelease/Genre/GenreText",
+                &format!("{at}.genre"),
+            );
         }
     }
 
     fn deal(&mut self, deal: &DealRequest, i: usize, release_refs: &[&str]) {
         let at = format!("deals[{i}]");
         if deal.release_references.is_empty() {
-            self.p.missing("ReleaseDeal/DealReleaseReference", &format!("{at}.release_references"));
+            self.p.missing(
+                "ReleaseDeal/DealReleaseReference",
+                &format!("{at}.release_references"),
+            );
         }
         for r in &deal.release_references {
             if !release_refs.contains(&r.as_str()) {
@@ -348,7 +417,11 @@ impl PartyTable {
         }
         for track in &release.tracks {
             table.add(PartyKind::Artist, &track.artist);
-            if let Some(label) = track.track_release.as_ref().and_then(|tr| tr.label.as_ref()) {
+            if let Some(label) = track
+                .track_release
+                .as_ref()
+                .and_then(|tr| tr.label.as_ref())
+            {
                 table.add(PartyKind::Label, label);
             }
         }
@@ -429,7 +502,10 @@ fn display_artist(parties: &PartyTable, artist: &str, role: Option<&AvsValueRequ
         &parties.reference(PartyKind::Artist, artist),
     ));
     let main_artist = AvsValueRequest::from("MainArtist");
-    element.add_child(avs_element("DisplayArtistRole", role.unwrap_or(&main_artist)));
+    element.add_child(avs_element(
+        "DisplayArtistRole",
+        role.unwrap_or(&main_artist),
+    ));
     element
 }
 
@@ -481,7 +557,11 @@ fn resource(track: &TrackRequest, parties: &PartyTable, version: Ern4Version) ->
     display_title.add_child(text_element("TitleText", &track.title));
     element.add_child(display_title);
     element.add_child(text_element("DisplayArtistName", &track.artist));
-    element.add_child(display_artist(parties, &track.artist, track.artist_role.as_ref()));
+    element.add_child(display_artist(
+        parties,
+        &track.artist,
+        track.artist_role.as_ref(),
+    ));
     element.add_child(text_element("Duration", &track.duration));
     if let Some(pw) = &track.parental_warning_type {
         element.add_child(text_element("ParentalWarningType", pw));
@@ -502,7 +582,11 @@ fn release_list(release: &ReleaseRequest, parties: &PartyTable) -> Element {
     // Exactly one ReleaseId: release_ids, else release_id as GRid and upc as ICPN.
     element.add_child(release_id(&release_identifiers(release)));
 
-    let titles: Vec<_> = release.title.iter().filter(|t| !t.text.is_empty()).collect();
+    let titles: Vec<_> = release
+        .title
+        .iter()
+        .filter(|t| !t.text.is_empty())
+        .collect();
     for title in &titles {
         let mut e = text_element("DisplayTitleText", &title.text);
         if let Some(lang) = &title.language_code {
@@ -521,7 +605,11 @@ fn release_list(release: &ReleaseRequest, parties: &PartyTable) -> Element {
         element.add_child(e);
     }
     element.add_child(text_element("DisplayArtistName", &release.artist));
-    element.add_child(display_artist(parties, &release.artist, release.artist_role.as_ref()));
+    element.add_child(display_artist(
+        parties,
+        &release.artist,
+        release.artist_role.as_ref(),
+    ));
     if let Some(label) = &release.label {
         element.add_child(text_element(
             "ReleaseLabelReference",
@@ -591,7 +679,10 @@ fn deal(deal: &DealRequest) -> Element {
     }
     terms_element.add_child(validity);
     if !terms.commercial_model_type.is_empty() {
-        terms_element.add_child(text_element("CommercialModelType", &terms.commercial_model_type));
+        terms_element.add_child(text_element(
+            "CommercialModelType",
+            &terms.commercial_model_type,
+        ));
     }
     for u in &terms.use_types {
         terms_element.add_child(text_element("UseType", u));

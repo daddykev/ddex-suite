@@ -12,7 +12,7 @@ Classification and history: `dev-docs/TEST_TRIAGE.md`.
 
 | Bug | Test(s) |
 |---|---|
-| `parse_fast_streaming` (used when `SecurityConfig::relaxed()` / `enable_fast_streaming` is set) returns no releases or resources; the conversion is a TODO in `lib.rs` | `it::fast_streaming::test_fast_streaming_connection_basic`, `…_explicitly`, `…_vs_normal_performance` (perf) |
+| `parse_fast_streaming` (used when `SecurityConfig::relaxed()` / `enable_fast_streaming` is set) returns no releases or resources; the conversion is a TODO in `lib.rs` | `it::fast_streaming::test_fast_streaming_connection_basic`, `…_explicitly` |
 | `StreamingParser::stream_releases` skips the message root element (only `stream_deals` descends into it), so it yields nothing for a full document | `it::utf8_handling::streaming_parser_handles_utf8` |
 | quick-xml's own end-tag/attribute checks fire first and come back as a generic `XmlError`, pre-empting the typed `MismatchedTags` / `UnexpectedClosingTag` / `InvalidAttribute` variants from `parser::xml_validator` | `it::malformed_xml::test_mismatched_opening_closing_tags`, `test_unexpected_closing_tag`, `test_duplicate_attributes`, `test_complex_malformed_structure` |
 | `]]>` in character data is accepted (not well-formed XML) and the surrounding text is mangled | `it::malformed_xml::test_cdata_terminator_in_text_is_rejected` |
@@ -51,7 +51,7 @@ decision needed)". The security policy above does not settle them:
 | Bug | Test(s) |
 |---|---|
 | Native `ParsedERNMessage.message_id` is a method, not the documented `str` attribute | `tests/test_parser.py::TestDDEXParser::test_parse_string`, `test_parse_bytes`, `test_parse_async`, `test_convenience_function` |
-| Native `detect_version` returns `"V4_3"`, while the pure-Python fallback and the docs use `"4.3"` | `tests/test_parser.py::TestDDEXParser::test_detect_version` |
+| Native `detect_version` returns `"V4_3"`, while the docs use `"4.3"` | `tests/test_parser.py::TestDDEXParser::test_detect_version` |
 
 ## Not pinned by a test (seen during the cleanup)
 
@@ -67,15 +67,13 @@ decision needed)". The security policy above does not settle them:
 - ddex-parser ERN 3.8.x: only the first `ResourceGroup` of the default
   `ReleaseDetailsByTerritory` block is kept in the graph; resource `ProprietaryId`s
   (`SoundRecordingId`, `VideoId`, `ImageId`) are not read.
-- Node parser binding: the values of `ParsedMessage.resources` have snake_case keys
-  (`resource_id`, `p_line`, ...) while the generated `JsResource` interface is camelCase
-  (`resources` is typed `any`). The `mode` / `autoThreshold` / `enableStreaming` /
-  `streamingThreshold` options are accepted and ignored.
-- ddex-builder timing tests (`--features perf-tests`, release build) miss their targets on
-  the development machine, also on `main` (4–6 of `perf::test_*_performance`,
-  `test_performance_regression_benchmark`, `security_fixes::…::test_performance_impact_benchmark`;
-  e.g. 12-track album 12–15 ms vs a 10 ms target). The set varies between runs.
-
+- Node parser binding: `parse` / `parseSync` take no working options. Every
+  `ParseOptions` field throws since 0.5.0: the streaming ones (`mode`, `autoThreshold`,
+  `enableStreaming`, `streamingThreshold`) and the ones that had no effect
+  (`resolveReferences`, `includeRaw`, `maxMemory`, `timeoutMs`, `allowBlocking`,
+  `chunkSize`, the fidelity options, `collectStatistics`, `validationLevel`, ...).
+  `ParsedMessage.statistics` (all zeros) and `fidelityInfo` (an echo of the options) were
+  removed.
 - ERN 3.8.1 builder output is not XSD-checked: no official 3.8.1 schema can be obtained
   (DDEX no longer serves ERN 3.x XSDs, and no archived copy of the 3.8.1 one exists). It
   is the 3.8.2 document in the 381 namespace (`it::ern38_xsd`), and the content models
@@ -83,10 +81,9 @@ decision needed)". The security policy above does not settle them:
 - The ERN 3.8.2 XSD is fetched from the Internet Archive's capture of its official URL
   (DDEX removed the ERN 3.x schemas from service.ddex.net in 2026), pinned by hash.
 - ddex-builder streaming writer (`streaming::StreamingBuilder`, Node `StreamingDdexBuilder`): ERN 4.2/4.3 targets are rejected with "not yet supported by the streaming writer" (it only writes the 3.8-style tree; use `DDEXBuilder::build` for 4.x). Its 3.8 output still declares the `ern/43` namespace whatever version is requested, and is the old 3.8-style tree, not the schema-valid 3.8.2 that `DDEXBuilder::build` writes.
-- ddex-builder WASM binding (`bindings/wasm`): `build` writes its own string-concatenated "ERN 4.3" document (3.8-shaped, not schema-valid) instead of calling the core builder, and `batch_build` returns hard-coded placeholder XML.
+- ddex-builder WASM binding: `DdexDiffViewer` compares the two documents as single text nodes (it wraps each document in one text node instead of parsing it, like `DDEXBuilder::diff_xml`), so any difference is one change.
 - ddex-parser `FastStreamingParser::new(StreamingConfig)` ignores the config: buffer size, `max_memory` and the `SecurityConfig` limits are not applied on the fast path (`SecurityConfig::relaxed()` / `enable_fast_streaming`).
 - ddex-builder `DDEXBuilder::diff_xml` / `diff_xml_with_config` / `diff_request_with_xml` are stubs: `parse_xml_to_ast` wraps the whole document in one text node, so any difference is reported as a single `/#text` modification. The `DiffEngine` itself works on real ASTs.
 - ddex-builder CLI: `build` writes a placeholder document (`build_ddex_xml` returns `<xml><!-- DDEX XML would be generated here --></xml>`), and `--validate` never fails (`validate_input_data` returns `Ok(())`). Presets and the target version set on `ddex_builder::Builder` do not affect `DDEXBuilder::build` output. (The no-op `batch` subcommand was removed for the same reason.)
 - The Node builder binding's `validateStructure` reports `isValid: true` for invalid XML (`npm test` prints it without failing).
-- The Python parser reports `__version__ == "0.4.3"` while the package is 0.4.5.
 - ERN prefixed local elements (`<ern:PartyId>`, not schema-valid) are handled inconsistently: some are found, `MessageSender/PartyId` is not.

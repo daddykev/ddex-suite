@@ -1,6 +1,6 @@
 [package]
 name = "ddex-builder-python"
-version = "0.4.3"
+version = "0.5.0"
 edition = "2021"
 authors = ["Kevin Marques Moo"]
 license = "MIT"
@@ -12,12 +12,15 @@ crate-type = ["cdylib"]
 # No Rust tests here; binding tests live in the package test suites (npm/pytest).
 test = false
 doctest = false
+# Same lib name as the Rust crate it wraps (the Python module name); rustdoc would
+# write both to target/doc/<name>, so only the Rust crate is documented.
+doc = false
 
 [dependencies]
 ddex-builder = { path = "../..", features = ["ffi"] }
 ddex-parser = { path = "../../../ddex-parser" }
 ddex-core = { path = "../../../core" }
-pyo3 = { version = "0.24.1", features = ["extension-module", "abi3-py38"] }
+pyo3 = { version = "0.24.1", features = ["extension-module", "abi3-py310"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 pythonize = "0.24"

@@ -9,8 +9,6 @@ use std::io::Cursor;
 use ddex_core::models::flat::{ParsedDeal, ParsedERNMessage, ParsedRelease, ParsedResource};
 use ddex_core::models::versions::ERNVersion;
 use ddex_parser::{error::ParseError, DDEXParser as RustDDEXParser};
-use indexmap;
-use serde_json;
 
 /// Convert a JavaScript string to a BufRead + Seek cursor for the parser
 fn string_to_cursor(xml: String) -> Cursor<Vec<u8>> {
@@ -130,7 +128,7 @@ fn parse_error_to_napi(err: ParseError) -> napi::Error {
         ParseError::Timeout { message } => {
             napi::Error::new(
                 napi::Status::GenericFailure,
-                format!("Parsing timeout: {}. Consider using streaming mode for large files or increasing timeout limits.", message),
+                format!("Parsing timeout: {}. Consider splitting the input or increasing timeout limits.", message),
             )
         }
         ParseError::DepthLimitExceeded { depth, limit } => {
@@ -366,11 +364,83 @@ fn convert_resources_to_js_object(
     serde_json::Value::Object(js_resources)
 }
 
+/// Every parse option was removed in 0.5.0 (the streaming ones, and the ones that had no
+/// effect). They are rejected instead of silently ignored.
+fn reject_removed_options(options: &ParseOptions) -> Result<()> {
+    let streaming = [
+        ("mode", options.mode.is_some()),
+        ("autoThreshold", options.auto_threshold.is_some()),
+        ("enableStreaming", options.enable_streaming.is_some()),
+        ("streamingThreshold", options.streaming_threshold.is_some()),
+    ];
+    let no_effect = [
+        ("resolveReferences", options.resolve_references.is_some()),
+        ("includeRaw", options.include_raw.is_some()),
+        ("maxMemory", options.max_memory.is_some()),
+        ("timeoutMs", options.timeout_ms.is_some()),
+        ("allowBlocking", options.allow_blocking.is_some()),
+        ("chunkSize", options.chunk_size.is_some()),
+        ("fidelityLevel", options.fidelity_level.is_some()),
+        ("preserveComments", options.preserve_comments.is_some()),
+        (
+            "preserveProcessingInstructions",
+            options.preserve_processing_instructions.is_some(),
+        ),
+        ("preserveExtensions", options.preserve_extensions.is_some()),
+        (
+            "preserveAttributeOrder",
+            options.preserve_attribute_order.is_some(),
+        ),
+        (
+            "preserveNamespacePrefixes",
+            options.preserve_namespace_prefixes.is_some(),
+        ),
+        ("canonicalization", options.canonicalization.is_some()),
+        ("collectStatistics", options.collect_statistics.is_some()),
+        ("validationLevel", options.validation_level.is_some()),
+        (
+            "extensionValidation",
+            options.extension_validation.is_some(),
+        ),
+        ("enableChecksums", options.enable_checksums.is_some()),
+        ("memoryLimit", options.memory_limit.is_some()),
+        (
+            "enableDetailedErrors",
+            options.enable_detailed_errors.is_some(),
+        ),
+    ];
+    let names = |list: &[(&'static str, bool)]| -> Vec<&'static str> {
+        list.iter()
+            .filter(|(_, set)| *set)
+            .map(|(name, _)| *name)
+            .collect()
+    };
+    let (streaming, no_effect) = (names(&streaming), names(&no_effect));
+    let mut reasons = Vec::new();
+    if !streaming.is_empty() {
+        reasons.push(format!(
+            "{} were removed in 0.5.0: the Node parser always uses the complete parser, whatever \
+             the input size (streaming is not available in Node)",
+            streaming.join(", ")
+        ));
+    }
+    if !no_effect.is_empty() {
+        reasons.push(format!(
+            "{} were removed in 0.5.0: they had no effect on parsing",
+            no_effect.join(", ")
+        ));
+    }
+    if reasons.is_empty() {
+        return Ok(());
+    }
+    Err(napi::Error::new(
+        napi::Status::InvalidArg,
+        format!("Parse option(s) {}. Remove them.", reasons.join("; ")),
+    ))
+}
+
 /// Convert ParsedERNMessage to Node.js ParsedMessage structure
-fn convert_parsed_message(
-    parsed: ParsedERNMessage,
-    options: Option<&ParseOptions>,
-) -> ParsedMessage {
+fn convert_parsed_message(parsed: ParsedERNMessage) -> ParsedMessage {
     let flat = parsed.flat; // Take ownership instead of borrowing
 
     // Convert the actual data structures
@@ -382,45 +452,6 @@ fn convert_parsed_message(
     let release_count = releases.len() as u32;
     let resource_count = flat.resources.len() as u32;
     let deal_count = deals.len() as u32;
-
-    // Generate statistics if requested
-    let statistics = if options.and_then(|o| o.collect_statistics).unwrap_or(false) {
-        Some(ParseStatistics {
-            parse_time_ms: 0.0,   // TODO: Add timing
-            memory_used_bytes: 0, // TODO: Add memory tracking
-            element_count: 0,     // TODO: Count elements during parsing
-            attribute_count: 0,   // TODO: Count attributes during parsing
-            comment_count: 0,     // TODO: Count comments during parsing
-            extension_count: if parsed.extensions.is_some() { 1 } else { 0 },
-            namespace_count: 1, // TODO: Count namespaces during parsing
-            file_size_bytes: 0, // TODO: Track file size
-        })
-    } else {
-        None
-    };
-
-    // Generate fidelity info based on options
-    let fidelity_info = if let Some(opts) = options {
-        Some(FidelityInfo {
-            fidelity_level: opts
-                .fidelity_level
-                .clone()
-                .unwrap_or_else(|| "balanced".to_string()),
-            canonicalization_algorithm: opts
-                .canonicalization
-                .clone()
-                .unwrap_or_else(|| "db_c14n".to_string()),
-            comments_preserved: opts.preserve_comments.unwrap_or(false),
-            extensions_preserved: opts.preserve_extensions.unwrap_or(true),
-            processing_instructions_preserved: opts
-                .preserve_processing_instructions
-                .unwrap_or(false),
-            attribute_order_preserved: opts.preserve_attribute_order.unwrap_or(true),
-            namespace_prefixes_preserved: opts.preserve_namespace_prefixes.unwrap_or(true),
-        })
-    } else {
-        None
-    };
 
     ParsedMessage {
         message_id: flat.message_id.clone(),
@@ -445,9 +476,6 @@ fn convert_parsed_message(
         releases,
         resources: resources_obj,
         deals,
-
-        statistics,
-        fidelity_info,
     }
 }
 
@@ -526,12 +554,16 @@ pub struct JsDateInfo {
 /// A P line or C line.
 #[napi(object)]
 #[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct JsCopyright {
     pub text: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub year: Option<i32>,
     /// `PLineCompany` / `CLineCompany`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub company: Option<String>,
     pub territory_codes: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub is_default: Option<bool>,
 }
 
@@ -583,26 +615,41 @@ pub struct JsTrackGroup {
     pub sequence_number: Option<i32>,
 }
 
-/// A resource. Note: the values of `ParsedMessage.resources` are plain objects whose keys
-/// are snake_case (`resource_id`, `p_line`, ...), not the camelCase names of this interface.
+/// A resource (the values of `ParsedMessage.resources`). It reaches JS through serde, so the
+/// serde names must match the camelCase names napi gives the other objects; absent values
+/// are omitted as napi does (`test-types.js` checks the keys against index.d.ts).
 #[napi(object)]
 #[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct JsResource {
     pub resource_id: String,
     pub resource_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub duration_seconds: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub duration_string: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub file_format: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bitrate: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub sample_rate: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub file_size: Option<String>, // Convert u64 to string for JS compatibility
     /// Default genre (3.8.x), parental warning, P/C line and label name (3.8.x).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub genre: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub sub_genre: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parental_warning: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub p_line: Option<JsCopyright>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub c_line: Option<JsCopyright>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub label_name: Option<String>,
 }
 
@@ -622,6 +669,12 @@ pub struct JsDeal {
 #[napi(js_name = "DdexParser")]
 pub struct DdexParser {
     inner: RustDDEXParser,
+}
+
+impl Default for DdexParser {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[napi]
@@ -675,6 +728,10 @@ impl DdexParser {
         xml: String,
         options: Option<ParseOptions>,
     ) -> Result<ParsedMessage> {
+        if let Some(opts) = &options {
+            reject_removed_options(opts)?;
+        }
+
         // Validate input
         if xml.is_empty() {
             return Err(napi::Error::new(
@@ -687,7 +744,7 @@ impl DdexParser {
             // 100MB limit
             return Err(napi::Error::new(
                 napi::Status::InvalidArg,
-                "XML input too large (>100MB). Consider using streaming mode for large files.",
+                "XML input too large (>100MB). The Node parser reads the whole document into memory.",
             ));
         }
 
@@ -710,7 +767,7 @@ impl DdexParser {
 
                 // Convert the Rust ParsedERNMessage to Node.js ParsedMessage
                 // All data is now real parsed data - no mock data possible at this point
-                let result = convert_parsed_message(parsed_message, options.as_ref());
+                let result = convert_parsed_message(parsed_message);
                 Ok(result)
             }
             Err(parse_error) => {
@@ -729,6 +786,10 @@ impl DdexParser {
         }
     }
 
+    /// # Safety
+    ///
+    /// napi-rs requires `unsafe` for an async method taking `&mut self`: the caller (JS)
+    /// must not call methods of the same parser concurrently with this one.
     #[napi]
     pub async unsafe fn parse(
         &mut self,
@@ -818,11 +879,6 @@ impl DdexParser {
         }
     }
 
-    #[napi]
-    pub fn stream(&self, _xml: String, _options: Option<StreamOptions>) -> Result<ReleaseStream> {
-        Ok(ReleaseStream::new())
-    }
-
     /// Get detailed error information for debugging - useful for error handling in JavaScript
     #[napi]
     pub fn get_detailed_error(&mut self, xml: String) -> Result<DetailedError> {
@@ -838,47 +894,81 @@ impl DdexParser {
     }
 }
 
+/// Options accepted by `parse` / `parseSync`. None are supported in 0.5.0: every field
+/// is a removed option, and passing any of them throws (they used to be ignored).
 #[napi(object)]
 #[derive(Default)]
 pub struct ParseOptions {
-    // Legacy options for backward compatibility
-    /// Not used: parsing always uses the complete parser, whatever the input size (the
-    /// core's experimental streaming mode is not exposed here).
-    pub mode: Option<String>,
-    /// Not used (no automatic switch to streaming since 0.5.0).
-    pub auto_threshold: Option<u32>,
-    pub resolve_references: Option<bool>,
-    pub include_raw: Option<bool>,
-    pub max_memory: Option<u32>,
-    pub timeout_ms: Option<u32>,
-    pub allow_blocking: Option<bool>,
-    pub chunk_size: Option<u32>,
-
-    // Perfect Fidelity Engine options
-    pub fidelity_level: Option<String>, // "fast", "balanced", "perfect"
-    pub preserve_comments: Option<bool>,
-    pub preserve_processing_instructions: Option<bool>,
-    pub preserve_extensions: Option<bool>,
-    pub preserve_attribute_order: Option<bool>,
-    pub preserve_namespace_prefixes: Option<bool>,
-    pub canonicalization: Option<String>, // "none", "c14n", "c14n11", "db_c14n"
-    pub collect_statistics: Option<bool>,
-    /// Not used (see `mode`).
-    pub enable_streaming: Option<bool>,
-    /// Not used (see `mode`).
-    pub streaming_threshold: Option<u32>,
-    pub validation_level: Option<String>, // "none", "basic", "standard", "strict"
-    pub extension_validation: Option<bool>,
-    pub enable_checksums: Option<bool>,
-    pub memory_limit: Option<u32>,
-    pub enable_detailed_errors: Option<bool>,
-}
-
-#[napi(object)]
-#[derive(Default)]
-pub struct StreamOptions {
-    pub chunk_size: Option<u32>,
-    pub max_memory: Option<u32>,
+    /// Removed in 0.5.0: parsing always uses the complete parser, whatever the input size
+    /// (the core's experimental streaming mode is not exposed in Node). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub mode: Option<serde_json::Value>,
+    /// Removed in 0.5.0 (see `mode`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub auto_threshold: Option<serde_json::Value>,
+    /// Removed in 0.5.0 (see `mode`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub enable_streaming: Option<serde_json::Value>,
+    /// Removed in 0.5.0 (see `mode`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub streaming_threshold: Option<serde_json::Value>,
+    /// Removed in 0.5.0: it had no effect on parsing. Passing it throws.
+    #[napi(ts_type = "never")]
+    pub resolve_references: Option<serde_json::Value>,
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub include_raw: Option<serde_json::Value>,
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub max_memory: Option<serde_json::Value>,
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub timeout_ms: Option<serde_json::Value>,
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub allow_blocking: Option<serde_json::Value>,
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub chunk_size: Option<serde_json::Value>,
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub fidelity_level: Option<serde_json::Value>,
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub preserve_comments: Option<serde_json::Value>,
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub preserve_processing_instructions: Option<serde_json::Value>,
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub preserve_extensions: Option<serde_json::Value>,
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub preserve_attribute_order: Option<serde_json::Value>,
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub preserve_namespace_prefixes: Option<serde_json::Value>,
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub canonicalization: Option<serde_json::Value>,
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub collect_statistics: Option<serde_json::Value>,
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub validation_level: Option<serde_json::Value>,
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub extension_validation: Option<serde_json::Value>,
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub enable_checksums: Option<serde_json::Value>,
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub memory_limit: Option<serde_json::Value>,
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub enable_detailed_errors: Option<serde_json::Value>,
 }
 
 #[napi(object)]
@@ -904,35 +994,10 @@ pub struct ParsedMessage {
 
     // CRITICAL: Actual data arrays/objects
     pub releases: Vec<JsRelease>,
-    pub resources: serde_json::Value, // Will be a JS object with resource IDs as keys
+    /// Resources by resource reference.
+    #[napi(ts_type = "Record<string, JsResource>")]
+    pub resources: serde_json::Value,
     pub deals: Vec<JsDeal>,
-
-    // Perfect Fidelity Engine results
-    pub statistics: Option<ParseStatistics>,
-    pub fidelity_info: Option<FidelityInfo>,
-}
-
-#[napi(object)]
-pub struct ParseStatistics {
-    pub parse_time_ms: f64,
-    pub memory_used_bytes: u32,
-    pub element_count: u32,
-    pub attribute_count: u32,
-    pub comment_count: u32,
-    pub extension_count: u32,
-    pub namespace_count: u32,
-    pub file_size_bytes: u32,
-}
-
-#[napi(object)]
-pub struct FidelityInfo {
-    pub fidelity_level: String,
-    pub canonicalization_algorithm: String,
-    pub comments_preserved: bool,
-    pub extensions_preserved: bool,
-    pub processing_instructions_preserved: bool,
-    pub attribute_order_preserved: bool,
-    pub namespace_prefixes_preserved: bool,
 }
 
 #[napi(object)]
@@ -951,60 +1016,4 @@ pub struct DetailedError {
     pub value: Option<String>,
     pub context: Option<String>,
     pub suggestions: Vec<String>,
-}
-
-#[napi(object)]
-pub struct StreamedRelease {
-    pub release_reference: String,
-    pub title: String,
-    pub release_type: Option<String>,
-    pub resource_count: u32,
-}
-
-#[napi]
-pub struct ReleaseStream {
-    position: i32,
-}
-
-impl ReleaseStream {
-    // Regular impl block for internal methods
-    fn new() -> Self {
-        ReleaseStream { position: 0 }
-    }
-}
-
-#[napi]
-impl ReleaseStream {
-    // Fixed: using unsafe for &mut self in async
-    #[napi]
-    pub async unsafe fn next(&mut self) -> Result<Option<StreamedRelease>> {
-        // Return a few test releases
-        if self.position < 3 {
-            self.position += 1;
-            Ok(Some(StreamedRelease {
-                release_reference: format!("R{:03}", self.position),
-                title: format!("Test Release {}", self.position),
-                release_type: Some("Album".to_string()),
-                resource_count: 10,
-            }))
-        } else {
-            Ok(None)
-        }
-    }
-
-    #[napi]
-    pub async fn progress(&self) -> Result<ProgressInfo> {
-        Ok(ProgressInfo {
-            bytes_processed: (self.position * 1000) as f64,
-            releases_parsed: self.position as f64,
-            elapsed_ms: 100.0,
-        })
-    }
-}
-
-#[napi(object)]
-pub struct ProgressInfo {
-    pub bytes_processed: f64,
-    pub releases_parsed: f64,
-    pub elapsed_ms: f64,
 }

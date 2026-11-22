@@ -1,0 +1,268 @@
+# Builds the release packages and uploads them as workflow artifacts. It does NOT publish
+# anything: download the artifacts and publish by hand, in the order given in PUBLISH.md.
+name: Release build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # ---------------------------------------------------------------- PyPI
+  wheels:
+    name: wheel ${{ matrix.package }} ${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [ddex-parser, ddex-builder]
+        platform:
+          - { name: manylinux-x86_64, runner: ubuntu-latest, target: x86_64-unknown-linux-gnu, manylinux: "2_28" }
+          - { name: manylinux-aarch64, runner: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu, manylinux: "2_28" }
+          - { name: musllinux-x86_64, runner: ubuntu-latest, target: x86_64-unknown-linux-musl, manylinux: musllinux_1_2 }
+          - { name: macos-x86_64, runner: macos-13, target: x86_64-apple-darwin }
+          - { name: macos-arm64, runner: macos-14, target: aarch64-apple-darwin }
+          - { name: windows-x64, runner: windows-latest, target: x86_64-pc-windows-msvc }
+    steps:
+      - uses: actions/checkout@v4
+      # abi3-py310 (the pyo3 feature): one cp310-abi3 wheel per platform for Python 3.10+.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Build abi3 wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: packages/${{ matrix.package }}/bindings/python
+          target: ${{ matrix.platform.target }}
+          manylinux: ${{ matrix.platform.manylinux || 'auto' }}
+          args: --release --out dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel-${{ matrix.package }}-${{ matrix.platform.name }}
+          path: packages/${{ matrix.package }}/bindings/python/dist/*.whl
+          if-no-files-found: error
+
+  sdist:
+    name: sdist ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [ddex-parser, ddex-builder]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: packages/${{ matrix.package }}/bindings/python
+          command: sdist
+          args: --out dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdist-${{ matrix.package }}
+          path: packages/${{ matrix.package }}/bindings/python/dist/*.tar.gz
+          if-no-files-found: error
+
+  # Install each wheel on a matching runner with the oldest supported Python (3.10): import
+  # it and parse (or build) with an official sample. The musllinux wheel is tested in an
+  # Alpine container.
+  wheel-install-test:
+    name: install-test wheel ${{ matrix.platform.name }}
+    needs: wheels
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - { name: manylinux-x86_64, runner: ubuntu-latest }
+          - { name: manylinux-aarch64, runner: ubuntu-24.04-arm }
+          - { name: musllinux-x86_64, runner: ubuntu-latest, container: "python:3.10-alpine" }
+          - { name: macos-x86_64, runner: macos-13 }
+          - { name: macos-arm64, runner: macos-14 }
+          - { name: windows-x64, runner: windows-latest }
+    container: ${{ matrix.platform.container || '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        if: ${{ !matrix.platform.container }}
+        with:
+          python-version: "3.10"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wheel-*-${{ matrix.platform.name }}
+          path: wheels
+          merge-multiple: true
+      - name: Install the wheels (no index access)
+        shell: bash
+        run: python -m pip install --no-index --find-links wheels ddex-parser ddex-builder
+      - name: Import, parse and build
+        shell: bash
+        run: python scripts/release_smoke.py "examples/Samples43/1 Audio.xml"
+
+  sdist-install-test:
+    name: install-test sdist
+    needs: sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: sdist-*
+          path: sdist
+          merge-multiple: true
+      - name: Build and install from the sdists
+        run: python -m pip install sdist/*.tar.gz
+      - name: Import, parse and build
+        run: python scripts/release_smoke.py "examples/Samples43/1 Audio.xml"
+
+  # The README renders on PyPI (twine check --strict) and each wheel / sdist holds what it
+  # should: the package modules and the native extension, no caches or build leftovers.
+  pypi-check:
+    name: twine check and contents
+    needs: [wheels, sdist]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "{wheel,sdist}-*"
+          path: dist
+          merge-multiple: true
+      - run: python -m pip install twine
+      - name: twine check --strict
+        run: twine check --strict dist/*
+      - name: Contents
+        run: |
+          set -euo pipefail
+          for f in dist/*.whl; do
+            case "$f" in *-cp310-abi3-*) ;; *) echo "$f is not a cp310-abi3 wheel"; exit 1;; esac
+            echo "== $f"; python -m zipfile -l "$f" | awk 'NR>1 {print $1}' | tee files.txt
+            if grep -E '__pycache__|\.pyc$' files.txt; then echo "build leftovers in $f"; exit 1; fi
+            grep -E '^ddex_(parser|builder)/_internal\.' files.txt >/dev/null || { echo "no native extension in $f"; exit 1; }
+          done
+          for f in dist/*.tar.gz; do
+            echo "== $f ($(tar -tzf "$f" | wc -l) files)"
+            if tar -tzf "$f" | grep -E '__pycache__|\.pyc$|/target/|/node_modules/'; then echo "leftovers in $f"; exit 1; fi
+          done
+
+  # ---------------------------------------------------------------- npm
+  node-binaries:
+    name: node ${{ matrix.package }} ${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [ddex-parser, ddex-builder]
+        platform:
+          - { name: darwin-arm64, runner: macos-14, target: aarch64-apple-darwin }
+          - { name: darwin-x64, runner: macos-13, target: x86_64-apple-darwin }
+          - { name: linux-x64-gnu, runner: ubuntu-22.04, target: x86_64-unknown-linux-gnu }
+          - { name: win32-x64-msvc, runner: windows-latest, target: x86_64-pc-windows-msvc }
+    defaults:
+      run:
+        shell: bash
+        working-directory: packages/${{ matrix.package }}/bindings/node
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform.target }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund  # package-lock.json is not tracked
+      - name: Build the native binary
+        run: npx napi build --platform --release --target ${{ matrix.platform.target }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: node-${{ matrix.package }}-${{ matrix.platform.name }}
+          path: packages/${{ matrix.package }}/bindings/node/*.${{ matrix.platform.name }}.node
+          if-no-files-found: error
+
+  node-install-test:
+    name: install-test node ${{ matrix.platform.name }}
+    needs: node-binaries
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - { name: darwin-arm64, runner: macos-14 }
+          - { name: darwin-x64, runner: macos-13 }
+          - { name: linux-x64-gnu, runner: ubuntu-latest }
+          - { name: win32-x64-msvc, runner: windows-latest }
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: node-*-${{ matrix.platform.name }}
+          path: binaries
+          merge-multiple: true
+      # Each package is packed twice: its platform package (npm/<platform>, with the
+      # binary copied in) and the main package. Installing both tarballs is what a user
+      # gets from npm on this platform.
+      - name: Pack and install the platform and main packages
+        env:
+          PLATFORM: ${{ matrix.platform.name }}
+        run: |
+          set -euo pipefail
+          packs="$RUNNER_TEMP/packs"
+          mkdir -p "$packs" "$RUNNER_TEMP/app"
+          for pkg in ddex-parser ddex-builder; do
+            dir="packages/$pkg/bindings/node"
+            cp "binaries/$pkg-node.$PLATFORM.node" "$dir/npm/$PLATFORM/"
+            npm pack "./$dir/npm/$PLATFORM" --pack-destination "$packs"
+            npm pack "./$dir" --pack-destination "$packs"
+          done
+          cd "$RUNNER_TEMP/app"
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund "$packs"/*.tgz
+      - name: Import, parse and build
+        working-directory: ${{ runner.temp }}/app
+        run: node "$GITHUB_WORKSPACE/scripts/release_smoke.js" "$GITHUB_WORKSPACE/examples/Samples43/1 Audio.xml"
+
+  # Pack every npm package the release publishes (the two main packages and the eight
+  # platform packages, each with its binary) and check each tarball's exact file list.
+  npm-pack-check:
+    name: npm pack contents
+    needs: node-binaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: node-*
+          path: binaries
+          merge-multiple: true
+      - name: Pack
+        run: |
+          set -euo pipefail
+          mkdir -p packs
+          for pkg in ddex-parser ddex-builder; do
+            dir="packages/$pkg/bindings/node"
+            for platform in darwin-arm64 darwin-x64 linux-x64-gnu win32-x64-msvc; do
+              cp "binaries/$pkg-node.$platform.node" "$dir/npm/$platform/"
+              npm pack "./$dir/npm/$platform" --ignore-scripts --pack-destination packs
+            done
+            npm pack "./$dir" --ignore-scripts --pack-destination packs
+          done
+      - name: Check the tarballs
+        run: python3 scripts/check_npm_packs.py packs --version "$(node -p "require('./packages/ddex-parser/bindings/node/package.json').version")"

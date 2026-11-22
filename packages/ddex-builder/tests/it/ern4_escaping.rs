@@ -132,11 +132,23 @@ fn named_cases() {
         assert_well_formed(&xml);
         assert_xsd_valid(&xml, "4.3", text);
         let flat = parse(&xml).flat;
-        assert_eq!(flat.releases[0].default_title.as_deref(), Some(text), "{xml}");
-        assert_eq!(flat.releases[0].display_artist.as_deref(), Some(text), "{xml}");
+        assert_eq!(
+            flat.releases[0].default_title.as_deref(),
+            Some(text),
+            "{xml}"
+        );
+        assert_eq!(
+            flat.releases[0].display_artist.as_deref(),
+            Some(text),
+            "{xml}"
+        );
     }
 
-    for (text, code) in [("bell\u{7}", "U+0007"), ("nul\u{0}", "U+0000"), ("bad\u{FFFE}", "U+FFFE")] {
+    for (text, code) in [
+        ("bell\u{7}", "U+0007"),
+        ("nul\u{0}", "U+0000"),
+        ("bad\u{FFFE}", "U+FFFE"),
+    ] {
         let mut request = minimal_single("4.3");
         request.releases[0].tracks[0].title = text.to_string();
         let err = DDEXBuilder::new()

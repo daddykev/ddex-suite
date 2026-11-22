@@ -4,25 +4,23 @@ Performance benchmarks and optimization targets for DDEX Suite.
 
 ## Current Performance Metrics
 
-### Parsing Performance
+Measured with the criterion benches (`cargo bench`) on an Apple M1 Pro, release profile.
+Source and caveats: `dev-docs/PERFORMANCE.md` in the repository. Your numbers will differ by machine.
 
-| File Size | Average Time | Memory Usage | Throughput |
-|-----------|--------------|--------------|------------|
-| 1KB | &lt;1ms | &lt;1MB | 10,000 files/sec |
-| 10KB | &lt;5ms | &lt;5MB | 2,000 files/sec |
-| 100KB | &lt;25ms | &lt;15MB | 400 files/sec |
-| 1MB | &lt;100ms | &lt;50MB | 100 files/sec |
-| 10MB | &lt;500ms | &lt;100MB | 20 files/sec |
-| 100MB | &lt;5s | &lt;200MB | 2 files/sec |
+| Operation | Measured |
+|-----------|----------|
+| Parse an official ERN 4.3 sample (10–330 KB) | 0.5–14 ms (about 20–24 MiB/s) |
+| Parse `1 Audio.xml` (75 KB, typical album) | 3.4 ms |
+| Parse a ~10 MB ERN 4.3 catalog | 441 ms (22.7 MiB/s) |
+| Build ERN 4.3, 1 track | 2.7 ms |
+| Build ERN 4.3, 12 tracks | 11.4 ms |
+| Build ERN 4.3, 100 tracks | 80 ms |
 
-### Building Performance
+The parallel streaming iterator does not currently scale with the thread count (1 to 8
+threads all take 11.6 ms on the 10 MB catalog); making it scale is planned for 0.6.0.
 
-| Release Count | Track Count | Build Time | Memory Usage |
-|---------------|-------------|------------|--------------|
-| 1 | 10 | &lt;10ms | &lt;5MB |
-| 10 | 100 | &lt;50ms | &lt;25MB |
-| 100 | 1,000 | &lt;200ms | &lt;100MB |
-| 1,000 | 10,000 | &lt;2s | &lt;500MB |
+The example scripts below show how to measure your own workload; they are not the source
+of the numbers above.
 
 ## Benchmark Test Suite
 
@@ -502,16 +500,11 @@ for size, results in streaming_results.items():
 
 ## Performance Targets
 
-### Target Metrics (v1.0)
+### Status
 
-| Metric | Target | Current | Status |
-|--------|---------|---------|---------|
-| Parse 10KB | &lt;5ms | &lt;3ms | ✅ Achieved |
-| Parse 100KB | &lt;25ms | &lt;20ms | ✅ Achieved |
-| Parse 1MB | &lt;100ms | &lt;85ms | ✅ Achieved |
-| Build 100 releases | &lt;500ms | &lt;300ms | ✅ Achieved |
-| Memory efficiency | &lt;2x file size | &lt;1.5x | ✅ Exceeded |
-| Streaming 100MB | &lt;10s | &lt;8s | ✅ Achieved |
+See [Current Performance Metrics](#current-performance-metrics) for measured numbers.
+Earlier "achieved" targets on this page were not produced by a benchmark and were removed.
+Planned: a parallel streaming iterator that scales with the thread count (0.6.0).
 
 ### Optimization Roadmap
 

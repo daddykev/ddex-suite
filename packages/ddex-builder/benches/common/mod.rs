@@ -5,19 +5,19 @@ use ddex_builder::builder::{
 };
 use ddex_builder::BuildRequest;
 
-fn party(name: &str) -> PartyRequest {
+fn party(name: &str, id: &str) -> PartyRequest {
     PartyRequest {
         party_name: vec![LocalizedStringRequest {
             text: name.to_string(),
             language_code: None,
         }],
-        party_id: None,
+        party_id: Some(id.to_string()),
         party_reference: None,
     }
 }
 
-/// An ERN 4.3 request with one release of `track_count` tracks.
-/// `track_count == 0` gives a header-only message.
+/// A complete ERN 4.3 request (every value the 4.3 XSD requires) with one release of
+/// `track_count` tracks. `track_count == 0` gives a header-only message.
 pub fn request_with_tracks(track_count: usize) -> BuildRequest {
     let releases = if track_count == 0 {
         vec![]
@@ -41,10 +41,16 @@ pub fn request_with_tracks(track_count: usize) -> BuildRequest {
                     title: format!("Track {}", i + 1),
                     duration: format!("PT{}M{}S", 2 + i % 4, (i * 7) % 60),
                     artist: "Benchmark Artist".to_string(),
+                    resource_type: Some("MusicalWorkSoundRecording".into()),
+                    parental_warning_type: Some("NotExplicit".to_string()),
+                    sequence_number: Some(i as u32 + 1),
                     ..Default::default()
                 })
                 .collect(),
             resource_references: None,
+            release_type: Some(if track_count == 1 { "Single" } else { "Album" }.into()),
+            genre: Some("Pop".to_string()),
+            parental_warning_type: Some("NotExplicit".to_string()),
             ..Default::default()
         }]
     };
@@ -52,8 +58,8 @@ pub fn request_with_tracks(track_count: usize) -> BuildRequest {
     BuildRequest {
         header: MessageHeaderRequest {
             message_id: Some("BENCH_001".to_string()),
-            message_sender: party("Benchmark Sender"),
-            message_recipient: party("Benchmark Recipient"),
+            message_sender: party("Benchmark Sender", "PADPIDA0000000001"),
+            message_recipient: party("Benchmark Recipient", "PADPIDA0000000002"),
             message_control_type: None,
             // Fixed timestamp so every build of the same request is comparable.
             message_created_date_time: Some("2024-01-01T00:00:00Z".to_string()),
@@ -63,6 +69,7 @@ pub fn request_with_tracks(track_count: usize) -> BuildRequest {
         releases,
         deals: vec![],
         extensions: None,
-        ..Default::default()
+        language_and_script_code: Some("en".to_string()),
+        avs_version_id: Some("12".to_string()),
     }
 }

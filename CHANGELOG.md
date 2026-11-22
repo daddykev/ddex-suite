@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-22
+
+Every package (crates, npm, PyPI, WASM) is released at 0.5.0. The breaking changes are
+listed under "Changed (breaking)". Release notes: `dev-docs/RELEASE_NOTES_0.5.0.md`.
+
 ### Added
-Parser completeness (0.5.0): every field below is read in each ERN version where the XSD
+Parser completeness: every field below is read in each ERN version where the XSD
 has it (3.8.2, 4.2, 4.3); absent values stay `None` / empty, nothing is invented.
 - Deals: `ValidityPeriod/EndDate` (graph `DealTerms.end_date` and
   `validity_period.end_date`, flat `deal.validity.end`); it was never read.
@@ -104,6 +109,11 @@ has it (3.8.2, 4.2, 4.3); absent values stay `None` / empty, nothing is invented
   holds the 4.x root attributes (`LanguageAndScriptCode`, `AvsVersionId`, ...).
 
 ### Fixed
+- WASM: both WASM crates build again for `wasm32-unknown-unknown`. getrandom 0.3 needs
+  `--cfg getrandom_backend="wasm_js"`; the per-crate `.cargo/config.toml` files set an
+  old cfg name (and the root one was gitignored). The root `.cargo/config.toml` is now
+  tracked and sets it for the wasm32 target. The core builder measures its build time
+  with `web-time` (`std::time::Instant` panics on wasm32).
 - **ERN 4.2 / 4.3 builder output is schema-valid.** It was a 3.8-style tree (no
   `ReleaseType`, `ReferenceTitle` instead of `DisplayTitleText`, no `PartyList` or
   `ResourceGroup`, header elements out of order, no `DealList`) that failed XSD
@@ -227,7 +237,7 @@ has it (3.8.2, 4.2, 4.3); absent values stay `None` / empty, nothing is invented
   main TrackRelease is promoted).
 
 ### Changed (breaking)
-Parser (0.5.0):
+Parser:
 - Text is kept exactly as written instead of trimmed, following each value's XSD
   `whiteSpace` facet: `xs:string`-derived values (titles, names, identifiers, AVS codes,
   dates as written) keep leading, trailing and repeated whitespace and newlines;
@@ -360,7 +370,103 @@ Parser: absent optional values are now reported as `None` / `null` instead of in
 - Python: the `sender` column of the flat DataFrame is the sender's name (or `None`)
   instead of a Rust debug dump of the whole organization.
 
+Node parser:
+- `ParsedMessage.resources` is typed `Record<string, JsResource>` (it was `any`) and its
+  values have the camelCase keys of `JsResource` (`resourceId`, `pLine`, `durationSeconds`,
+  ...) like the rest of the Node API; they were snake_case (`resource_id`, `p_line`, ...).
+  Absent values are omitted instead of `null`, as for the other objects.
+  Migration: `resources.A1.resource_id` → `resources.A1.resourceId`.
+- The parse options `mode`, `autoThreshold`, `enableStreaming` and `streamingThreshold`
+  are typed `never` and throw when given; they were accepted and ignored (the Node parser
+  always reads the whole document). Remove them.
+- Every other parse option also throws: `resolveReferences`, `includeRaw`, `maxMemory`,
+  `timeoutMs`, `allowBlocking`, `chunkSize`, `fidelityLevel`, the `preserve*` options,
+  `canonicalization`, `collectStatistics`, `validationLevel`, `extensionValidation`,
+  `enableChecksums`, `memoryLimit` and `enableDetailedErrors` are typed `never`. None had
+  an effect on parsing. Remove them; `parse(xml)` / `parseSync(xml)` behave as before.
+- Removed `ParsedMessage.statistics` (`ParseStatistics`: every count was 0) and
+  `ParsedMessage.fidelityInfo` (`FidelityInfo`: it echoed the options back).
+- Removed `DdexParser.stream()` and `ReleaseStream` (with `StreamOptions`,
+  `StreamedRelease`, `ProgressInfo`): `stream()` ignored its input and returned three
+  hard-coded "Test Release" objects. Use `parse` / `parseSync`.
+
+Python (ddex-parser, ddex-builder):
+- Drops Python 3.8 and 3.9: Python 3.10 or newer is required (`requires-python = ">=3.10"`,
+  abi3 wheels tagged `cp310-abi3`); 0.4.5 allowed 3.8. Python 3.9 reached end of life on
+  2025-10-31. CI tests 3.10 to 3.14.
+- Importing the package without its native extension raises `ImportError` naming the
+  cause and how to fix it. There is no mock fallback any more: the builder's mock classes
+  (which printed a warning and could not build) and the parser's mock results (fixed
+  `"TEST"` messages, a three-item fake stream, a one-row DataFrame) were removed.
+  `ddex_builder.is_rust_available()` always returns `True`.
+- `__version__` is read from the package metadata (`importlib.metadata`); it was
+  hard-coded (`"0.4.3"` in the builder; `"0.1.0"` or the crate version in the parser).
+
+WASM builder:
+- `WasmDdexBuilder.build(request)` runs the core builder: it takes the core build request
+  (the same `BuildRequest` type as the Node binding, included in the generated `.d.ts`)
+  with the core's validation and errors, and writes the core's schema-valid ERN 4.3 / 4.2
+  / 3.8.2 output. It had its own string-concatenated "ERN 4.3" generator (3.8-shaped, not
+  schema-valid). `build` is now synchronous.
+- Removed `batchBuild` (it returned hard-coded placeholder XML; call `build` per request)
+  and the members that returned fixed or invented values: the `Release` / `Resource`
+  classes with `addRelease` / `addResource`, `buildWithFidelity`,
+  `testRoundTripFidelity`, `canonicalizeXml`, `validate`, `getStats`, `reset`, the preset
+  methods and `validateStructure`. The stale browser test pages and examples that used
+  them were removed.
+- The module now holds the whole core builder (about 2.4 MB, 800 KB gzipped).
+
+Tests:
+- The wall-clock pass/fail performance tests (`perf-tests` feature) are now criterion
+  benches that report numbers (`ddex-parser` `throughput`; `ddex-builder` `performance`,
+  `security`); the numbers are recorded in `dev-docs/PERFORMANCE.md`. `perf-tests` keeps
+  five sanity limits at about 10× the recorded timings (release mode only). The
+  ddex-builder benches used an incomplete ERN 4.3 request and timed the validation error;
+  they now build complete requests and unwrap the result.
+
+### Packaging
+- Registry pages rewritten for 0.5.0. Each package README (crates.io, npm, PyPI) has a
+  breaking-change notice, examples for the current API, measured performance only,
+  absolute links, and links to the docs site, changelog, migration notes, known issues and
+  issue tracker. The crate READMEs are the crate docs on docs.rs
+  (`#![doc = include_str!("../README.md")]`), so their examples are doctests.
+- Manifests: consistent description, keywords, `homepage = "https://ddex-suite.org"`,
+  repository, bugs and license; `rust-version = "1.82"`; PyPI `project.urls` (the parser's
+  were invalid top-level keys and did not show) and classifiers for Python 3.10 to 3.14.
+- Smaller packages: the crates ship only `src`, `README.md` and `LICENSE` (ddex-core 45 →
+  40 files, ddex-parser 96 → 48, ddex-builder 128 → 69: no tests, fixtures, benches,
+  logs or status documents); the npm builder package no longer ships the stale `dist/`
+  and `js/` wrapper (8 → 6 files, now with its LICENSE). The committed TypeDoc HTML of
+  the Node bindings was removed; the website is the documentation home.
+- The per-package CHANGELOG.md files point to this changelog.
+- CI checks: `cargo doc` with `-D warnings`, MSRV 1.82, `cargo package` of the three
+  crates, and the Node and Python README examples run against freshly built packages
+  (`scripts/readme_examples.py`). The release build runs `twine check --strict` and checks
+  the wheel / sdist contents and the exact file list of every npm tarball
+  (`scripts/check_npm_packs.py`).
+- All version references agree at 0.5.0: the binding crates were 0.4.3, the Python
+  packages reported stale versions, and the WASM / website packages lagged.
+  `scripts/check_versions.py` checks every reference against the workspace version.
+- New `Release build` workflow (`.github/workflows/release-build.yml`, manual): abi3
+  wheels for manylinux x86_64 / aarch64, musllinux x86_64, macOS x86_64 / arm64 and
+  Windows x64, sdists, and Node binaries for darwin-arm64, darwin-x64, linux-x64-gnu and
+  win32-x64-msvc. Every artifact is install-tested on a matching runner
+  (`scripts/release_smoke.py` / `release_smoke.js`). It publishes nothing; `PUBLISH.md`
+  gives the manual order.
+- npm: each package has one platform package per supported target (`npm/<platform>`),
+  listed in `optionalDependencies`; the main packages no longer ship `*.node` files. The
+  unbuilt targets (musl, Linux arm64, Android, armv7) were dropped from the napi config.
+- CI (`.github/workflows/ci.yml`) restored: fmt, clippy, workspace tests, XSD
+  validation, Node, Python 3.10–3.14 and the ERN 4 oracle.
+
 ### Documentation
+- Performance claims in the README, the package READMEs and the website are replaced by
+  the numbers measured with the criterion benches (`dev-docs/PERFORMANCE.md`): parsing at
+  about 20–24 MiB/s (3.4 ms for a typical album, 441 ms for a 10 MB catalog), building at
+  about 0.8 ms per track plus 2 ms per message. The earlier 25–30 / 500–700 / 1,265 MB/s,
+  sub-3 ms and "6.25× on 8 cores" figures were not reproduced. The parallel streaming
+  iterator does not currently scale with the thread count (planned for 0.6.0).
+- `PUBLISH.md` rewritten for the release-build workflow.
 - Corrected class names in code examples for each language binding: Node.js uses
   `DdexParser` / `DdexBuilder` / `StreamingDdexBuilder`; Python uses `DDEXParser`
   (parser) and `DdexBuilder` (builder); Rust uses `ddex_parser::DDEXParser` and
@@ -387,11 +493,15 @@ Parser: absent optional values are now reported as `None` / `null` instead of in
 - Stopped tracking the Firebase deploy cache (`website/.firebase/`); removed stray
   interrupted-copy test files and an accidental nested copy of the Node builder binding.
 
+### Fixed (packaging)
+- PyPI 0.4.5 shipped only a macOS arm64 wheel and no sdist, so `pip install` failed on
+  Linux, Windows and Intel Macs; 0.5.0 is built for all of them, with sdists.
+- npm 0.4.5 shipped native binaries for `darwin-arm64` and `linux-x64-gnu` only; 0.5.0
+  adds `darwin-x64` and `win32-x64-msvc`.
+
 ### Known issues
-- PyPI 0.4.5 ships only a macOS arm64 wheel (`cp38-abi3-macosx_11_0_arm64`) and no
-  sdist, so `pip install` cannot install 0.4.5 on Linux, Windows or Intel Macs.
-- npm 0.4.5 ships native binaries for `darwin-arm64` and `linux-x64-gnu` only; there are
-  no Windows or Intel Mac (`darwin-x64`) binaries.
+See `KNOWN_ISSUES.md`. Not built in 0.5.0: npm binaries for Linux musl / arm64 and
+Python wheels for Linux musl aarch64.
 
 ## [0.4.5] - 2025-09-21
 

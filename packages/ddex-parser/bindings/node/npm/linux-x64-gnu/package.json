@@ -1,0 +1,41 @@
+{
+  "name": "ddex-parser-linux-x64-gnu",
+  "version": "0.5.0",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "main": "ddex-parser-node.linux-x64-gnu.node",
+  "files": [
+    "ddex-parser-node.linux-x64-gnu.node"
+  ],
+  "description": "The linux-x64-gnu native binary of ddex-parser (installed automatically by ddex-parser)",
+  "keywords": [
+    "ddex",
+    "ern",
+    "xml",
+    "parser",
+    "music",
+    "metadata",
+    "native"
+  ],
+  "author": "Kevin Marques Moo",
+  "homepage": "https://ddex-suite.org",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/daddykev/ddex-suite.git",
+    "directory": "packages/ddex-parser/bindings/node/npm/linux-x64-gnu"
+  },
+  "bugs": {
+    "url": "https://github.com/daddykev/ddex-suite/issues"
+  },
+  "libc": [
+    "glibc"
+  ]
+}

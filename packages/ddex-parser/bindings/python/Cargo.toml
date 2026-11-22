@@ -1,7 +1,7 @@
 # packages/ddex-parser/bindings/python/Cargo.toml
 [package]
 name = "ddex-parser-python"
-version = "0.4.3"
+version = "0.5.0"
 edition = "2021"
 authors = ["Kevin Marques Moo"]
 license = "MIT"
@@ -13,12 +13,15 @@ crate-type = ["cdylib"]
 # No Rust tests here; binding tests live in the package test suites (npm/pytest).
 test = false
 doctest = false
+# Same lib name as the Rust crate it wraps (the Python module name); rustdoc would
+# write both to target/doc/<name>, so only the Rust crate is documented.
+doc = false
 
 [dependencies]
 ddex-core = { path = "../../../core" }
 ddex-parser = { path = "../.." }
 
-pyo3 = { version = "0.24.1", features = ["extension-module", "abi3-py38"] }
+pyo3 = { version = "0.24.1", features = ["extension-module", "abi3-py310"] }
 pyo3-async-runtimes = { version = "0.24", features = ["tokio-runtime"] }
 serde = { workspace = true }
 serde_json = { workspace = true }

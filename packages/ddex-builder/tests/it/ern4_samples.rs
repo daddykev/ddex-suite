@@ -40,27 +40,71 @@ fn compare(original: &FlattenedMessage, rebuilt: &FlattenedMessage) -> Vec<Strin
         rebuilt.releases.len().to_string(),
     );
     for (o, r) in original.releases.iter().zip(&rebuilt.releases) {
-        check("release title".into(), format!("{:?}", o.default_title), format!("{:?}", r.default_title));
-        check("ICPN".into(), format!("{:?}", o.identifiers.upc), format!("{:?}", r.identifiers.upc));
-        check("release type".into(), o.release_type.clone(), r.release_type.clone());
-        check("display artist".into(), format!("{:?}", o.display_artist), format!("{:?}", r.display_artist));
-        check("track count".into(), o.tracks.len().to_string(), r.tracks.len().to_string());
+        check(
+            "release title".into(),
+            format!("{:?}", o.default_title),
+            format!("{:?}", r.default_title),
+        );
+        check(
+            "ICPN".into(),
+            format!("{:?}", o.identifiers.upc),
+            format!("{:?}", r.identifiers.upc),
+        );
+        check(
+            "release type".into(),
+            o.release_type.clone(),
+            r.release_type.clone(),
+        );
+        check(
+            "display artist".into(),
+            format!("{:?}", o.display_artist),
+            format!("{:?}", r.display_artist),
+        );
+        check(
+            "track count".into(),
+            o.tracks.len().to_string(),
+            r.tracks.len().to_string(),
+        );
         for (i, (ot, rt)) in o.tracks.iter().zip(&r.tracks).enumerate() {
             let t = |f: &str| format!("track {} {f}", i + 1);
-            check(t("ISRC"), format!("{:?}", ot.isrc), format!("{:?}", rt.isrc));
-            check(t("title"), format!("{:?}", ot.title), format!("{:?}", rt.title));
+            check(
+                t("ISRC"),
+                format!("{:?}", ot.isrc),
+                format!("{:?}", rt.isrc),
+            );
+            check(
+                t("title"),
+                format!("{:?}", ot.title),
+                format!("{:?}", rt.title),
+            );
             check(
                 t("duration"),
                 format!("{:?}", ot.duration.map(|d| d.as_secs())),
                 format!("{:?}", rt.duration.map(|d| d.as_secs())),
             );
-            check(t("disc"), format!("{:?}", ot.disc_number), format!("{:?}", rt.disc_number));
-            check(t("position"), ot.position.to_string(), rt.position.to_string());
+            check(
+                t("disc"),
+                format!("{:?}", ot.disc_number),
+                format!("{:?}", rt.disc_number),
+            );
+            check(
+                t("position"),
+                ot.position.to_string(),
+                rt.position.to_string(),
+            );
         }
     }
-    check("deal count".into(), original.deals.len().to_string(), rebuilt.deals.len().to_string());
+    check(
+        "deal count".into(),
+        original.deals.len().to_string(),
+        rebuilt.deals.len().to_string(),
+    );
     for (i, (od, rd)) in original.deals.iter().zip(&rebuilt.deals).enumerate() {
-        check(format!("deal {} releases", i + 1), format!("{:?}", od.releases), format!("{:?}", rd.releases));
+        check(
+            format!("deal {} releases", i + 1),
+            format!("{:?}", od.releases),
+            format!("{:?}", rd.releases),
+        );
     }
     diffs
 }
@@ -75,7 +119,11 @@ fn official_samples_round_trip() {
     for (version, path) in samples() {
         let name = format!(
             "{}/{}",
-            path.parent().unwrap().file_name().unwrap().to_string_lossy(),
+            path.parent()
+                .unwrap()
+                .file_name()
+                .unwrap()
+                .to_string_lossy(),
             path.file_name().unwrap().to_string_lossy()
         );
         let original = parse(&std::fs::read_to_string(&path).unwrap());
@@ -109,7 +157,12 @@ fn official_samples_round_trip() {
         if !diffs.is_empty() {
             failures.push(format!("{name}: {}", diffs.join("; ")));
         }
-        let tracks = original.flat.releases.iter().map(|r| r.tracks.len()).sum::<usize>();
+        let tracks = original
+            .flat
+            .releases
+            .iter()
+            .map(|r| r.tracks.len())
+            .sum::<usize>();
         table.push(format!(
             "| {name} | {xsd} | {} | {} |",
             if diffs.is_empty() {
@@ -117,7 +170,11 @@ fn official_samples_round_trip() {
             } else {
                 "**no**".to_string()
             },
-            if diffs.is_empty() { "none".to_string() } else { diffs.join("; ") }
+            if diffs.is_empty() {
+                "none".to_string()
+            } else {
+                diffs.join("; ")
+            }
         ));
     }
     println!("{}", table.join("\n"));

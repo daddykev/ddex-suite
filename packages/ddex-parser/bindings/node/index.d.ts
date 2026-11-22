@@ -113,8 +113,9 @@ export interface JsTrackGroup {
   sequenceNumber?: number
 }
 /**
- * A resource. Note: the values of `ParsedMessage.resources` are plain objects whose keys
- * are snake_case (`resource_id`, `p_line`, ...), not the camelCase names of this interface.
+ * A resource (the values of `ParsedMessage.resources`). It reaches JS through serde, so the
+ * serde names must match the camelCase names napi gives the other objects; absent values
+ * are omitted as napi does (`test-types.js` checks the keys against index.d.ts).
  */
 export interface JsResource {
   resourceId: string
@@ -144,41 +145,60 @@ export interface JsDeal {
   restrictions: Array<string>
   commercialModel?: string
 }
+/**
+ * Options accepted by `parse` / `parseSync`. None are supported in 0.5.0: every field
+ * is a removed option, and passing any of them throws (they used to be ignored).
+ */
 export interface ParseOptions {
   /**
-   * Not used: parsing always uses the complete parser, whatever the input size (the
-   * core's experimental streaming mode is not exposed here).
+   * Removed in 0.5.0: parsing always uses the complete parser, whatever the input size
+   * (the core's experimental streaming mode is not exposed in Node). Passing it throws.
    */
-  mode?: string
-  /** Not used (no automatic switch to streaming since 0.5.0). */
-  autoThreshold?: number
-  resolveReferences?: boolean
-  includeRaw?: boolean
-  maxMemory?: number
-  timeoutMs?: number
-  allowBlocking?: boolean
-  chunkSize?: number
-  fidelityLevel?: string
-  preserveComments?: boolean
-  preserveProcessingInstructions?: boolean
-  preserveExtensions?: boolean
-  preserveAttributeOrder?: boolean
-  preserveNamespacePrefixes?: boolean
-  canonicalization?: string
-  collectStatistics?: boolean
-  /** Not used (see `mode`). */
-  enableStreaming?: boolean
-  /** Not used (see `mode`). */
-  streamingThreshold?: number
-  validationLevel?: string
-  extensionValidation?: boolean
-  enableChecksums?: boolean
-  memoryLimit?: number
-  enableDetailedErrors?: boolean
-}
-export interface StreamOptions {
-  chunkSize?: number
-  maxMemory?: number
+  mode?: never
+  /** Removed in 0.5.0 (see `mode`). Passing it throws. */
+  autoThreshold?: never
+  /** Removed in 0.5.0 (see `mode`). Passing it throws. */
+  enableStreaming?: never
+  /** Removed in 0.5.0 (see `mode`). Passing it throws. */
+  streamingThreshold?: never
+  /** Removed in 0.5.0: it had no effect on parsing. Passing it throws. */
+  resolveReferences?: never
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
+  includeRaw?: never
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
+  maxMemory?: never
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
+  timeoutMs?: never
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
+  allowBlocking?: never
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
+  chunkSize?: never
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
+  fidelityLevel?: never
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
+  preserveComments?: never
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
+  preserveProcessingInstructions?: never
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
+  preserveExtensions?: never
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
+  preserveAttributeOrder?: never
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
+  preserveNamespacePrefixes?: never
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
+  canonicalization?: never
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
+  collectStatistics?: never
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
+  validationLevel?: never
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
+  extensionValidation?: never
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
+  enableChecksums?: never
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
+  memoryLimit?: never
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
+  enableDetailedErrors?: never
 }
 export interface ParsedMessage {
   messageId: string
@@ -198,29 +218,9 @@ export interface ParsedMessage {
   resourceCount: number
   totalDurationSeconds: number
   releases: Array<JsRelease>
-  resources: any
+  /** Resources by resource reference. */
+  resources: Record<string, JsResource>
   deals: Array<JsDeal>
-  statistics?: ParseStatistics
-  fidelityInfo?: FidelityInfo
-}
-export interface ParseStatistics {
-  parseTimeMs: number
-  memoryUsedBytes: number
-  elementCount: number
-  attributeCount: number
-  commentCount: number
-  extensionCount: number
-  namespaceCount: number
-  fileSizeBytes: number
-}
-export interface FidelityInfo {
-  fidelityLevel: string
-  canonicalizationAlgorithm: string
-  commentsPreserved: boolean
-  extensionsPreserved: boolean
-  processingInstructionsPreserved: boolean
-  attributeOrderPreserved: boolean
-  namespacePrefixesPreserved: boolean
 }
 export interface SanityCheckResult {
   isValid: boolean
@@ -236,28 +236,12 @@ export interface DetailedError {
   context?: string
   suggestions: Array<string>
 }
-export interface StreamedRelease {
-  releaseReference: string
-  title: string
-  releaseType?: string
-  resourceCount: number
-}
-export interface ProgressInfo {
-  bytesProcessed: number
-  releasesParsed: number
-  elapsedMs: number
-}
 export declare class DdexParser {
   constructor()
   detectVersion(xml: string): string
   parseSync(xml: string, options?: ParseOptions | undefined | null): ParsedMessage
   parse(xml: string, options?: ParseOptions | undefined | null): Promise<ParsedMessage>
   sanityCheck(xml: string): Promise<SanityCheckResult>
-  stream(xml: string, options?: StreamOptions | undefined | null): ReleaseStream
   /** Get detailed error information for debugging - useful for error handling in JavaScript */
   getDetailedError(xml: string): DetailedError
-}
-export declare class ReleaseStream {
-  next(): Promise<StreamedRelease | null>
-  progress(): Promise<ProgressInfo>
 }

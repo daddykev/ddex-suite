@@ -1,6 +1,6 @@
 // Smoke test: the Node binding builds an ERN 3.8.2 message (with deals) with the core
 // builder, and ddex-parser (its Node binding) reads it back.
-// Run with: npm run test:smoke (after `npm run build` here and in ../../../ddex-parser/bindings/node)
+// Run with: npm test (after `npm run build` here and in ../../../ddex-parser/bindings/node)
 
 const assert = require('node:assert/strict');
 const path = require('node:path');

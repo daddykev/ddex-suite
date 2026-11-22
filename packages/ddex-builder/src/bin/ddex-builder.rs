@@ -1150,13 +1150,11 @@ fn handle_watch_command(
     // })?;
     // watcher.watch(&cmd.path, notify::RecursiveMode::from(cmd.recursive))?;
 
-    // Simulate file watching loop (in real implementation, this would be driven by notify events)
-    loop {
-        // For demo purposes, just exit after showing the setup
-        if !is_quiet() {
-            println!("File watching simulation - in real implementation, this would use the notify crate");
-        }
-        break;
+    // File watching is not implemented: only the initial build (if requested) runs.
+    if !is_quiet() {
+        println!(
+            "File watching simulation - in real implementation, this would use the notify crate"
+        );
     }
 
     Ok(())

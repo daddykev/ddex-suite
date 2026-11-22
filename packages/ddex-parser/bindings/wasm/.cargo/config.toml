@@ -1,5 +1,0 @@
-[build]
-rustflags = ["--cfg", "getrandom_wasm_js"]
-
-[target.wasm32-unknown-unknown]
-rustflags = ["--cfg", "getrandom_wasm_js"]

@@ -1,0 +1,42 @@
+{
+  "name": "ddex-builder-linux-x64-gnu",
+  "version": "0.5.0",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "main": "ddex-builder-node.linux-x64-gnu.node",
+  "files": [
+    "ddex-builder-node.linux-x64-gnu.node"
+  ],
+  "description": "The linux-x64-gnu native binary of ddex-builder (installed automatically by ddex-builder)",
+  "keywords": [
+    "ddex",
+    "ern",
+    "xml",
+    "builder",
+    "music",
+    "metadata",
+    "deterministic",
+    "native"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/daddykev/ddex-suite.git",
+    "directory": "packages/ddex-builder/bindings/node/npm/linux-x64-gnu"
+  },
+  "libc": [
+    "glibc"
+  ],
+  "homepage": "https://ddex-suite.org",
+  "bugs": {
+    "url": "https://github.com/daddykev/ddex-suite/issues"
+  },
+  "author": "Kevin Marques Moo"
+}

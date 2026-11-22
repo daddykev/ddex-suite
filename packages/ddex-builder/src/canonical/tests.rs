@@ -340,7 +340,9 @@ mod integration_tests {
         let created = result.find("<MessageCreatedDateTime>").unwrap();
         assert!(header < sender && sender < created, "{result}");
         assert!(result.contains("<DisplayTitleText>  Sample  Release  </DisplayTitleText>"));
-        assert!(result.contains(r#"Namespace="PADPIDA0000000001" UserDefinedValue="Box &amp; Book""#));
+        assert!(
+            result.contains(r#"Namespace="PADPIDA0000000001" UserDefinedValue="Box &amp; Book""#)
+        );
         assert_snapshot!(result);
     }
 
@@ -394,9 +396,15 @@ mod integration_tests {
                 "<root>\n  Line 1\n  Line 2\n</root>",
             ),
             // ... and whitespace-only text
-            (r#"<?xml version="1.0"?><root>   </root>"#, "<root>   </root>"),
+            (
+                r#"<?xml version="1.0"?><root>   </root>"#,
+                "<root>   </root>",
+            ),
             // A carriage return survives as a character reference
-            (r#"<?xml version="1.0"?><root>a&#13;b</root>"#, "<root>a&#13;b</root>"),
+            (
+                r#"<?xml version="1.0"?><root>a&#13;b</root>"#,
+                "<root>a&#13;b</root>",
+            ),
         ];
 
         for (input, expected_text) in test_cases {

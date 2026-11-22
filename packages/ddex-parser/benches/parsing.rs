@@ -12,7 +12,7 @@ fn benchmark_parse_sizes(c: &mut Criterion) {
     group.measurement_time(Duration::from_secs(10));
 
     // Use include_str! for compile-time inclusion
-    let xml = include_str!("../../../test-suite/valid/ern-4.3/simple_release.xml");
+    let xml = include_str!("../tests/fixtures/ern43_basic.xml");
 
     let mut parser = DDEXParser::new();
 
@@ -48,7 +48,7 @@ fn benchmark_memory_usage(c: &mut Criterion) {
     let mut group = c.benchmark_group("memory_usage");
 
     // Use include_str! here too
-    let xml = include_str!("../../../test-suite/valid/ern-4.3/simple_release.xml");
+    let xml = include_str!("../tests/fixtures/ern43_basic.xml");
 
     group.bench_function("stream_simple", |b| {
         b.iter(|| {
@@ -74,7 +74,7 @@ fn benchmark_reference_resolution(c: &mut Criterion) {
     let mut group = c.benchmark_group("reference_resolution");
 
     let mut parser = DDEXParser::new();
-    let xml = include_str!("../../../test-suite/valid/ern-4.3/simple_release.xml");
+    let xml = include_str!("../tests/fixtures/ern43_basic.xml");
 
     group.bench_function("with_resolution", |b| {
         b.iter(|| {

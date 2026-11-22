@@ -5,10 +5,8 @@ use std::time::Duration;
 mod common;
 use common::request_with_tracks as create_test_request_with_tracks;
 
-// Target metrics:
-// - Single track: <5ms
-// - 12-track album: <10ms
-// - 100-track compilation: <50ms
+// Reports numbers only (recorded in dev-docs/PERFORMANCE.md). tests/it/perf.rs
+// (`--features perf-tests`) keeps generous sanity limits against catastrophic regressions.
 
 fn benchmark_performance_scales(c: &mut Criterion) {
     let mut group = c.benchmark_group("ddex_builder_performance");
@@ -30,7 +28,7 @@ fn benchmark_performance_scales(c: &mut Criterion) {
                     black_box(request.clone()),
                     black_box(BuildOptions::default()),
                 );
-                black_box(result)
+                black_box(result.unwrap())
             });
         },
     );
@@ -48,7 +46,7 @@ fn benchmark_performance_scales(c: &mut Criterion) {
                     black_box(request.clone()),
                     black_box(BuildOptions::default()),
                 );
-                black_box(result)
+                black_box(result.unwrap())
             });
         },
     );
@@ -66,7 +64,7 @@ fn benchmark_performance_scales(c: &mut Criterion) {
                     black_box(request.clone()),
                     black_box(BuildOptions::default()),
                 );
-                black_box(result)
+                black_box(result.unwrap())
             });
         },
     );
@@ -109,7 +107,7 @@ fn benchmark_xml_generation(c: &mut Criterion) {
                         black_box(request.clone()),
                         black_box(BuildOptions::default()),
                     );
-                    black_box(result)
+                    black_box(result.unwrap())
                 });
             },
         );
@@ -118,9 +116,43 @@ fn benchmark_xml_generation(c: &mut Criterion) {
     group.finish();
 }
 
+/// The `ParallelProcessor` path (formerly the "optimized" perf tests).
+fn benchmark_parallel_processor(c: &mut Criterion) {
+    use ddex_builder::memory_optimization::BuildMemoryManager;
+    use ddex_builder::optimized_strings::BuildContext;
+    use ddex_builder::parallel_processing::{ParallelConfig, ParallelProcessor};
+
+    let mut group = c.benchmark_group("parallel_processor");
+    for track_count in [1usize, 12, 50] {
+        group.bench_with_input(
+            BenchmarkId::new("process_build_parallel", format!("{}_tracks", track_count)),
+            &track_count,
+            |b, &track_count| {
+                let request = create_test_request_with_tracks(track_count);
+                let processor = ParallelProcessor::new(ParallelConfig::default()).unwrap();
+                let memory_manager = BuildMemoryManager::new();
+                b.iter(|| {
+                    let mut context = BuildContext::new();
+                    black_box(
+                        processor
+                            .process_build_parallel(
+                                black_box(&request),
+                                &mut context,
+                                &memory_manager,
+                            )
+                            .unwrap(),
+                    )
+                });
+            },
+        );
+    }
+    group.finish();
+}
+
 criterion_group!(
     benches,
     benchmark_performance_scales,
+    benchmark_parallel_processor,
     benchmark_memory_allocation,
     benchmark_xml_generation
 );

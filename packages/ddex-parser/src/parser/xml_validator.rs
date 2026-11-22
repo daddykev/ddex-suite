@@ -352,7 +352,7 @@ impl XmlValidator {
 }
 
 /// Validate XML name according to XML 1.0 specification
-/// https://www.w3.org/TR/xml/#NT-Name
+/// <https://www.w3.org/TR/xml/#NT-Name>
 fn is_valid_xml_name(name: &str) -> bool {
     if name.is_empty() {
         return false;

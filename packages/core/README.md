@@ -1,55 +1,57 @@
-# DDEX Core
+# ddex-core
 
-Shared DDEX data models and utilities for the DDEX Suite toolkit.
+Shared DDEX data models for [`ddex-parser`](https://crates.io/crates/ddex-parser) and
+[`ddex-builder`](https://crates.io/crates/ddex-builder), part of
+[DDEX Suite](https://github.com/daddykev/ddex-suite).
 
-## Overview
+> **0.5.0 has breaking changes.** The flat and graph models gained fields (dates, P/C
+> lines, genres, parental warnings, labels, track groups), so struct literals need the new
+> fields. See the
+> [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md).
 
-This crate provides the core data structures and utilities shared across the DDEX Suite components:
+You normally use this crate through `ddex-parser`, whose `DDEXParser::parse` returns a
+`ddex_core::models::flat::ParsedERNMessage`:
 
-- **DDEX Parser** (`ddex-parser`) - High-performance DDEX XML parser
-- **DDEX Builder** (`ddex-builder`) - Deterministic DDEX XML builder
-
-## Features
-
-- Complete DDEX data models for ERN 3.8.2, 4.2, and 4.3
-- Serde serialization/deserialization support
-- TypeScript type definitions (optional feature)
-- Comprehensive error handling with `thiserror`
+- `models::flat`: the developer-friendly view (`ParsedRelease`, `ParsedTrack`,
+  `ParsedResource`, `ParsedDeal`, ...). Absent values are `None` or empty; nothing is
+  invented.
+- `models::graph`: the structure of the ERN message as written.
+- `ERNVersion`: ERN 3.8.1, 3.8.2, 4.2 and 4.3.
 
 ## Installation
 
-Add this to your `Cargo.toml`:
-
 ```toml
 [dependencies]
-ddex-core = "0.4.4"
+ddex-core = "0.5.0"
 ```
 
-## Usage
+## Example
 
 ```rust
-use ddex_core::*;
+use ddex_core::models::flat::ParsedRelease;
+use ddex_core::ERNVersion;
 
-// Work with DDEX data structures
-// This crate provides the foundation for parsing and building DDEX XML
+/// The track titles of a release parsed by ddex-parser.
+fn track_titles(release: &ParsedRelease) -> Vec<&str> {
+    release.tracks.iter().filter_map(|track| track.title.as_deref()).collect()
+}
+
+assert_eq!(ERNVersion::V4_3.as_str(), "4.3");
+assert_eq!(ERNVersion::V4_3.namespace(), "http://ddex.net/xml/ern/43");
 ```
 
 ## Features
 
-- `typescript` - Enable TypeScript type generation with `ts-rs`
+- `typescript`: derive TypeScript definitions with `ts-rs`.
+
+## Links
+
+- Documentation: [docs.rs/ddex-core](https://docs.rs/ddex-core) and [ddex-suite.org](https://ddex-suite.org)
+- [Changelog](https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md)
+- [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md)
+- [Known issues](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md)
+- [Report an issue](https://github.com/daddykev/ddex-suite/issues)
 
 ## License
 
-MIT License - See LICENSE file for details.
-
-## Related Crates
-
-- [`ddex-parser`](https://crates.io/crates/ddex-parser) - Parse DDEX XML files
-- [`ddex-builder`](https://crates.io/crates/ddex-builder) - Build deterministic DDEX XML
-
-## Documentation
-
-For complete documentation and examples, visit:
-- [Documentation](https://docs.rs/ddex-core)
-- [GitHub Repository](https://github.com/daddykev/ddex-suite)
-- [Project Website](https://ddex-suite.web.app)
+MIT, see [LICENSE](https://github.com/daddykev/ddex-suite/blob/main/LICENSE).

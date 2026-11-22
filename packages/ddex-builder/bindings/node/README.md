@@ -1,171 +1,142 @@
-# DDEX Builder - JavaScript/TypeScript Bindings
+# ddex-builder (Node.js)
 
-[![npm version](https://img.shields.io/npm/v/ddex-builder.svg)](https://www.npmjs.com/package/ddex-builder)
-[![Downloads](https://img.shields.io/npm/dm/ddex-builder.svg)](https://www.npmjs.com/package/ddex-builder)
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/ddex-builder)](https://bundlephobia.com/package/ddex-builder)
-[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+Deterministic DDEX ERN XML builder for Node.js, a native addon over the Rust
+[`ddex-builder`](https://crates.io/crates/ddex-builder) crate. Part of
+[DDEX Suite](https://github.com/daddykev/ddex-suite). It writes ERN 4.3, 4.2, 3.8.2 and
+3.8.1 from a typed build request, canonicalized with DB-C14N/1.0 so the same request
+always produces the same bytes. TypeScript types are included (`index.d.ts`,
+`build-request.d.ts`).
 
-Generate deterministic, industry-compliant DDEX XML files from JavaScript/TypeScript with consistent reproducibility. Build DDEX messages with full TypeScript support, streaming capabilities, and partner-specific presets for major platforms.
+> **0.5.0 has breaking changes.** `build(request)` takes the core build request (`header`
+> and `version` are required, nothing is filled in), ERN 3.8.2 output is schema-valid,
+> and `batchBuild` was removed. See the
+> [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md).
 
 ## Installation
 
 ```bash
 npm install ddex-builder
-# or for specific version
-npm install ddex-builder@0.4.4
-# or
-yarn add ddex-builder
 ```
 
-> **✅ v0.4.4 Compatibility**
-> Enhanced round-trip compatibility with ddex-parser v0.4.4's strict validation. Improved error handling for better workflow integration.
+Prebuilt binaries are installed for macOS (arm64, x64), Linux x64 (glibc) and Windows
+x64, through the platform packages `ddex-builder-<platform>`. Node.js 18 or newer.
 
-## Documentation
+## Example
 
-📚 **API Documentation**: Complete TypeScript/JavaScript API documentation is available in the `/docs` directory. Open `docs/index.html` in your browser to browse the full API reference with examples, type definitions, and cross-references.
+```js
+const { DdexBuilder } = require('ddex-builder');
 
-**Key Documentation Features:**
-- Complete API reference for all classes and interfaces
-- TypeScript type definitions with IntelliSense support
-- Comprehensive examples and usage patterns
-- Search functionality across all documentation
-- Cross-references between related types and methods
+const party = (name, id) => ({ party_name: [{ text: name }], party_id: id });
 
-Full documentation will be published online with the v1.0.0 release.
-
-## Quick Start
-
-### TypeScript
-
-```typescript
-import { DdexBuilder } from 'ddex-builder';
-
-const builder = new DdexBuilder({ validate: true });
-
-const releaseData = {
-  messageHeader: {
-    senderName: 'My Record Label',
-    messageId: 'RELEASE_2024_001',
-    sentDate: new Date('2024-01-15T10:30:00Z')
+const request = {
+  header: {
+    message_id: 'MSG-001',
+    message_sender: party('Example Label', 'PADPIDA0000000001'),
+    message_recipient: party('Example DSP', 'PADPIDA0000000002'),
+    message_created_date_time: '2024-01-01T00:00:00Z',
   },
+  version: '4.3',
+  avs_version_id: '12',
+  language_and_script_code: 'en',
   releases: [{
-    releaseId: 'REL001',
-    title: 'Amazing Album',
-    mainArtist: 'Incredible Artist',
-    labelName: 'My Record Label',
-    releaseDate: '2024-02-01',
-    genres: ['Pop', 'Electronic'],
+    release_id: 'A1-ABCDE-0000000001-M',
+    title: [{ text: 'Example Single' }],
+    artist: 'Example Artist',
+    label: 'Example Label',
+    release_type: 'Single',
+    genre: 'Pop',
+    parental_warning_type: 'NotExplicit',
     tracks: [{
-      trackId: 'TRK001',
-      title: 'Hit Song',
-      position: 1,
-      duration: 195,
-      isrc: 'US1234567890',
-      artists: ['Incredible Artist']
-    }]
-  }]
+      track_id: 'T1',
+      isrc: 'ZZ0000000001',
+      title: 'Example Track',
+      duration: 'PT3M42S',
+      artist: 'Example Artist',
+      resource_type: 'MusicalWorkSoundRecording',
+      parental_warning_type: 'NotExplicit',
+    }],
+  }],
+  deals: [],
 };
 
-const xml = await builder.buildFromObject(releaseData, { version: '4.3' });
-console.log('Generated DDEX XML:', xml.length, 'bytes');
+new DdexBuilder().build(request).then((xml) => {
+  console.log(xml);
+});
 ```
 
-## Features
+The request mirrors the Rust `BuildRequest` (snake_case field names); see
+`build-request.d.ts`. When the target version's schema requires a value the request does
+not carry, `build` rejects with an error naming the field, for example
+`ERN 4.3 requires Release/ReleaseType (releases[0].release_type)`.
 
-### 🎯 Deterministic Output
-- **100% reproducible** XML generation with stable hash IDs
-- DB-C14N/1.0 canonicalization for deterministic consistency
-- Stable ordering ensures identical output across Node.js versions
-- Content-addressable resource IDs for reliable references
+The output reads back with [`ddex-parser`](https://www.npmjs.com/package/ddex-parser):
 
-### 🌐 Cross-Platform Compatibility
-- **Node.js 16+** with native addon performance
-- **Browser support** via optimized WASM bundle (<400KB)
-- **TypeScript-first** with comprehensive type definitions
-- **ESM and CommonJS** support for maximum compatibility
+```js
+const { DdexBuilder } = require('ddex-builder');
+const { DdexParser } = require('ddex-parser');
 
-### 🏭 Industry Presets
-- **YouTube Music**: Content ID and monetization settings
-- **Generic**: Default preset for broad distributor compatibility
+const party = (name, id) => ({ party_name: [{ text: name }], party_id: id });
+const track = (n) => ({
+  track_id: `T${n}`,
+  isrc: `ZZ000000000${n}`,
+  title: `Track ${n}`,
+  duration: 'PT3M0S',
+  artist: 'Example Artist',
+  resource_type: 'MusicalWorkSoundRecording',
+  parental_warning_type: 'NotExplicit',
+});
 
-### 🚀 High Performance
-- Native Rust core with optimized Node.js bindings
-- Streaming generation for large catalogs (>10,000 tracks)
-- Memory-efficient processing with configurable limits
-- Async/await throughout with proper backpressure handling
-
-### 🔒 Built-in Validation
-- Real-time DDEX schema validation with detailed error messages
-- Business rule enforcement for industry compliance
-- Reference integrity checking across the entire message
-- Territory and rights validation with suggestion engine
-
-## Performance Benchmarks
-
-Performance comparison in different environments:
-
-### Node.js (Native Addon)
-| Dataset Size | Build Time | Memory Usage | Output Size | Throughput |
-|--------------|------------|-------------|-------------|------------|
-| Single release (10 tracks) | 3ms | 8MB | 25KB | 333 releases/sec |
-| Album catalog (100 releases) | 25ms | 35MB | 2.5MB | 40 releases/sec |
-| Label catalog (1000 releases) | 180ms | 120MB | 25MB | 5.6 releases/sec |
-| Large catalog (10000 releases) | 1.8s | 300MB | 250MB | 5.6 releases/sec |
-
-### Browser (WASM)
-| Dataset Size | Build Time | Memory Usage | Bundle Impact |
-|--------------|------------|-------------|---------------|
-| Single release | 8ms | 12MB | 394KB (gzipped) |
-| Small catalog (50 releases) | 85ms | 25MB | No additional |
-| Medium catalog (500 releases) | 650ms | 80MB | No additional |
-
-Memory usage remains constant with streaming mode regardless of dataset size.
-
-## Round-Trip Compatibility
-
-Perfect integration with ddex-parser for complete workflows:
-
-```typescript
-import { DdexParser } from 'ddex-parser';
-import { DdexBuilder } from 'ddex-builder';
-
-// Parse existing DDEX file
-const parser = new DdexParser();
-const original = await parser.parseFile('input.xml');
-
-// Modify specific fields
-const modified = { ...original.flattened };
-modified.releases[0].title = 'Remastered Edition';
-
-// Build new deterministic XML
-const builder = new DdexBuilder({ canonical: true });
-const newXml = await builder.buildFromFlattened(modified);
-
-// Perfect round-trip fidelity guaranteed
-const reparsed = await parser.parseString(newXml);
-console.assert(reparsed.releases[0].title === 'Remastered Edition');
+new DdexBuilder()
+  .build({
+    header: {
+      message_sender: party('Example Label', 'PADPIDA0000000001'),
+      message_recipient: party('Example DSP', 'PADPIDA0000000002'),
+    },
+    version: '4.3',
+    avs_version_id: '12',
+    language_and_script_code: 'en',
+    releases: [{
+      release_id: 'A1-ABCDE-0000000002-M',
+      title: [{ text: 'Example Album' }],
+      artist: 'Example Artist',
+      label: 'Example Label',
+      release_type: 'Album',
+      genre: 'Pop',
+      parental_warning_type: 'NotExplicit',
+      tracks: [track(1), track(2)],
+    }],
+    deals: [],
+  })
+  .then((xml) => {
+    const message = new DdexParser().parseSync(xml);
+    console.log(message.releases[0].tracks.map((t) => t.title)); // [ 'Track 1', 'Track 2' ]
+  });
 ```
 
-## Security
+## Supported versions
 
-v0.4.0 includes comprehensive security enhancements:
-- Zero unsafe code, comprehensive input validation
-- Supply chain security with cargo-deny and SBOM
-- Memory-bounded processing with configurable limits
-- Built-in validation prevents malformed output
-- Deterministic generation prevents injection attacks
+| `version` | Output |
+|---|---|
+| `"4.3"`, `"4.2"` | Validated against the official XSDs in CI |
+| `"3.8.2"` | Validated against the official XSD in CI; video resources are not supported yet |
+| `"3.8.1"` | The 3.8.2 document in the 3.8.1 namespace; not checked against an official XSD (none is available) |
+
+## Scope
+
+- Use `build(request)`. The preset methods (`applyPreset`, `getAvailablePresets`, ...) do
+  not change its output in 0.5.0, `StreamingDdexBuilder` only writes the old 3.8-style
+  tree, and `validateStructure` reports invalid XML as valid; see the known issues.
+- Text is XML-escaped on output. `build` checks the fields the target version requires;
+  it does not validate the output against the XSD or the AVS business rules at runtime.
+
+## Links
+
+- Documentation: [ddex-suite.org](https://ddex-suite.org/docs/builder)
+- [Changelog](https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md)
+- [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md)
+- [Known issues](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md)
+- [Report an issue](https://github.com/daddykev/ddex-suite/issues)
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/daddykev/ddex-suite/blob/main/LICENSE) file for details.
-
-## Related Projects
-
-- **[ddex-parser](https://www.npmjs.com/package/ddex-parser)** - Parse DDEX XML files to JavaScript objects
-- **[ddex-builder (Python)](https://pypi.org/project/ddex-builder/)** - Python bindings
-- **[DDEX Suite](https://ddex-suite.org)** - Complete DDEX processing toolkit
-
----
-
-Built with ❤️ for the music industry. Powered by Rust + TypeScript for deterministic, type-safe DDEX generation.
+MIT, see [LICENSE](https://github.com/daddykev/ddex-suite/blob/main/LICENSE).

@@ -1,15 +1,15 @@
 //! ddex-parser integration tests, compiled as a single test binary.
 //!
 //! Feature-gated modules:
-//! - `perf`: throughput/latency targets; run with `cargo test --release --features perf-tests`.
+//! - `perf`: timing sanity limits (release only); run with `cargo test --release --features perf-tests`.
 
 mod common;
 
 mod community_prs_regression;
 mod depth_limit;
+mod ern38_details;
 mod ern4_build_inputs;
 mod ern4_tracks;
-mod ern38_details;
 mod error_contract;
 mod fast_streaming;
 mod large_file;

@@ -4,7 +4,7 @@ use std::io::Cursor;
 
 fn benchmark_memory(c: &mut Criterion) {
     // Go up TWO levels
-    let xml = include_str!("../../../test-suite/valid/ern-4.3/simple_release.xml");
+    let xml = include_str!("../tests/fixtures/ern43_basic.xml");
 
     c.bench_function("memory_bounded_parse", |b| {
         b.iter(|| {

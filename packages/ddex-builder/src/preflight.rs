@@ -94,7 +94,7 @@ pub struct ValidationError {
     pub field: String,
     /// Human-readable error message
     pub message: String,
-    /// Location in the structure (e.g., "Release[0].Track[2]")
+    /// Location in the structure (e.g., `Release[0].Track[2]`)
     pub location: String,
 }
 

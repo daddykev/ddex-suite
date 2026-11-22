@@ -75,7 +75,7 @@ class TestDDEXParser:
     @pytest.mark.xfail(
         strict=True,
         reason="known bug: the native detect_version returns the enum spelling ('V4_3') "
-        "while the pure-Python fallback and this API's docs use '4.3'",
+        "while this API's docs use '4.3'",
     )
     def test_detect_version(self):
         parser = DDEXParser()

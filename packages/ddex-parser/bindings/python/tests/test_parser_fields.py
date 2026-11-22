@@ -1,7 +1,9 @@
 """Smoke test for the 0.5.0 parser fields through the Python binding: the deals() and
 message_control_type() accessors and the new DataFrame columns (release identifiers,
 dates, P/C lines, genres, parental warnings, labels, 3.8.x track artists and layout,
-TrackRelease genre). Absent values are None.
+TrackRelease genre). Absent values are None; in DataFrame columns they are pandas'
+missing value (None in an object column, NaN in pandas 3's default string dtype), so
+the DataFrame checks use pd.isna.
 
 Run (with the extension built, e.g. `maturin develop`, plus pandas):
     python -m pytest tests/test_parser_fields.py
@@ -10,6 +12,7 @@ Run (with the extension built, e.g. `maturin develop`, plus pandas):
 import os
 
 import ddex_parser
+import pandas as pd
 
 FIXTURES = os.path.join(os.path.dirname(__file__), "..", "..", "..", "tests", "fixtures")
 
@@ -37,7 +40,7 @@ def test_ern43_fields():
 
     release = parsed.to_dataframe("releases").to_dict("records")[0]
     assert release["icpn"] == "123456789012"
-    assert release["isrc"] is None
+    assert pd.isna(release["isrc"])
     assert release["label_name"] == "Details Records"
     assert (release["genre"], release["sub_genre"]) == ("Pop", "Synth-pop")
     assert [(g["genre"], g["territory_codes"], g["is_default"]) for g in release["genres"]] == [
@@ -54,19 +57,19 @@ def test_ern43_fields():
         ("2024-09-20", []),
     ]
     # A partial date has no full-date value; the list keeps it as written
-    assert release["original_release_date"] is None
+    assert pd.isna(release["original_release_date"])
     assert [d["date"] for d in release["original_release_dates"]] == ["2016"]
 
     track = parsed.to_dataframe("tracks").to_dict("records")[0]
     assert track["parental_warning"] == "ExplicitContentEdited"
     assert track["p_line"] == "(P) 2024 Details Records"
-    assert track["genre"] is None  # 4.x resources carry no genre
+    assert pd.isna(track["genre"])  # 4.x resources carry no genre
     assert (track["track_release_genre"], track["track_release_sub_genre"]) == ("Pop", "Electropop")
 
     flat = parsed.to_dataframe("flat").to_dict("records")
     assert flat[0]["message_control_type"] == "TestMessage"
     assert flat[1]["label_name"] == "Details Records"
-    assert flat[1]["message_control_type"] is None
+    assert pd.isna(flat[1]["message_control_type"])
 
 
 def test_ern382_fields():
@@ -94,7 +97,7 @@ def test_ern382_fields():
     assert [t["track_number"] for t in tracks] == [1, 2]
     assert tracks[0]["group_path"] == [{"group_type": None, "sequence_number": 1}]
     assert (tracks[0]["genre"], tracks[0]["label_name"]) == ("Pop", "Details Records")
-    assert tracks[1]["p_line"] is None
+    assert pd.isna(tracks[1]["p_line"])
     assert tracks[1]["parental_warning"] == "NotExplicit"
 
 

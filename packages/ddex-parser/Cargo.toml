@@ -6,17 +6,22 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 authors.workspace = true
-description = "High-performance DDEX XML parser with SIMD optimization (40+ MB/s)"
-keywords = ["ddex", "xml", "parser", "music", "metadata"]
+description = "DDEX ERN XML parser (ERN 3.8.x, 4.2, 4.3) with a flat and a graph model"
+keywords = ["ddex", "ern", "xml", "parser", "music"]
 categories = ["parser-implementations", "multimedia::audio"]
 documentation = "https://docs.rs/ddex-parser"
 readme = "README.md"
-homepage = "https://github.com/daddykev/ddex-suite"
-exclude = ["*.bak", "*.backup", "*.log", "*.tmp", "tests/integration/*.ts"]
+homepage.workspace = true
+rust-version.workspace = true
+include = ["/src/**/*.rs", "/build.rs", "/Cargo.toml", "/README.md", "/LICENSE"]
+
+[package.metadata.docs.rs]
+# Default features, as in CI (`cargo doc --no-deps --workspace --lib`).
+features = []
 
 [dependencies]
 # Core dependency
-ddex-core = { version = "0.4.5", path = "../core" }
+ddex-core = { version = "0.5.0", path = "../core" }
 
 # Use workspace dependencies
 quick-xml = { workspace = true }
@@ -76,7 +81,7 @@ simd = []
 bench = []
 zero-copy = []  # High-performance zero-copy streaming parser
 performance-debug = []  # Enable performance logging and metrics output
-# Test-only: throughput/latency/speedup assertions (meaningful in release mode only):
+# Test-only: timing sanity limits (about 10x the recorded timings; release mode only):
 #   cargo test -p ddex-parser --release --features perf-tests
 perf-tests = []
 # Test-only: tests for streaming implementations slated for removal
@@ -95,6 +100,10 @@ test = false
 required-features = ["async"]
 
 # Benchmarks
+[[bench]]
+name = "throughput"
+harness = false
+
 [[bench]]
 name = "parsing"
 harness = false

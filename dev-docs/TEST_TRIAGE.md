@@ -14,8 +14,10 @@ Categories:
   placeholder assertions.
 - **DEFER**: exercises only streaming implementations that may be removed. Gated
   behind the `legacy-streaming-tests` feature (off by default).
-- **PERF**: throughput/latency/speedup assertions. Gated behind the `perf-tests`
-  feature (off by default). Run with `cargo test --release --features perf-tests`.
+- **PERF**: since 0.5.0, timings are benchmarks that report numbers
+  (`cargo bench`, recorded in `dev-docs/PERFORMANCE.md`). The `perf-tests` feature keeps
+  only a few sanity limits (about 10× the recorded timings, release mode only):
+  `cargo test --release --features perf-tests perf::`.
 
 DELETE approval key: **P** = pre-approved category (milestone, report generator,
 duplicate, no-assertion), **A** = approved by Kevin during triage (dead APIs,
@@ -246,8 +248,10 @@ Things the triage couldn't predict, found while making the KEEP/REWRITE tests pa
   `ern38_population.py` checks that each new field is populated exactly where the 3.8.x
   XML has it (repository fixtures and the YouTube 3.8.2 samples: no misses, nothing
   invented).
-- **perf-tests:** run with `--release` (as documented above). Several ddex-builder timing
-  tests miss their targets on the development machine on `main` as well; listed under
-  "Not pinned" in `KNOWN_ISSUES.md`.
+- **perf-tests (0.5.0):** the wall-clock pass/fail tests became criterion benches
+  (`ddex-parser` `throughput`, `ddex-builder` `performance` / `security`); the
+  `perf-tests` feature keeps five sanity limits (`perf::`). The builder benches used an
+  incomplete ERN 4.3 request, so they timed a validation error; they now build for real
+  and unwrap the result. See `dev-docs/PERFORMANCE.md`.
 
 The full list of known bugs lives in `KNOWN_ISSUES.md`.

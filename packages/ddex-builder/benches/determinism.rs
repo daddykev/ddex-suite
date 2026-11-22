@@ -18,7 +18,13 @@ fn bench_single_build(c: &mut Criterion) {
     for (name, tracks) in SIZES {
         let request = common::request_with_tracks(tracks);
         group.bench_with_input(BenchmarkId::new("build", name), &request, |b, request| {
-            b.iter(|| black_box(builder.build(request.clone(), BuildOptions::default())))
+            b.iter(|| {
+                black_box(
+                    builder
+                        .build(request.clone(), BuildOptions::default())
+                        .unwrap(),
+                )
+            })
         });
     }
 
@@ -35,7 +41,7 @@ fn bench_determinism_verification(c: &mut Criterion) {
             group.bench_with_input(
                 BenchmarkId::new(format!("verify_{iterations}x"), name),
                 &request,
-                |b, request| b.iter(|| black_box(verifier.verify(request, iterations))),
+                |b, request| b.iter(|| black_box(verifier.verify(request, iterations).unwrap())),
             );
         }
     }
@@ -48,10 +54,10 @@ fn bench_convenience_checks(c: &mut Criterion) {
     let request = common::request_with_tracks(12);
 
     group.bench_function("quick_check", |b| {
-        b.iter(|| black_box(DeterminismVerifier::quick_check(&request)))
+        b.iter(|| black_box(DeterminismVerifier::quick_check(&request).unwrap()))
     });
     group.bench_function("thorough_check_3x", |b| {
-        b.iter(|| black_box(DeterminismVerifier::thorough_check(&request, 3)))
+        b.iter(|| black_box(DeterminismVerifier::thorough_check(&request, 3).unwrap()))
     });
 
     group.finish();
