@@ -16,16 +16,13 @@ Classification and history: `dev-docs/TEST_TRIAGE.md`.
 | `StreamingParser::stream_releases` skips the message root element (only `stream_deals` descends into it), so it yields nothing for a full document | `it::utf8_handling::streaming_parser_handles_utf8` |
 | quick-xml's own end-tag/attribute checks fire first and come back as a generic `XmlError`, pre-empting the typed `MismatchedTags` / `UnexpectedClosingTag` / `InvalidAttribute` variants from `parser::xml_validator` | `it::malformed_xml::test_mismatched_opening_closing_tags`, `test_unexpected_closing_tag`, `test_duplicate_attributes`, `test_complex_malformed_structure` |
 | `]]>` in character data is accepted (not well-formed XML) and the surrounding text is mangled | `it::malformed_xml::test_cdata_terminator_in_text_is_rejected` |
+| ERN 3.8.x: `ReleaseId/ISRC` and `ReleaseId/ProprietaryId` are not read (only GRid / GRIN / ICPN), so a 3.8 release identified by ISRC or a proprietary ID has no identifiers; `ValidityPeriod/EndDate` is never read (any version). `LabelName`, `Genre`, `ParentalWarningType` and `ResourceGroup` (disc / sequence numbers) in the 3.8 `…DetailsByTerritory` are not read either | builder `it::ern38_round_trip::ern38_round_trip` (pinned as the expected build failures of the YouTube 3.8.2 samples and the proprietary-ID album) |
 
 ## ddex-builder
 
-> **ERN 3.8.2 builder output omits `DealList`.** `DDEXBuilder::build` drops every
-> `DealRequest` for 3.8.x targets (the 3.8 generator never writes deals). ERN 4.2/4.3
-> output includes the `DealList`. Not pinned by a test: the 3.8.2 output is pinned
-> byte for byte (`it::ern382_output`), so fixing this will update those snapshots.
-
 | Bug | Test(s) |
 |---|---|
+| ERN 3.8.x targets: Video resources are rejected (`resource_kind is Video`; the 3.8 generator writes `SoundRecording`s only) | `it::ern38_round_trip` (expected failures: 12 YouTube video samples, 9 official 4.x samples with videos) |
 | The stable-hash MessageId includes `Utc::now()`'s date (`builder.rs`, `generate_stable_hash_ids`), so output changes daily and the golden snapshot goes stale | `it::golden_files::test_audio_album_golden` |
 | `PathValidator`: allows `settings.json`, empty paths, malformed paths, Unicode homographs and `malware.exe`; rejects valid relative paths, paths within the depth limit and valid paths under concurrency; mishandles a bare `\` | `it::security_fixes::*` (5), `it::security::path_validator_tests::*` (4) |
 | `InputValidator::validate_xml_content` is regex-only: accepts empty input, doesn't enforce `max_xml_depth`, accepts malformed CDATA and `]]>` in text, and ignores `allow_dtd` (with `false` it accepts an empty DTD or a mixed-case `<!Entity … System` declaration; with `true` it still rejects every internal entity declaration) | `it::security::integration_tests::test_security_edge_cases`, `test_memory_safety_under_attack`, `it::security::malicious_payload_tests::test_cdata_section_abuse`, `test_xml_injection_in_ddex_fields`, `it::security::xxe_prevention_tests::test_xxe_edge_cases`, `it::security::parameter_entity_tests::test_parameter_entity_evasions`, `it::security::entity_expansion_tests::test_reasonable_entities_allowed` |
@@ -56,7 +53,13 @@ decision needed)". The security policy above does not settle them:
 
 ## Not pinned by a test (seen during the cleanup)
 
-- ddex-builder streaming writer (`streaming::StreamingBuilder`, Node `StreamingDdexBuilder`): ERN 4.2/4.3 targets are rejected with "not yet supported by the streaming writer" (it only writes the 3.8-style tree; use `DDEXBuilder::build` for 4.x). Its 3.8 output still declares the `ern/43` namespace whatever version is requested.
+- ERN 3.8.1 builder output is not XSD-checked: no official 3.8.1 schema can be obtained
+  (DDEX no longer serves ERN 3.x XSDs, and no archived copy of the 3.8.1 one exists). It
+  is the 3.8.2 document in the 381 namespace (`it::ern38_xsd`), and the content models
+  of every element written are the same in an unofficial copy of the 3.8.1 schema.
+- The ERN 3.8.2 XSD is fetched from the Internet Archive's capture of its official URL
+  (DDEX removed the ERN 3.x schemas from service.ddex.net in 2026), pinned by hash.
+- ddex-builder streaming writer (`streaming::StreamingBuilder`, Node `StreamingDdexBuilder`): ERN 4.2/4.3 targets are rejected with "not yet supported by the streaming writer" (it only writes the 3.8-style tree; use `DDEXBuilder::build` for 4.x). Its 3.8 output still declares the `ern/43` namespace whatever version is requested, and is the old 3.8-style tree, not the schema-valid 3.8.2 that `DDEXBuilder::build` writes.
 - ddex-builder WASM binding (`bindings/wasm`): `build` writes its own string-concatenated "ERN 4.3" document (3.8-shaped, not schema-valid) instead of calling the core builder, and `batch_build` returns hard-coded placeholder XML.
 - ddex-parser `FastStreamingParser::new(StreamingConfig)` ignores the config: buffer size, `max_memory` and the `SecurityConfig` limits are not applied on the fast path (`SecurityConfig::relaxed()` / `enable_fast_streaming`).
 - ddex-builder `DDEXBuilder::diff_xml` / `diff_xml_with_config` / `diff_request_with_xml` are stubs: `parse_xml_to_ast` wraps the whole document in one text node, so any difference is reported as a single `/#text` modification. The `DiffEngine` itself works on real ASTs.

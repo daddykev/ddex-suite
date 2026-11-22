@@ -201,4 +201,22 @@ Things the triage couldn't predict, found while making the KEEP/REWRITE tests pa
   explicit 4.x test data (`ern4_support::ern4_test_data`); their dangling deal
   references, non-pattern references and 100-release message were fixed in the data.
 
+## builder-ern382: schema-valid ERN 3.8.2 builder output with deals
+
+- **Rewritten:** `ern382_output` snapshots now pin the schema-valid 3.8.2 document
+  (and are XSD-checked by `ern38_xsd`); the request gained `use_types` on its deal
+  (3.8.2 `Usage/UseType` is required). `target_version` gives its 3.8.1 request party
+  IDs (required by the 3.8 XSD). The canonicalizer unit test that pinned the 3.8.2
+  `MessageHeader` reorder now pins document order (the old order contradicted the XSD).
+- **New:** `ern38_xsd` (xmllint against the official 3.8.2 XSD, canonical and pretty;
+  3.8.1 = 3.8.2 document in the 381 namespace; named errors for missing values;
+  escaping and illegal characters), `ern38_round_trip` (YouTube 3.8.2 samples,
+  repository 3.8.x fixtures and builder-made messages: parse → build → XSD → re-parse;
+  official 4.x samples rebuilt as 3.8.2). Expected build failures are pinned with the
+  error they must name (parser gaps, no 3.8.x video, fixtures without required data).
+  Node `smoke-ern382.js` (part of `npm run test:smoke`), Python `test_smoke_ern382.py`.
+- **Unchanged:** the 4.x tests (`ern4_xsd`, `ern4_samples`, `ern4_escaping`,
+  `round_trip`); `ern4_support` gained the 3.8.2 schema in its tooling check and a few
+  helpers made public for the 3.8 round trip.
+
 The full list of known bugs lives in `KNOWN_ISSUES.md`.

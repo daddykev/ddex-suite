@@ -41,6 +41,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   instructions when DDEX updates the unversioned `allowed-value-sets.xsd`) and points the
   imports at the local copies. The builder's XSD tests run it when the schemas are
   missing.
+- `scripts/fetch_ddex_schemas.sh` also fetches the official ERN 3.8.2
+  `release-notification.xsd` and the `avs_20161006.xsd` it imports (`schemas/ern/382/`).
+  DDEX no longer serves the ERN 3.x XSDs, so the 3.8.2 file comes from the Internet
+  Archive's capture of its official URL
+  (`http://service.ddex.net/xml/ern/382/release-notification.xsd`), pinned by the
+  original's SHA-256; `DDEX_ERN382_XSD=<file>` uses a local copy instead (same hash
+  check). No official ERN 3.8.1 XSD can be obtained, so none is fetched.
+- `scripts/fetch_ern382_samples.sh`: downloads YouTube's 20 published ERN 3.8.2 sample
+  messages (all valid against the 3.8.2 XSD) into `samples/youtube-ern382/`, pinned by
+  SHA-256 and gitignored (not redistributed). The builder's 3.8.2 round-trip test runs
+  it when they are missing (`DDEX_SKIP_SAMPLES=1` skips them explicitly).
 - Parser graph model, for rebuilding parsed 4.x messages: `Release.genre` (was always
   empty), `Release.release_type_user_defined_value`, `Release.parental_warning_type`,
   `Release.release_label_reference`; `Resource.type_value`,
@@ -85,6 +96,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `DisplayArtist`s (one party named after the `DisplayArtistName` is written),
     `Namespace` on a user-defined `ReleaseType`, and territory / language / `IsDefault` /
     `SequenceNumber` attributes on display texts, artists and labels.
+- **ERN 3.8.2 builder output is schema-valid and includes deals.** The 3.8 generator
+  wrote a tree that failed the 3.8.2 XSD at almost every level (header order, bare-text
+  `PartyName`, `ResourceId` instead of `SoundRecordingId`, no
+  `SoundRecordingDetailsByTerritory` / `ReleaseDetailsByTerritory` /
+  `ReleaseResourceReferenceList`, `ReleaseReference` before `ReleaseId`, several
+  `ReleaseId`s and `ReferenceTitle`s) and dropped every deal. It is now a separate 3.8.x
+  generator (`generator/ern38.rs`; helpers shared with 4.x in `generator/shared.rs`)
+  following the official XSD: 3.8.2 `MessageHeader`; `SoundRecording` with
+  `SoundRecordingType`, `SoundRecordingId` (ISRC / ProprietaryIds), `ReferenceTitle`,
+  `Duration` and `SoundRecordingDetailsByTerritory` (display artist, parental warning);
+  `Release` with one `ReleaseId`, `ReferenceTitle`, `ReleaseResourceReferenceList`,
+  `ReleaseType` and `ReleaseDetailsByTerritory` (display artist name and artist, label,
+  titles, parental warning, `ResourceGroup`, genre, release date); 4.x-style track
+  releases (`tracks[].track_release`) as `Release`s of type `TrackRelease`; and a
+  `DealList` (`ReleaseDeal` / `DealReleaseReference` / `Deal` / `DealTerms` with
+  `CommercialModelType`, `Usage/UseType`, `TerritoryCode`, `ValidityPeriod`). A deal
+  with no terms is written as its `DealReference` alone (`DealTerms` is optional in
+  3.8.x); the ID generator no longer makes up a reference for such a deal. ERN 3.8.1
+  uses the same generator with the 381 namespace (the content models are the same; no
+  official 3.8.1 XSD is available to check against). Derived values (documented in
+  `ern38.rs`): `TerritoryCode` `Worldwide` for the request's non-territorial details,
+  `ArtistRole` `MainArtist`, `TitleType` `DisplayTitle`, `ReleaseType` `TrackRelease`,
+  and a track release's title falls back to its track's title.
+  - Verified with xmllint against the official 3.8.2 XSD: single, multi-track album with
+    track releases and deals, multi-disc album, several releases sharing a recording,
+    term-less deals; canonical and pretty output.
+  - The 10 official 4.2/4.3 samples without videos rebuild as schema-valid 3.8.2 whose
+    re-parsed main release (title, ICPN, type, artist, tracks, per-track ISRC / title /
+    duration), deal count and deal references equal the original's.
+  - Builder-made 3.8.2 messages round-trip (parse → build → XSD → re-parse). YouTube's
+    3.8.2 samples and the repository's 3.8.x fixtures cannot be rebuilt yet: their builds
+    fail naming the missing fields, because of parser gaps (`KNOWN_ISSUES.md`), the lack
+    of 3.8.x video support, or data the fixtures do not have.
+- The DB-C14N canonicalizer no longer reorders ERN 3.8.x elements: its 3.8 reorder
+  tables did not follow the XSD sequences (they moved `MessageCreatedDateTime` before
+  `MessageSender`, `ReleaseReference` before `ReleaseId`, and every unlisted child to the
+  end), so canonical 3.8.2 output was schema-invalid. 3.8.x now keeps document order, as
+  4.x does; the generators write XSD order.
 - Builder output escaping: attribute values escape `"` and `'` as well as `&`, `<`, `>`,
   and tab / LF / CR as character references; text escapes CR as `&#13;`, so every
   character reads back unchanged. The canonicalizer no longer double-escapes attribute
@@ -134,6 +183,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   main TrackRelease is promoted).
 
 ### Changed (breaking)
+Builder (ERN 3.8.2 / 3.8.1 output):
+- The output changes completely (see Fixed): `MessageSchemaVersionId` is `ern/382`
+  (was `ern/3.8.2`); `MessageThreadId` is no longer written (it repeated the
+  `MessageId`); `MessageControlType` is written when set; track artists, track resource
+  types and parental warnings, release genre and parental warning, and deals now appear.
+  Escaping and the rejection of characters XML 1.0 does not allow are unchanged.
+- 3.8.x requests that built before now fail, naming each field, when the 3.8.2 XSD
+  requires a value they do not have: sender / recipient `party_id`; a release
+  identifier (`release_id`, `upc` or `release_ids`); a release title; at least one track
+  (or `resource_references`) per release; per track an `isrc` or `proprietary_ids`,
+  `title` and an xs:duration `duration`; per track release an identifier; per deal with
+  terms, `use_types`, `territory_code` and a `start_date` or `end_date`, and per deal
+  without terms a `deal_reference`; deal release references must name releases in the
+  message. Values the schema cannot hold are rejected: Video resources, references
+  that do not match `A…` / `R…`, duplicate references, non-ISO dates. A recording
+  shared by several releases (same `resource_reference`) is written once and must have
+  the same details everywhere.
+- A request's `resource_group_type`s (required by 4.x on nested groups) are not written
+  for 3.8.x, which has no such attribute; the group tree is.
+- 3.8.x sender / recipient party IDs need not be DPIDs (4.x requires DPIDs).
+
 Builder (ERN 4.x output, build requests and bindings):
 - New build-request fields, all optional (`#[serde(default)]`, so JSON requests without
   them still deserialize): `BuildRequest.language_and_script_code`, `avs_version_id`;
