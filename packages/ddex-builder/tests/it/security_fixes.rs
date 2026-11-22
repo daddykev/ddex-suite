@@ -479,6 +479,7 @@ mod security_integration_tests {
 
     // Helper functions for benchmarking
 
+    #[cfg(feature = "perf-tests")]
     fn benchmark_path_validation(iterations: usize) -> f64 {
         let paths = vec![
             "valid/path.xml",
@@ -512,6 +513,7 @@ mod security_integration_tests {
         overhead.max(0.0) // Don't allow negative overhead
     }
 
+    #[cfg(feature = "perf-tests")]
     fn benchmark_entity_classification(iterations: usize) -> f64 {
         let entities = vec![
             create_entity("title", "Song Title"),
@@ -542,6 +544,7 @@ mod security_integration_tests {
         overhead.max(0.0)
     }
 
+    #[cfg(feature = "perf-tests")]
     fn benchmark_error_sanitization(iterations: usize) -> f64 {
         let test_errors = vec![
             Error::new(ErrorKind::NotFound, "File not found"),

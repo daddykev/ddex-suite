@@ -328,6 +328,7 @@ mod tests {
     use super::*;
     use std::io::Cursor;
 
+    #[cfg(feature = "perf-tests")]
     fn generate_large_ddex_data(target_mb: usize) -> Vec<u8> {
         let mut xml = String::from(
             r#"<?xml version="1.0" encoding="UTF-8"?>

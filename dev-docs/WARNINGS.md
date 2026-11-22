@@ -38,7 +38,7 @@ so there was no complete baseline. Fixed first (commit "build: make `cargo build
 |---|---|---|
 | Baseline (after the compile fixes above) | **395** | 377 |
 | After Step 2 (CLI imports the library crate) | **105** | 88 |
-| Final (`--features perf-tests`, see note above) | **0** | 0 |
+| Final, both configurations: default features and `--features perf-tests` (`cargo build --workspace --all-targets [--features perf-tests]` and `cargo test --workspace -q`) | **0** | 0 |
 
 ### Baseline, distinct diagnostics per crate and lint
 
