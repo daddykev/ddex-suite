@@ -88,7 +88,7 @@ jobs:
   # Install each wheel on a matching runner with the oldest supported Python (3.10): import
   # it and parse (or build) with an official sample. The musllinux wheel is tested in an
   # Alpine container. The macOS x86_64 wheel is tested on macos-latest (Apple Silicon) with
-  # an x86_64 Python running under Rosetta 2.
+  # python.org's universal2 Python 3.10 running as x86_64 under Rosetta 2.
   wheel-install-test:
     name: install-test wheel ${{ matrix.platform.name }}
     needs: wheels
@@ -106,20 +106,37 @@ jobs:
     container: ${{ matrix.platform.container || '' }}
     steps:
       - uses: actions/checkout@v7
-      - name: Install Rosetta 2
-        if: ${{ matrix.platform.arch == 'x64' }}
-        run: arch -x86_64 /usr/bin/true 2>/dev/null || sudo softwareupdate --install-rosetta --agree-to-license
+      # python:3.10-alpine has no bash, which the steps below use.
+      - name: Install bash (Alpine)
+        if: ${{ matrix.platform.container }}
+        shell: sh
+        run: apk add --no-cache bash
       - uses: actions/setup-python@v7
-        if: ${{ !matrix.platform.container }}
+        if: ${{ !matrix.platform.container && !matrix.platform.arch }}
         with:
           python-version: "3.10"
-          architecture: ${{ matrix.platform.arch || '' }}
+      # macOS x86_64 on Apple Silicon: setup-python's darwin-x64 Python links Intel Homebrew
+      # libraries (/usr/local/opt/gettext) that the runner does not have. python.org's
+      # universal2 installer is self-contained; a venv of it, run through `arch -x86_64`,
+      # is the x86_64 `python` for the steps below.
+      - name: x86_64 Python 3.10 under Rosetta 2 (python.org universal2)
+        if: ${{ matrix.platform.arch == 'x64' }}
+        run: |
+          set -euo pipefail
+          arch -x86_64 /usr/bin/true 2>/dev/null || sudo softwareupdate --install-rosetta --agree-to-license
+          curl -fsSLo "$RUNNER_TEMP/python.pkg" https://www.python.org/ftp/python/3.10.11/python-3.10.11-macos11.pkg
+          sudo installer -pkg "$RUNNER_TEMP/python.pkg" -target /
+          arch -x86_64 /Library/Frameworks/Python.framework/Versions/3.10/bin/python3.10 -m venv "$RUNNER_TEMP/venv-x86_64"
+          mkdir -p "$RUNNER_TEMP/bin-x86_64"
+          printf '#!/bin/sh\nexec arch -x86_64 "%s/venv-x86_64/bin/python" "$@"\n' "$RUNNER_TEMP" > "$RUNNER_TEMP/bin-x86_64/python"
+          chmod +x "$RUNNER_TEMP/bin-x86_64/python"
+          echo "$RUNNER_TEMP/bin-x86_64" >> "$GITHUB_PATH"
       - name: Check the interpreter's architecture
         if: ${{ matrix.platform.machine }}
         env:
           MACHINE: ${{ matrix.platform.machine }}
         run: |
-          python -c "import platform; print(platform.machine())"
+          python -c "import platform, sys; print(platform.machine(), sys.version)"
           test "$(python -c 'import platform; print(platform.machine())')" = "$MACHINE"
       - uses: actions/download-artifact@v8
         with:
