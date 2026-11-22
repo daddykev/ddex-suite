@@ -45,7 +45,6 @@ jobs:
   clippy-builder-determinism:
     name: cargo clippy ddex-builder (disallowed HashMap/HashSet; allowed to fail until 0.6.0)
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -54,7 +53,11 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       # TODO(0.6.0): replace the remaining HashMap/HashSet uses in ddex-builder (about 50
       # errors) and fold this into the clippy job.
+      # continue-on-error on the step, not the job: on the job it keeps the workflow green
+      # but the PR still lists the check as failed. On the step, the errors stay in this
+      # step's log (marked failed) and the job's check passes.
       - run: cargo clippy -p ddex-builder --all-targets
+        continue-on-error: true
 
   test:
     name: cargo test (-D warnings)
