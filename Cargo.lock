@@ -577,6 +577,7 @@ dependencies = [
  "console",
  "criterion",
  "ddex-core",
+ "ddex-parser",
  "dhat",
  "futures",
  "hex",
