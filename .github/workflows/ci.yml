@@ -214,12 +214,11 @@ jobs:
 
   python:
     name: Python ${{ matrix.python }}
-    # ubuntu-latest is Ubuntu 26.04, for which actions/setup-python has no Python 3.9 build.
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
