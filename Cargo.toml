@@ -54,6 +54,14 @@ napi-derive = "2"
 pyo3 = "0.24.1"
 wasm-bindgen = "0.2"
 
+# Dev/test builds: keep line tables for backtraces in our crates, drop full
+# debuginfo everywhere (dependencies get none) to keep target/ small.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
 # Profile configurations for optimized builds (moved from packages)
 [profile.release]
 opt-level = 3
