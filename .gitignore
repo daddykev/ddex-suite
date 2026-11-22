@@ -305,3 +305,5 @@ temp/
 *.tm
 # Official DDEX XSDs, fetched by scripts/fetch_ddex_schemas.sh (DDEX licence: not redistributed)
 /schemas/
+# YouTube's ERN 3.8.2 sample messages, fetched by scripts/fetch_ern382_samples.sh (not redistributed)
+/samples/
