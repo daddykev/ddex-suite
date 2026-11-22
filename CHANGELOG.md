@@ -391,6 +391,8 @@ Node parser:
   hard-coded "Test Release" objects. Use `parse` / `parseSync`.
 
 Python (ddex-parser, ddex-builder):
+- Python 3.9 or newer (`requires-python = ">=3.9"`, abi3 wheels tagged `cp39-abi3`); 0.4.5
+  allowed 3.8. CI tests 3.9 to 3.13.
 - Importing the package without its native extension raises `ImportError` naming the
   cause and how to fix it. There is no mock fallback any more: the builder's mock classes
   (which printed a warning and could not build) and the parser's mock results (fixed
@@ -422,6 +424,25 @@ Tests:
   they now build complete requests and unwrap the result.
 
 ### Packaging
+- Registry pages rewritten for 0.5.0. Each package README (crates.io, npm, PyPI) has a
+  breaking-change notice, examples for the current API, measured performance only,
+  absolute links, and links to the docs site, changelog, migration notes, known issues and
+  issue tracker. The crate READMEs are the crate docs on docs.rs
+  (`#![doc = include_str!("../README.md")]`), so their examples are doctests.
+- Manifests: consistent description, keywords, `homepage = "https://ddex-suite.org"`,
+  repository, bugs and license; `rust-version = "1.82"`; PyPI `project.urls` (the parser's
+  were invalid top-level keys and did not show) and classifiers for Python 3.9 to 3.13.
+- Smaller packages: the crates ship only `src`, `README.md` and `LICENSE` (ddex-core 45 →
+  40 files, ddex-parser 96 → 48, ddex-builder 128 → 69: no tests, fixtures, benches,
+  logs or status documents); the npm builder package no longer ships the stale `dist/`
+  and `js/` wrapper (8 → 6 files, now with its LICENSE). The committed TypeDoc HTML of
+  the Node bindings was removed; the website is the documentation home.
+- The per-package CHANGELOG.md files point to this changelog.
+- CI checks: `cargo doc` with `-D warnings`, MSRV 1.82, `cargo package` of the three
+  crates, and the Node and Python README examples run against freshly built packages
+  (`scripts/readme_examples.py`). The release build runs `twine check --strict` and checks
+  the wheel / sdist contents and the exact file list of every npm tarball
+  (`scripts/check_npm_packs.py`).
 - All version references agree at 0.5.0: the binding crates were 0.4.3, the Python
   packages reported stale versions, and the WASM / website packages lagged.
   `scripts/check_versions.py` checks every reference against the workspace version.

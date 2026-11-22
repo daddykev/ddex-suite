@@ -54,6 +54,7 @@ Read "Upgrading" before you update.
 - `displayArtist`, `artist`, `senderName` and `recipientName` are optional.
 
 ### Python
+- Python 3.9 or newer is required (0.4.5 allowed 3.8).
 - `import ddex_parser` / `import ddex_builder` raise `ImportError` if the native extension
   cannot load. The message names the cause and the fix: reinstall a wheel for your
   platform, or run `maturin develop` in a checkout.
