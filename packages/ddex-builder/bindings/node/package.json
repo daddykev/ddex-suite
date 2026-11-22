@@ -56,7 +56,7 @@
     "artifacts": "napi artifacts",
     "version": "napi version",
     "test": "node test.js",
-    "test:smoke": "node smoke-ern43.js"
+    "test:smoke": "node smoke-ern43.js && node smoke-ern382.js"
   },
   "engines": {
     "node": ">=14.0.0"
