@@ -2,7 +2,6 @@
 //! Version-specific transformation and adaptation
 
 use crate::error::ParseError;
-use ddex_core::models::graph::ERNMessage;
 use ddex_core::models::versions::ERNVersion;
 use ddex_core::models::versions::VersionDifferences;
 
@@ -83,52 +82,5 @@ impl VersionAdapter {
             instant_gratification_date: None,
             takedown_date: None,
         })
-    }
-}
-
-/// Migration helper to upgrade between versions
-pub struct VersionMigrator;
-
-impl VersionMigrator {
-    /// Migrate from 3.8.2 to 4.2
-    pub fn migrate_382_to_42(message: &ERNMessage) -> Result<ERNMessage, ParseError> {
-        let mut migrated = message.clone();
-        migrated.version = ERNVersion::V4_2;
-
-        // Add empty audit trail if not present
-        if migrated.message_audit_trail.is_none() {
-            migrated.message_audit_trail = Some(ddex_core::models::graph::MessageAuditTrail {
-                audit_trail_events: Vec::new(),
-                extensions: None,
-                attributes: None,
-                comments: None,
-            });
-        }
-
-        Ok(migrated)
-    }
-
-    /// Migrate from 4.2 to 4.3
-    pub fn migrate_42_to_43(message: &ERNMessage) -> Result<ERNMessage, ParseError> {
-        let mut migrated = message.clone();
-        migrated.version = ERNVersion::V4_3;
-        Ok(migrated)
-    }
-
-    /// Downgrade from 4.3 to 4.2 (with data loss warnings)
-    pub fn downgrade_43_to_42(
-        message: &ERNMessage,
-    ) -> Result<(ERNMessage, Vec<String>), ParseError> {
-        let mut downgraded = message.clone();
-        downgraded.version = ERNVersion::V4_2;
-
-        let mut warnings = Vec::new();
-
-        if downgraded.profile.is_some() {
-            warnings.push("Profile information will be lost in 4.2".to_string());
-            downgraded.profile = None;
-        }
-
-        Ok((downgraded, warnings))
     }
 }

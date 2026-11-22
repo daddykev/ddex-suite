@@ -56,42 +56,6 @@ pub fn decode_attribute_value(bytes: &[u8], position: usize) -> Result<String, P
         .map_err(|e| ParseError::SimpleXmlError(format!("Attribute unescape error: {}", e)))
 }
 
-/// Validate UTF-8 string without copying
-pub fn validate_utf8(bytes: &[u8]) -> Result<&str, ParseError> {
-    std::str::from_utf8(bytes).map_err(|e| ParseError::InvalidUtf8 {
-        message: format!("UTF-8 validation error: {}", e),
-    })
-}
-
-/// Validate that a string contains only valid UTF-8 characters
-pub fn validate_utf8_string(text: &str) -> Result<(), ParseError> {
-    // Check if the string is valid UTF-8 (this should always pass for &str)
-    // But we also check for any invalid Unicode scalar values
-    for (pos, ch) in text.char_indices() {
-        if ch == '\u{FFFD}' {
-            // Replacement character indicates invalid UTF-8 was present
-            return Err(ParseError::InvalidUtf8 {
-                message: format!(
-                    "Found Unicode replacement character at position {} indicating invalid UTF-8",
-                    pos
-                ),
-            });
-        }
-
-        // Check for other problematic characters that might indicate encoding issues
-        if ch.is_control() && ch != '\t' && ch != '\n' && ch != '\r' {
-            // Allow common whitespace control characters but reject others
-            return Err(ParseError::InvalidUtf8 {
-                message: format!(
-                    "Found invalid control character at position {}: U+{:04X}",
-                    pos, ch as u32
-                ),
-            });
-        }
-    }
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
