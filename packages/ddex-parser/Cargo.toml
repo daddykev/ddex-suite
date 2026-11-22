@@ -111,3 +111,7 @@ harness = false
 # Profile configurations for optimized builds
 # Development profile with some optimizations for faster tests
 # Size-optimized profile for WASM
+
+[[bench]]
+name = "fast_streaming_benchmark"
+harness = false

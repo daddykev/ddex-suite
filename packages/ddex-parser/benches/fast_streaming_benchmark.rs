@@ -259,7 +259,7 @@ fn validate_throughput_target(c: &mut Criterion) {
 
     match result {
         Ok(iterator) => {
-            let stats = iterator.stats();
+            let stats = iterator.stats().clone();
             let elements: Vec<_> = iterator.collect();
             let total_duration = start.elapsed();
 
@@ -334,7 +334,7 @@ fn benchmark_memory_efficiency(c: &mut Criterion) {
 
             let result = parser.parse_streaming(&mut reader, None);
             let iterator = result.expect("Parsing should succeed");
-            let stats = iterator.stats();
+            let stats = iterator.stats().clone();
 
             // Verify memory usage is within bounds
             assert!(

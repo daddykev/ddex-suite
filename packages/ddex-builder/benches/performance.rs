@@ -1,10 +1,9 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
-use ddex_builder::builder::{
-    ContributorRequest, DisplayArtistRequest, LocalizedStringRequest, MessageHeaderRequest,
-    PartyRequest, ReleaseRequest, ResourceRequest, SoundRecordingRequest,
-};
-use ddex_builder::{BuildOptions, BuildRequest, DDEXBuilder};
+use ddex_builder::{BuildOptions, DDEXBuilder};
 use std::time::Duration;
+
+mod common;
+use common::request_with_tracks as create_test_request_with_tracks;
 
 // Target metrics:
 // - Single track: <5ms
@@ -117,101 +116,6 @@ fn benchmark_xml_generation(c: &mut Criterion) {
     }
 
     group.finish();
-}
-
-fn create_test_request_with_tracks(track_count: usize) -> BuildRequest {
-    let mut releases = vec![];
-    let mut sound_recordings = vec![];
-
-    // Create sound recordings
-    for i in 0..track_count {
-        sound_recordings.push(SoundRecordingRequest {
-            sound_recording_id: format!("TRACK_{:03}", i + 1),
-            reference_title: LocalizedStringRequest {
-                text: format!("Track {} Title", i + 1),
-                language_code: None,
-            },
-            display_artist: vec![DisplayArtistRequest {
-                artist_name: format!("Artist {}", (i % 5) + 1), // Simulate repeated artists
-                party_id: None,
-                artist_role: None,
-            }],
-            contributors: vec![ContributorRequest {
-                contributor_name: format!("Contributor {}", (i % 3) + 1),
-                contributor_role: "MainArtist".to_string(),
-                party_id: None,
-            }],
-            resources: vec![ResourceRequest {
-                resource_id: format!("RES_{:03}", i + 1),
-                resource_reference: format!("track_{:03}.mp3", i + 1),
-                resource_type: "SoundRecording".to_string(),
-            }],
-            duration: Some(format!("PT{}M{}S", 3 + (i % 4), 30 + (i % 30))), // Vary durations
-            genre: vec!["Rock".to_string()], // Common genre for interning
-            p_line: vec![LocalizedStringRequest {
-                text: format!("℗ 2024 Label {}", (i % 2) + 1), // Simulate label repetition
-                language_code: None,
-            }],
-        });
-    }
-
-    // Create release
-    releases.push(ReleaseRequest {
-        release_id: "REL_BENCH_001".to_string(),
-        reference_title: LocalizedStringRequest {
-            text: if track_count == 1 {
-                "Single Release".to_string()
-            } else if track_count <= 20 {
-                "Album Release".to_string()
-            } else {
-                "Compilation Release".to_string()
-            },
-            language_code: None,
-        },
-        display_artist: vec![DisplayArtistRequest {
-            artist_name: "Main Artist".to_string(), // Common artist for interning
-            party_id: None,
-            artist_role: None,
-        }],
-        sound_recordings,
-        release_type: if track_count == 1 { "Single" } else { "Album" }.to_string(),
-        p_line: vec![LocalizedStringRequest {
-            text: "℗ 2024 Test Label".to_string(), // Common P-line for interning
-            language_code: None,
-        }],
-        c_line: vec![LocalizedStringRequest {
-            text: "© 2024 Test Label".to_string(), // Common C-line for interning
-            language_code: None,
-        }],
-        genre: vec!["Rock".to_string()], // Common genre for interning
-        release_date: Some("2024-01-01".to_string()),
-    });
-
-    BuildRequest {
-        header: MessageHeaderRequest {
-            message_id: Some(format!("BENCH_{:03}_TRACKS", track_count)),
-            message_sender: PartyRequest {
-                party_name: vec![LocalizedStringRequest {
-                    text: "Benchmark Sender".to_string(), // Static for interning
-                    language_code: None,
-                }],
-                party_id: None,
-            },
-            message_recipient: PartyRequest {
-                party_name: vec![LocalizedStringRequest {
-                    text: "Benchmark Recipient".to_string(), // Static for interning
-                    language_code: None,
-                }],
-                party_id: None,
-            },
-            message_control_type: None,
-        },
-        version: "4.3".to_string(), // Static for interning
-        profile: None,
-        releases,
-        deals: vec![],
-        extensions: None,
-    }
 }
 
 criterion_group!(
