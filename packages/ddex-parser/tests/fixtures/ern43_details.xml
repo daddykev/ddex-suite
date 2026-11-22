@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ERN 4.3 with the 0.5.0 parser fields: MessageControlType, release dates (territorial,
+     default, partial), P/C lines (release, SoundRecordingEdition, Image), genres (default and
+     territorial), parental warnings, label via ReleaseLabelReference, TrackRelease genre and a
+     deal EndDate. -->
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43" LanguageAndScriptCode="en" AvsVersionId="12">
+  <MessageHeader>
+    <MessageId>DETAILS-43</MessageId>
+    <MessageSender><PartyId>PADPIDA0000000001</PartyId><PartyName><FullName>Details Label</FullName></PartyName></MessageSender>
+    <MessageRecipient><PartyId>PADPIDA0000000002</PartyId><PartyName><FullName>Details DSP</FullName></PartyName></MessageRecipient>
+    <MessageCreatedDateTime>2024-09-13T12:00:00Z</MessageCreatedDateTime>
+    <MessageControlType>TestMessage</MessageControlType>
+  </MessageHeader>
+  <PartyList>
+    <Party><PartyReference>PArtist</PartyReference><PartyName><FullName>Details Artist</FullName></PartyName></Party>
+    <Party><PartyReference>PLabel</PartyReference><PartyName><FullName>Details Records</FullName></PartyName></Party>
+  </PartyList>
+  <ResourceList>
+    <SoundRecording>
+      <ResourceReference>A1</ResourceReference>
+      <Type>MusicalWorkSoundRecording</Type>
+      <SoundRecordingEdition>
+        <ResourceId><ISRC>ZZDET2400001</ISRC></ResourceId>
+        <PLine><Year>2024</Year><PLineCompany>Details Records</PLineCompany><PLineText>(P) 2024 Details Records</PLineText></PLine>
+      </SoundRecordingEdition>
+      <DisplayTitleText>Detail Track</DisplayTitleText>
+      <DisplayTitle><TitleText>Detail Track</TitleText></DisplayTitle>
+      <DisplayArtistName>Details Artist</DisplayArtistName>
+      <DisplayArtist SequenceNumber="1"><ArtistPartyReference>PArtist</ArtistPartyReference><DisplayArtistRole>MainArtist</DisplayArtistRole></DisplayArtist>
+      <Duration>PT3M30S</Duration>
+      <ParentalWarningType ApplicableTerritoryCode="US">Explicit</ParentalWarningType>
+      <ParentalWarningType IsDefault="true">ExplicitContentEdited</ParentalWarningType>
+    </SoundRecording>
+    <Image>
+      <ResourceReference>A2</ResourceReference>
+      <Type>FrontCoverImage</Type>
+      <ResourceId><ProprietaryId Namespace="DPID:PADPIDA0000000001">IMG1</ProprietaryId></ResourceId>
+      <CLine><Year>2024</Year><CLineText>(C) 2024 Details Records</CLineText></CLine>
+      <ParentalWarningType>NotExplicit</ParentalWarningType>
+    </Image>
+  </ResourceList>
+  <ReleaseList>
+    <Release>
+      <ReleaseReference>R0</ReleaseReference>
+      <ReleaseType>Album</ReleaseType>
+      <ReleaseId><ICPN>123456789012</ICPN></ReleaseId>
+      <DisplayTitleText>Details Album</DisplayTitleText>
+      <DisplayTitle><TitleText>Details Album</TitleText></DisplayTitle>
+      <DisplayArtistName>Details Artist</DisplayArtistName>
+      <DisplayArtist SequenceNumber="1"><ArtistPartyReference>PArtist</ArtistPartyReference><DisplayArtistRole>MainArtist</DisplayArtistRole></DisplayArtist>
+      <ReleaseLabelReference>PLabel</ReleaseLabelReference>
+      <PLine><Year>2024</Year><PLineText>(P) 2024 Details Records</PLineText></PLine>
+      <CLine ApplicableTerritoryCode="DE"><Year>2023</Year><CLineText>(C) 2023 Details GmbH</CLineText></CLine>
+      <CLine><Year>2024</Year><CLineText>(C) 2024 Details Records</CLineText></CLine>
+      <Genre ApplicableTerritoryCode="JP"><GenreText>J-Pop</GenreText></Genre>
+      <Genre IsDefault="true"><GenreText>Pop</GenreText><SubGenre>Synth-pop</SubGenre></Genre>
+      <ReleaseDate ApplicableTerritoryCode="JP">2024-09-18</ReleaseDate>
+      <ReleaseDate IsDefault="true">2024-09-20</ReleaseDate>
+      <OriginalReleaseDate>2016</OriginalReleaseDate>
+      <ParentalWarningType>Explicit</ParentalWarningType>
+      <ResourceGroup>
+        <ResourceGroupContentItem>
+          <SequenceNumber>1</SequenceNumber>
+          <ReleaseResourceReference>A1</ReleaseResourceReference>
+        </ResourceGroupContentItem>
+        <LinkedReleaseResourceReference LinkDescription="CoverArt">A2</LinkedReleaseResourceReference>
+      </ResourceGroup>
+    </Release>
+    <TrackRelease>
+      <ReleaseReference>R1</ReleaseReference>
+      <ReleaseId><ProprietaryId Namespace="DPID:PADPIDA0000000001">TR1</ProprietaryId></ReleaseId>
+      <ReleaseResourceReference>A1</ReleaseResourceReference>
+      <ReleaseLabelReference>PLabel</ReleaseLabelReference>
+      <Genre><GenreText>Pop</GenreText><SubGenre>Electropop</SubGenre></Genre>
+    </TrackRelease>
+  </ReleaseList>
+  <DealList>
+    <ReleaseDeal>
+      <DealReleaseReference>R0</DealReleaseReference>
+      <Deal>
+        <DealTerms>
+          <TerritoryCode>Worldwide</TerritoryCode>
+          <ValidityPeriod><StartDate>2024-09-20</StartDate><EndDate>2025-09-19</EndDate></ValidityPeriod>
+          <CommercialModelType>SubscriptionModel</CommercialModelType>
+          <UseType>OnDemandStream</UseType>
+        </DealTerms>
+      </Deal>
+    </ReleaseDeal>
+  </DealList>
+</ern:NewReleaseMessage>

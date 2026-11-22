@@ -15,6 +15,7 @@ mod large_file;
 mod malformed_xml;
 mod parse_options;
 mod playground_regression;
+mod serialization;
 mod utf8_handling;
 mod vendor_quirks;
 mod version_detection;

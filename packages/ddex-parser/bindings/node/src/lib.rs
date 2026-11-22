@@ -203,8 +203,65 @@ fn convert_release(release: ParsedRelease) -> JsRelease {
         disc_count: release.disc_count.map(|c| c as u32),
         release_date: release.release_date.map(|d| d.to_rfc3339()),
         original_release_date: release.original_release_date.map(|d| d.to_rfc3339()),
-        label_name: None, // ParsedRelease doesn't have label_name directly
+        label_name: release.label_name,
         tracks: release.tracks.into_iter().map(convert_track).collect(),
+        icpn: release.identifiers.upc,
+        isrc: release.identifiers.isrc,
+        grid: release.identifiers.grid,
+        proprietary_ids: release
+            .identifiers
+            .proprietary
+            .into_iter()
+            .map(|p| JsProprietaryId {
+                namespace: p.namespace,
+                value: p.value,
+            })
+            .collect(),
+        genres: release
+            .genres
+            .into_iter()
+            .map(|g| JsGenre {
+                genre: g.genre,
+                sub_genre: g.sub_genre,
+                territory_codes: g.scope.territory_codes,
+                excluded_territory_codes: g.scope.excluded_territory_codes,
+                is_default: g.scope.is_default,
+            })
+            .collect(),
+        parental_warning: release.parental_warning,
+        parental_warnings: release.parental_warnings,
+        p_line: release.p_line.map(convert_copyright),
+        c_line: release.c_line.map(convert_copyright),
+        release_dates: release
+            .release_dates
+            .into_iter()
+            .map(convert_date)
+            .collect(),
+        original_release_dates: release
+            .original_release_dates
+            .into_iter()
+            .map(convert_date)
+            .collect(),
+    }
+}
+
+fn convert_copyright(c: ddex_core::models::common::Copyright) -> JsCopyright {
+    JsCopyright {
+        text: c.text,
+        year: c.year,
+        company: c.owner,
+        territory_codes: c.scope.territory_codes,
+        is_default: c.scope.is_default,
+    }
+}
+
+fn convert_date(d: ddex_core::models::flat::DateInfo) -> JsDateInfo {
+    JsDateInfo {
+        date: d.date,
+        is_approximate: d.is_approximate,
+        territory_codes: d.scope.territory_codes,
+        excluded_territory_codes: d.scope.excluded_territory_codes,
+        is_default: d.scope.is_default,
     }
 }
 
@@ -231,6 +288,23 @@ fn convert_track(track: ddex_core::models::flat::ParsedTrack) -> JsTrack {
                 sequence_number: g.sequence_number,
             })
             .collect(),
+        artists: track
+            .artists
+            .into_iter()
+            .map(|a| JsArtist {
+                name: a.name,
+                role: a.role,
+                party_reference: a.party_id,
+            })
+            .collect(),
+        genre: track.genre,
+        sub_genre: track.sub_genre,
+        parental_warning: track.parental_warning,
+        p_line: track.p_line.map(convert_copyright),
+        c_line: track.c_line.map(convert_copyright),
+        label_name: track.label_name,
+        track_release_genre: track.track_release_genre,
+        track_release_sub_genre: track.track_release_sub_genre,
     }
 }
 
@@ -251,6 +325,12 @@ fn convert_resource(resource: ParsedResource) -> JsResource {
             .technical_details
             .file_size
             .map(|size| size.to_string()),
+        genre: resource.genre,
+        sub_genre: resource.sub_genre,
+        parental_warning: resource.parental_warning,
+        p_line: resource.p_line.map(convert_copyright),
+        c_line: resource.c_line.map(convert_copyright),
+        label_name: resource.label_name,
     }
 }
 
@@ -352,6 +432,7 @@ fn convert_parsed_message(
         recipient_id: flat.recipient.id.clone(),
         version: flat.version.clone(),
         profile: flat.profile.clone(),
+        message_control_type: flat.message_control_type.clone(),
 
         // Counts (for backward compatibility)
         release_count,
@@ -384,10 +465,82 @@ pub struct JsRelease {
     pub sub_genre: Option<String>,
     pub track_count: u32,
     pub disc_count: Option<u32>,
+    /// Default release date (RFC 3339, midnight UTC); only for a full `YYYY-MM-DD` date.
     pub release_date: Option<String>,
     pub original_release_date: Option<String>,
+    /// 3.8.x `LabelName`; 4.x the PartyList name of the first `ReleaseLabelReference`.
     pub label_name: Option<String>,
     pub tracks: Vec<JsTrack>,
+    /// `ReleaseId/ICPN`.
+    pub icpn: Option<String>,
+    /// `ReleaseId/ISRC` (ERN 3.8.x).
+    pub isrc: Option<String>,
+    /// `ReleaseId/GRid`.
+    pub grid: Option<String>,
+    /// `ReleaseId/ProprietaryId`s.
+    pub proprietary_ids: Vec<JsProprietaryId>,
+    /// Every genre in document order (`genre` / `subGenre` hold the default one).
+    pub genres: Vec<JsGenre>,
+    /// Default `ParentalWarningType`.
+    pub parental_warning: Option<String>,
+    /// Every `ParentalWarningType` value in document order.
+    pub parental_warnings: Vec<String>,
+    /// Default P line / C line.
+    pub p_line: Option<JsCopyright>,
+    pub c_line: Option<JsCopyright>,
+    /// Every release date as written (`YYYY`, `YYYY-MM` or `YYYY-MM-DD`) with its territories.
+    pub release_dates: Vec<JsDateInfo>,
+    pub original_release_dates: Vec<JsDateInfo>,
+}
+
+#[napi(object)]
+#[derive(serde::Serialize)]
+pub struct JsProprietaryId {
+    pub namespace: String,
+    pub value: String,
+}
+
+/// Where a value applies: 4.x `ApplicableTerritoryCode` / `IsDefault`; 3.8.x the
+/// territories of the DetailsByTerritory block it came from.
+#[napi(object)]
+#[derive(serde::Serialize)]
+pub struct JsGenre {
+    pub genre: String,
+    pub sub_genre: Option<String>,
+    pub territory_codes: Vec<String>,
+    pub excluded_territory_codes: Vec<String>,
+    pub is_default: Option<bool>,
+}
+
+#[napi(object)]
+#[derive(serde::Serialize)]
+pub struct JsDateInfo {
+    /// As written: `YYYY`, `YYYY-MM` or `YYYY-MM-DD`.
+    pub date: String,
+    pub is_approximate: Option<bool>,
+    pub territory_codes: Vec<String>,
+    pub excluded_territory_codes: Vec<String>,
+    pub is_default: Option<bool>,
+}
+
+/// A P line or C line.
+#[napi(object)]
+#[derive(serde::Serialize)]
+pub struct JsCopyright {
+    pub text: String,
+    pub year: Option<i32>,
+    /// `PLineCompany` / `CLineCompany`.
+    pub company: Option<String>,
+    pub territory_codes: Vec<String>,
+    pub is_default: Option<bool>,
+}
+
+#[napi(object)]
+#[derive(serde::Serialize)]
+pub struct JsArtist {
+    pub name: String,
+    pub role: String,
+    pub party_reference: Option<String>,
 }
 
 #[napi(object)]
@@ -407,8 +560,20 @@ pub struct JsTrack {
     pub track_release_reference: Option<String>,
     /// ERN 4.x: first identifier of that TrackRelease's `ReleaseId`.
     pub track_release_id: Option<String>,
-    /// ERN 4.x: enclosing nested ResourceGroups, outermost first.
+    /// Enclosing nested ResourceGroups, outermost first.
     pub group_path: Vec<JsTrackGroup>,
+    /// Display artists with their roles (3.8.x: from the details block; 4.x: via PartyList).
+    pub artists: Vec<JsArtist>,
+    /// The resource's default genre (3.8.x), parental warning, P/C line and label (3.8.x).
+    pub genre: Option<String>,
+    pub sub_genre: Option<String>,
+    pub parental_warning: Option<String>,
+    pub p_line: Option<JsCopyright>,
+    pub c_line: Option<JsCopyright>,
+    pub label_name: Option<String>,
+    /// ERN 4.x: default genre of this track's TrackRelease.
+    pub track_release_genre: Option<String>,
+    pub track_release_sub_genre: Option<String>,
 }
 
 #[napi(object)]
@@ -418,6 +583,8 @@ pub struct JsTrackGroup {
     pub sequence_number: Option<i32>,
 }
 
+/// A resource. Note: the values of `ParsedMessage.resources` are plain objects whose keys
+/// are snake_case (`resource_id`, `p_line`, ...), not the camelCase names of this interface.
 #[napi(object)]
 #[derive(serde::Serialize)]
 pub struct JsResource {
@@ -430,6 +597,13 @@ pub struct JsResource {
     pub bitrate: Option<i32>,
     pub sample_rate: Option<i32>,
     pub file_size: Option<String>, // Convert u64 to string for JS compatibility
+    /// Default genre (3.8.x), parental warning, P/C line and label name (3.8.x).
+    pub genre: Option<String>,
+    pub sub_genre: Option<String>,
+    pub parental_warning: Option<String>,
+    pub p_line: Option<JsCopyright>,
+    pub c_line: Option<JsCopyright>,
+    pub label_name: Option<String>,
 }
 
 #[napi(object)]
@@ -668,7 +842,10 @@ impl DdexParser {
 #[derive(Default)]
 pub struct ParseOptions {
     // Legacy options for backward compatibility
+    /// Not used: parsing always uses the complete parser, whatever the input size (the
+    /// core's experimental streaming mode is not exposed here).
     pub mode: Option<String>,
+    /// Not used (no automatic switch to streaming since 0.5.0).
     pub auto_threshold: Option<u32>,
     pub resolve_references: Option<bool>,
     pub include_raw: Option<bool>,
@@ -686,7 +863,9 @@ pub struct ParseOptions {
     pub preserve_namespace_prefixes: Option<bool>,
     pub canonicalization: Option<String>, // "none", "c14n", "c14n11", "db_c14n"
     pub collect_statistics: Option<bool>,
+    /// Not used (see `mode`).
     pub enable_streaming: Option<bool>,
+    /// Not used (see `mode`).
     pub streaming_threshold: Option<u32>,
     pub validation_level: Option<String>, // "none", "basic", "standard", "strict"
     pub extension_validation: Option<bool>,
@@ -713,6 +892,8 @@ pub struct ParsedMessage {
     pub recipient_id: String,
     pub version: String,
     pub profile: Option<String>,
+    /// `MessageHeader/MessageControlType` as written.
+    pub message_control_type: Option<String>,
 
     // Counts (for backward compatibility)
     pub release_count: u32,

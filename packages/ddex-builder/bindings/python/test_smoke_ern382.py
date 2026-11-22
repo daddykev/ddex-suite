@@ -70,8 +70,14 @@ def test_ern382_build_round_trips_through_the_parser():
     ]
     assert tracks[0]["release_title"] == 'Smoke & "Mirrors" <Live>'
     assert parsed.release_count() == 1
-    # The Python parser binding does not expose deals; check the DealList in the XML
-    assert xml.count("<DealReleaseReference>R0</DealReleaseReference>") == 1
+    deals = parsed.deals()
+    assert [(d["releases"], d["start_date"], d["usage_rights"]) for d in deals] == [
+        (["R0"], "2024-01-01T00:00:00+00:00", ["OnDemandStream"])
+    ]
+    release = parsed.to_dataframe("releases").to_dict("records")[0]
+    assert release["label_name"] == "Smoke Records"
+    assert release["icpn"] == "123456789012"
+    assert parsed.message_control_type() is None  # not in the request, not invented
 
 
 def test_values_the_382_schema_requires_are_errors():

@@ -55,6 +55,10 @@ async function main() {
     ['USRT12400002', 'Track 2'],
   ]);
   assert.equal(parsed.dealCount, 1);
+  assert.equal(parsed.deals[0].startDate, '2024-01-01T00:00:00+00:00');
+  assert.equal(release.labelName, 'Smoke Records');
+  assert.equal(release.icpn, '123456789012');
+  assert.equal(parsed.messageControlType ?? null, null, 'not in the request, not invented');
 
   // Values the 3.8.2 schema requires are the core builder's errors, naming the field
   const incomplete = structuredClone(request);

@@ -150,106 +150,8 @@ impl PyDDEXParser {
             .parse_with_options(cursor, CoreParseOptions::default())
             .map_err(|e| PyValueError::new_err(format!("Parse error: {}", e)))?;
 
-        // Try to import pandas
-        let pandas = py.import("pandas").map_err(|_| {
-            PyValueError::new_err(
-                "pandas is required for to_dataframe(). Install with: pip install pandas",
-            )
-        })?;
-
-        match schema {
-            "flat" => {
-                // Create a flattened representation suitable for DataFrame
-                let mut records = Vec::new();
-
-                // Extract message-level info with all columns
-                let message_dict = PyDict::new(py);
-                message_dict.set_item("message_id", &parsed.flat.message_id)?;
-                // Sender PartyName is optional per the XSD: None (not "None") when absent.
-                message_dict.set_item("sender", &parsed.flat.sender.name)?;
-                message_dict.set_item("created_date", &parsed.flat.message_date.to_rfc3339())?;
-                message_dict.set_item("message_type", &parsed.flat.message_type)?;
-                message_dict.set_item("type", "message")?;
-                message_dict.set_item("release_index", py.None())?;
-                message_dict.set_item("release_id", py.None())?;
-                message_dict.set_item("title", py.None())?;
-                message_dict.set_item("artist", py.None())?;
-                message_dict.set_item("p_line", py.None())?;
-                message_dict.set_item("genre", py.None())?;
-                message_dict.set_item("track_count", py.None())?;
-                records.push(message_dict.into_any());
-
-                // Extract release info with all columns
-                for (idx, release) in parsed.flat.releases.iter().enumerate() {
-                    let release_dict = PyDict::new(py);
-                    release_dict.set_item("message_id", py.None())?;
-                    release_dict.set_item("sender", py.None())?;
-                    release_dict.set_item("created_date", py.None())?;
-                    release_dict.set_item("message_type", py.None())?;
-                    release_dict.set_item("type", "release")?;
-                    release_dict.set_item("release_index", idx)?;
-                    release_dict.set_item("release_id", &release.release_id)?;
-                    release_dict.set_item("title", &release.default_title)?;
-                    release_dict.set_item("artist", &release.display_artist)?;
-                    release_dict
-                        .set_item("p_line", release.p_line.as_ref().map(|c| c.text.clone()))?;
-                    release_dict.set_item("genre", &release.genre)?;
-                    release_dict.set_item("track_count", release.track_count)?;
-                    records.push(release_dict.into_any());
-                }
-
-                let py_records = PyList::new(py, records)?;
-                let df = pandas.call_method1("DataFrame", (py_records,))?;
-                Ok(df.into())
-            }
-            "releases" => {
-                // Create a DataFrame focused on releases
-                let mut records = Vec::new();
-                for release in parsed.flat.releases.iter() {
-                    let dict = PyDict::new(py);
-                    dict.set_item("release_id", &release.release_id)?;
-                    dict.set_item("title", &release.default_title)?;
-                    dict.set_item("artist", &release.display_artist)?;
-                    dict.set_item("p_line", release.p_line.as_ref().map(|c| c.text.clone()))?;
-                    dict.set_item("genre", &release.genre)?;
-                    dict.set_item("track_count", release.track_count)?;
-                    dict.set_item("release_date", release.release_date.map(|d| d.to_rfc3339()))?;
-                    records.push(dict.into_any());
-                }
-
-                let py_records = PyList::new(py, records)?;
-                let df = pandas.call_method1("DataFrame", (py_records,))?;
-                Ok(df.into())
-            }
-            "tracks" => {
-                // Create a DataFrame focused on sound recordings/tracks
-                let mut records = Vec::new();
-
-                for release in &parsed.flat.releases {
-                    for (track_idx, track) in release.tracks.iter().enumerate() {
-                        let dict = PyDict::new(py);
-                        dict.set_item("release_id", &release.release_id)?;
-                        dict.set_item("release_title", &release.default_title)?;
-                        dict.set_item("track_index", track_idx)?;
-                        dict.set_item("track_id", &track.track_id)?;
-                        dict.set_item("track_title", &track.title)?;
-                        dict.set_item("artist", &track.display_artist)?;
-                        dict.set_item("duration", track.duration.map(|d| d.as_secs_f64()))?;
-                        dict.set_item("isrc", &track.isrc)?;
-                        set_track_position_items(py, &dict, track)?;
-                        records.push(dict.into_any());
-                    }
-                }
-
-                let py_records = PyList::new(py, records)?;
-                let df = pandas.call_method1("DataFrame", (py_records,))?;
-                Ok(df.into())
-            }
-            _ => Err(PyValueError::new_err(format!(
-                "Unknown schema '{}'. Supported schemas: 'flat', 'releases', 'tracks'",
-                schema
-            ))),
-        }
+        // Same rows as ParsedERNMessage.to_dataframe (one implementation of the columns)
+        PyParsedERNMessage::new(parsed).to_dataframe(py, schema)
     }
 
     /// Create DDEX XML from pandas DataFrame  
@@ -569,52 +471,90 @@ impl PyParsedERNMessage {
     fn release_count(&self) -> usize {
         self.inner.flat.releases.len()
     }
+
+    /// `MessageHeader/MessageControlType` as written, or None.
+    fn message_control_type(&self) -> Option<String> {
+        self.inner.flat.message_control_type.clone()
+    }
+
+    /// The deals, one dict per deal: deal_id, releases (release references), start_date,
+    /// end_date (RFC 3339, midnight UTC for a date), territories, excluded_territories,
+    /// usage_rights (use types), distribution_channels. Absent values are None / [].
+    fn deals(&self, py: Python) -> PyResult<Vec<Py<PyAny>>> {
+        self.inner
+            .flat
+            .deals
+            .iter()
+            .map(|deal| {
+                let d = PyDict::new(py);
+                d.set_item("deal_id", &deal.deal_id)?;
+                d.set_item("releases", deal.releases.clone())?;
+                d.set_item("start_date", deal.validity.start.map(|t| t.to_rfc3339()))?;
+                d.set_item("end_date", deal.validity.end.map(|t| t.to_rfc3339()))?;
+                d.set_item("territories", deal.territories.included.clone())?;
+                d.set_item("excluded_territories", deal.territories.excluded.clone())?;
+                d.set_item("usage_rights", deal.usage_rights.clone())?;
+                d.set_item(
+                    "distribution_channels",
+                    deal.distribution_channels.included.clone(),
+                )?;
+                Ok(d.into_any().unbind())
+            })
+            .collect()
+    }
 }
 
 impl PyParsedERNMessage {
+    /// Flat schema: a message row, then one row per release. Every row has every column
+    /// (None where it does not apply or the value is absent).
     fn to_flat_dataframe_data(&self, py: Python) -> PyResult<Vec<Py<PyAny>>> {
-        // Flat schema: one row per release with basic info
+        let flat = &self.inner.flat;
         let mut rows = Vec::new();
 
-        // Add message-level row with all columns (None for release-specific fields)
         let msg_row = PyDict::new(py);
-        msg_row.set_item("message_id", &self.inner.flat.message_id)?;
+        msg_row.set_item("message_id", &flat.message_id)?;
         // Sender PartyName is optional per the XSD: None (not "None") when absent.
-        msg_row.set_item("sender", &self.inner.flat.sender.name)?;
-        msg_row.set_item("created_date", &self.inner.flat.message_date.to_rfc3339())?;
-        msg_row.set_item("message_type", &self.inner.flat.message_type)?;
+        msg_row.set_item("sender", &flat.sender.name)?;
+        msg_row.set_item("created_date", flat.message_date.to_rfc3339())?;
+        msg_row.set_item("message_type", &flat.message_type)?;
+        msg_row.set_item("message_control_type", &flat.message_control_type)?;
         msg_row.set_item("type", "message")?;
-        msg_row.set_item("release_index", py.None())?;
-        msg_row.set_item("release_id", py.None())?;
-        msg_row.set_item("title", py.None())?;
-        msg_row.set_item("artist", py.None())?;
-        msg_row.set_item("p_line", py.None())?;
-        msg_row.set_item("genre", py.None())?;
-        msg_row.set_item("track_count", py.None())?;
+        for key in FLAT_RELEASE_COLUMNS {
+            msg_row.set_item(*key, py.None())?;
+        }
         rows.push(msg_row.into_any().into());
 
-        // Add release rows with all columns (None for message-specific fields)
-        for (idx, release) in self.inner.flat.releases.iter().enumerate() {
+        for (idx, release) in flat.releases.iter().enumerate() {
             let row = PyDict::new(py);
-            row.set_item("message_id", py.None())?;
-            row.set_item("sender", py.None())?;
-            row.set_item("created_date", py.None())?;
-            row.set_item("message_type", py.None())?;
+            for key in [
+                "message_id",
+                "sender",
+                "created_date",
+                "message_type",
+                "message_control_type",
+            ] {
+                row.set_item(key, py.None())?;
+            }
             row.set_item("type", "release")?;
             row.set_item("release_index", idx)?;
             row.set_item("release_id", &release.release_id)?;
             row.set_item("title", &release.default_title)?;
             row.set_item("artist", &release.display_artist)?;
             row.set_item("p_line", release.p_line.as_ref().map(|c| c.text.clone()))?;
+            row.set_item("c_line", release.c_line.as_ref().map(|c| c.text.clone()))?;
             row.set_item("genre", &release.genre)?;
+            row.set_item("sub_genre", &release.sub_genre)?;
+            row.set_item("parental_warning", &release.parental_warning)?;
+            row.set_item("label_name", &release.label_name)?;
+            row.set_item("release_date", release.release_date.map(|d| d.to_rfc3339()))?;
             row.set_item("track_count", release.track_count)?;
             rows.push(row.into_any().into());
         }
         Ok(rows)
     }
 
+    /// Releases schema: one row per release with all release details.
     fn to_releases_dataframe_data(&self, py: Python) -> PyResult<Vec<Py<PyAny>>> {
-        // Releases schema: one row per release with all release details
         let mut rows = Vec::new();
         for release in &self.inner.flat.releases {
             let row = PyDict::new(py);
@@ -625,13 +565,14 @@ impl PyParsedERNMessage {
             row.set_item("genre", &release.genre)?;
             row.set_item("track_count", release.track_count)?;
             row.set_item("release_date", release.release_date.map(|d| d.to_rfc3339()))?;
+            set_release_detail_items(py, &row, release)?;
             rows.push(row.into_any().into());
         }
         Ok(rows)
     }
 
+    /// Tracks schema: one row per track with full details.
     fn to_tracks_dataframe_data(&self, py: Python) -> PyResult<Vec<Py<PyAny>>> {
-        // Tracks schema: one row per track with full details
         let mut rows = Vec::new();
         for release in &self.inner.flat.releases {
             for (track_idx, track) in release.tracks.iter().enumerate() {
@@ -645,11 +586,129 @@ impl PyParsedERNMessage {
                 row.set_item("duration", track.duration.map(|d| d.as_secs_f64()))?;
                 row.set_item("isrc", &track.isrc)?;
                 set_track_position_items(py, &row, track)?;
+                set_track_detail_items(py, &row, track)?;
                 rows.push(row.into_any().into());
             }
         }
         Ok(rows)
     }
+}
+
+/// Release columns of the flat schema (None on the message row).
+const FLAT_RELEASE_COLUMNS: &[&str] = &[
+    "release_index",
+    "release_id",
+    "title",
+    "artist",
+    "p_line",
+    "c_line",
+    "genre",
+    "sub_genre",
+    "parental_warning",
+    "label_name",
+    "release_date",
+    "track_count",
+];
+
+fn set_scope_items(
+    d: &Bound<'_, PyDict>,
+    scope: &ddex_core::models::common::TerritoryScope,
+) -> PyResult<()> {
+    d.set_item("territory_codes", scope.territory_codes.clone())?;
+    d.set_item(
+        "excluded_territory_codes",
+        scope.excluded_territory_codes.clone(),
+    )?;
+    d.set_item("is_default", scope.is_default)?;
+    Ok(())
+}
+
+fn dates_list<'py>(
+    py: Python<'py>,
+    dates: &[ddex_core::models::flat::DateInfo],
+) -> PyResult<Bound<'py, PyList>> {
+    let list = PyList::empty(py);
+    for date in dates {
+        let d = PyDict::new(py);
+        d.set_item("date", &date.date)?;
+        d.set_item("is_approximate", date.is_approximate)?;
+        set_scope_items(&d, &date.scope)?;
+        list.append(d)?;
+    }
+    Ok(list)
+}
+
+/// The 0.5.0 release columns (releases schema). Absent values are None / empty lists.
+fn set_release_detail_items(
+    py: Python,
+    row: &Bound<'_, PyDict>,
+    release: &ddex_core::models::flat::ParsedRelease,
+) -> PyResult<()> {
+    row.set_item("icpn", &release.identifiers.upc)?;
+    row.set_item("isrc", &release.identifiers.isrc)?;
+    row.set_item("grid", &release.identifiers.grid)?;
+    let ids = PyList::empty(py);
+    for p in &release.identifiers.proprietary {
+        let d = PyDict::new(py);
+        d.set_item("namespace", &p.namespace)?;
+        d.set_item("value", &p.value)?;
+        ids.append(d)?;
+    }
+    row.set_item("proprietary_ids", ids)?;
+    row.set_item("label_name", &release.label_name)?;
+    row.set_item("sub_genre", &release.sub_genre)?;
+    let genres = PyList::empty(py);
+    for g in &release.genres {
+        let d = PyDict::new(py);
+        d.set_item("genre", &g.genre)?;
+        d.set_item("sub_genre", &g.sub_genre)?;
+        set_scope_items(&d, &g.scope)?;
+        genres.append(d)?;
+    }
+    row.set_item("genres", genres)?;
+    row.set_item("parental_warning", &release.parental_warning)?;
+    row.set_item("parental_warnings", release.parental_warnings.clone())?;
+    row.set_item("p_line_year", release.p_line.as_ref().and_then(|c| c.year))?;
+    row.set_item("c_line", release.c_line.as_ref().map(|c| c.text.clone()))?;
+    row.set_item("c_line_year", release.c_line.as_ref().and_then(|c| c.year))?;
+    row.set_item(
+        "original_release_date",
+        release.original_release_date.map(|d| d.to_rfc3339()),
+    )?;
+    row.set_item("release_dates", dates_list(py, &release.release_dates)?)?;
+    row.set_item(
+        "original_release_dates",
+        dates_list(py, &release.original_release_dates)?,
+    )?;
+    Ok(())
+}
+
+/// The 0.5.0 track columns (tracks schema). Absent values are None / empty lists.
+fn set_track_detail_items(
+    py: Python,
+    row: &Bound<'_, PyDict>,
+    track: &ddex_core::models::flat::ParsedTrack,
+) -> PyResult<()> {
+    let artists = PyList::empty(py);
+    for a in &track.artists {
+        let d = PyDict::new(py);
+        d.set_item("name", &a.name)?;
+        d.set_item("role", &a.role)?;
+        d.set_item("party_reference", &a.party_id)?;
+        artists.append(d)?;
+    }
+    row.set_item("artists", artists)?;
+    row.set_item("genre", &track.genre)?;
+    row.set_item("sub_genre", &track.sub_genre)?;
+    row.set_item("parental_warning", &track.parental_warning)?;
+    row.set_item("p_line", track.p_line.as_ref().map(|c| c.text.clone()))?;
+    row.set_item("p_line_year", track.p_line.as_ref().and_then(|c| c.year))?;
+    row.set_item("c_line", track.c_line.as_ref().map(|c| c.text.clone()))?;
+    row.set_item("c_line_year", track.c_line.as_ref().and_then(|c| c.year))?;
+    row.set_item("label_name", &track.label_name)?;
+    row.set_item("track_release_genre", &track.track_release_genre)?;
+    row.set_item("track_release_sub_genre", &track.track_release_sub_genre)?;
+    Ok(())
 }
 
 /// Stream iterator for large files

@@ -14,10 +14,69 @@ export interface JsRelease {
   subGenre?: string
   trackCount: number
   discCount?: number
+  /** Default release date (RFC 3339, midnight UTC); only for a full `YYYY-MM-DD` date. */
   releaseDate?: string
   originalReleaseDate?: string
+  /** 3.8.x `LabelName`; 4.x the PartyList name of the first `ReleaseLabelReference`. */
   labelName?: string
   tracks: Array<JsTrack>
+  /** `ReleaseId/ICPN`. */
+  icpn?: string
+  /** `ReleaseId/ISRC` (ERN 3.8.x). */
+  isrc?: string
+  /** `ReleaseId/GRid`. */
+  grid?: string
+  /** `ReleaseId/ProprietaryId`s. */
+  proprietaryIds: Array<JsProprietaryId>
+  /** Every genre in document order (`genre` / `subGenre` hold the default one). */
+  genres: Array<JsGenre>
+  /** Default `ParentalWarningType`. */
+  parentalWarning?: string
+  /** Every `ParentalWarningType` value in document order. */
+  parentalWarnings: Array<string>
+  /** Default P line / C line. */
+  pLine?: JsCopyright
+  cLine?: JsCopyright
+  /** Every release date as written (`YYYY`, `YYYY-MM` or `YYYY-MM-DD`) with its territories. */
+  releaseDates: Array<JsDateInfo>
+  originalReleaseDates: Array<JsDateInfo>
+}
+export interface JsProprietaryId {
+  namespace: string
+  value: string
+}
+/**
+ * Where a value applies: 4.x `ApplicableTerritoryCode` / `IsDefault`; 3.8.x the
+ * territories of the DetailsByTerritory block it came from.
+ */
+export interface JsGenre {
+  genre: string
+  subGenre?: string
+  territoryCodes: Array<string>
+  excludedTerritoryCodes: Array<string>
+  isDefault?: boolean
+}
+export interface JsDateInfo {
+  /** As written: `YYYY`, `YYYY-MM` or `YYYY-MM-DD`. */
+  date: string
+  isApproximate?: boolean
+  territoryCodes: Array<string>
+  excludedTerritoryCodes: Array<string>
+  isDefault?: boolean
+}
+/** A P line or C line. */
+export interface JsCopyright {
+  text: string
+  year?: number
+  /** `PLineCompany` / `CLineCompany`. */
+  company?: string
+  territoryCodes: Array<string>
+  isDefault?: boolean
+}
+export interface JsArtist {
+  name: string
+  role: string
+  partyReference?: string
 }
 export interface JsTrack {
   trackId: string
@@ -34,13 +93,29 @@ export interface JsTrack {
   trackReleaseReference?: string
   /** ERN 4.x: first identifier of that TrackRelease's `ReleaseId`. */
   trackReleaseId?: string
-  /** ERN 4.x: enclosing nested ResourceGroups, outermost first. */
+  /** Enclosing nested ResourceGroups, outermost first. */
   groupPath: Array<JsTrackGroup>
+  /** Display artists with their roles (3.8.x: from the details block; 4.x: via PartyList). */
+  artists: Array<JsArtist>
+  /** The resource's default genre (3.8.x), parental warning, P/C line and label (3.8.x). */
+  genre?: string
+  subGenre?: string
+  parentalWarning?: string
+  pLine?: JsCopyright
+  cLine?: JsCopyright
+  labelName?: string
+  /** ERN 4.x: default genre of this track's TrackRelease. */
+  trackReleaseGenre?: string
+  trackReleaseSubGenre?: string
 }
 export interface JsTrackGroup {
   groupType?: string
   sequenceNumber?: number
 }
+/**
+ * A resource. Note: the values of `ParsedMessage.resources` are plain objects whose keys
+ * are snake_case (`resource_id`, `p_line`, ...), not the camelCase names of this interface.
+ */
 export interface JsResource {
   resourceId: string
   resourceType: string
@@ -51,6 +126,13 @@ export interface JsResource {
   bitrate?: number
   sampleRate?: number
   fileSize?: string
+  /** Default genre (3.8.x), parental warning, P/C line and label name (3.8.x). */
+  genre?: string
+  subGenre?: string
+  parentalWarning?: string
+  pLine?: JsCopyright
+  cLine?: JsCopyright
+  labelName?: string
 }
 export interface JsDeal {
   dealId?: string
@@ -63,7 +145,12 @@ export interface JsDeal {
   commercialModel?: string
 }
 export interface ParseOptions {
+  /**
+   * Not used: parsing always uses the complete parser, whatever the input size (the
+   * core's experimental streaming mode is not exposed here).
+   */
   mode?: string
+  /** Not used (no automatic switch to streaming since 0.5.0). */
   autoThreshold?: number
   resolveReferences?: boolean
   includeRaw?: boolean
@@ -79,7 +166,9 @@ export interface ParseOptions {
   preserveNamespacePrefixes?: boolean
   canonicalization?: string
   collectStatistics?: boolean
+  /** Not used (see `mode`). */
   enableStreaming?: boolean
+  /** Not used (see `mode`). */
   streamingThreshold?: number
   validationLevel?: string
   extensionValidation?: boolean
@@ -101,6 +190,8 @@ export interface ParsedMessage {
   recipientId: string
   version: string
   profile?: string
+  /** `MessageHeader/MessageControlType` as written. */
+  messageControlType?: string
   releaseCount: number
   trackCount: number
   dealCount: number
