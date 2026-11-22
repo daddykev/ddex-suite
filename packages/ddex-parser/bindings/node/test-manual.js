@@ -1,20 +1,27 @@
+// Smoke test: the native binding loads, parses a valid message and rejects invalid input.
+// Run with: node test-manual.js (after `npm run build` or `npm run build:debug`)
+
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 const { DdexParser } = require('./index');
 
-console.log('Testing Node.js bindings...');
+const parser = new DdexParser({ debug: false });
+console.log('✓ Parser loaded');
 
-try {
-  const parser = new DdexParser({ debug: false });
-  console.log('✓ Parser loaded successfully');
+const valid = fs.readFileSync(
+  path.join(__dirname, '..', '..', 'tests', 'fixtures', 'ern43_basic.xml'),
+  'utf8',
+);
+const result = parser.parseSync(valid);
+assert.equal(result.messageId, 'MSG_TV7HAUF8KQ');
+console.log('✓ Parses a valid ERN 4.3 message');
 
-  try {
-    parser.parseSync('<NewReleaseMessage></NewReleaseMessage>');
-    console.log('❌ Should have rejected incomplete XML');
-  } catch(e) {
-    console.log('✓ Correctly rejects incomplete XML:', e.message.substring(0, 50) + '...');
-  }
+assert.throws(
+  () => parser.parseSync('<NewReleaseMessage></NewReleaseMessage>'),
+  /namespace|missing|required/i,
+  'a message without the ERN namespace must be rejected',
+);
+console.log('✓ Rejects incomplete XML');
 
-  console.log('✓ All Node.js binding tests passed');
-} catch(e) {
-  console.error('❌ Failed to load parser:', e.message);
-  process.exit(1);
-}
+console.log('All Node.js binding smoke checks passed');

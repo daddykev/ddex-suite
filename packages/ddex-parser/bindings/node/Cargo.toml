@@ -9,6 +9,9 @@ publish = false
 
 [lib]
 crate-type = ["cdylib"]
+# No Rust tests here; binding tests live in the package test suites (npm/pytest).
+test = false
+doctest = false
 
 [dependencies]
 ddex-parser = { path = "../../" }
