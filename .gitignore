@@ -310,3 +310,6 @@ temp/
 /samples/
 **/bindings/wasm/pkg-node/
 packages/*/bindings/node/docs/
+
+# Release artifacts downloaded from the Release build workflow
+dist-*/
