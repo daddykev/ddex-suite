@@ -170,9 +170,9 @@ Things the triage couldn't predict, found while making the KEEP/REWRITE tests pa
   already asserts (`test-community-prs.js`).
 - **Round trip (builder):** both new tests are KEEP-IGNORED. The 4.3 output is a
   3.8-style tree that the parser rejects (no ReleaseType) or reads without titles.
-- **Revived security suite:** 83 tests compile. 60 pass, 23 are ignored (11 clear
-  bugs, 12 marked "policy decision needed"), and one no-assertion 93 s stress test
-  was deleted (P). One test bug fixed (case-sensitive keyword check).
+- **Revived security suite:** 83 tests compile. One no-assertion 93 s stress test
+  was deleted (P); of the remaining 82, 59 pass and 23 are ignored (12 clear bugs,
+  11 marked "policy decision needed"). One test bug fixed (case-sensitive keyword check).
 - **Python:** after the sample fix, the remaining failures are binding bugs
   (`message_id` is a method; `detect_version` returns `V4_3`), now
   `xfail(strict=True)`.
