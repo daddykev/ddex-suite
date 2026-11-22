@@ -13,7 +13,7 @@ Fully functional DDEX XML parser for JavaScript and TypeScript with complete dat
 ```bash
 npm install ddex-parser
 # or for specific version
-npm install ddex-parser@0.4.6
+npm install ddex-parser@0.5.0
 # or
 yarn add ddex-parser
 ```
@@ -215,7 +215,7 @@ class DdexParser {
 }
 ```
 
-`options` is accepted for compatibility but no option is supported: since 0.4.6 every
+`options` is accepted for compatibility but no option is supported: since 0.5.0 every
 `ParseOptions` field throws (the streaming options `mode`, `autoThreshold`,
 `enableStreaming`, `streamingThreshold`, and the ones that had no effect, such as
 `resolveReferences`, `includeRaw`, `collectStatistics` and the fidelity options).

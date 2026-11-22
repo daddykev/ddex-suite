@@ -7,10 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.4.6] - 2026-11-22
+## [0.5.0] - 2026-11-22
 
-Every package (crates, npm, PyPI, WASM) is released at 0.4.6. The breaking changes are
-listed under "Changed (breaking)". Release notes: `dev-docs/RELEASE_NOTES_0.4.6.md`.
+Every package (crates, npm, PyPI, WASM) is released at 0.5.0. The breaking changes are
+listed under "Changed (breaking)". Release notes: `dev-docs/RELEASE_NOTES_0.5.0.md`.
 
 ### Added
 Parser completeness: every field below is read in each ERN version where the XSD
@@ -422,7 +422,7 @@ Tests:
   they now build complete requests and unwrap the result.
 
 ### Packaging
-- All version references agree at 0.4.6: the binding crates were 0.4.3, the Python
+- All version references agree at 0.5.0: the binding crates were 0.4.3, the Python
   packages reported stale versions, and the WASM / website packages lagged.
   `scripts/check_versions.py` checks every reference against the workspace version.
 - New `Release build` workflow (`.github/workflows/release-build.yml`, manual): abi3
@@ -473,12 +473,12 @@ Tests:
 
 ### Fixed (packaging)
 - PyPI 0.4.5 shipped only a macOS arm64 wheel and no sdist, so `pip install` failed on
-  Linux, Windows and Intel Macs; 0.4.6 is built for all of them, with sdists.
-- npm 0.4.5 shipped native binaries for `darwin-arm64` and `linux-x64-gnu` only; 0.4.6
+  Linux, Windows and Intel Macs; 0.5.0 is built for all of them, with sdists.
+- npm 0.4.5 shipped native binaries for `darwin-arm64` and `linux-x64-gnu` only; 0.5.0
   adds `darwin-x64` and `win32-x64-msvc`.
 
 ### Known issues
-See `KNOWN_ISSUES.md`. Not built in 0.4.6: npm binaries for Linux musl / arm64 and
+See `KNOWN_ISSUES.md`. Not built in 0.5.0: npm binaries for Linux musl / arm64 and
 Python wheels for Linux musl aarch64.
 
 ## [0.4.5] - 2025-09-21

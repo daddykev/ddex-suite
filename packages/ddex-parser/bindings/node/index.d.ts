@@ -146,58 +146,58 @@ export interface JsDeal {
   commercialModel?: string
 }
 /**
- * Options accepted by `parse` / `parseSync`. None are supported in 0.4.6: every field
+ * Options accepted by `parse` / `parseSync`. None are supported in 0.5.0: every field
  * is a removed option, and passing any of them throws (they used to be ignored).
  */
 export interface ParseOptions {
   /**
-   * Removed in 0.4.6: parsing always uses the complete parser, whatever the input size
+   * Removed in 0.5.0: parsing always uses the complete parser, whatever the input size
    * (the core's experimental streaming mode is not exposed in Node). Passing it throws.
    */
   mode?: never
-  /** Removed in 0.4.6 (see `mode`). Passing it throws. */
+  /** Removed in 0.5.0 (see `mode`). Passing it throws. */
   autoThreshold?: never
-  /** Removed in 0.4.6 (see `mode`). Passing it throws. */
+  /** Removed in 0.5.0 (see `mode`). Passing it throws. */
   enableStreaming?: never
-  /** Removed in 0.4.6 (see `mode`). Passing it throws. */
+  /** Removed in 0.5.0 (see `mode`). Passing it throws. */
   streamingThreshold?: never
-  /** Removed in 0.4.6: it had no effect on parsing. Passing it throws. */
+  /** Removed in 0.5.0: it had no effect on parsing. Passing it throws. */
   resolveReferences?: never
-  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
   includeRaw?: never
-  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
   maxMemory?: never
-  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
   timeoutMs?: never
-  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
   allowBlocking?: never
-  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
   chunkSize?: never
-  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
   fidelityLevel?: never
-  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
   preserveComments?: never
-  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
   preserveProcessingInstructions?: never
-  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
   preserveExtensions?: never
-  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
   preserveAttributeOrder?: never
-  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
   preserveNamespacePrefixes?: never
-  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
   canonicalization?: never
-  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
   collectStatistics?: never
-  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
   validationLevel?: never
-  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
   extensionValidation?: never
-  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
   enableChecksums?: never
-  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
   memoryLimit?: never
-  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  /** Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws. */
   enableDetailedErrors?: never
 }
 export interface ParsedMessage {

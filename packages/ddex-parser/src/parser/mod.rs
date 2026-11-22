@@ -26,7 +26,7 @@ use std::io::BufRead;
 pub struct ParseOptions {
     /// `Dom` (default, complete) or the experimental, opt-in `Stream` path.
     pub mode: mode::ParseMode,
-    /// Unused since 0.4.6: `Auto` no longer switches to `Stream` above a size threshold.
+    /// Unused since 0.5.0: `Auto` no longer switches to `Stream` above a size threshold.
     pub auto_threshold: u64,
     pub resolve_references: bool,
     pub include_raw: bool,

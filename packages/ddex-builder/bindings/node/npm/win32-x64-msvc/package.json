@@ -1,6 +1,6 @@
 {
   "name": "ddex-builder-win32-x64-msvc",
-  "version": "0.4.6",
+  "version": "0.5.0",
   "os": [
     "win32"
   ],

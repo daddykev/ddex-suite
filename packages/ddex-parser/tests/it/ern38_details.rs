@@ -1,4 +1,4 @@
-//! ERN 3.8.2 details read by the 0.4.6 parser (fixture `ern382_details.xml`): ReleaseId
+//! ERN 3.8.2 details read by the 0.5.0 parser (fixture `ern382_details.xml`): ReleaseId
 //! ProprietaryId in document order, values from ReleaseDetailsByTerritory blocks with their
 //! territories (default: the Worldwide block), Release-level P/C lines and dates, the
 //! ResourceGroup tree, SoundRecordingDetailsByTerritory artists, label, genre, parental

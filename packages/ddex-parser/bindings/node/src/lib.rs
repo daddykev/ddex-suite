@@ -364,7 +364,7 @@ fn convert_resources_to_js_object(
     serde_json::Value::Object(js_resources)
 }
 
-/// Every parse option was removed in 0.4.6 (the streaming ones, and the ones that had no
+/// Every parse option was removed in 0.5.0 (the streaming ones, and the ones that had no
 /// effect). They are rejected instead of silently ignored.
 fn reject_removed_options(options: &ParseOptions) -> Result<()> {
     let streaming = [
@@ -404,14 +404,14 @@ fn reject_removed_options(options: &ParseOptions) -> Result<()> {
     let mut reasons = Vec::new();
     if !streaming.is_empty() {
         reasons.push(format!(
-            "{} were removed in 0.4.6: the Node parser always uses the complete parser, whatever \
+            "{} were removed in 0.5.0: the Node parser always uses the complete parser, whatever \
              the input size (streaming is not available in Node)",
             streaming.join(", ")
         ));
     }
     if !no_effect.is_empty() {
         reasons.push(format!(
-            "{} were removed in 0.4.6: they had no effect on parsing",
+            "{} were removed in 0.5.0: they had no effect on parsing",
             no_effect.join(", ")
         ));
     }
@@ -879,79 +879,79 @@ impl DdexParser {
     }
 }
 
-/// Options accepted by `parse` / `parseSync`. None are supported in 0.4.6: every field
+/// Options accepted by `parse` / `parseSync`. None are supported in 0.5.0: every field
 /// is a removed option, and passing any of them throws (they used to be ignored).
 #[napi(object)]
 #[derive(Default)]
 pub struct ParseOptions {
-    /// Removed in 0.4.6: parsing always uses the complete parser, whatever the input size
+    /// Removed in 0.5.0: parsing always uses the complete parser, whatever the input size
     /// (the core's experimental streaming mode is not exposed in Node). Passing it throws.
     #[napi(ts_type = "never")]
     pub mode: Option<serde_json::Value>,
-    /// Removed in 0.4.6 (see `mode`). Passing it throws.
+    /// Removed in 0.5.0 (see `mode`). Passing it throws.
     #[napi(ts_type = "never")]
     pub auto_threshold: Option<serde_json::Value>,
-    /// Removed in 0.4.6 (see `mode`). Passing it throws.
+    /// Removed in 0.5.0 (see `mode`). Passing it throws.
     #[napi(ts_type = "never")]
     pub enable_streaming: Option<serde_json::Value>,
-    /// Removed in 0.4.6 (see `mode`). Passing it throws.
+    /// Removed in 0.5.0 (see `mode`). Passing it throws.
     #[napi(ts_type = "never")]
     pub streaming_threshold: Option<serde_json::Value>,
-    /// Removed in 0.4.6: it had no effect on parsing. Passing it throws.
+    /// Removed in 0.5.0: it had no effect on parsing. Passing it throws.
     #[napi(ts_type = "never")]
     pub resolve_references: Option<serde_json::Value>,
-    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
     #[napi(ts_type = "never")]
     pub include_raw: Option<serde_json::Value>,
-    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
     #[napi(ts_type = "never")]
     pub max_memory: Option<serde_json::Value>,
-    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
     #[napi(ts_type = "never")]
     pub timeout_ms: Option<serde_json::Value>,
-    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
     #[napi(ts_type = "never")]
     pub allow_blocking: Option<serde_json::Value>,
-    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
     #[napi(ts_type = "never")]
     pub chunk_size: Option<serde_json::Value>,
-    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
     #[napi(ts_type = "never")]
     pub fidelity_level: Option<serde_json::Value>,
-    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
     #[napi(ts_type = "never")]
     pub preserve_comments: Option<serde_json::Value>,
-    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
     #[napi(ts_type = "never")]
     pub preserve_processing_instructions: Option<serde_json::Value>,
-    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
     #[napi(ts_type = "never")]
     pub preserve_extensions: Option<serde_json::Value>,
-    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
     #[napi(ts_type = "never")]
     pub preserve_attribute_order: Option<serde_json::Value>,
-    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
     #[napi(ts_type = "never")]
     pub preserve_namespace_prefixes: Option<serde_json::Value>,
-    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
     #[napi(ts_type = "never")]
     pub canonicalization: Option<serde_json::Value>,
-    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
     #[napi(ts_type = "never")]
     pub collect_statistics: Option<serde_json::Value>,
-    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
     #[napi(ts_type = "never")]
     pub validation_level: Option<serde_json::Value>,
-    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
     #[napi(ts_type = "never")]
     pub extension_validation: Option<serde_json::Value>,
-    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
     #[napi(ts_type = "never")]
     pub enable_checksums: Option<serde_json::Value>,
-    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
     #[napi(ts_type = "never")]
     pub memory_limit: Option<serde_json::Value>,
-    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
     #[napi(ts_type = "never")]
     pub enable_detailed_errors: Option<serde_json::Value>,
 }

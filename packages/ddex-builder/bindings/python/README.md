@@ -12,7 +12,7 @@ Generate deterministic, industry-compliant DDEX XML files from Python data struc
 ```bash
 pip install ddex-builder
 # or for specific version
-pip install ddex-builder==0.4.6
+pip install ddex-builder==0.5.0
 ```
 
 The package needs its native extension (included in the wheels for Linux, macOS and

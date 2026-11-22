@@ -8,7 +8,7 @@ binding smoke tests (`bindings/node/test-*.js`). Everything here is synthetic.
 | `ern_381.xml`, `ern382_basic.xml`, `ern42_basic.xml`, `ern43_basic.xml` | `version_parsing`: one minimal message per ERN version. The 4.x files were adapted from the gitignored `test-suite/` corpus, adding the PartyId/ReleaseType fields the parser requires |
 | `deal_without_reference.xml`, `deals_linked_to_releases.xml`, `image_without_reference_title.xml`, `sound_recording_without_duration.xml` | `community_prs_regression`, Node `test-community-prs.js` |
 | `ern43_multi_disc.xml`, `ern43_main_track_release.xml` | `ern4_tracks`, Node `test-ern4-tracks.js` |
-| `ern43_details.xml`, `ern382_details.xml` | The 0.4.6 fields (dates, P/C lines, genres, parental warnings, labels, MessageControlType, deal EndDate; 3.8.2 details blocks, ReleaseId ProprietaryId, track artists and ResourceGroup): `serialization`, `ern38_details`, Node `test-parser-fields.js`, Python `tests/test_parser_fields.py`; `ern382_details.xml` is also a source of ddex-builder's `ern38_round_trip`. Both are XSD-valid |
+| `ern43_details.xml`, `ern382_details.xml` | The 0.5.0 fields (dates, P/C lines, genres, parental warnings, labels, MessageControlType, deal EndDate; 3.8.2 details blocks, ReleaseId ProprietaryId, track artists and ResourceGroup): `serialization`, `ern38_details`, Node `test-parser-fields.js`, Python `tests/test_parser_fields.py`; `ern382_details.xml` is also a source of ddex-builder's `ern38_round_trip`. Both are XSD-valid |
 
 The official DDEX samples live in `examples/Samples42` and `examples/Samples43` at
 the repo root (tracked) and are read directly by `ern4_tracks`.
@@ -29,9 +29,9 @@ cargo build --release -p ddex-parser --bin ddex-parser
 
 It prints one Markdown row per file and exits non-zero on any mismatch.
 
-## 0.4.6 fields
+## 0.5.0 fields
 
-`compare_ern4_oracle.py` also prints a second table comparing the 0.4.6 fields
+`compare_ern4_oracle.py` also prints a second table comparing the 0.5.0 fields
 (`ern4_oracle.details`: dates, P/C lines, genres, parental warnings, label,
 MessageControlType, TrackRelease genre, deal dates) per 4.x file. For ERN 3.8.x,
 `scripts/ern38_population.py` checks that each of those fields is populated exactly where

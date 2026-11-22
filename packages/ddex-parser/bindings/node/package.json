@@ -1,6 +1,6 @@
 {
   "name": "ddex-parser",
-  "version": "0.4.6",
+  "version": "0.5.0",
   "description": "DDEX XML parser with native and WASM bindings",
   "main": "index.js",
   "types": "index.d.ts",
@@ -65,9 +65,9 @@
     "typescript": "^5.9.2"
   },
   "optionalDependencies": {
-    "ddex-parser-darwin-arm64": "0.4.6",
-    "ddex-parser-darwin-x64": "0.4.6",
-    "ddex-parser-linux-x64-gnu": "0.4.6",
-    "ddex-parser-win32-x64-msvc": "0.4.6"
+    "ddex-parser-darwin-arm64": "0.5.0",
+    "ddex-parser-darwin-x64": "0.5.0",
+    "ddex-parser-linux-x64-gnu": "0.5.0",
+    "ddex-parser-win32-x64-msvc": "0.5.0"
   }
 }

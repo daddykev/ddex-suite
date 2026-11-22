@@ -9,7 +9,7 @@ Prints one Markdown table row per file and exits non-zero on any mismatch. Compa
 track, in order: resource reference, ISRC, title, display artist, duration (seconds),
 TrackRelease reference/ID, track_number (= item SequenceNumber) and group path.
 
-A second table compares the 0.4.6 fields (ern4_oracle.details) per sample: one yes/no per
+A second table compares the 0.5.0 fields (ern4_oracle.details) per sample: one yes/no per
 field, plus how many of the fields are populated in the sample.
 """
 import argparse
@@ -158,7 +158,7 @@ def main():
             ok &= row_ok
             yn = lambda b: "yes" if b else "**NO**"  # noqa: E731
             print(f"| {os.path.relpath(path)} | {len(e_rows)} | {len(p_rows)} | {yn(isrc)} | {yn(title)} | {yn(other)} |")
-    # 0.4.6 fields
+    # 0.5.0 fields
     print()
     print("| sample | " + " | ".join(DETAIL_COLUMNS) + " | populated |")
     print("|---|" + "---|" * (len(DETAIL_COLUMNS) + 1))

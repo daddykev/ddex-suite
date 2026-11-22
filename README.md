@@ -35,7 +35,7 @@ Beyond the core implementation, this is a showcase of **software craftsmanship a
 
 ## 🚧 Development Status
 
-**Latest Release**: Suite v0.4.6  
+**Latest Release**: Suite v0.5.0  
 **Current Development Phase**: 5.1 - Performance & Scale  
 **Target Release**: Suite v1.0.0 in Q1 2026
 
@@ -45,9 +45,9 @@ All packages published across npm, PyPI, and **crates.io**! ✅
 
 | Package | npm | PyPI | crates.io | Version |
 |---------|-----|------|-----------|---------|
-| **ddex-core** | - | - | ✅ [Published](https://crates.io/crates/ddex-core) | v0.4.6 |
-| **ddex-parser** | ✅ [Published](https://www.npmjs.com/package/ddex-parser) | ✅ [Published](https://pypi.org/project/ddex-parser/) | ✅ [Published](https://crates.io/crates/ddex-parser) | v0.4.6 |
-| **ddex-builder** | ✅ [Published](https://www.npmjs.com/package/ddex-builder) | ✅ [Published](https://pypi.org/project/ddex-builder/) | ✅ [Published](https://crates.io/crates/ddex-builder) | v0.4.6 |
+| **ddex-core** | - | - | ✅ [Published](https://crates.io/crates/ddex-core) | v0.5.0 |
+| **ddex-parser** | ✅ [Published](https://www.npmjs.com/package/ddex-parser) | ✅ [Published](https://pypi.org/project/ddex-parser/) | ✅ [Published](https://crates.io/crates/ddex-parser) | v0.5.0 |
+| **ddex-builder** | ✅ [Published](https://www.npmjs.com/package/ddex-builder) | ✅ [Published](https://pypi.org/project/ddex-builder/) | ✅ [Published](https://crates.io/crates/ddex-builder) | v0.5.0 |
 
 ### Progress Overview
 
@@ -164,7 +164,7 @@ Parse → Modify → Build workflows maintain all your data, with beneficial nor
 
 ## 🚀 Features
 
-### ✅ Parser completeness and honest bindings (v0.4.6)
+### ✅ Parser completeness and honest bindings (v0.5.0)
 - Parser reads release dates, P/C lines, genres, parental warnings, labels,
   `MessageControlType` and deal end dates in ERN 3.8.2, 4.2 and 4.3; text is kept
   exactly as written (XSD whitespace rules)
@@ -237,17 +237,17 @@ Parse → Modify → Build workflows maintain all your data, with beneficial nor
 
 ```bash
 # JavaScript/TypeScript
-npm install ddex-parser  # ✅ Latest: v0.4.6
-npm install ddex-builder # ✅ Latest: v0.4.6
+npm install ddex-parser  # ✅ Latest: v0.5.0
+npm install ddex-builder # ✅ Latest: v0.5.0
 
 # Python
-pip install ddex-parser  # ✅ Latest: v0.4.6
-pip install ddex-builder # ✅ Latest: v0.4.6
+pip install ddex-parser  # ✅ Latest: v0.5.0
+pip install ddex-builder # ✅ Latest: v0.5.0
 
 # Rust
-cargo add ddex-core      # ✅ Latest: v0.4.6
-cargo add ddex-parser    # ✅ Latest: v0.4.6
-cargo add ddex-builder   # ✅ Latest: v0.4.6
+cargo add ddex-core      # ✅ Latest: v0.5.0
+cargo add ddex-parser    # ✅ Latest: v0.5.0
+cargo add ddex-builder   # ✅ Latest: v0.5.0
 ```
 
 ### Browser/WASM
@@ -447,7 +447,7 @@ DDEX Suite is designed to complement [DDEX Workbench](https://ddex-workbench.org
 ---
 
 **Repository**: https://github.com/daddykev/ddex-suite  
-**Parser**: v0.4.6 on [npm](https://www.npmjs.com/package/ddex-parser) and [PyPI](https://pypi.org/project/ddex-parser/)
-**Builder**: v0.4.6 on [npm](https://www.npmjs.com/package/ddex-builder) and [PyPI](https://pypi.org/project/ddex-builder/)  
+**Parser**: v0.5.0 on [npm](https://www.npmjs.com/package/ddex-parser) and [PyPI](https://pypi.org/project/ddex-parser/)
+**Builder**: v0.5.0 on [npm](https://www.npmjs.com/package/ddex-builder) and [PyPI](https://pypi.org/project/ddex-builder/)  
 **Suite Target**: v1.0.0 in Q1 2026  
 **Last Updated**: November 22, 2026

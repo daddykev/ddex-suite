@@ -7,7 +7,7 @@ High-performance DDEX XML parser built in Rust with comprehensive security prote
 
 Part of the [DDEX Suite](https://github.com/daddykev/ddex-suite) - a comprehensive toolkit for working with DDEX metadata in the music industry.
 
-> **v0.4.6** - Complete parsing of dates, P/C lines, genres, labels and deal end dates in ERN 3.8.2 / 4.2 / 4.3; text kept exactly as written; `parse()` no longer switches to streaming above 10 MB. See the CHANGELOG for breaking changes.
+> **v0.5.0** - Complete parsing of dates, P/C lines, genres, labels and deal end dates in ERN 3.8.2 / 4.2 / 4.3; text kept exactly as written; `parse()` no longer switches to streaming above 10 MB. See the CHANGELOG for breaking changes.
 >
 > **v0.4.4 Released** - Enhanced validation with strict error handling! Parser now properly fails on missing required fields instead of using placeholders.
 >

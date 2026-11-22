@@ -55,10 +55,10 @@ The request type (`BuildRequest`, snake_case field names) is in the generated
 requires a value that the request does not carry, `build` throws an error naming the
 field, e.g. `ERN 4.3 requires Release/Genre/GenreText (releases[0].genre)`.
 
-## Changes in 0.4.6
+## Changes in 0.5.0
 
-Before 0.4.6 this package had its own string-concatenated generator whose "ERN 4.3"
-output was not schema-valid, and `batchBuild` returned placeholder XML. In 0.4.6:
+Before 0.5.0 this package had its own string-concatenated generator whose "ERN 4.3"
+output was not schema-valid, and `batchBuild` returned placeholder XML. In 0.5.0:
 
 - `build(request)` calls the core builder (synchronous; it no longer returns a Promise).
 - Removed: `batchBuild` (call `build` once per request), the `Release` / `Resource`

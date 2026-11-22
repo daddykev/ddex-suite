@@ -1,10 +1,10 @@
-# DDEX Suite 0.4.6 release notes
+# DDEX Suite 0.5.0 release notes
 
-Date: 2026-11-22. Every package is released at 0.4.6: crates (`ddex-core`, `ddex-parser`,
+Date: 2026-11-22. Every package is released at 0.5.0: crates (`ddex-core`, `ddex-parser`,
 `ddex-builder`), npm (`ddex-parser`, `ddex-builder` and their platform packages), PyPI
-(`ddex-parser`, `ddex-builder`) and the WASM builder. Full list: `CHANGELOG.md` [0.4.6].
+(`ddex-parser`, `ddex-builder`) and the WASM builder. Full list: `CHANGELOG.md` [0.5.0].
 
-**0.4.6 contains breaking changes** (listed below) even though it is a patch number.
+**0.5.0 contains breaking changes** (listed below).
 Read "Upgrading" before you update.
 
 ## Highlights

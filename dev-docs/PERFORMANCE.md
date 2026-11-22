@@ -16,7 +16,7 @@ produced this way and are superseded by this file.
 
 ## Machine and run
 
-- Date: 2026-11-22, ddex-suite 0.4.6 (release-0.5.0 branch)
+- Date: 2026-11-22, ddex-suite 0.5.0 (release-0.5.0 branch)
 - Apple M1 Pro (8 cores), 16 GB, macOS 15.8.3
 - Rust 1.89.0, `cargo bench` (bench profile = release: `opt-level = 3`, fat LTO,
   `codegen-units = 1`)
@@ -128,7 +128,7 @@ path), which is negligible next to a build.
 
 In debug builds these tests are ignored (debug is 50–100× slower).
 
-## Changes in 0.4.6
+## Changes in 0.5.0
 
 The wall-clock pass/fail tests (`perf-tests`) became these benches. The removed tests
 asserted targets that the machine above missed intermittently, and two sets measured

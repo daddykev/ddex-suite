@@ -11,7 +11,7 @@ dev-docs/*
 !dev-docs/TEST_TRIAGE.md
 !dev-docs/WARNINGS.md
 !dev-docs/PERFORMANCE.md
-!dev-docs/RELEASE_NOTES_0.4.6.md
+!dev-docs/RELEASE_NOTES_0.5.0.md
 
 # Archive directories
 archive/

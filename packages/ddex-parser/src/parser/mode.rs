@@ -2,7 +2,7 @@
 //! Parser mode selection (DOM vs Stream)
 //!
 //! The DOM path is the complete parser and is used unless [`ParseMode::Stream`] is requested
-//! explicitly. Since 0.4.6, `Auto` no longer switches to the streaming path for large inputs:
+//! explicitly. Since 0.5.0, `Auto` no longer switches to the streaming path for large inputs:
 //! that path reads only a subset of the fields, so values silently disappeared for files
 //! above the threshold.
 
@@ -63,7 +63,7 @@ impl ModeSelector {
         }
     }
 
-    /// The configured size threshold. Since 0.4.6 it no longer influences the mode.
+    /// The configured size threshold. Since 0.5.0 it no longer influences the mode.
     pub fn threshold(&self) -> u64 {
         self.threshold
     }

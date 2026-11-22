@@ -12,7 +12,7 @@ High-performance DDEX XML parser for Python with built-in security features and 
 ```bash
 pip install ddex-parser
 # or for specific version
-pip install ddex-parser==0.4.6
+pip install ddex-parser==0.5.0
 ```
 
 The package needs its native extension (included in the wheels for Linux, macOS and

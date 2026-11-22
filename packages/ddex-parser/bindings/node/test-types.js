@@ -2,7 +2,7 @@
 // walks the whole ParsedMessage of the official ERN 4.3 (and 4.2) samples recursively,
 // including resources, tracks and deals, and checks that each key is declared on its
 // interface with a value of the declared type, and that every required key is present.
-// Also checks that the parse options removed in 0.4.6 are rejected.
+// Also checks that the parse options removed in 0.5.0 are rejected.
 //
 // Run with: npm test (after `npm run build`).
 
@@ -94,12 +94,12 @@ const optionNames = Object.keys(interfaces.ParseOptions);
 assert.ok(optionNames.includes('mode') && optionNames.includes('collectStatistics'));
 for (const name of optionNames) {
   assert.equal(interfaces.ParseOptions[name].type, 'never', `ParseOptions.${name} should be never`);
-  assert.throws(() => parser.parseSync(sample, { [name]: 1 }), new RegExp(`${name}.*removed in 0\\.4\\.6`));
+  assert.throws(() => parser.parseSync(sample, { [name]: 1 }), new RegExp(`${name}.*removed in 0\\.5\\.0`));
 }
 assert.ok(parser.parseSync(sample, {}).releases.length > 0, 'an empty options object is accepted');
 const parsed = parser.parseSync(sample);
 assert.ok(!('statistics' in parsed) && !('fidelityInfo' in parsed), 'statistics / fidelityInfo were removed');
-assert.equal(typeof parser.stream, 'undefined', 'stream() was removed in 0.4.6');
+assert.equal(typeof parser.stream, 'undefined', 'stream() was removed in 0.5.0');
 
 console.log(`ok - parse output keys match index.d.ts (${files.length} samples; ` +
   `${visited.JsResource} resources, ${visited.JsTrack} tracks, ${visited.JsDeal} deals)`);

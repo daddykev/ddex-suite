@@ -1,7 +1,7 @@
 # Publishing DDEX Suite
 
 Every package is released at the same version: `[workspace.package] version` in the root
-`Cargo.toml` (0.4.6 at the time of writing). Nothing is published automatically. The
+`Cargo.toml` (0.5.0 at the time of writing). Nothing is published automatically. The
 **Release build** workflow (`.github/workflows/release-build.yml`, run by hand with
 "Run workflow") builds and install-tests the npm and PyPI artifacts. You download them
 and publish by hand in the order below.
