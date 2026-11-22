@@ -1152,7 +1152,9 @@ fn handle_watch_command(
 
     // File watching is not implemented: only the initial build (if requested) runs.
     if !is_quiet() {
-        println!("File watching simulation - in real implementation, this would use the notify crate");
+        println!(
+            "File watching simulation - in real implementation, this would use the notify crate"
+        );
     }
 
     Ok(())

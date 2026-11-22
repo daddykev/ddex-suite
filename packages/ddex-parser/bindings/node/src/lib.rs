@@ -382,17 +382,32 @@ fn reject_removed_options(options: &ParseOptions) -> Result<()> {
         ("chunkSize", options.chunk_size.is_some()),
         ("fidelityLevel", options.fidelity_level.is_some()),
         ("preserveComments", options.preserve_comments.is_some()),
-        ("preserveProcessingInstructions", options.preserve_processing_instructions.is_some()),
+        (
+            "preserveProcessingInstructions",
+            options.preserve_processing_instructions.is_some(),
+        ),
         ("preserveExtensions", options.preserve_extensions.is_some()),
-        ("preserveAttributeOrder", options.preserve_attribute_order.is_some()),
-        ("preserveNamespacePrefixes", options.preserve_namespace_prefixes.is_some()),
+        (
+            "preserveAttributeOrder",
+            options.preserve_attribute_order.is_some(),
+        ),
+        (
+            "preserveNamespacePrefixes",
+            options.preserve_namespace_prefixes.is_some(),
+        ),
         ("canonicalization", options.canonicalization.is_some()),
         ("collectStatistics", options.collect_statistics.is_some()),
         ("validationLevel", options.validation_level.is_some()),
-        ("extensionValidation", options.extension_validation.is_some()),
+        (
+            "extensionValidation",
+            options.extension_validation.is_some(),
+        ),
         ("enableChecksums", options.enable_checksums.is_some()),
         ("memoryLimit", options.memory_limit.is_some()),
-        ("enableDetailedErrors", options.enable_detailed_errors.is_some()),
+        (
+            "enableDetailedErrors",
+            options.enable_detailed_errors.is_some(),
+        ),
     ];
     let names = |list: &[(&'static str, bool)]| -> Vec<&'static str> {
         list.iter()
