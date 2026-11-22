@@ -83,10 +83,12 @@ xml = DdexBuilder().build({
     },
     "version": "4.3",
     "avs_version_id": "12",
+    "language_and_script_code": "en",
     "releases": [{
         "release_id": "A1-ABCDE-0000000001-M",
         "title": [{"text": "Example Single"}],
         "artist": "Example Artist",
+        "label": "Example Label",
         "release_type": "Single",
         "genre": "Pop",
         "parental_warning_type": "NotExplicit",
