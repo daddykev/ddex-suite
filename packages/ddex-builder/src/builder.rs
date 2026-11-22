@@ -26,9 +26,15 @@ use serde::{Deserialize, Serialize};
 ///             party_id: Some("PADPIDA2014120301K".to_string()),
 ///             party_reference: None,
 ///         },
-///         // ... other fields
-///         message_recipient: PartyRequest { /* ... */ },
-///         message_control_type: Some("NewReleaseMessage".to_string()),
+///         message_recipient: PartyRequest {
+///         party_name: vec![LocalizedStringRequest {
+///             text: "Example DSP".to_string(),
+///             language_code: None,
+///         }],
+///         party_id: Some("PADPIDA2014120302K".to_string()),
+///         party_reference: None,
+///     },
+///         message_control_type: Some("LiveMessage".to_string()),
 ///         message_created_date_time: None, // Will be auto-generated
 ///     },
 ///     version: "4.3".to_string(),
@@ -79,8 +85,15 @@ pub struct BuildRequest {
 ///         party_id: Some("PADPIDA2014120301K".to_string()),
 ///         party_reference: None,
 ///     },
-///     message_recipient: PartyRequest { /* similar structure */ },
-///     message_control_type: Some("NewReleaseMessage".to_string()),
+///     message_recipient: PartyRequest {
+///         party_name: vec![LocalizedStringRequest {
+///             text: "Example DSP".to_string(),
+///             language_code: None,
+///         }],
+///         party_id: Some("PADPIDA2014120302K".to_string()),
+///         party_reference: None,
+///     },
+///     message_control_type: Some("LiveMessage".to_string()),
 ///     message_created_date_time: None, // Auto-generated if None
 /// };
 /// ```

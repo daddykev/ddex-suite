@@ -60,6 +60,7 @@
 //! let result = generator.generate_build_request_schema()?;
 //! let schema_json = serde_json::to_string_pretty(&result.schema)?;
 //! println!("Generated schema:\n{}", schema_json);
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
 //! ### Advanced Configuration
@@ -77,26 +78,34 @@
 //!     ..Default::default()
 //! };
 //!
-//! let spotify_preset = spotify_audio_43();
+//! let preset = generic::audio_album();
 //! let generator = SchemaGenerator::with_preset(
 //!     DdexVersion::Ern43,
 //!     MessageProfile::AudioAlbum,
-//!     spotify_preset
+//!     preset
 //! ).with_config(config);
 //!
 //! let result = generator.generate_complete_schema()?;
+//! # let _ = result;
+//! # Ok::<(), ddex_builder::BuildError>(())
 //! ```
 //!
 //! ### Type Definition Export
 //!
 //! ```rust
+//! # use ddex_builder::schema::SchemaGenerator;
+//! # use ddex_builder::presets::{DdexVersion, MessageProfile};
+//! # let generator = SchemaGenerator::new(DdexVersion::Ern43, MessageProfile::AudioAlbum);
+//! # let result = generator.generate_build_request_schema()?;
+//! # let out_dir = std::env::temp_dir();
 //! // Generate TypeScript definitions
 //! let typescript = generator.generate_typescript_types(&result.schema)?;
-//! std::fs::write("ddex-types.d.ts", typescript)?;
+//! std::fs::write(out_dir.join("ddex-types.d.ts"), typescript)?;
 //!
 //! // Generate Python definitions
 //! let python = generator.generate_python_types(&result.schema)?;
-//! std::fs::write("ddex_types.py", python)?;
+//! std::fs::write(out_dir.join("ddex_types.py"), python)?;
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
 //! ## Schema Features

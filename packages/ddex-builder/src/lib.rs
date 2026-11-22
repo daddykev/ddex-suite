@@ -17,23 +17,52 @@
 //! ## Quick Start
 //!
 //! ```rust
-//! use ddex_builder::{Builder, DdexVersion};
-//! use ddex_builder::builder::{BuildRequest, OutputFormat};
+//! use ddex_builder::builder::{
+//!     LocalizedStringRequest, MessageHeaderRequest, PartyRequest, ReleaseRequest, TrackRequest,
+//! };
+//! use ddex_builder::{BuildOptions, BuildRequest, DDEXBuilder};
 //!
-//! // Create a builder with Spotify preset
-//! let mut builder = Builder::new();
-//! builder.preset("spotify_audio_43")?;
-//!
-//! // Build DDEX XML
-//! let request = BuildRequest {
-//!     source_xml: r#"<SoundRecording>...</SoundRecording>"#.to_string(),
-//!     output_format: OutputFormat::Xml,
-//!     preset: Some("spotify_audio_43".to_string()),
-//!     validate_schema: true,
+//! let text = |s: &str| vec![LocalizedStringRequest { text: s.to_string(), language_code: None }];
+//! let party = |id: &str, name: &str| PartyRequest {
+//!     party_name: text(name),
+//!     party_id: Some(id.to_string()),
+//!     party_reference: None,
 //! };
 //!
-//! let result = builder.build_internal(&request)?;
-//! println!("Generated DDEX XML: {}", result.xml);
+//! let request = BuildRequest {
+//!     header: MessageHeaderRequest {
+//!         message_id: Some("MSG-001".to_string()),
+//!         message_sender: party("PADPIDA0000000001", "Example Label"),
+//!         message_recipient: party("PADPIDA0000000002", "Example DSP"),
+//!         message_control_type: Some("LiveMessage".to_string()),
+//!         message_created_date_time: Some("2024-01-01T00:00:00Z".to_string()),
+//!     },
+//!     version: "4.3".to_string(),
+//!     profile: Some("AudioSingle".to_string()),
+//!     releases: vec![ReleaseRequest {
+//!         release_id: "REL001".to_string(),
+//!         release_reference: Some("R1".to_string()),
+//!         title: text("Example Single"),
+//!         artist: "Example Artist".to_string(),
+//!         label: None,
+//!         release_date: None,
+//!         upc: None,
+//!         tracks: vec![TrackRequest {
+//!             track_id: "TRK001".to_string(),
+//!             resource_reference: Some("A1".to_string()),
+//!             isrc: "ZZ0000000001".to_string(),
+//!             title: "Example Track".to_string(),
+//!             duration: "PT3M0S".to_string(),
+//!             artist: "Example Artist".to_string(),
+//!         }],
+//!         resource_references: None,
+//!     }],
+//!     deals: vec![],
+//!     extensions: None,
+//! };
+//!
+//! let result = DDEXBuilder::new().build(request, BuildOptions::default())?;
+//! assert!(result.xml.contains("<MessageId>MSG-001</MessageId>"));
 //! # Ok::<(), ddex_builder::BuildError>(())
 //! ```
 //!
@@ -42,22 +71,21 @@
 //! DDEX Builder includes comprehensive security measures:
 //!
 //! ```rust
-//! use ddex_builder::{InputValidator, SecurityConfig, ApiSecurityManager};
+//! use ddex_builder::{ApiSecurityManager, InputValidator, SecurityConfig};
 //!
 //! // Configure security settings
 //! let security_config = SecurityConfig {
-//!     max_xml_size: 10_000_000,        // 10MB limit
-//!     max_json_depth: 32,              // Prevent deep nesting attacks
+//!     max_xml_size: 10_000_000, // 10MB limit
+//!     max_xml_depth: 32,        // Prevent deep nesting attacks
 //!     rate_limiting_enabled: true,
 //!     max_requests_per_minute: 100,
-//!     validate_urls: true,
-//!     block_private_ips: true,
 //!     ..Default::default()
 //! };
 //!
 //! // Validate inputs
+//! let xml_input = "<NewReleaseMessage/>";
 //! let validator = InputValidator::new(security_config.clone());
-//! validator.validate_xml_content(&xml_input)?;
+//! validator.validate_xml_content(xml_input)?;
 //!
 //! // API security management
 //! let mut api_security = ApiSecurityManager::new(security_config);
@@ -437,9 +465,9 @@ impl Default for BuildStatistics {
 /// use ddex_builder::Builder;
 ///
 /// let mut builder = Builder::new();
-/// builder.preset("spotify_audio_43")?;
+/// builder.preset("audio_album")?;
 ///
-/// // Builder is now configured for Spotify Audio releases (ERN 4.3)
+/// // Builder is now configured for audio album releases
 /// assert!(builder.is_preset_locked() == false); // Unlocked for further customization
 /// # Ok::<(), ddex_builder::BuildError>(())
 /// ```
@@ -450,7 +478,7 @@ impl Default for BuildStatistics {
 /// use ddex_builder::Builder;
 ///
 /// let mut builder = Builder::new();
-/// builder.apply_preset("spotify_audio_43", true)?; // Lock the preset
+/// builder.apply_preset("audio_album", true)?; // Lock the preset
 ///
 /// assert!(builder.is_preset_locked());
 /// # Ok::<(), ddex_builder::BuildError>(())
@@ -463,6 +491,7 @@ impl Default for BuildStatistics {
 /// use ddex_builder::versions::ConversionOptions;
 ///
 /// let builder = Builder::new();
+/// let xml_content = "<test></test>";
 ///
 /// // Check version compatibility
 /// let compatible = builder.is_version_compatible(
@@ -473,14 +502,15 @@ impl Default for BuildStatistics {
 /// if compatible {
 ///     let options = Some(ConversionOptions::default());
 ///     let result = builder.convert_version(
-///         &xml_content,
+///         xml_content,
 ///         DdexVersion::Ern382,
 ///         DdexVersion::Ern43,
 ///         options
 ///     )?;
-///     println!("Converted XML: {}", result.converted_xml);
+///     if let ddex_builder::versions::ConverterResult::Success { xml, .. } = result {
+///         println!("Converted XML: {}", xml);
+///     }
 /// }
-/// # let xml_content = "<test></test>";
 /// # Ok::<(), ddex_builder::BuildError>(())
 /// ```
 ///
@@ -647,22 +677,20 @@ impl Builder {
     ///
     /// let mut builder = Builder::new();
     ///
-    /// // Apply Spotify preset without locking
-    /// builder.apply_preset("spotify_audio_43", false)?;
+    /// // Apply the generic audio album preset without locking
+    /// builder.apply_preset("audio_album", false)?;
     /// assert!(!builder.is_preset_locked());
     ///
-    /// // Apply and lock YouTube preset  
-    /// builder.apply_preset("youtube_video_43", true)?;
+    /// // Apply and lock the YouTube video preset
+    /// builder.apply_preset("youtube_video", true)?;
     /// assert!(builder.is_preset_locked());
     /// # Ok::<(), ddex_builder::BuildError>(())
     /// ```
     ///
     /// # Available Presets
     ///
-    /// Common presets include:
-    /// - `spotify_audio_43` - Spotify audio releases (ERN 4.3)
-    /// - `youtube_video_43` - YouTube video content (ERN 4.3)  
-    /// - `apple_music_43` - Apple Music releases (ERN 4.3)
+    /// Built-in presets: `audio_album`, `audio_single`, `video_single`, `compilation`,
+    /// `youtube_album`, `youtube_video`, `youtube_single`.
     /// - `universal_basic` - Universal Music basic preset
     /// - `sony_enhanced` - Sony Music enhanced features
     ///

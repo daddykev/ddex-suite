@@ -74,8 +74,8 @@
 //! config.custom_sort_order = Some(release_order);
 //!
 //! // Apply configuration to builder
-//! let mut builder = Builder::new();
-//! builder.set_determinism_config(config);
+//! let builder = ddex_builder::Builder::with_config(config);
+//! # let _ = builder;
 //! ```
 //!
 //! ## Verification Process
@@ -88,14 +88,35 @@
 //! 4. **Failure Detection** - any variance triggers detailed diff analysis
 //!
 //! ```rust
-//! // Automatic verification during build
-//! let config = DeterminismConfig {
-//!     verify_determinism: Some(3), // 3 verification rounds
-//!     ..Default::default()
+//! use ddex_builder::builder::{
+//!     BuildRequest, LocalizedStringRequest, MessageHeaderRequest, PartyRequest,
 //! };
+//! use ddex_builder::determinism::{DeterminismConfig, DeterminismVerifier};
+//! # let party = |name: &str| PartyRequest {
+//! #     party_name: vec![LocalizedStringRequest { text: name.to_string(), language_code: None }],
+//! #     party_id: Some("PADPIDA0000000001".to_string()),
+//! #     party_reference: None,
+//! # };
+//! # let request = BuildRequest {
+//! #     header: MessageHeaderRequest {
+//! #         message_id: Some("MSG-1".to_string()),
+//! #         message_sender: party("Label"),
+//! #         message_recipient: party("DSP"),
+//! #         message_control_type: None,
+//! #         message_created_date_time: Some("2024-01-01T00:00:00Z".to_string()),
+//! #     },
+//! #     version: "4.3".to_string(),
+//! #     profile: None,
+//! #     releases: vec![],
+//! #     deals: vec![],
+//! #     extensions: None,
+//! # };
 //!
-//! let result = builder.build_with_verification(&request, &config)?;
-//! // If determinism fails, build returns detailed error with diff
+//! // Build the same request 3 times and compare bytes and hashes
+//! let verifier = DeterminismVerifier::new(DeterminismConfig::default());
+//! let result = verifier.verify(&request, 3)?;
+//! assert!(result.is_deterministic, "differences: {:?}", result.differences);
+//! # Ok::<(), ddex_builder::BuildError>(())
 //! ```
 //!
 //! ## Performance Impact

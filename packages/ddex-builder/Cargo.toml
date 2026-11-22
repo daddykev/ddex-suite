@@ -92,6 +92,8 @@ pretty_assertions = { workspace = true }
 proptest = { workspace = true }
 insta = { workspace = true }
 similar = "2.4"
+# Real parse -> build -> re-parse round-trip tests (tests/it/round_trip.rs)
+ddex-parser = { path = "../ddex-parser" }
 
 # Fidelity testing dependencies
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
@@ -113,6 +115,9 @@ ffi = []  # Foreign Function Interface support
 wasm = []  # WebAssembly support
 dhat-heap = ["dhat"]  # Memory profiling
 performance-debug = []  # Enable performance logging and metrics output
+# Test-only: latency/overhead assertions (meaningful in release mode only):
+#   cargo test -p ddex-builder --release --features perf-tests
+perf-tests = []
 
 # Benchmarks
 [[bench]]
@@ -135,6 +140,7 @@ harness = false
 [[bin]]
 name = "ddex-builder"
 path = "src/bin/ddex-builder.rs"
+test = false  # the CLI has no unit tests
 
 # Strict linting configuration to ensure determinism
 [lints.clippy]

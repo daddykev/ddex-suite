@@ -18,10 +18,15 @@
 //! # Examples
 //!
 //! ```rust
-//! use ddex_builder::versions::{VersionConverter, DdexVersion};
+//! use ddex_builder::versions::{ConverterResult, VersionConverter};
+//! use ddex_builder::DdexVersion;
 //!
+//! let ddex_xml = r#"<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/382"/>"#;
 //! let converter = VersionConverter::new();
-//! let result = converter.convert_version(ddex_xml, DdexVersion::Ern382, DdexVersion::Ern43)?;
+//! match converter.convert(ddex_xml, DdexVersion::Ern382, DdexVersion::Ern43, None) {
+//!     ConverterResult::Success { xml, report } => println!("{xml}\n{report:?}"),
+//!     ConverterResult::Failure { .. } => eprintln!("conversion failed"),
+//! }
 //! ```
 
 use crate::error::BuildError;

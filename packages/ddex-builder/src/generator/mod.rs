@@ -38,22 +38,35 @@
 //! ## Usage Example
 //!
 //! ```rust
+//! use ddex_builder::builder::{
+//!     BuildRequest, LocalizedStringRequest, MessageHeaderRequest, PartyRequest,
+//! };
 //! use ddex_builder::generator::ASTGenerator;
-//! use ddex_builder::{BuildRequest, ReleaseRequest};
+//! # let party = |name: &str| PartyRequest {
+//! #     party_name: vec![LocalizedStringRequest { text: name.to_string(), language_code: None }],
+//! #     party_id: Some("PADPIDA0000000001".to_string()),
+//! #     party_reference: None,
+//! # };
+//! # let request = BuildRequest {
+//! #     header: MessageHeaderRequest {
+//! #         message_id: Some("MSG-1".to_string()),
+//! #         message_sender: party("Label"),
+//! #         message_recipient: party("DSP"),
+//! #         message_control_type: None,
+//! #         message_created_date_time: Some("2024-01-01T00:00:00Z".to_string()),
+//! #     },
+//! #     version: "4.3".to_string(),
+//! #     profile: None,
+//! #     releases: vec![],
+//! #     deals: vec![],
+//! #     extensions: None,
+//! # };
 //!
 //! let mut generator = ASTGenerator::new("4.3".to_string());
-//!
-//! let request = BuildRequest {
-//!     releases: vec![ReleaseRequest {
-//!         release_id: "R123".to_string(),
-//!         tracks: vec![/* track data */],
-//!         // ... other fields
-//!     }],
-//!     // ... other fields
-//! };
-//!
 //! let ast = generator.generate(&request)?;
-//! // AST is now ready for XML serialization
+//! // `ast` is now ready for XML serialization (see `xml_writer`)
+//! # let _ = ast;
+//! # Ok::<(), ddex_builder::BuildError>(())
 //! ```
 //!
 //! ## Performance Characteristics

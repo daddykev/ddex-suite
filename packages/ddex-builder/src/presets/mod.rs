@@ -36,25 +36,21 @@
 //! ## Usage Example
 //!
 //! ```rust
-//! use ddex_builder::presets::*;
+//! use ddex_builder::presets::all_presets;
 //! use ddex_builder::Builder;
 //!
-//! // Use generic audio album preset
+//! // Use the generic audio album preset
 //! let mut builder = Builder::new();
-//! builder.apply_preset(&generic::audio_album())?;
+//! builder.apply_preset("audio_album", false)?;
 //!
-//! // Use YouTube preset for video content
-//! builder.apply_preset(&youtube::youtube_video())?;
-//!
-//! // Load by name
-//! let presets = all_presets();
-//! let audio_album = &presets["audio_album"];
-//! builder.apply_partner_preset(audio_album)?;
+//! // Switch to the YouTube preset for video content
+//! builder.apply_preset("youtube_video", false)?;
 //!
 //! // List available presets
 //! for (name, preset) in all_presets() {
 //!     println!("{}: {}", name, preset.description);
 //! }
+//! # Ok::<(), ddex_builder::BuildError>(())
 //! ```
 //!
 //! ## Preset Features

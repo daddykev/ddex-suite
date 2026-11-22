@@ -4,7 +4,7 @@
 //! attack prevention and other security measures in the DDEX Builder.
 //!
 //! ## Test Coverage
-//! 
+//!
 //! ### XXE Prevention Tests
 //! - External DTD references with SYSTEM/PUBLIC identifiers
 //! - Billion laughs attacks (exponential entity expansion)
@@ -14,7 +14,7 @@
 //! - Nested parameter entities
 //! - Out-of-band (OOB) data exfiltration
 //! - Mixed attack vectors
-//! 
+//!
 //! ### Entity Expansion Tests
 //! - Classic billion laughs variants
 //! - Quadratic blowup attacks
@@ -23,7 +23,7 @@
 //! - Nested entity structures
 //! - Memory exhaustion attempts
 //! - Entity count limits
-//! 
+//!
 //! ### Parameter Entity Tests
 //! - File disclosure via parameter entities
 //! - Network requests via parameter entities
@@ -31,7 +31,7 @@
 //! - Parameter entity loops and cycles
 //! - Mixed parameter/general entity attacks
 //! - Evasion techniques
-//! 
+//!
 //! ### Malicious Payload Tests
 //! - XML injection in DDEX fields
 //! - Script injection attempts
@@ -41,7 +41,7 @@
 //! - CDATA section abuse
 //! - Encoding manipulation
 //! - Unicode normalization attacks
-//! 
+//!
 //! ### Builder Security Tests
 //! - Input validation during build
 //! - Output sanitization
@@ -49,45 +49,45 @@
 //! - Build-time XXE prevention
 //! - Secure content handling
 //! - Rate limiting protection
-//! 
+//!
 //! ### Integration Tests
 //! - End-to-end security verification
 //! - Performance under attack conditions
 //! - Error handling and recovery
 //! - Logging security
-//! 
+//!
 //! ## Security Principles Tested
-//! 
+//!
 //! 1. **Defense in Depth**: Multiple layers of security validation
 //! 2. **Fail-Safe Defaults**: Secure defaults with explicit opt-in for dangerous features
 //! 3. **Input Validation**: All input is validated and sanitized
 //! 4. **Output Encoding**: All output is properly encoded for safety
 //! 5. **Least Privilege**: Minimal permissions and capabilities
 //! 6. **Error Handling**: Secure error messages without information disclosure
-//! 
+//!
 //! ## Usage
-//! 
+//!
 //! Run all security tests:
 //! ```bash
 //! cargo test --test security
 //! ```
-//! 
+//!
 //! Run specific test modules:
 //! ```bash
 //! cargo test xxe_prevention
-//! cargo test entity_expansion  
+//! cargo test entity_expansion
 //! cargo test parameter_entity
 //! cargo test malicious_payload
 //! cargo test builder_security
 //! ```
 
-pub mod xxe_prevention_tests;
-pub mod entity_expansion_tests; 
-pub mod parameter_entity_tests;
-pub mod malicious_payload_tests;
 pub mod builder_security_tests;
+pub mod entity_expansion_tests;
 pub mod integration_tests;
+pub mod malicious_payload_tests;
+pub mod parameter_entity_tests;
 pub mod path_validator_tests;
+pub mod xxe_prevention_tests;
 
 use ddex_builder::security::SecurityConfig;
 
@@ -96,19 +96,20 @@ pub fn test_security_config() -> SecurityConfig {
     SecurityConfig::default()
 }
 
-/// Restrictive security configuration for high-security tests  
+/// Restrictive security configuration for high-security tests
 pub fn restrictive_security_config() -> SecurityConfig {
     SecurityConfig {
-        max_xml_size: 10_000,      // 10KB limit
-        max_json_size: 10_000,     // 10KB limit
-        max_string_size: 1_000,    // 1KB strings
-        max_xml_depth: 10,         // Very shallow
+        max_xml_size: 10_000,   // 10KB limit
+        max_json_size: 10_000,  // 10KB limit
+        max_string_size: 1_000, // 1KB strings
+        max_xml_depth: 10,      // Very shallow
         max_attributes_per_element: 10,
-        max_child_elements: 100,   
+        max_child_elements: 100,
         allow_external_entities: false,
         allow_dtd: false,
         rate_limiting_enabled: true,
         max_requests_per_minute: 10, // Very restrictive
+        ..SecurityConfig::default()
     }
 }
 
@@ -116,15 +117,16 @@ pub fn restrictive_security_config() -> SecurityConfig {
 pub fn permissive_security_config() -> SecurityConfig {
     SecurityConfig {
         max_xml_size: 10_000_000,  // 10MB
-        max_json_size: 10_000_000, // 10MB  
+        max_json_size: 10_000_000, // 10MB
         max_string_size: 100_000,  // 100KB strings
         max_xml_depth: 1000,       // Deep nesting allowed
         max_attributes_per_element: 1000,
         max_child_elements: 100_000,
         allow_external_entities: false, // Still keep this secure
-        allow_dtd: false,              // And this
+        allow_dtd: false,               // And this
         rate_limiting_enabled: false,   // No rate limiting
         max_requests_per_minute: 1000,
+        ..SecurityConfig::default()
     }
 }
 
@@ -141,7 +143,7 @@ mod test_utilities {
     pub fn assert_xxe_blocked(xml_content: &str, description: &str) {
         let config = test_security_config();
         let validator = InputValidator::new(config.clone());
-        
+
         // Test with InputValidator
         let result = validator.validate_xml_content(xml_content);
         assert!(
@@ -150,20 +152,23 @@ mod test_utilities {
             description,
             result
         );
-        
+
         // Test with SecureXmlReader
         let cursor = Cursor::new(xml_content.as_bytes());
         let mut reader = SecureXmlReader::new(cursor, config);
-        
+
         let mut buf = Vec::new();
         let mut events_processed = 0;
         let max_events = 100; // Prevent infinite loops in tests
-        
+
         loop {
             if events_processed >= max_events {
-                panic!("{}: Too many events processed, security measure may not be working", description);
+                panic!(
+                    "{}: Too many events processed, security measure may not be working",
+                    description
+                );
             }
-            
+
             match reader.read_event(&mut buf) {
                 Ok(quick_xml::events::Event::Eof) => {
                     // If we reach EOF without error, the security measure might not be working
@@ -177,12 +182,17 @@ mod test_utilities {
                 Err(BuildError::Security(msg)) => {
                     // Expected - security measure is working
                     assert!(
-                        msg.contains("DTD") || msg.contains("entity") || 
-                        msg.contains("external") || msg.contains("bomb") ||
-                        msg.contains("dangerous") || msg.contains("timeout") ||
-                        msg.contains("depth") || msg.contains("elements"),
+                        msg.contains("DTD")
+                            || msg.contains("entity")
+                            || msg.contains("external")
+                            || msg.contains("bomb")
+                            || msg.contains("dangerous")
+                            || msg.contains("timeout")
+                            || msg.contains("depth")
+                            || msg.contains("elements"),
                         "{}: Security error message should be descriptive: {}",
-                        description, msg
+                        description,
+                        msg
                     );
                     return;
                 }
@@ -192,7 +202,7 @@ mod test_utilities {
                 }
             }
         }
-        
+
         // If we get here, check if it was caught by content validation
         if events_processed > 0 {
             println!("Warning: {} was not blocked at XML parsing level but may be caught by content validation", description);
@@ -203,7 +213,7 @@ mod test_utilities {
     pub fn assert_valid_xml_allowed(xml_content: &str, description: &str) {
         let config = test_security_config();
         let validator = InputValidator::new(config.clone());
-        
+
         let result = validator.validate_xml_content(xml_content);
         assert!(
             result.is_ok(),
@@ -211,14 +221,14 @@ mod test_utilities {
             description,
             result
         );
-        
+
         // Test with SecureXmlReader
         let cursor = Cursor::new(xml_content.as_bytes());
         let mut reader = SecureXmlReader::new(cursor, config);
-        
+
         let mut buf = Vec::new();
         let mut events_processed = 0;
-        
+
         loop {
             match reader.read_event(&mut buf) {
                 Ok(quick_xml::events::Event::Eof) => break,
@@ -226,7 +236,10 @@ mod test_utilities {
                     events_processed += 1;
                     buf.clear();
                     if events_processed > 1000 {
-                        panic!("{}: Processing too many events, possible infinite loop", description);
+                        panic!(
+                            "{}: Processing too many events, possible infinite loop",
+                            description
+                        );
                     }
                 }
                 Err(e) => {
@@ -234,8 +247,12 @@ mod test_utilities {
                 }
             }
         }
-        
-        assert!(events_processed > 0, "{}: Should have processed some XML events", description);
+
+        assert!(
+            events_processed > 0,
+            "{}: Should have processed some XML events",
+            description
+        );
     }
 
     /// Helper to generate XXE payloads for testing

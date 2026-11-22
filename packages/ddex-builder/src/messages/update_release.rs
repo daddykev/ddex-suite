@@ -20,17 +20,22 @@ use serde::{Deserialize, Serialize};
 ///
 /// # Example
 /// ```
-/// use ddex_builder::messages::update_release::UpdateReleaseMessage;
-/// use ddex_builder::builder::MessageHeaderRequest;
+/// use ddex_builder::messages::update_release::*;
+/// use ddex_builder::builder::{LocalizedStringRequest, MessageHeaderRequest, PartyRequest};
 /// use indexmap::IndexMap;
+/// # let party = |name: &str| PartyRequest {
+/// #     party_name: vec![LocalizedStringRequest { text: name.to_string(), language_code: None }],
+/// #     party_id: Some("PADPIDA0000000001".to_string()),
+/// #     party_reference: None,
+/// # };
 ///
 /// // Create an update message to modify a release title
 /// let update_message = UpdateReleaseMessage {
 ///     header: MessageHeaderRequest {
 ///         message_id: Some("UPD-MSG-20241215-001".to_string()),
 ///         // ... other header fields
-///         # message_sender: Default::default(),
-///         # message_recipient: Default::default(),
+///         # message_sender: party("Label"),
+///         # message_recipient: party("DSP"),
 ///         # message_control_type: Some("UpdateMessage".to_string()),
 ///         # message_created_date_time: None,
 ///     },

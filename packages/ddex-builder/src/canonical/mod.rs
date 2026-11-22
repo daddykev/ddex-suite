@@ -59,6 +59,7 @@
 //!
 //! // Same input always produces same output
 //! assert_eq!(hash, canonicalizer.canonical_hash(&canonical)?);
+//! # Ok::<(), ddex_builder::BuildError>(())
 //! ```
 //!
 //! ## Specification Rules

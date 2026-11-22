@@ -29,18 +29,20 @@
 //!
 //! ## Usage Example
 //!
-//! ```rust
-//! use ddex_builder::messages::*;
-//! use ddex_builder::{Builder, BuildRequest};
+//! Compiled but not run (`no_run`): the two XML strings stand in for complete
+//! messages.
 //!
-//! // Create a new release message
-//! let mut builder = Builder::new();
-//! let request = BuildRequest {
-//!     message_type: MessageType::NewRelease,
-//!     // ... other fields
-//! };
+//! ```no_run
+//! use ddex_builder::messages::UpdateGenerator;
 //!
-//! let result = builder.build_internal(&request)?;
+//! let original_xml = std::fs::read_to_string("original.xml")?;
+//! let updated_xml = std::fs::read_to_string("updated.xml")?;
+//!
+//! // Describe the changes between two NewReleaseMessages as an UpdateReleaseMessage
+//! let mut generator = UpdateGenerator::new();
+//! let update = generator.create_update(&original_xml, &updated_xml, "ORIG-MSG-001")?;
+//! println!("{} update operations", update.update_list.len());
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
 //! ## Message Validation

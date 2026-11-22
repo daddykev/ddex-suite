@@ -68,13 +68,15 @@ impl Default for StreamingConfig {
 /// ```
 /// use ddex_builder::streaming::{StreamingBuilder, StreamingProgress};
 ///
+/// let output_writer: Vec<u8> = Vec::new();
 /// let mut builder = StreamingBuilder::new(output_writer)?;
 /// builder.set_progress_callback(Box::new(|progress: StreamingProgress| {
-///     println!("Progress: {}/{} items, {} MB written",
+///     println!("Progress: {} items ({:.0}%), {} MB written",
 ///              progress.releases_written + progress.resources_written,
 ///              progress.estimated_completion_percent.unwrap_or(0.0),
 ///              progress.bytes_written / 1024 / 1024);
 /// }));
+/// # Ok::<(), ddex_builder::BuildError>(())
 /// ```
 #[derive(Debug, Clone)]
 pub struct StreamingProgress {
@@ -512,7 +514,11 @@ impl<W: IoWrite> StreamingBuilder<W> {
 /// and any warnings that were generated during the process.
 ///
 /// # Example
-/// ```
+///
+/// Illustrative fragment (not compiled): assumes a `streaming_builder` that has
+/// already written a complete message.
+///
+/// ```ignore
 /// use ddex_builder::streaming::StreamingResult;
 ///
 /// // After completing a streaming build
@@ -583,7 +589,10 @@ pub struct StreamingStats {
 /// including state management errors, I/O issues, and XML formatting problems.
 ///
 /// # Example
-/// ```
+///
+/// Illustrative fragment (not compiled): assumes an existing `streaming_builder`.
+///
+/// ```ignore
 /// use ddex_builder::streaming::{StreamingBuilder, StreamingError};
 ///
 /// match streaming_builder.write_resource(/*...*/) {
