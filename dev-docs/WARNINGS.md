@@ -6,6 +6,14 @@ Check command (run from the workspace root):
 cargo build --workspace --all-targets --features perf-tests,legacy-streaming-tests 2>&1 | grep -c "^warning"
 ```
 
+**After this branch the `legacy-streaming-tests` feature no longer exists** (it was removed
+with the legacy streaming implementations), so the command above now fails with "none of the
+selected packages contains this feature". The equivalent check is:
+
+```bash
+cargo build --workspace --all-targets --features perf-tests 2>&1 | grep -c "^warning"
+```
+
 The count includes cargo's per-target summary lines (`warning: ... generated N warnings`),
 so it is a little higher than the number of distinct diagnostics. ddex-builder has no
 `legacy-streaming-tests` feature; cargo applies each feature to the packages that define it.
@@ -78,7 +86,7 @@ How the public API reaches `src/streaming/`:
 | `verification` | nothing (uses `comprehensive`) | DEAD-PUBLIC, pre-approved → delete |
 | `comprehensive` | only `verification` and legacy tests | DEAD-PUBLIC, **not pre-approved: ask** |
 | `aligned_comprehensive` | nothing | DEAD-PUBLIC, **not pre-approved: ask** |
-| `element` (`ParsedElement`, `HeaderBuilder`) | only `parser` (deleted) and the `ParsedElement` re-export | DEAD-PUBLIC once `parser` is gone (no warning today), **ask** |
+| `element` (`ParsedElement`, `HeaderBuilder`) | `tests/it/community_prs_regression.rs` (`ParsedElement::Deal(..).is_complete()`, regression test for a community PR) | **KEEP**. Correction: first classified as unused and approved for deletion; the reference was found while compiling, so it stays |
 | `accumulator.rs`, `parser.rs.tmp` | not in the module tree (never compiled) | orphan files → delete |
 
 Large-file mode (`parser::mode` → `parser::stream::parse_streaming`) does not use
@@ -174,5 +182,16 @@ goal does not require removing them. Listed for a separate decision:
 | Item | Used by |
 |---|---|
 | `transform::version_adapter::{VersionAdapter, VersionMigrator}` | `parser::version_aware` uses `VersionAdapter`; `VersionMigrator` has no users |
-| `transform::resolve::ReferenceResolver` | `parser::dom::resolve_references` (itself unused by the parse path) |
+| `transform::resolve::ReferenceResolver` | **live**: `parser::dom::parse_dom` calls `resolve_references` when `ParseOptions::resolve_references` is set (the default). Correction: first listed as unused, from the bin-copy false positives. Kept |
 | `utf8_utils::{validate_utf8, validate_utf8_string}` | no users |
+
+## Decisions (from Kevin, during this branch)
+
+| Item | Decision |
+|---|---|
+| `comprehensive`, `aligned_comprehensive` | deleted, with their tests |
+| `element` | approved for deletion, but kept: it is used (see correction above) |
+| `ddex-builder batch` (BUG) | **removed**. Wiring it up was approved first, then turned out to need a real `build` path: `build_ddex_xml` and `validate_input_data` in the CLI are stubs, and presets/version on `Builder` do not affect `DDEXBuilder::build`. Recorded in KNOWN_ISSUES.md |
+| `FastStreamingParser` config (BUG) | the field is dropped, `new(config)` keeps its signature and documents that the config is ignored; KNOWN_ISSUES.md row |
+| `VersionMigrator`, `validate_utf8`, `validate_utf8_string` | deleted |
+| `ReferenceResolver` | kept (live) |
