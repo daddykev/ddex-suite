@@ -33,13 +33,13 @@ pub enum PathComponent {
     Wildcard,
     /// Descendant-or-self axis (//)
     DescendantOrSelf,
-    /// Attribute selector ([@attr="value"])
+    /// Attribute selector (`[@attr="value"]`)
     AttributeFilter {
         element: String,
         attribute: String,
         value: Option<String>,
     },
-    /// Index selector ([1], [2], etc.)
+    /// Index selector (`[1]`, `[2]`, etc.)
     IndexFilter { element: String, index: usize },
 }
 

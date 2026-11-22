@@ -120,8 +120,8 @@ impl ASTGenerator {
 
     /// Generate an AST from a build request
     ///
-    /// Each version follows its official DDEX XSD: ERN 4.2 and 4.3 are written by [`ern4`],
-    /// ERN 3.8.2 and 3.8.1 by [`ern38`]. Both fail, naming every missing request field,
+    /// Each version follows its official DDEX XSD: ERN 4.2 and 4.3 are written by `ern4`,
+    /// ERN 3.8.2 and 3.8.1 by `ern38`. Both fail, naming every missing request field,
     /// when the schema requires a value the request does not carry.
     pub fn generate(&mut self, request: &BuildRequest) -> Result<AST, BuildError> {
         use ddex_core::models::versions::ERNVersion;

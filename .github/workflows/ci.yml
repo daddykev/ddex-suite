@@ -88,7 +88,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: cargo doc --no-deps --workspace --lib
+      # The Python bindings' libs share their names with the crates they wrap (ddex_parser,
+      # ddex_builder: the Python module names), and rustdoc writes both to the same path;
+      # --lib overrides their `doc = false`, so they are excluded here.
+      - run: cargo doc --no-deps --workspace --lib --exclude ddex-parser-python --exclude ddex-builder-python
 
   msrv:
     name: MSRV (rust-version 1.82)

@@ -13,6 +13,9 @@ crate-type = ["cdylib"]
 # No Rust tests here; binding tests live in the package test suites (npm/pytest).
 test = false
 doctest = false
+# Same lib name as the Rust crate it wraps (the Python module name); rustdoc would
+# write both to target/doc/<name>, so only the Rust crate is documented.
+doc = false
 
 [dependencies]
 ddex-core = { path = "../../../core" }
