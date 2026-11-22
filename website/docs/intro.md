@@ -1,91 +1,74 @@
 ---
 sidebar_position: 1
+title: Introduction
+description: What DDEX Suite does, what it does not do, and its status at 0.5.0.
 ---
 
-# Introduction to DDEX Suite
+# Introduction
 
-DDEX Suite is a high-performance toolkit for processing DDEX metadata with perfect fidelity. Built in Rust with native bindings for JavaScript/TypeScript and Python, it provides two complementary tools for working with DDEX XML files.
+DDEX Suite reads and writes [DDEX](https://ddex.net) ERN (Electronic Release Notification)
+XML, the format labels and distributors use to send release metadata to music services.
+It is one Rust core with bindings for Node.js and Python:
 
-## What is DDEX?
+- **ddex-parser** reads ERN 3.8.1, 3.8.2, 4.2 and 4.3 messages into a flat,
+  developer-friendly model (Rust, Node.js, Python) and a graph that follows the message
+  structure (Rust only).
+- **ddex-builder** writes ERN 4.3, 4.2, 3.8.2 and 3.8.1 messages from a build request.
+  ERN 4.3, 4.2 and 3.8.2 output is validated against the official DDEX XSDs in CI.
+- **ddex-core** holds the data models the two share.
 
-DDEX (Digital Data Exchange) is the music industry standard for exchanging metadata between digital service providers, record labels, distributors, and other music industry stakeholders. DDEX XML files contain rich metadata about releases, tracks, artists, territories, and commercial terms.
+The packages are published as `ddex-parser` and `ddex-builder` on
+[npm](https://www.npmjs.com/package/ddex-parser),
+[PyPI](https://pypi.org/project/ddex-parser/) and [crates.io](https://crates.io/crates/ddex-parser),
+plus `ddex-core` on crates.io. All of them are released together at the same version.
 
-## Why DDEX Suite?
+## What it does
 
-### 🚀 **Performance**
-- Parse 10KB files in &lt;5ms
-- Process 100MB files in &lt;5s  
-- Stream 1GB+ files with &lt;100MB memory usage
+- **Parses without inventing data.** A value that is absent from the XML is `None` /
+  `undefined` / empty, never a default. Text is kept as written, following each value's
+  XSD `whiteSpace` facet.
+- **Reads the fields people need.** Release and track titles, artists, identifiers,
+  release dates (full or partial, as written), P and C lines, genres, parental warnings,
+  labels, the track layout (disc, position, nested resource groups), ERN 4.x track
+  releases and deals. See the [parse output reference](./parse-output.mdx).
+- **Builds schema-valid XML.** Nothing is filled in for you: when the target ERN version
+  requires a value the request does not carry, the build fails with an error naming the
+  field. See the [build request reference](./build-request.mdx).
+- **Hardens XML parsing.** DTDs and external entities are rejected, entity expansion,
+  depth and size are limited, and nothing is fetched from the network. See the
+  [security model](./security.md).
+- **Exports to pandas.** The Python parser returns DataFrames and the Python builder
+  builds from one. See [Python and DataFrames](./python-dataframes.md).
 
-### 🎯 **Perfect Fidelity**
-- Round-trip guarantee: Parse → Modify → Build produces identical results
-- Preserves all DDEX extensions and custom fields
-- Deterministic output with stable ordering
+## What it does not do
 
-### 🔧 **Developer-Friendly**
-- Clean TypeScript/Python objects instead of raw XML
-- Both "graph" (faithful DDEX structure) and "flattened" (developer-friendly) representations
-- Comprehensive error reporting and validation
+- **No runtime XSD or AVS validation.** Neither package checks a message against the DDEX
+  schema or the allowed-value sets and business rules at runtime. Use
+  [DDEX Workbench](https://ddex-workbench.org) for that.
+- **No parse-to-build bridge.** There is no built-in conversion from a parsed message to a
+  build request yet; you map the fields you need (the
+  [building quick start](./quick-start-building.mdx#parse-modify-build) shows how).
+- **Not byte-for-byte deterministic yet.** A message ID, references and
+  `MessageCreatedDateTime` that the request leaves out are generated, so two builds of the
+  same request can differ. Full determinism is planned for 0.6.0.
+- **Presets do not change the output.** The builder's preset APIs exist but have no effect
+  on `build` in 0.5.0.
+- **No streaming in Node.js or Python.** `parse` reads the whole document. The Rust
+  streaming APIs are experimental and read a subset of the fields.
 
-### 🌍 **Multi-Language Support**
-- Native Node.js bindings with TypeScript definitions
-- Python bindings with DataFrame integration
-- WebAssembly build for browser usage
+## Status
 
-## Core Components
+The current release is **0.5.0**, a pre-1.0 release: APIs can still change between minor
+versions, and 0.5.0 itself has breaking changes (see [Migrating to 0.5.0](./migration.md)).
+Open bugs are listed in [Known issues and roadmap](./known-issues.md).
 
-### ddex-parser
-Transforms DDEX XML into clean, structured data:
+DDEX Suite is designed to complement [DDEX Workbench](https://ddex-workbench.org): the suite
+parses and builds messages, and Workbench validates them against the XSDs and business
+rules.
 
-```typescript
-import { DdexParser } from 'ddex-parser';
+## Next steps
 
-const parser = new DdexParser();
-const result = await parser.parse(xmlContent);
-
-// Access structured data
-console.log(result.flat.releases[0].title);
-console.log(result.flat.soundRecordings[0].artist);
-```
-
-### ddex-builder  
-Generates deterministic DDEX XML from data structures:
-
-```typescript
-import { DdexBuilder } from 'ddex-builder';
-
-const builder = new DdexBuilder();
-const xml = await builder.build(result.toBuildRequest());
-```
-
-## Supported DDEX Versions
-
-- **ERN 3.8.2** - Electronic Release Notification
-- **ERN 4.2** - Electronic Release Notification  
-- **ERN 4.3** - Electronic Release Notification (latest)
-
-## Installation
-
-### Node.js / TypeScript
-
-```bash
-npm install ddex-parser ddex-builder
-```
-
-### Python
-
-```bash
-pip install ddex-parser ddex-builder
-```
-
-## Quick Start
-
-Ready to get started? Check out our [Getting Started Guide](./getting-started/) for installation instructions and your first DDEX processing workflow.
-
-## Community & Support
-
-- 📖 [Documentation](https://ddex-suite.org)
-- 🐛 [Issues & Bug Reports](https://github.com/daddykev/ddex-suite/issues)
-- 💬 [Discussions](https://github.com/daddykev/ddex-suite/discussions)
-- 📦 [npm](https://www.npmjs.com/org/ddex-suite)
-- 🐍 [PyPI](https://pypi.org/user/ddex-suite/)
+- [Install](./installation.md) the packages for your language.
+- [Parse](./quick-start-parsing.mdx) your first message.
+- [Build](./quick-start-building.mdx) an ERN 4.3 message.
+- Try the [Playground](./playground.md) without installing anything.

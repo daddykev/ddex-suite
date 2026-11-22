@@ -1,0 +1,601 @@
+---
+sidebar_position: 4
+title: "Quick start: building"
+description: Build a valid ERN 4.3 message in Rust, Node.js or Python, read the required-field errors, and go from a parsed message to a new one.
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Quick start: building
+
+The builder writes an ERN message from a **build request**: a struct in Rust, a plain
+object in Node.js, a dict in Python. The three have the same fields with the same
+snake_case names. Every field is listed in the [build request reference](./build-request.mdx).
+
+## Build an ERN 4.3 message
+
+This request has everything ERN 4.3 requires for a single with one track:
+
+<Tabs groupId="language">
+<TabItem value="rust" label="Rust">
+
+```rust
+use ddex_builder::builder::{
+    LocalizedStringRequest, MessageHeaderRequest, PartyRequest, ReleaseRequest, TrackRequest,
+};
+use ddex_builder::{BuildOptions, BuildRequest, DDEXBuilder};
+
+fn main() -> Result<(), ddex_builder::BuildError> {
+    let text = |s: &str| vec![LocalizedStringRequest { text: s.to_string(), language_code: None }];
+    let party = |name: &str, id: &str| PartyRequest {
+        party_name: text(name),
+        party_id: Some(id.to_string()),
+        party_reference: None,
+    };
+
+    let request = BuildRequest {
+        header: MessageHeaderRequest {
+            message_id: Some("MSG-001".to_string()),
+            message_sender: party("Example Label", "PADPIDA0000000001"),
+            message_recipient: party("Example DSP", "PADPIDA0000000002"),
+            message_control_type: Some("LiveMessage".to_string()),
+            message_created_date_time: Some("2024-01-01T00:00:00Z".to_string()),
+        },
+        version: "4.3".to_string(),
+        avs_version_id: Some("12".to_string()),
+        language_and_script_code: Some("en".to_string()),
+        releases: vec![ReleaseRequest {
+            release_id: "A1-ABCDE-0000000001-M".to_string(),
+            title: text("Example Single"),
+            artist: "Example Artist".to_string(),
+            label: Some("Example Label".to_string()),
+            release_type: Some("Single".into()),
+            genre: Some("Pop".to_string()),
+            parental_warning_type: Some("NotExplicit".to_string()),
+            tracks: vec![TrackRequest {
+                track_id: "T1".to_string(),
+                isrc: "ZZ0000000001".to_string(),
+                title: "Example Track".to_string(),
+                duration: "PT3M42S".to_string(),
+                artist: "Example Artist".to_string(),
+                resource_type: Some("MusicalWorkSoundRecording".into()),
+                parental_warning_type: Some("NotExplicit".to_string()),
+                ..Default::default()
+            }],
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+
+    let result = DDEXBuilder::new().build(request, BuildOptions::default())?;
+    assert!(result.xml.contains("<MessageId>MSG-001</MessageId>"));
+    println!("{}", result.xml);
+    Ok(())
+}
+```
+
+`build` returns a `BuildResult`; the XML is `result.xml`.
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```js
+const { DdexBuilder } = require('ddex-builder');
+
+const party = (name, id) => ({ party_name: [{ text: name }], party_id: id });
+
+const request = {
+  header: {
+    message_id: 'MSG-001',
+    message_sender: party('Example Label', 'PADPIDA0000000001'),
+    message_recipient: party('Example DSP', 'PADPIDA0000000002'),
+    message_control_type: 'LiveMessage',
+    message_created_date_time: '2024-01-01T00:00:00Z',
+  },
+  version: '4.3',
+  avs_version_id: '12',
+  language_and_script_code: 'en',
+  releases: [{
+    release_id: 'A1-ABCDE-0000000001-M',
+    title: [{ text: 'Example Single' }],
+    artist: 'Example Artist',
+    label: 'Example Label',
+    release_type: 'Single',
+    genre: 'Pop',
+    parental_warning_type: 'NotExplicit',
+    tracks: [{
+      track_id: 'T1',
+      isrc: 'ZZ0000000001',
+      title: 'Example Track',
+      duration: 'PT3M42S',
+      artist: 'Example Artist',
+      resource_type: 'MusicalWorkSoundRecording',
+      parental_warning_type: 'NotExplicit',
+    }],
+  }],
+  deals: [],
+};
+
+new DdexBuilder().build(request).then((xml) => {
+  console.log(xml);
+});
+```
+
+`build(request)` returns a `Promise<string>`. The request type is `BuildRequest` in
+`build-request.d.ts`.
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+from ddex_builder import DdexBuilder
+
+
+def party(name, party_id):
+    return {"party_name": [{"text": name}], "party_id": party_id}
+
+
+request = {
+    "header": {
+        "message_id": "MSG-001",
+        "message_sender": party("Example Label", "PADPIDA0000000001"),
+        "message_recipient": party("Example DSP", "PADPIDA0000000002"),
+        "message_control_type": "LiveMessage",
+        "message_created_date_time": "2024-01-01T00:00:00Z",
+    },
+    "version": "4.3",
+    "avs_version_id": "12",
+    "language_and_script_code": "en",
+    "releases": [{
+        "release_id": "A1-ABCDE-0000000001-M",
+        "title": [{"text": "Example Single"}],
+        "artist": "Example Artist",
+        "label": "Example Label",
+        "release_type": "Single",
+        "genre": "Pop",
+        "parental_warning_type": "NotExplicit",
+        "tracks": [{
+            "track_id": "T1",
+            "isrc": "ZZ0000000001",
+            "title": "Example Track",
+            "duration": "PT3M42S",
+            "artist": "Example Artist",
+            "resource_type": "MusicalWorkSoundRecording",
+            "parental_warning_type": "NotExplicit",
+        }],
+    }],
+    "deals": [],
+}
+
+xml = DdexBuilder().build(request)
+print(xml)
+```
+
+`build(request)` returns the XML as `str`. `ddex_builder.BuildRequest` and the other
+`TypedDict`s in `ddex_builder.build_request` describe the request for type checkers.
+
+</TabItem>
+</Tabs>
+
+The output is ERN 4.3 that validates against the official XSD, canonicalized with
+DB-C14N/1.0 (fixed namespace prefixes, sorted attributes, elements in XSD order). The
+message ID and creation time are given here; when a request leaves them (or the release and
+resource references) out, they are generated, so two builds of such a request differ.
+
+## When a required field is missing
+
+Nothing is filled in. When the target version requires a value the request does not carry,
+the build fails, and the error lists **every** missing field with the schema element and the
+request field:
+
+```text
+Build failed: Validation failed: ERN 4.3 requires Release/ReleaseType (releases[0].release_type), ERN 4.3 requires Release/Genre/GenreText (releases[0].genre)
+```
+
+Each entry reads `ERN <version> requires <schema element> (<request field>)`. A value
+that is present but malformed reads `ERN <version>: <request field> is "<value>"; the
+schema requires ...`. Here the request above lacks the release type and genre:
+
+<Tabs groupId="language">
+<TabItem value="rust" label="Rust">
+
+```rust
+use ddex_builder::builder::{
+    LocalizedStringRequest, MessageHeaderRequest, PartyRequest, ReleaseRequest, TrackRequest,
+};
+use ddex_builder::{BuildError, BuildOptions, BuildRequest, DDEXBuilder};
+
+fn main() {
+    let text = |s: &str| vec![LocalizedStringRequest { text: s.to_string(), language_code: None }];
+    let party = |name: &str, id: &str| PartyRequest {
+        party_name: text(name),
+        party_id: Some(id.to_string()),
+        party_reference: None,
+    };
+    let request = BuildRequest {
+        header: MessageHeaderRequest {
+            message_sender: party("Example Label", "PADPIDA0000000001"),
+            message_recipient: party("Example DSP", "PADPIDA0000000002"),
+            ..Default::default()
+        },
+        version: "4.3".to_string(),
+        avs_version_id: Some("12".to_string()),
+        language_and_script_code: Some("en".to_string()),
+        releases: vec![ReleaseRequest {
+            release_id: "A1-ABCDE-0000000001-M".to_string(),
+            title: text("Example Single"),
+            artist: "Example Artist".to_string(),
+            label: Some("Example Label".to_string()),
+            parental_warning_type: Some("NotExplicit".to_string()),
+            tracks: vec![TrackRequest {
+                track_id: "T1".to_string(),
+                isrc: "ZZ0000000001".to_string(),
+                title: "Example Track".to_string(),
+                duration: "PT3M42S".to_string(),
+                artist: "Example Artist".to_string(),
+                resource_type: Some("MusicalWorkSoundRecording".into()),
+                parental_warning_type: Some("NotExplicit".to_string()),
+                ..Default::default()
+            }],
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+
+    match DDEXBuilder::new().build(request, BuildOptions::default()) {
+        Err(BuildError::ValidationFailed { errors }) => {
+            assert_eq!(
+                errors,
+                [
+                    "ERN 4.3 requires Release/ReleaseType (releases[0].release_type)",
+                    "ERN 4.3 requires Release/Genre/GenreText (releases[0].genre)",
+                ]
+            );
+        }
+        other => panic!("expected a validation error, got {other:?}"),
+    }
+}
+```
+
+In Rust the entries are the `errors` of `BuildError::ValidationFailed`.
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```js
+const assert = require('node:assert/strict');
+const { DdexBuilder } = require('ddex-builder');
+
+const party = (name, id) => ({ party_name: [{ text: name }], party_id: id });
+
+const request = {
+  header: {
+    message_sender: party('Example Label', 'PADPIDA0000000001'),
+    message_recipient: party('Example DSP', 'PADPIDA0000000002'),
+  },
+  version: '4.3',
+  avs_version_id: '12',
+  language_and_script_code: 'en',
+  releases: [{
+    release_id: 'A1-ABCDE-0000000001-M',
+    title: [{ text: 'Example Single' }],
+    artist: 'Example Artist',
+    label: 'Example Label',
+    parental_warning_type: 'NotExplicit',
+    tracks: [{
+      track_id: 'T1',
+      isrc: 'ZZ0000000001',
+      title: 'Example Track',
+      duration: 'PT3M42S',
+      artist: 'Example Artist',
+      resource_type: 'MusicalWorkSoundRecording',
+      parental_warning_type: 'NotExplicit',
+    }],
+  }],
+  deals: [],
+};
+
+new DdexBuilder().build(request).then(
+  () => assert.fail('expected a validation error'),
+  (error) => {
+    assert.match(error.message, /ERN 4\.3 requires Release\/ReleaseType \(releases\[0\]\.release_type\)/);
+    assert.match(error.message, /ERN 4\.3 requires Release\/Genre\/GenreText \(releases\[0\]\.genre\)/);
+    console.log(error.message);
+  },
+);
+```
+
+In Node.js the promise rejects with an `Error` whose message is the line above.
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+from ddex_builder import DdexBuilder
+
+
+def party(name, party_id):
+    return {"party_name": [{"text": name}], "party_id": party_id}
+
+
+request = {
+    "header": {
+        "message_sender": party("Example Label", "PADPIDA0000000001"),
+        "message_recipient": party("Example DSP", "PADPIDA0000000002"),
+    },
+    "version": "4.3",
+    "avs_version_id": "12",
+    "language_and_script_code": "en",
+    "releases": [{
+        "release_id": "A1-ABCDE-0000000001-M",
+        "title": [{"text": "Example Single"}],
+        "artist": "Example Artist",
+        "label": "Example Label",
+        "parental_warning_type": "NotExplicit",
+        "tracks": [{
+            "track_id": "T1",
+            "isrc": "ZZ0000000001",
+            "title": "Example Track",
+            "duration": "PT3M42S",
+            "artist": "Example Artist",
+            "resource_type": "MusicalWorkSoundRecording",
+            "parental_warning_type": "NotExplicit",
+        }],
+    }],
+    "deals": [],
+}
+
+try:
+    DdexBuilder().build(request)
+except RuntimeError as error:
+    message = str(error)
+    assert "ERN 4.3 requires Release/ReleaseType (releases[0].release_type)" in message
+    assert "ERN 4.3 requires Release/Genre/GenreText (releases[0].genre)" in message
+    print(message)
+else:
+    raise AssertionError("expected a validation error")
+```
+
+In Python the error is a `RuntimeError` with the line above. A request that does not have
+the shape of a build request (for example without `header`) raises `ValueError`
+(`Invalid build request: missing field `header``).
+
+</TabItem>
+</Tabs>
+
+Which fields each version requires is listed in the
+[build request reference](./build-request.mdx#required-fields-by-ern-version).
+
+## Parse, modify, build {#parse-modify-build}
+
+There is no built-in conversion from a parsed message to a build request yet. Map the fields
+you need: parse `release.xml`, change the title and build ERN 4.3 again. The flat model does
+not carry everything ERN 4.3 requires (for example the resource's DDEX `Type`), so the
+examples set those values themselves.
+
+<Tabs groupId="language">
+<TabItem value="rust" label="Rust">
+
+```rust
+use ddex_builder::builder::{
+    LocalizedStringRequest, MessageHeaderRequest, PartyRequest, ReleaseRequest, TrackRequest,
+};
+use ddex_builder::{BuildOptions, BuildRequest, DDEXBuilder};
+use ddex_parser::DDEXParser;
+use std::io::Cursor;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Parse
+    let message = DDEXParser::new().parse(Cursor::new(std::fs::read("release.xml")?))?;
+    let flat = &message.flat;
+    let release = &flat.releases[0];
+
+    let text = |s: &str| vec![LocalizedStringRequest { text: s.to_string(), language_code: None }];
+    let party = |name: Option<&str>, id: &str| PartyRequest {
+        party_name: name.map(text).unwrap_or_default(),
+        party_id: Some(id.to_string()),
+        party_reference: None,
+    };
+
+    // Map the fields into a build request (ERN 4.3)
+    let tracks = release
+        .tracks
+        .iter()
+        .map(|track| TrackRequest {
+            track_id: track.track_id.clone(),
+            resource_reference: Some(track.track_id.clone()),
+            isrc: track.isrc.clone().unwrap_or_default(),
+            title: track.title.clone().unwrap_or_default(),
+            duration: track
+                .duration
+                .map(|d| format!("PT{}M{}S", d.as_secs() / 60, d.as_secs() % 60))
+                .unwrap_or_default(),
+            artist: track.display_artist.clone().unwrap_or_default(),
+            // The flat model does not carry the resource's DDEX Type, so set it
+            resource_type: Some("MusicalWorkSoundRecording".into()),
+            parental_warning_type: track.parental_warning.clone(),
+            ..Default::default()
+        })
+        .collect();
+    let title = release.default_title.as_deref().unwrap_or_default();
+    let request = BuildRequest {
+        header: MessageHeaderRequest {
+            message_sender: party(flat.sender.name.as_deref(), &flat.sender.id),
+            message_recipient: party(flat.recipient.name.as_deref(), &flat.recipient.id),
+            ..Default::default()
+        },
+        version: "4.3".to_string(),
+        avs_version_id: Some("12".to_string()),
+        language_and_script_code: Some("en".to_string()),
+        releases: vec![ReleaseRequest {
+            upc: release.identifiers.upc.clone(), // written as ReleaseId/ICPN
+            // Modify: a new title
+            title: text(&format!("{title} (Remastered)")),
+            artist: release.display_artist.clone().unwrap_or_default(),
+            label: release.label_name.clone(),
+            release_type: Some(release.release_type.as_str().into()),
+            genre: release.genre.clone(),
+            parental_warning_type: release.parental_warning.clone(),
+            tracks,
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+
+    // Build, then read the result back
+    let xml = DDEXBuilder::new().build(request, BuildOptions::default())?.xml;
+    let rebuilt = DDEXParser::new().parse(Cursor::new(xml.into_bytes()))?;
+    let rebuilt = &rebuilt.flat.releases[0];
+    assert_eq!(rebuilt.default_title.as_deref(), Some(format!("{title} (Remastered)").as_str()));
+    assert_eq!(rebuilt.tracks.len(), release.tracks.len());
+    println!("{}: {} tracks", title, rebuilt.tracks.len());
+    Ok(())
+}
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```js
+const fs = require('node:fs');
+const assert = require('node:assert/strict');
+const { DdexParser } = require('ddex-parser');
+const { DdexBuilder } = require('ddex-builder');
+
+// Parse
+const parser = new DdexParser();
+const message = parser.parseSync(fs.readFileSync('release.xml', 'utf8'));
+const release = message.releases[0];
+
+// Map the fields into a build request (ERN 4.3)
+const isoDuration = (seconds) => `PT${Math.floor(seconds / 60)}M${seconds % 60}S`;
+const request = {
+  header: {
+    message_sender: { party_name: [{ text: message.senderName }], party_id: message.senderId },
+    message_recipient: { party_name: [{ text: message.recipientName }], party_id: message.recipientId },
+  },
+  version: '4.3',
+  avs_version_id: '12',
+  language_and_script_code: 'en',
+  releases: [{
+    release_id: '',
+    upc: release.icpn, // written as ReleaseId/ICPN
+    // Modify: a new title
+    title: [{ text: `${release.title} (Remastered)` }],
+    artist: release.displayArtist,
+    label: release.labelName,
+    release_type: release.releaseType,
+    genre: release.genre,
+    parental_warning_type: release.parentalWarning,
+    tracks: release.tracks.map((track) => ({
+      track_id: track.trackId,
+      resource_reference: track.resourceReference,
+      isrc: track.isrc,
+      title: track.title,
+      duration: isoDuration(message.resources[track.resourceReference].durationSeconds),
+      artist: track.artist,
+      // The flat model does not carry the resource's DDEX Type, so set it
+      resource_type: 'MusicalWorkSoundRecording',
+      parental_warning_type: track.parentalWarning,
+    })),
+  }],
+  deals: [],
+};
+
+// Build, then read the result back
+new DdexBuilder().build(request).then((xml) => {
+  const rebuilt = parser.parseSync(xml).releases[0];
+  assert.equal(rebuilt.title, `${release.title} (Remastered)`);
+  assert.equal(rebuilt.icpn, release.icpn);
+  assert.deepEqual(rebuilt.tracks.map((t) => t.isrc), release.tracks.map((t) => t.isrc));
+  console.log(`${rebuilt.title}: ${rebuilt.tracks.length} tracks`);
+});
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import pandas as pd
+from ddex_builder import DdexBuilder
+from ddex_parser import DDEXParser
+
+# Parse
+parser = DDEXParser()
+with open("release.xml", encoding="utf-8") as f:
+    message = parser.parse(f.read())
+release = message.to_dataframe("releases").iloc[0]
+tracks = message.to_dataframe("tracks")
+
+
+def text(value):
+    """A DataFrame cell as str, or None when it is missing (None or NaN)."""
+    return None if pd.isna(value) else str(value)
+
+
+def iso_duration(seconds):
+    seconds = int(seconds)
+    return f"PT{seconds // 60}M{seconds % 60}S"
+
+
+def party(name, party_id):
+    return {"party_name": [{"text": name}], "party_id": party_id}
+
+
+# Map the fields into a build request (ERN 4.3). The DataFrames do not carry the party IDs
+# or the release type, so they are set here.
+request = {
+    "header": {
+        "message_sender": party("Example Label", "PADPIDA0000000001"),
+        "message_recipient": party("Example DSP", "PADPIDA0000000002"),
+    },
+    "version": "4.3",
+    "avs_version_id": "12",
+    "language_and_script_code": "en",
+    "releases": [{
+        "release_id": "",
+        "upc": text(release["icpn"]),  # written as ReleaseId/ICPN
+        # Modify: a new title
+        "title": [{"text": f"{release['title']} (Remastered)"}],
+        "artist": text(release["artist"]),
+        "label": text(release["label_name"]),
+        "release_type": "Album",
+        "genre": text(release["genre"]),
+        "parental_warning_type": text(release["parental_warning"]),
+        "tracks": [
+            {
+                "track_id": track.track_id,
+                "isrc": track.isrc,
+                "title": track.track_title,
+                "duration": iso_duration(track.duration),
+                "artist": track.artist,
+                # The DataFrames do not carry the resource's DDEX Type, so set it
+                "resource_type": "MusicalWorkSoundRecording",
+                "parental_warning_type": text(track.parental_warning),
+            }
+            for track in tracks.itertuples()
+        ],
+    }],
+    "deals": [],
+}
+
+# Build, then read the result back
+xml = DdexBuilder().build(request)
+rebuilt = parser.parse(xml)
+assert rebuilt.to_dataframe("releases").iloc[0]["title"] == f"{release['title']} (Remastered)"
+assert list(rebuilt.to_dataframe("tracks")["isrc"]) == list(tracks["isrc"])
+print(rebuilt.to_dataframe("releases").iloc[0]["title"], len(tracks), "tracks")
+```
+
+To build from a DataFrame directly, see
+[Python and DataFrames](./python-dataframes.md#build-from-a-dataframe).
+
+</TabItem>
+</Tabs>
+
+In CI, each official ERN 4.2 and 4.3 sample in the repository is parsed, rebuilt in its own
+version, validated against the official XSD and parsed again; the release title, ICPN,
+type and display artist, each track's ISRC, title, duration, disc and position, the deal
+count and the deals' release references match the original. Data the build request cannot carry yet (contributors, P and C
+lines, images, ...) is not compared.

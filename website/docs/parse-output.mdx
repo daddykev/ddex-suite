@@ -1,0 +1,287 @@
+---
+sidebar_position: 5
+title: Parse output reference
+description: Every field of the parser's flat model in Rust, Node.js and Python, how absent values look, and the Rust graph model.
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Parse output reference
+
+The parser produces two views of a message:
+
+- the **flat model**, denormalized for easy use: releases with their tracks resolved,
+  labels and artists looked up, dates and genres collected. Rust:
+  `ddex_core::models::flat::FlattenedMessage` (`message.flat`). Node.js: the
+  `ParsedMessage` returned by `parse` / `parseSync` (camelCase names; see `index.d.ts`).
+  Python: the accessor methods of `ParsedERNMessage` and its
+  [DataFrames](./python-dataframes.md).
+- the **graph model**, the message structure as written (Rust only:
+  `message.graph`, see [below](#graph-model-rust)).
+
+The field names below are the Rust ones; the Node.js name is the camelCase form shown in
+the tables. Python column names are listed on the [DataFrames page](./python-dataframes.md).
+
+## Absent values
+
+The parser never invents a value. When the XML does not have a value:
+
+| | Optional value | List |
+|---|---|---|
+| Rust | `None` | empty `Vec` |
+| Node.js | the key is omitted (`undefined`) | `[]` |
+| Python | `None` (in a DataFrame: pandas' missing value, see [pandas 2 and 3](./python-dataframes.md#missing-values-pandas-2-and-3)) | `[]` |
+
+Text is kept as written. Each value follows its XSD `whiteSpace` facet: strings keep their
+whitespace, and only token types such as references are collapsed. A present but empty
+element (`<TitleText/>`) is `Some("")` / `""`, not absent.
+
+## Message
+
+| Rust (`flat`) | Node.js | Description |
+|---|---|---|
+| `message_id` | `messageId` | `MessageHeader/MessageId` |
+| `message_type` | `messageType` | The root element, e.g. `NewReleaseMessage` |
+| `message_date` | `messageDate` | `MessageCreatedDateTime` (Rust `DateTime<Utc>`; Node.js an RFC 3339 string) |
+| `sender.name`, `sender.id` | `senderName`, `senderId` | `MessageSender` `PartyName/FullName` (optional) and `PartyId` |
+| `recipient.name`, `recipient.id` | `recipientName`, `recipientId` | `MessageRecipient`, the same way |
+| `version` | `version` | The ERN version enum's name: `V3_8_1`, `V3_8_2`, `V4_2` or `V4_3` |
+| `profile` | `profile` | The message profile, when one is recognized |
+| `message_control_type` | `messageControlType` | `MessageHeader/MessageControlType` as written (`LiveMessage`, `TestMessage`, ...); absent when the header has none |
+| `releases` | `releases` | See [Release](#release) |
+| `resources` | `resources` | Resources keyed by resource reference (`A1`, ...); see [Resource](#resource) |
+| `deals` | `deals` | See [Deal](#deal) |
+| `parties` | (not exposed) | 4.x `PartyList` parties keyed by party reference (graph `Party` values) |
+| `stats` | `releaseCount`, `trackCount`, `dealCount`, `totalDurationSeconds` | Counts; Node.js also has `resourceCount` |
+
+Python: `message_id()`, `version()`, `release_count()` and `message_control_type()` are
+methods; the header values are also the message row of `to_dataframe("flat")`.
+
+## Release
+
+| Rust (`ParsedRelease`) | Node.js (`JsRelease`) | Description |
+|---|---|---|
+| `release_id` | `releaseId` | The **`ReleaseReference`** (`R0`, ...), the key deals use. The identifiers are below |
+| `identifiers.upc` | `icpn` | `ReleaseId/ICPN` |
+| `identifiers.grid` | `grid` | `ReleaseId/GRid` |
+| `identifiers.isrc` | `isrc` | `ReleaseId/ISRC` (3.8.x; 4.x has no release ISRC) |
+| `identifiers.proprietary` | `proprietaryIds` | `ReleaseId/ProprietaryId`s as `{ namespace, value }` |
+| `default_title` | `title`, `defaultTitle` | 4.x `DisplayTitleText`, 3.8.x `ReferenceTitle` |
+| `title` | (not exposed) | Every title as `LocalizedString` (`text`, `language_code`) |
+| `default_subtitle` | `subtitle` | The first subtitle |
+| `display_artist` | `displayArtist` | 4.x `DisplayArtistName`, else the display artists' names |
+| `artists` | (not exposed) | Display artists as `{ name, role, party_id }` |
+| `release_type` | `releaseType` | `ReleaseType` (`Album`, `Single`, ...; `TrackRelease` for a 4.3 main track release) |
+| `genre`, `sub_genre` | `genre`, `subGenre` | The default genre; see [Genres](#genres) |
+| `genres` | `genres` | Every genre with its territory scope |
+| `parental_warning` | `parentalWarning` | The default `ParentalWarningType` |
+| `parental_warnings` | `parentalWarnings` | Every `ParentalWarningType` value in document order |
+| `label_name` | `labelName` | See [Label](#label) |
+| `p_line`, `c_line` | `pLine`, `cLine` | The default P line and C line; see [P and C lines](#p-and-c-lines) |
+| `release_date` | `releaseDate` | The default release date, **only when it is a full `YYYY-MM-DD` date** (Rust `DateTime<Utc>` at midnight UTC; Node.js RFC 3339) |
+| `release_dates` | `releaseDates` | Every release date as written; see [Dates](#dates) |
+| `original_release_date`, `original_release_dates` | `originalReleaseDate`, `originalReleaseDates` | The same for `OriginalReleaseDate` |
+| `tracks` | `tracks` | See [Track](#track) |
+| `track_count` | `trackCount` | Number of tracks |
+| `disc_count` | `discCount` | Number of discs, when the release has disc groups |
+| `territories` | (not exposed) | The release's `TerritoryCode` / `ExcludedTerritoryCode` (3.8.x details blocks) |
+
+Releases are the message's `Release`s. In ERN 4.3 a message whose only release is a
+`TrackRelease IsMainRelease="true"` gets that track release as its release (with
+`release_type` `TrackRelease` and no display artist, which the XSD does not give it).
+
+## Track
+
+A track is a sound recording or video that the release lists, resolved against its
+resource (images and text are not tracks).
+
+| Rust (`ParsedTrack`) | Node.js (`JsTrack`) | Description |
+|---|---|---|
+| `track_id` | `trackId`, `resourceReference` | The resource reference (`A1`, ...) |
+| `isrc` | `isrc` | The resource's ISRC |
+| `title` | `title` | The resource's title (4.x `DisplayTitleText`, 3.8.x `ReferenceTitle`) |
+| `display_artist` | `artist` | The resource's display artist |
+| `artists` | `artists` | Display artists with their roles: Rust `{ name, role, party_id }`, Node.js `{ name, role, partyReference }` |
+| `duration` | `duration` | Rust `std::time::Duration`; **Node.js the formatted `m:ss` string** (`2:28`). Seconds are in `resources[ref].durationSeconds` |
+| `duration_formatted` | (`duration`) | `m:ss` |
+| `position` | `position` | 1-based order of the track within its disc, or within the release when there are no discs |
+| `disc_number` | `discNumber` | See [Track layout](#track-layout) |
+| `track_number` | `trackNumber` | The item's own `SequenceNumber`, as written |
+| `group_path` | `groupPath` | Enclosing nested `ResourceGroup`s, outermost first, as `{ group_type, sequence_number }` |
+| `genre`, `sub_genre` | `genre`, `subGenre` | The resource's default genre (3.8.x; 4.x resources have none) |
+| `parental_warning` | `parentalWarning` | The resource's default `ParentalWarningType` |
+| `p_line`, `c_line` | `pLine`, `cLine` | The resource's default P line and C line |
+| `label_name` | `labelName` | The resource's default label name (3.8.x) |
+| `track_release_reference` | `trackReleaseReference` | 4.x: see [Track releases](#track-releases) |
+| `track_release_id` | `trackReleaseId` | 4.x |
+| `track_release_genre`, `track_release_sub_genre` | `trackReleaseGenre`, `trackReleaseSubGenre` | 4.x |
+
+### Track layout
+
+- **`disc_number`** (ERN 4.x): the `SequenceNumber` of the nearest enclosing `Component`
+  group, else of the nearest `ReleaseComponent` group. `MultiWorkPart` and `Side` groups
+  never set it. ERN 3.8.x: not read (always absent).
+- **`position`**: counts tracks from 1 within each disc, in document order (3.8.x: in the
+  order of the release's `ReleaseResourceReferenceList`).
+- **`track_number`**: the item's `SequenceNumber` in the `ResourceGroup`, exactly as
+  written (it can differ from `position`, or be absent).
+- **`group_path`**: every nested `ResourceGroup` between the release's top-level group and
+  the track, outermost first, each with its `ResourceGroupType` and `SequenceNumber`. The
+  top-level group itself is not included. Empty when the track sits directly in the
+  top-level group.
+
+### Track releases
+
+ERN 4.x describes each track's own release as a `TrackRelease`. The flat model attaches it
+to the track:
+
+| Field | Description |
+|---|---|
+| `track_release_reference` | The `TrackRelease`'s `ReleaseReference`. Deals reference track releases by this value, so it is how a deal's `releases` map to tracks |
+| `track_release_id` | The first identifier of that `TrackRelease`'s `ReleaseId` |
+| `track_release_genre`, `track_release_sub_genre` | The `TrackRelease`'s default genre |
+
+These are absent for ERN 3.8.x messages and for tracks without a `TrackRelease`.
+
+## Dates
+
+`release_dates` and `original_release_dates` hold every date **as written**, so partial
+dates survive:
+
+| Field | Description |
+|---|---|
+| `date` | `YYYY`, `YYYY-MM` or `YYYY-MM-DD`, exactly as in the XML |
+| `is_approximate` | The `IsApproximate` attribute, when present |
+| territory scope | See [Territory scope](#territory-scope) |
+
+`release_date` / `releaseDate` is a convenience: the default date as a timestamp, set only
+when that date is a full `YYYY-MM-DD`. A release dated `2024` has
+`release_dates[0].date == "2024"` and no `release_date`.
+
+## P and C lines
+
+`p_line` and `c_line` are the default `PLine` and `CLine`:
+
+| Rust (`Copyright`) | Node.js (`JsCopyright`) | Description |
+|---|---|---|
+| `text` | `text` | `PLineText` / `CLineText` as written (e.g. `(P) 1994 EMI Music Japan Inc.`) |
+| `year` | `year` | `Year` |
+| `owner` | `company` | `PLineCompany` / `CLineCompany` |
+| `scope` | `territoryCodes`, `isDefault` | See [Territory scope](#territory-scope) |
+
+## Genres
+
+`genres` lists every genre in document order as `{ genre, sub_genre }` with its territory
+scope. `genre` / `sub_genre` on the release hold the default one: the first marked
+`IsDefault`, else the first that applies worldwide, else the first.
+
+## Parental warnings
+
+`parental_warning` is the default `ParentalWarningType` value (`Explicit`,
+`NotExplicit`, `NoAdviceAvailable`, ...), chosen the same way as the default genre;
+`parental_warnings` lists every value in document order. Tracks carry their resource's
+default warning.
+
+## Label
+
+`label_name` is the release's label: in ERN 3.8.x the default `LabelName`; in ERN 4.x the
+`PartyList` name of the party referenced by the first `ReleaseLabelReference`.
+
+## Territory scope
+
+Dates, genres, P and C lines and label names carry where they apply:
+
+| Rust (`TerritoryScope`) | Node.js | Description |
+|---|---|---|
+| `territory_codes` | `territoryCodes` | 4.x `ApplicableTerritoryCode`; 3.8.x the `TerritoryCode`s of the `...DetailsByTerritory` block the value was read from |
+| `excluded_territory_codes` | `excludedTerritoryCodes` | 3.8.x `ExcludedTerritoryCode`s of that block |
+| `is_default` | `isDefault` | 4.x `IsDefault`, when written |
+| `language_and_script_code` | (not exposed) | The value's `LanguageAndScriptCode` |
+
+Only what the XML says is recorded: a value written directly on the release has an empty
+scope.
+
+## Deal
+
+| Rust (`ParsedDeal`) | Node.js (`JsDeal`) | Python `deals()` | Description |
+|---|---|---|---|
+| `deal_id` | `dealId` | `deal_id` | `DealReference` (optional in ERN) |
+| `releases` | `releases` | `releases` | The release references the deal applies to (`R0`, track releases `R1`, ...) |
+| `validity.start`, `validity.end` | `startDate`, `endDate` | `start_date`, `end_date` | `ValidityPeriod` `StartDate` / `EndDate` (Rust `DateTime<Utc>`; Node.js and Python RFC 3339, midnight UTC for a date) |
+| `territories.included` | `territories` | `territories` | `TerritoryCode`s |
+| `territories.excluded` | (not exposed) | `excluded_territories` | `ExcludedTerritoryCode`s |
+| `distribution_channels.included` | (not exposed) | `distribution_channels` | Distribution channels |
+| `usage_rights` | `usageRights` | `usage_rights` | The use types |
+| `pricing` | (not exposed) | (not exposed) | Price tiers |
+
+Two caveats: with several `ValidityPeriod`s in one deal the last start and end date win, and
+`StartDateTime` / `EndDateTime` are not read. Use types outside the parser's known list
+appear in their debug form (`Other("ConditionalDownload")`). The flat deal has no
+commercial model type (Node.js `commercialModel` is always absent).
+
+## Resource
+
+`resources` maps each resource reference to the resource:
+
+| Rust (`ParsedResource`) | Node.js (`JsResource`) | Description |
+|---|---|---|
+| `resource_id` | `resourceId` | The resource reference |
+| `resource_type` | `resourceType` | The resource kind: `SoundRecording`, `Video`, `Image`, ... (not the DDEX `Type` value) |
+| `title` | `title` | The title, when the resource has one |
+| `duration` | `durationSeconds`, `durationString` | Rust `Duration`; Node.js seconds and `m:ss` |
+| `technical_details` | `fileFormat`, `bitrate`, `sampleRate`, `fileSize` | From the first technical details block |
+| `genre`, `sub_genre`, `parental_warning`, `p_line`, `c_line`, `label_name` | the same in camelCase | The resource's defaults, as on [Track](#track) |
+
+## Fields not filled in 0.5.0
+
+These Rust fields exist in the model but the parser does not fill them yet: on releases
+`videos`, `images`, `cover_art`, `parent_release`, `child_releases`,
+`identifiers.ean` and `identifiers.catalog_number`; on tracks `iswc`, `subtitle`,
+`file_format`, `bitrate` and `sample_rate` (the resource has them), and `is_hidden`,
+`is_bonus`, `is_explicit` and `is_instrumental` are always `false` (for explicit content
+use `parental_warning`); on deals `restrictions`
+(Node.js `restrictions`) is always empty.
+
+## Graph model (Rust) {#graph-model-rust}
+
+`message.graph` is a `ddex_core::models::graph::ERNMessage`: the message as written, with
+its references unresolved. Use it when you need something the flat model does not carry.
+
+| Field | Description |
+|---|---|
+| `message_header` | `MessageHeader`: ID, sender, recipient, created date-time, control type |
+| `parties` | ERN 4.x `PartyList` |
+| `resources` | Every resource (`Resource`): reference, kind, IDs, titles, display artists, duration, technical details, genres, parental warnings, P and C lines, label names |
+| `releases` | `Release`s: reference, IDs, titles, type, genres, display artists, dates, labels, P and C lines, parental warnings, the `ResourceGroup` tree and the 3.8.x `ReleaseResourceReferenceList` |
+| `track_releases` | ERN 4.x `TrackRelease`s, in document order (empty for 3.8.x) |
+| `deals` | `Deal`s with their `DealTerms` (territories, channels, commercial model types, use types, validity, prices) |
+| `version` | `ERNVersion` (`V3_8_1`, `V3_8_2`, `V4_2`, `V4_3`) |
+| `attributes` | The root element's attributes (`AvsVersionId`, `LanguageAndScriptCode`, ...) |
+| `extensions` | Extension elements and attributes that are not part of the ERN schema |
+
+```rust
+use ddex_parser::DDEXParser;
+use std::io::Cursor;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let message = DDEXParser::new().parse(Cursor::new(std::fs::read("release.xml")?))?;
+    let graph = &message.graph;
+
+    println!("ERN {}", graph.version.as_str());
+    for release in &graph.releases {
+        println!(
+            "{}: {} resource group(s), {} label reference(s)",
+            release.release_reference,
+            usize::from(release.resource_group.is_some()),
+            release.release_label_reference.len(),
+        );
+    }
+    for track_release in &graph.track_releases {
+        println!("track release {}", track_release.release_reference);
+    }
+    Ok(())
+}
+```
+
+The full list of types and fields is on [docs.rs/ddex-core](https://docs.rs/ddex-core).

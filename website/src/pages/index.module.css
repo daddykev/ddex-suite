@@ -569,3 +569,48 @@
     font-size: 1.5rem;
   }
 }
+
+/* Feature tiles */
+.featureTileCol {
+  margin-bottom: 1.5rem;
+}
+
+.featureTile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 100%;
+  padding: 1.5rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 12px;
+  background-color: var(--ifm-background-color);
+  color: var(--ifm-font-color-base);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.featureTile:hover {
+  color: var(--ifm-font-color-base);
+  text-decoration: none;
+  border-color: var(--ifm-color-primary);
+  transform: translateY(-2px);
+}
+
+.featureTile p {
+  margin: 0;
+  color: var(--ifm-color-emphasis-800);
+}
+
+.featureComparison .sectionSubtitle a {
+  color: white;
+  text-decoration: underline;
+}
+
+.performanceBenchmarks .sectionSubtitle {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.featureComparison .sectionSubtitle {
+  color: rgba(255, 255, 255, 0.9);
+  margin: 1rem 0 0;
+}
