@@ -21,7 +21,6 @@ test-assets/
 .github/
 .dockerignore
 
-KNOWN_ISSUES.md
 PUBLISH.md
 
 # =========================

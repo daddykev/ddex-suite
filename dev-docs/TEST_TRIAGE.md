@@ -157,3 +157,24 @@ and runs every inline test a second time (~97 s). Bin-target tests disabled
 
 Also seen: the Python parser reports `__version__ == "0.4.3"` while the package is
 0.4.5. Version-consistency is v0.5.0 packaging work and not touched here.
+
+## Outcomes after the fix-up commits
+
+Things the triage couldn't predict, found while making the KEEP/REWRITE tests pass:
+
+- **New KEEP-IGNORED (parser):** `StreamingParser::stream_releases` yields nothing
+  for a full document (`utf8_handling::streaming_parser_handles_utf8`); `]]>` in
+  text is accepted (`malformed_xml::test_cdata_terminator_in_text_is_rejected`).
+- **REWRITE adjusted:** `version_parsing::graph_and_flat_models_agree` now compares
+  `flat.version` with the enum spelling (`V4_3`), which the Node binding contract
+  already asserts (`test-community-prs.js`).
+- **Round trip (builder):** both new tests are KEEP-IGNORED. The 4.3 output is a
+  3.8-style tree that the parser rejects (no ReleaseType) or reads without titles.
+- **Revived security suite:** 83 tests compile. 60 pass, 23 are ignored (11 clear
+  bugs, 12 marked "policy decision needed"), and one no-assertion 93 s stress test
+  was deleted (P). One test bug fixed (case-sensitive keyword check).
+- **Python:** after the sample fix, the remaining failures are binding bugs
+  (`message_id` is a method; `detect_version` returns `V4_3`), now
+  `xfail(strict=True)`.
+
+The full list of known bugs lives in `KNOWN_ISSUES.md`.
