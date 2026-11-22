@@ -722,7 +722,8 @@ impl DDEXBuilder {
         mut request: BuildRequest,
         options: BuildOptions,
     ) -> Result<BuildResult, super::error::BuildError> {
-        let start = std::time::Instant::now();
+        // web_time: std::time on native targets; `performance.now()` on wasm32 (std panics there)
+        let start = web_time::Instant::now();
         let mut warnings = Vec::new();
 
         // 0. Reject target versions the builder cannot emit, instead of writing a bogus namespace.

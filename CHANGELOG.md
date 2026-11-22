@@ -104,6 +104,11 @@ has it (3.8.2, 4.2, 4.3); absent values stay `None` / empty, nothing is invented
   holds the 4.x root attributes (`LanguageAndScriptCode`, `AvsVersionId`, ...).
 
 ### Fixed
+- WASM: both WASM crates build again for `wasm32-unknown-unknown`. getrandom 0.3 needs
+  `--cfg getrandom_backend="wasm_js"`; the per-crate `.cargo/config.toml` files set an
+  old cfg name (and the root one was gitignored). The root `.cargo/config.toml` is now
+  tracked and sets it for the wasm32 target. The core builder measures its build time
+  with `web-time` (`std::time::Instant` panics on wasm32).
 - **ERN 4.2 / 4.3 builder output is schema-valid.** It was a 3.8-style tree (no
   `ReleaseType`, `ReferenceTitle` instead of `DisplayTitleText`, no `PartyList` or
   `ResourceGroup`, header elements out of order, no `DealList`) that failed XSD
@@ -359,6 +364,20 @@ Parser: absent optional values are now reported as `None` / `null` instead of in
   `ParsedMessage.senderName` and `recipientName` are optional.
 - Python: the `sender` column of the flat DataFrame is the sender's name (or `None`)
   instead of a Rust debug dump of the whole organization.
+
+WASM builder (0.5.0):
+- `WasmDdexBuilder.build(request)` runs the core builder: it takes the core build request
+  (the same `BuildRequest` type as the Node binding, included in the generated `.d.ts`)
+  with the core's validation and errors, and writes the core's schema-valid ERN 4.3 / 4.2
+  / 3.8.2 output. It had its own string-concatenated "ERN 4.3" generator (3.8-shaped, not
+  schema-valid). `build` is now synchronous.
+- Removed `batchBuild` (it returned hard-coded placeholder XML; call `build` per request)
+  and the members that returned fixed or invented values: the `Release` / `Resource`
+  classes with `addRelease` / `addResource`, `buildWithFidelity`,
+  `testRoundTripFidelity`, `canonicalizeXml`, `validate`, `getStats`, `reset`, the preset
+  methods and `validateStructure`. The stale browser test pages and examples that used
+  them were removed.
+- The module now holds the whole core builder (about 2.4 MB, 800 KB gzipped).
 
 ### Documentation
 - Corrected class names in code examples for each language binding: Node.js uses

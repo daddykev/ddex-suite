@@ -1,0 +1,4 @@
+# getrandom 0.3 (uuid) on wasm32-unknown-unknown: use the crypto.getRandomValues backend.
+# The `wasm_js` feature alone is not enough; the cfg is required too.
+[target.wasm32-unknown-unknown]
+rustflags = ["--cfg", 'getrandom_backend="wasm_js"']

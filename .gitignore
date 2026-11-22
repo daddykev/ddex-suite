@@ -16,7 +16,8 @@ test-archive/
 test-suite/
 test-assets/
 
-.cargo/
+.cargo/*
+!/.cargo/config.toml
 .claude/
 .github/
 .dockerignore
@@ -307,3 +308,4 @@ temp/
 /schemas/
 # YouTube's ERN 3.8.2 sample messages, fetched by scripts/fetch_ern382_samples.sh (not redistributed)
 /samples/
+**/bindings/wasm/pkg-node/
