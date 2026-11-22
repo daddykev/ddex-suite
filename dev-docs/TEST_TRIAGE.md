@@ -219,4 +219,35 @@ Things the triage couldn't predict, found while making the KEEP/REWRITE tests pa
   `round_trip`); `ern4_support` gained the 3.8.2 schema in its tooling check and a few
   helpers made public for the 3.8 round trip.
 
+## parser-completeness: 0.5.0 parser fields, whitespace, large files
+
+- **New (ddex-parser `tests/it`):** `whitespace` (4.3 and 3.8.2: text exact per the XSD
+  whiteSpace facet, references and typed values collapsed, CRLF normalized, `&#13;` kept,
+  empty vs absent), `large_file` (an 11+ MB 4.3 message through `parse()` yields the new
+  fields; `Auto` resolves to `Dom`), `ern38_details` (3.8.2 details blocks, ReleaseId
+  ProprietaryId order, ResourceGroup, track artists), `serialization` (the shape the WASM
+  binding returns, null / [] for absent values). Fixtures `ern43_details.xml` and
+  `ern382_details.xml` (XSD-valid) carry every new field.
+- **New (ddex-builder `tests/it`):** `whitespace_round_trip` (build -> parse keeps
+  whitespace in titles for 4.2 / 4.3 / 3.8.2; an empty title is the builder's
+  required-field error, see `KNOWN_ISSUES.md`).
+- **Changed:** `ern4_escaping`'s property test no longer trims its generated text (the
+  parser keeps surrounding whitespace). `ern38_round_trip`: the builder's ProprietaryId
+  multi-track album now round-trips and `ern382_details.xml` joins the sources; the
+  YouTube audio samples stay pinned, now on the builder's missing release ISRC (the
+  parser reads it); the 3.8.2 rebuild of the official DjMix samples is pinned on the
+  builder's empty-MessageId check (the parser no longer invents `MSG_<version>`).
+- **Bindings:** Node `test-parser-fields.js` (in `npm test`), Python
+  `tests/test_parser_fields.py` (deals() / message_control_type() and the new columns);
+  the builder bindings' `smoke-ern382.js` / `test_smoke_ern382.py` check deals and labels
+  through the parser bindings.
+- **Scripts (lxml, not part of `cargo test`):** `compare_ern4_oracle.py` gained a second
+  table for the new fields (all 19 official 4.x samples match on every column);
+  `ern38_population.py` checks that each new field is populated exactly where the 3.8.x
+  XML has it (repository fixtures and the YouTube 3.8.2 samples: no misses, nothing
+  invented).
+- **perf-tests:** run with `--release` (as documented above). Several ddex-builder timing
+  tests miss their targets on the development machine on `main` as well; listed under
+  "Not pinned" in `KNOWN_ISSUES.md`.
+
 The full list of known bugs lives in `KNOWN_ISSUES.md`.

@@ -8,6 +8,9 @@ Usage (from the repo root, with lxml installed):
 Prints one Markdown table row per file and exits non-zero on any mismatch. Compared per
 track, in order: resource reference, ISRC, title, display artist, duration (seconds),
 TrackRelease reference/ID, track_number (= item SequenceNumber) and group path.
+
+A second table compares the 0.5.0 fields (ern4_oracle.details) per sample: one yes/no per
+field, plus how many of the fields are populated in the sample.
 """
 import argparse
 import json
@@ -18,7 +21,7 @@ import sys
 import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from ern4_oracle import oracle  # noqa: E402
+from ern4_oracle import details, oracle  # noqa: E402
 
 
 def iso_seconds(value):
@@ -66,6 +69,59 @@ def parsed_rows(rel):
     } for t in rel["tracks"]]
 
 
+DETAIL_COLUMNS = [
+    "control type", "genre", "genres", "parental warning", "parental warnings", "label",
+    "P line", "C line", "release date", "release dates", "original date",
+    "original dates", "track warning", "track P/C line", "TrackRelease genre", "deal dates",
+]
+
+
+def parsed_line(c):
+    return {"text": c["text"], "year": c["year"]} if c else None
+
+
+def scope_territory(item):
+    codes = item.get("territory_codes") or []
+    return codes[0] if len(codes) == 1 else None
+
+
+def detail_checks(exp, flat):
+    """Per DETAIL_COLUMNS, whether the parser matches the oracle."""
+    checks = {k: True for k in DETAIL_COLUMNS}
+    checks["control type"] = exp["message_control_type"] == flat.get("message_control_type")
+    if len(exp["releases"]) != len(flat["releases"]):
+        return {k: False for k in DETAIL_COLUMNS}
+    for e, p in zip(exp["releases"], flat["releases"]):
+        checks["genre"] &= (e["genre"], e["sub_genre"]) == (p["genre"], p["sub_genre"])
+        checks["genres"] &= e["genres"] == [
+            {"genre": g["genre"], "sub_genre": g["sub_genre"], "territory": scope_territory(g),
+             "is_default": g.get("is_default")} for g in p["genres"]]
+        checks["parental warning"] &= e["parental_warning"] == p["parental_warning"]
+        checks["parental warnings"] &= e["parental_warnings"] == p["parental_warnings"]
+        checks["label"] &= e["label_name"] == p["label_name"]
+        checks["P line"] &= e["p_line"] == parsed_line(p["p_line"])
+        checks["C line"] &= e["c_line"] == parsed_line(p["c_line"])
+        checks["release date"] &= e["release_date"] == p["release_date"]
+        checks["release dates"] &= e["release_dates"] == [
+            {"date": d["date"], "territory": scope_territory(d)} for d in p["release_dates"]]
+        checks["original date"] &= e["original_release_date"] == p["original_release_date"]
+        checks["original dates"] &= e["original_release_dates"] == [
+            {"date": d["date"], "territory": scope_territory(d)} for d in p["original_release_dates"]]
+        if len(e["tracks"]) != len(p["tracks"]):
+            for k in ("track warning", "track P/C line", "TrackRelease genre"):
+                checks[k] = False
+            continue
+        for et, pt in zip(e["tracks"], p["tracks"]):
+            checks["track warning"] &= et["parental_warning"] == pt["parental_warning"]
+            checks["track P/C line"] &= (et["p_line"], et["c_line"]) == (
+                parsed_line(pt["p_line"]), parsed_line(pt["c_line"]))
+            checks["TrackRelease genre"] &= (et["track_release_genre"], et["track_release_sub_genre"]) == (
+                pt["track_release_genre"], pt["track_release_sub_genre"])
+    checks["deal dates"] = [(d["start"], d["end"]) for d in exp["deals"]] == [
+        (d["validity"]["start"], d["validity"]["end"]) for d in flat["deals"]]
+    return checks
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--parser", default="target/release/ddex-parser")
@@ -102,6 +158,28 @@ def main():
             ok &= row_ok
             yn = lambda b: "yes" if b else "**NO**"  # noqa: E731
             print(f"| {os.path.relpath(path)} | {len(e_rows)} | {len(p_rows)} | {yn(isrc)} | {yn(title)} | {yn(other)} |")
+    # 0.5.0 fields
+    print()
+    print("| sample | " + " | ".join(DETAIL_COLUMNS) + " | populated |")
+    print("|---|" + "---|" * (len(DETAIL_COLUMNS) + 1))
+    with tempfile.TemporaryDirectory() as tmp:
+        for path in args.files:
+            try:
+                flat = parse_flat(args.parser, path, tmp)
+            except subprocess.CalledProcessError:
+                ok = False
+                continue
+            exp = details(path)
+            checks = detail_checks(exp, flat)
+            ok &= all(checks.values())
+            rels = exp["releases"]
+            populated = sorted({k for r in rels for k, v in r.items() if v and k != "tracks"}
+                               | {"tracks." + k for r in rels for t in r["tracks"] for k, v in t.items() if v and k != "ref"}
+                               | ({"control type"} if exp["message_control_type"] else set())
+                               | ({"deal end"} if any(d["end"] for d in exp["deals"]) else set()))
+            yn = lambda b: "yes" if b else "**NO**"  # noqa: E731
+            print(f"| {os.path.relpath(path)} | " + " | ".join(yn(checks[k]) for k in DETAIL_COLUMNS)
+                  + f" | {len(populated)} |")
     sys.exit(0 if ok else 1)
 
 

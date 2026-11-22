@@ -16,13 +16,15 @@ Classification and history: `dev-docs/TEST_TRIAGE.md`.
 | `StreamingParser::stream_releases` skips the message root element (only `stream_deals` descends into it), so it yields nothing for a full document | `it::utf8_handling::streaming_parser_handles_utf8` |
 | quick-xml's own end-tag/attribute checks fire first and come back as a generic `XmlError`, pre-empting the typed `MismatchedTags` / `UnexpectedClosingTag` / `InvalidAttribute` variants from `parser::xml_validator` | `it::malformed_xml::test_mismatched_opening_closing_tags`, `test_unexpected_closing_tag`, `test_duplicate_attributes`, `test_complex_malformed_structure` |
 | `]]>` in character data is accepted (not well-formed XML) and the surrounding text is mangled | `it::malformed_xml::test_cdata_terminator_in_text_is_rejected` |
-| ERN 3.8.x: `ReleaseId/ISRC` and `ReleaseId/ProprietaryId` are not read (only GRid / GRIN / ICPN), so a 3.8 release identified by ISRC or a proprietary ID has no identifiers; `ValidityPeriod/EndDate` is never read (any version). `LabelName`, `Genre`, `ParentalWarningType` and `ResourceGroup` (disc / sequence numbers) in the 3.8 `…DetailsByTerritory` are not read either | builder `it::ern38_round_trip::ern38_round_trip` (pinned as the expected build failures of the YouTube 3.8.2 samples and the proprietary-ID album) |
 
 ## ddex-builder
 
 | Bug | Test(s) |
 |---|---|
 | ERN 3.8.x targets: Video resources are rejected (`resource_kind is Video`; the 3.8 generator writes `SoundRecording`s only) | `it::ern38_round_trip` (expected failures: 12 YouTube video samples, 9 official 4.x samples with videos) |
+| ERN 3.8.x targets: `ReleaseIdRequest` has no ISRC, so a 3.8.2 release (or track release) identified only by `ReleaseId/ISRC` cannot be rebuilt (the parser reads it since 0.5.0) | `it::ern38_round_trip` (expected failures: the 8 YouTube 3.8.2 audio samples `721620118165_*`, `USGCV1172318_*`) |
+| ERN 3.8.2 target: an empty `MessageId` (`<MessageId/>`, valid `xs:string`, parsed as `""`) is reported as missing, while the 4.x targets write it | `it::ern38_round_trip::official_4x_samples_rebuilt_as_ern382` (expected failures: Samples42/43 `8 DjMix.xml`) |
+| The request model cannot express a present but empty title: `TrackRequest.title` / release title `""` mean "not given" and the build fails with the required-field error (whitespace-only titles are written faithfully) | `it::whitespace_round_trip::empty_title_is_reported_missing_by_the_builder` |
 | The stable-hash MessageId includes `Utc::now()`'s date (`builder.rs`, `generate_stable_hash_ids`), so output changes daily and the golden snapshot goes stale | `it::golden_files::test_audio_album_golden` |
 | `PathValidator`: allows `settings.json`, empty paths, malformed paths, Unicode homographs and `malware.exe`; rejects valid relative paths, paths within the depth limit and valid paths under concurrency; mishandles a bare `\` | `it::security_fixes::*` (5), `it::security::path_validator_tests::*` (4) |
 | `InputValidator::validate_xml_content` is regex-only: accepts empty input, doesn't enforce `max_xml_depth`, accepts malformed CDATA and `]]>` in text, and ignores `allow_dtd` (with `false` it accepts an empty DTD or a mixed-case `<!Entity … System` declaration; with `true` it still rejects every internal entity declaration) | `it::security::integration_tests::test_security_edge_cases`, `test_memory_safety_under_attack`, `it::security::malicious_payload_tests::test_cdata_section_abuse`, `test_xml_injection_in_ddex_fields`, `it::security::xxe_prevention_tests::test_xxe_edge_cases`, `it::security::parameter_entity_tests::test_parameter_entity_evasions`, `it::security::entity_expansion_tests::test_reasonable_entities_allowed` |
@@ -52,6 +54,27 @@ decision needed)". The security policy above does not settle them:
 | Native `detect_version` returns `"V4_3"`, while the pure-Python fallback and the docs use `"4.3"` | `tests/test_parser.py::TestDDEXParser::test_detect_version` |
 
 ## Not pinned by a test (seen during the cleanup)
+
+- ddex-parser `ParseMode::Stream` (experimental, opt-in since 0.5.0; `parse()` never selects
+  it): `parser/stream.rs` reads a subset of the fields (no territory details, dates, P/C
+  lines, genres, labels, track layout, ...) and still trims text.
+- ddex-parser ERN 3.8.x release display artists: each `DisplayArtist/PartyName/FullName`
+  becomes an artist with the role `MainArtist` regardless of its `ArtistRole` (kept as
+  before 0.5.0 so no existing value changed; 3.8.x track artists use the real role).
+- ddex-parser: with several `ValidityPeriod`s in one deal, the last start / end date
+  given wins; `StartDateTime` / `EndDateTime` are not read; the flat deal has no
+  `CommercialModelType` (Node `commercialModel` is always null).
+- ddex-parser ERN 3.8.x: only the first `ResourceGroup` of the default
+  `ReleaseDetailsByTerritory` block is kept in the graph; resource `ProprietaryId`s
+  (`SoundRecordingId`, `VideoId`, `ImageId`) are not read.
+- Node parser binding: the values of `ParsedMessage.resources` have snake_case keys
+  (`resource_id`, `p_line`, ...) while the generated `JsResource` interface is camelCase
+  (`resources` is typed `any`). The `mode` / `autoThreshold` / `enableStreaming` /
+  `streamingThreshold` options are accepted and ignored.
+- ddex-builder timing tests (`--features perf-tests`, release build) miss their targets on
+  the development machine, also on `main` (4–6 of `perf::test_*_performance`,
+  `test_performance_regression_benchmark`, `security_fixes::…::test_performance_impact_benchmark`;
+  e.g. 12-track album 12–15 ms vs a 10 ms target). The set varies between runs.
 
 - ERN 3.8.1 builder output is not XSD-checked: no official 3.8.1 schema can be obtained
   (DDEX no longer serves ERN 3.x XSDs, and no archived copy of the 3.8.1 one exists). It

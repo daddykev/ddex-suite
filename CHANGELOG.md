@@ -8,6 +8,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+Parser completeness (0.5.0): every field below is read in each ERN version where the XSD
+has it (3.8.2, 4.2, 4.3); absent values stay `None` / empty, nothing is invented.
+- Deals: `ValidityPeriod/EndDate` (graph `DealTerms.end_date` and
+  `validity_period.end_date`, flat `deal.validity.end`); it was never read.
+- `MessageHeader/MessageControlType` in every version (also 3.8.2): graph
+  `MessageControlType` (new `Other(String)` variant keeps unexpected values), flat
+  `message_control_type` (text as written).
+- Release dates: 4.x `ReleaseDate` / `OriginalReleaseDate`; 3.8.2 `GlobalReleaseDate` /
+  `GlobalOriginalReleaseDate` and the `ReleaseDetailsByTerritory` dates. Flat
+  `release_date` / `original_release_date` hold the default date only when it is a full
+  `YYYY-MM-DD` date (midnight UTC); `release_dates[]` / `original_release_dates[]` keep
+  every date as written (`YYYY`, `YYYY-MM` or `YYYY-MM-DD`, never completed) with its
+  territories.
+- P and C lines (year, text, company) on releases and resources (4.3 `SoundRecordingEdition`
+  / `VideoEdition` included; 3.8.2 Release-level and details blocks): flat `p_line` /
+  `c_line` on releases, tracks and resources; every line with its scope in the graph.
+- Genre / SubGenre on releases (`genres[]` plus the default in `genre` / `sub_genre`),
+  TrackReleases (`track.track_release_genre` / `track_release_sub_genre`; a main
+  TrackRelease standing in for the release now has its genre) and 3.8.2 resources
+  (`track.genre`, `resource.genre`).
+- Parental warnings on releases and resources: flat `parental_warning` (default) and
+  `release.parental_warnings[]`; graph `parental_warnings` with `Namespace` /
+  `UserDefinedValue` / territory. 3.8.2 reads them from the details blocks.
+- Labels: flat `label_name` on releases (3.8.2 `LabelName`; 4.x the PartyList name of the
+  first `ReleaseLabelReference`), tracks and resources (3.8.2).
+- ERN 3.8.x: `ReleaseId/ISRC` (flat `identifiers.isrc`) and `ReleaseId/ProprietaryId`
+  (`identifiers.proprietary`) from every direct `ReleaseId`; the `ReleaseDetailsByTerritory`
+  `ResourceGroup` tree (graph `resource_group`; flat `track_number` and `group_path`, no
+  disc number since 3.8.2 groups carry no type); track artists (`track.display_artist`,
+  `track.artists` with their `ArtistRole`), which were always `None` for 3.8.x.
+- Territory scope: new `TerritoryScope` (4.x `ApplicableTerritoryCode` / `IsDefault` /
+  `LanguageAndScriptCode`; 3.8.2 the `TerritoryCode` / `ExcludedTerritoryCode` of the
+  details block) on `Copyright`, `Genre`, `ReleaseEvent`, and the new graph
+  `ParentalWarning` and `LabelName`. Defaults: `IsDefault="true"`, else a worldwide
+  entry, else the first.
+- Bindings: Node (`index.d.ts`) `messageControlType`, release `icpn` / `isrc` / `grid` /
+  `proprietaryIds` / `labelName` (was always null) / `genres` / `parentalWarning(s)` /
+  `pLine` / `cLine` / `releaseDates` / `originalReleaseDates`, track `artists` / `genre` /
+  `parentalWarning` / `pLine` / `cLine` / `labelName` / `trackReleaseGenre`. Python:
+  `ParsedERNMessage.deals()` and `message_control_type()` (there was no deals accessor),
+  new DataFrame columns (None / [] when absent). WASM: through serialization.
+- `scripts/ern38_population.py`: which of these fields the parser populates for ERN 3.8.x
+  files, checked against lxml. `scripts/ern4_oracle.py` / `compare_ern4_oracle.py`
+  compute and compare them for 4.x.
 - ERN 4.2 / 4.3 track extraction. `release.tracks` is built from the main `Release`'s
   `ResourceGroup` tree in document order (every official 4.2/4.3 DDEX sample previously
   parsed to 0 tracks). Only SoundRecording and Video resources become tracks.
@@ -183,6 +227,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   main TrackRelease is promoted).
 
 ### Changed (breaking)
+Parser (0.5.0):
+- Text is kept exactly as written instead of trimmed, following each value's XSD
+  `whiteSpace` facet: `xs:string`-derived values (titles, names, identifiers, AVS codes,
+  dates as written) keep leading, trailing and repeated whitespace and newlines;
+  references (`xs:ID` / `xs:IDREF`, the only `xs:token`-derived types in ERN 3.8.2 / 4.2
+  / 4.3 and the AVS) are collapsed; typed values (`xs:dateTime`, `xs:duration`,
+  `xs:integer`, `xs:boolean`, `xs:gYear`) are collapsed before parsing. Line endings are
+  normalized to LF (XML 1.0 §2.11). Whitespace between elements is formatting, not text.
+- A present element is `Some(text)` even when empty or whitespace only (an empty title is
+  `Some("")`, it used to be `None`); an absent element is `None`. An empty
+  `<MessageId/>` is now `""` instead of the invented fallback `MSG_<version>`.
+- `parse()` no longer switches to the streaming path for inputs over 10 MB
+  (`ParseMode::Auto`, the old default, chose it above `auto_threshold`); that path reads
+  only a subset of the fields. `ParseMode::Dom` is the default, `Auto` resolves to `Dom`,
+  and `ParseMode::Stream` is opt-in and experimental. `auto_threshold` is unused.
+- ERN 3.8.x graph `Release.release_id` gains the `ISRC` / `ProprietaryId` entries in
+  document order, so code reading `release_id[0]` can see a different identifier when an
+  ISRC precedes the ICPN (the XSD order is GRid, ISRC, ICPN, CatalogNumber,
+  ProprietaryId). Flat `identifiers` are matched by type and are unaffected.
+- The ERN 3.8.x reader only reads values where the XSD puts them (direct children, and the
+  `...DetailsByTerritory` blocks): `ReleaseId`, `ReleaseType`, `DisplayArtist`, titles and
+  durations are no longer picked up from nested elements such as `RelatedRelease`.
+  Across the repository corpus (19 official 4.x samples, the fixtures, the 20 YouTube
+  3.8.2 samples) no pre-existing flat value changed apart from `None` -> value.
+- With several genres, flat `release.genre` is the default one (`IsDefault`, else
+  worldwide), no longer simply the first.
+- `GraphBuilder::parse_release_deal` takes the `ReleaseDeal` start tag.
+- New struct fields in the core models (graph and flat, all `#[serde(default)]`); struct
+  literals constructing them need the new fields.
+
 Builder (ERN 3.8.2 / 3.8.1 output):
 - The output changes completely (see Fixed): `MessageSchemaVersionId` is `ern/382`
   (was `ern/3.8.2`); `MessageThreadId` is no longer written (it repeated the

@@ -9,6 +9,7 @@ mod community_prs_regression;
 mod depth_limit;
 mod ern4_build_inputs;
 mod ern4_tracks;
+mod ern38_details;
 mod error_contract;
 mod fast_streaming;
 mod large_file;
