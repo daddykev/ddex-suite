@@ -1,10 +1,17 @@
 # ddex-builder
 
-Deterministic DDEX ERN XML builder in Rust, part of
+DDEX ERN XML builder in Rust, part of
 [DDEX Suite](https://github.com/daddykev/ddex-suite). It writes ERN 4.3, 4.2, 3.8.2 and
-3.8.1 messages from a typed build request, canonicalized with DB-C14N/1.0 so the same
-request always produces the same bytes. Node.js and Python bindings use the same builder:
-`npm install ddex-builder`, `pip install ddex-builder`.
+3.8.1 messages from a typed build request, canonicalized with DB-C14N/1.0 (fixed
+namespace prefixes, sorted attributes, consistent formatting, elements in XSD order).
+Node.js and Python bindings use the same builder: `npm install ddex-builder`,
+`pip install ddex-builder`.
+
+Byte-for-byte determinism is not complete yet: with the default options, a message ID,
+release and resource references and `MessageCreatedDateTime` that the request leaves out
+are generated (random UUIDs, the current time), and the stable-hash ID strategy puts
+today's date into the `MessageId`, so two builds of the same request can differ. Full
+determinism is planned for 0.6.0.
 
 > **0.5.0 has breaking changes.** ERN 3.8.2 output is now schema-valid, the WASM binding
 > runs this builder, and the request types gained fields (use `..Default::default()`).
@@ -76,7 +83,8 @@ fn main() -> Result<(), ddex_builder::BuildError> {
         avs_version_id: Some("12".to_string()),
     };
 
-    // Canonical (DB-C14N/1.0) ERN 4.3; the same request always gives the same bytes.
+    // Canonical (DB-C14N/1.0) ERN 4.3. The message ID, creation time and references are
+    // given, so none of them is generated.
     let result = DDEXBuilder::new().build(request, BuildOptions::default())?;
     assert!(result.xml.contains("<MessageId>MSG-001</MessageId>"));
     println!("{}", result.xml);

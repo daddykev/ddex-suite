@@ -5,11 +5,11 @@ build-backend = "maturin"
 [project]
 name = "ddex-builder"
 version = "0.5.0"
-description = "Deterministic DDEX ERN XML builder (ERN 4.3, 4.2, 3.8.2) for Python, from dicts or pandas DataFrames"
+description = "DDEX ERN XML builder (ERN 4.3, 4.2, 3.8.2) for Python, from dicts or pandas DataFrames"
 readme = "README.md"
 authors = [{name = "Kevin Marques Moo"}]
 license = {text = "MIT"}
-keywords = ["ddex", "ern", "xml", "builder", "music", "metadata", "deterministic"]
+keywords = ["ddex", "ern", "xml", "builder", "music", "metadata"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
