@@ -58,20 +58,39 @@ async function runTests() {
     console.log('\n--- ERN Generation Test ---');
     
     // Create a simple test ERN with correct format matching Python
+    // ERN 4.3 needs label, genre and parental warning on the release, and a DDEX type,
+    // ISRC and parental warning on each resource (nothing is filled in by the builder)
     const testRelease = {
         releaseId: 'TEST_RELEASE_001',
         releaseType: 'Album',
         title: 'Test Album v0.2.5',
         artist: 'Test Artist',
-        trackIds: ['TRACK_001', 'TRACK_002']  // Add required trackIds
+        label: 'Test Label',
+        genre: 'Pop',
+        parentalWarningType: 'NotExplicit',
+        trackIds: ['A1']
     };
 
     const testResource = {
-        resourceId: 'TEST_RESOURCE_001',
-        resourceType: 'SoundRecording',  // Use resourceType instead of type
+        resourceId: 'A1',
+        resourceType: 'SoundRecording',
+        ddexType: 'MusicalWorkSoundRecording',
+        parentalWarningType: 'NotExplicit',
         title: 'Test Track 1 Audio',
+        isrc: 'USRT12400001',
         duration: 'PT3M00S',
         artist: 'Test Artist'
+    };
+
+    // The message header and version come from the build request
+    const request = {
+        version: '4.3',
+        language_and_script_code: 'en',
+        avs_version_id: '12',
+        header: {
+            message_sender: { party_name: [{ text: 'Test Label' }], party_id: 'PADPIDA0000000001' },
+            message_recipient: { party_name: [{ text: 'Test DSP' }], party_id: 'PADPIDA0000000002' }
+        }
     };
 
     try {
@@ -88,7 +107,7 @@ async function runTests() {
         console.log(`✓ Validation: ${JSON.stringify(validation)}`);
 
         // Build XML
-        const xml = await builder.build();
+        const xml = await builder.build(request);
         console.log(`✓ XML generated, length: ${xml ? xml.length : 'undefined'} characters`);
 
         // Check for placeholder content (ensure xml is a string)

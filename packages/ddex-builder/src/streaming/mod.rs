@@ -165,6 +165,23 @@ impl<W: IoWrite> StreamingBuilder<W> {
             ));
         }
 
+        // The streaming writer only knows the 3.8-style tree; schema-valid ERN 4.x output
+        // comes from DDEXBuilder::build.
+        use ddex_core::models::versions::ERNVersion;
+        if matches!(
+            crate::builder::parse_target_version(version),
+            Ok(ERNVersion::V4_2 | ERNVersion::V4_3)
+        ) {
+            return Err(BuildError::InvalidFormat {
+                field: "version".to_string(),
+                message: format!(
+                    "ERN {} is not yet supported by the streaming writer; use DDEXBuilder::build \
+                     for ERN 4.2/4.3 output",
+                    version
+                ),
+            });
+        }
+
         // Write XML declaration and start of message
         let xml_start = format!(
             r#"<?xml version="1.0" encoding="UTF-8"?>

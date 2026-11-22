@@ -310,9 +310,8 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { DdexBuilder, StreamingDdexBuilder, batchBuild, validateStructure } = nativeBinding
+const { DdexBuilder, StreamingDdexBuilder, validateStructure } = nativeBinding
 
 module.exports.DdexBuilder = DdexBuilder
 module.exports.StreamingDdexBuilder = StreamingDdexBuilder
-module.exports.batchBuild = batchBuild
 module.exports.validateStructure = validateStructure

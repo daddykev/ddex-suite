@@ -39,7 +39,13 @@ except ImportError as e:
     _RUST_AVAILABLE = False
     print(f"Warning: Rust extension not available, using mock implementation: {e}")
 
-    # Mock implementations for development only
+    # Mock implementations for development only. They never produce XML: building needs the
+    # native extension (the Rust core builder).
+    _NO_NATIVE = (
+        "the ddex_builder native extension is not available, so nothing can be built; "
+        "install a wheel or run `maturin develop` in packages/ddex-builder/bindings/python"
+    )
+
     class DdexBuilder:
         """Mock DdexBuilder for development/testing."""
         def __init__(self):
@@ -54,14 +60,14 @@ except ImportError as e:
             self._resources.append(resource)
             return self
 
-        def build(self):
-            return f"<mock>Built {len(self._releases)} releases</mock>"
+        def build(self, request=None):
+            raise RuntimeError(_NO_NATIVE)
 
         def validate(self):
             return {"valid": True, "errors": []}
 
-        def from_dataframe(self, df):
-            return self
+        def from_dataframe(self, df, schema=None, request=None):
+            raise RuntimeError(_NO_NATIVE)
 
         def get_stats(self):
             return {"releases": len(self._releases), "resources": len(self._resources)}
@@ -107,15 +113,18 @@ except ImportError as e:
         pass
 
     def batch_build(requests):
-        """Mock batch_build for development."""
-        return [f"<mock>Built from request {i}</mock>" for i, _ in enumerate(requests)]
+        """Unavailable without the native extension."""
+        raise RuntimeError(_NO_NATIVE)
 
     def validate_structure(xml):
         """Mock validate_structure for development."""
         return {"valid": True, "errors": [], "warnings": []}
 
+from ddex_builder.build_request import BuildRequest  # noqa: E402  (request types)
+
 # Public API
 __all__ = [
+    "BuildRequest",
     "__version__",
     "DdexBuilder",
     "Release",

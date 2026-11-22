@@ -14,12 +14,19 @@ export interface Release {
   releaseDate?: string
   genre?: string
   parentalWarning?: boolean
+  /** ERN 4.x `ParentalWarningType` (required for 4.x), e.g. "NotExplicit" */
+  parentalWarningType?: string
   trackIds: Array<string>
   metadata?: Record<string, string>
 }
 export interface Resource {
   resourceId: string
+  /** "SoundRecording" or "Video" */
   resourceType: string
+  /** ERN 4.x: the resource's DDEX `Type` (required for 4.x), e.g. "MusicalWorkSoundRecording" */
+  ddexType?: string
+  /** ERN 4.x `ParentalWarningType` (required for 4.x) */
+  parentalWarningType?: string
   title: string
   artist: string
   isrc?: string
@@ -133,14 +140,20 @@ export interface MessageHeader {
   messageRecipientName: string
   messageCreatedDateTime?: string
 }
-export declare function batchBuild(requests: Array<string>): Promise<Array<string>>
 export declare function validateStructure(xml: string): Promise<ValidationResult>
 export declare class DdexBuilder {
   constructor()
   addRelease(release: Release): void
   addResource(resource: Resource): void
-  build(data?: any | undefined | null): Promise<string>
-  buildWithFidelity(data?: any | undefined | null, fidelityOptions?: FidelityOptions | undefined | null): Promise<BuildResult>
+  /**
+   * Build DDEX XML with the core builder.
+   *
+   * `request` is a build request (the core `BuildRequest` fields, snake_case; see
+   * build-request.d.ts). `header` and `version` are required. When it has no
+   * `releases`, the releases added with `addRelease`/`addResource` are used.
+   */
+  build(request?: import('./build-request').BuildRequest | undefined | null): Promise<string>
+  buildWithFidelity(request?: import('./build-request').BuildRequest | undefined | null, fidelityOptions?: FidelityOptions | undefined | null): Promise<BuildResult>
   testRoundTripFidelity(originalXml: string, fidelityOptions?: FidelityOptions | undefined | null): Promise<VerificationResult>
   validate(): Promise<ValidationResult>
   getStats(): BuilderStats

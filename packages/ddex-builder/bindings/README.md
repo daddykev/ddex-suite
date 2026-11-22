@@ -266,26 +266,26 @@ All bindings provide these core methods with language-appropriate naming convent
 
 #### Node.js
 ```javascript
-// Batch build multiple releases
-const requests = [
-  { releaseId: 'REL001', title: 'Album 1', artist: 'Artist 1' },
-  { releaseId: 'REL002', title: 'Album 2', artist: 'Artist 2' },
-];
-
-const results = await batchBuild(requests);
+// One build request per message (see build-request.d.ts). ERN 4.x allows one Release per
+// message, and nothing is filled in: a missing required value fails with an error naming it.
+const results = await Promise.all(requests.map((request) => new DdexBuilder().build(request)));
 console.log(`Generated ${results.length} XML documents`);
 ```
 
 #### Python
 ```python
-# Process DataFrame with multiple releases
-df = pd.DataFrame([
-    {'release_id': 'REL001', 'title': 'Album 1', 'artist': 'Artist 1'},
-    {'release_id': 'REL002', 'title': 'Album 2', 'artist': 'Artist 2'}
-])
+# Tracks DataFrame -> one message; `request` supplies the header, version and the other
+# message-level values (see ddex_builder.build_request)
+xml = builder.from_dataframe(tracks_df, schema='tracks', request={
+    'version': '4.3', 'language_and_script_code': 'en', 'avs_version_id': '12',
+    'header': {
+        'message_sender': {'party_name': [{'text': 'My Label'}], 'party_id': 'PADPIDA0000000001'},
+        'message_recipient': {'party_name': [{'text': 'My DSP'}], 'party_id': 'PADPIDA0000000002'},
+    },
+})
 
-builder.from_dataframe(df, profile='AudioAlbum')
-xml = builder.build()
+# Several build request dicts -> several messages
+xmls = ddex_builder.batch_build([request_1, request_2])
 ```
 
 #### WASM

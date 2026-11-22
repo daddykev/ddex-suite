@@ -10,7 +10,6 @@
 import {
   DdexBuilder as NativeDdexBuilder,
   StreamingDdexBuilder as NativeStreamingDdexBuilder,
-  batchBuild,
   validateStructure,
   type Release,
   type Resource,
@@ -28,6 +27,7 @@ import {
   type StreamingStats,
   type MessageHeader
 } from '../index.js';
+import type { BuildRequest } from '../build-request';
 
 /**
  * Configuration options for DDEX XML building operations
@@ -84,17 +84,29 @@ export interface StreamingBuildOptions {
  * // Apply industry preset
  * builder.applyPreset('audio_album');
  *
- * // Add releases and resources
+ * // Add releases and resources (ERN 4.x needs label, genre, parentalWarningType, and
+ * // per resource ddexType and parentalWarningType; a missing one fails the build)
  * builder.addRelease({
- *   releaseId: 'REL001',
+ *   releaseId: 'A1-ABCDE-0000000001-M',
  *   releaseType: 'Album',
  *   title: 'My Album',
  *   artist: 'Artist Name',
- *   trackIds: ['TRK001', 'TRK002']
+ *   label: 'My Label',
+ *   genre: 'Pop',
+ *   parentalWarningType: 'NotExplicit',
+ *   trackIds: ['A1', 'A2']
  * });
  *
- * // Build XML
- * const xml = await builder.build();
+ * // Build XML: the request carries the header and version (nothing is filled in)
+ * const xml = await builder.build({
+ *   version: '4.3',
+ *   language_and_script_code: 'en',
+ *   avs_version_id: '12',
+ *   header: {
+ *     message_sender: { party_name: [{ text: 'My Label' }], party_id: 'PADPIDA0000000001' },
+ *     message_recipient: { party_name: [{ text: 'My DSP' }], party_id: 'PADPIDA0000000002' }
+ *   }
+ * });
  * console.log(xml);
  * ```
  *
@@ -160,22 +172,19 @@ export class DDEXBuilder {
   /**
    * Build DDEX XML from the current builder state with standard options
    *
-   * @param data - Optional additional data to include in build
+   * @param data - Build request (core `BuildRequest` fields, see build-request.d.ts);
+   *   `header` and `version` are required. Without `releases`, the releases added with
+   *   `addRelease`/`addResource` are used.
    * @param options - Build configuration options
    * @returns Promise resolving to XML string
    * @throws {Error} When build fails due to validation errors or missing data
    *
    * @example
    * ```typescript
-   * const xml = await builder.build(null, {
-   *   version: '4.3',
-   *   preset: 'audio_album',
-   *   enableDeterministicOrdering: true,
-   *   validateOnBuild: true
-   * });
+   * const xml = await builder.build(request, { preset: 'audio_album' });
    * ```
    */
-  async build(data?: any, options?: BuildOptions): Promise<string> {
+  async build(data?: BuildRequest | null, options?: BuildOptions): Promise<string> {
     if (options?.preset) {
       this.native.applyPreset(options.preset);
     }
@@ -205,7 +214,7 @@ export class DDEXBuilder {
    * console.log('Fidelity score:', result.verification?.fidelityScore);
    * ```
    */
-  async buildWithFidelity(data?: any, fidelityOptions?: FidelityOptions): Promise<BuildResult> {
+  async buildWithFidelity(data?: BuildRequest | null, fidelityOptions?: FidelityOptions): Promise<BuildResult> {
     return this.native.buildWithFidelity(data, fidelityOptions);
   }
 
@@ -635,44 +644,6 @@ export class StreamingDDEXBuilder {
 }
 
 /**
- * Build multiple DDEX documents in parallel for batch processing
- *
- * Efficiently processes multiple DDEX build requests in parallel, with automatic
- * resource management and error handling. Ideal for bulk catalog processing.
- *
- * @param requests - Array of JSON strings representing build requests
- * @returns Promise resolving to array of generated XML documents
- * @throws {Error} When any build request fails or contains invalid data
- *
- * @example
- * ```typescript
- * import { buildBatch } from 'ddex-builder';
- *
- * const requests = [
- *   JSON.stringify({ releases: [release1], resources: [resource1] }),
- *   JSON.stringify({ releases: [release2], resources: [resource2] }),
- *   JSON.stringify({ releases: [release3], resources: [resource3] })
- * ];
- *
- * try {
- *   const xmlDocuments = await buildBatch(requests);
- *   console.log(`Generated ${xmlDocuments.length} XML documents`);
- *
- *   xmlDocuments.forEach((xml, index) => {
- *     console.log(`Document ${index + 1}: ${xml.length} characters`);
- *   });
- * } catch (error) {
- *   console.error('Batch build failed:', error);
- * }
- * ```
- *
- * @category Utilities
- */
-export async function buildBatch(requests: string[]): Promise<string[]> {
-  return batchBuild(requests);
-}
-
-/**
  * Validate DDEX XML structure without building a complete document
  *
  * Performs structural validation of DDEX XML against schema rules and constraints.
@@ -714,6 +685,22 @@ export async function buildBatch(requests: string[]): Promise<string[]> {
 export async function validateDDEXStructure(xml: string): Promise<ValidationResult> {
   return validateStructure(xml);
 }
+
+// Build request types (build-request.d.ts)
+export type {
+  BuildRequest,
+  AvsValue,
+  LocalizedString,
+  Party,
+  MessageHeader as BuildMessageHeader,
+  ProprietaryId,
+  ReleaseIds,
+  ResourceGroup,
+  TrackRelease,
+  Track,
+  Release as BuildRelease,
+  Deal,
+} from '../build-request';
 
 // Re-export all types from the generated index.d.ts
 export type {

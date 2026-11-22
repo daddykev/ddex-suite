@@ -1,6 +1,6 @@
 use ::ddex_builder::builder::{
     BuildOptions, BuildRequest, DDEXBuilder, LocalizedStringRequest, MessageHeaderRequest,
-    PartyRequest, ReleaseRequest, TrackRequest,
+    PartyRequest, ReleaseRequest, ResourceKind, TrackRequest,
 };
 use ::ddex_parser::DDEXParser;
 use ddex_core::models::flat::ParsedERNMessage;
@@ -33,6 +33,9 @@ pub struct Release {
     pub genre: Option<String>,
     #[pyo3(get, set)]
     pub parental_warning: Option<bool>,
+    /// ERN 4.x `ParentalWarningType` (required for 4.x), e.g. "NotExplicit"
+    #[pyo3(get, set)]
+    pub parental_warning_type: Option<String>,
     #[pyo3(get, set)]
     pub track_ids: Vec<String>,
     #[pyo3(get, set)]
@@ -42,7 +45,7 @@ pub struct Release {
 #[pymethods]
 impl Release {
     #[new]
-    #[pyo3(signature = (release_id, release_type, title, artist, label=None, catalog_number=None, upc=None, release_date=None, genre=None, parental_warning=None, track_ids=None, metadata=None))]
+    #[pyo3(signature = (release_id, release_type, title, artist, label=None, catalog_number=None, upc=None, release_date=None, genre=None, parental_warning=None, track_ids=None, metadata=None, parental_warning_type=None))]
     pub fn new(
         release_id: String,
         release_type: String,
@@ -56,6 +59,7 @@ impl Release {
         parental_warning: Option<bool>,
         track_ids: Option<Vec<String>>,
         metadata: Option<HashMap<String, String>>,
+        parental_warning_type: Option<String>,
     ) -> Self {
         Release {
             release_id,
@@ -68,6 +72,7 @@ impl Release {
             release_date,
             genre,
             parental_warning,
+            parental_warning_type,
             track_ids: track_ids.unwrap_or_default(),
             metadata,
         }
@@ -86,8 +91,15 @@ impl Release {
 pub struct Resource {
     #[pyo3(get, set)]
     pub resource_id: String,
+    /// "SoundRecording" or "Video"
     #[pyo3(get, set)]
     pub resource_type: String,
+    /// ERN 4.x: the resource's DDEX `Type` (required for 4.x), e.g. "MusicalWorkSoundRecording"
+    #[pyo3(get, set)]
+    pub ddex_type: Option<String>,
+    /// ERN 4.x `ParentalWarningType` (required for 4.x)
+    #[pyo3(get, set)]
+    pub parental_warning_type: Option<String>,
     #[pyo3(get, set)]
     pub title: String,
     #[pyo3(get, set)]
@@ -107,7 +119,7 @@ pub struct Resource {
 #[pymethods]
 impl Resource {
     #[new]
-    #[pyo3(signature = (resource_id, resource_type, title, artist, isrc=None, duration=None, track_number=None, volume_number=None, metadata=None))]
+    #[pyo3(signature = (resource_id, resource_type, title, artist, isrc=None, duration=None, track_number=None, volume_number=None, metadata=None, ddex_type=None, parental_warning_type=None))]
     pub fn new(
         resource_id: String,
         resource_type: String,
@@ -118,10 +130,14 @@ impl Resource {
         track_number: Option<i32>,
         volume_number: Option<i32>,
         metadata: Option<HashMap<String, String>>,
+        ddex_type: Option<String>,
+        parental_warning_type: Option<String>,
     ) -> Self {
         Resource {
             resource_id,
             resource_type,
+            ddex_type,
+            parental_warning_type,
             title,
             artist,
             isrc,
@@ -544,11 +560,17 @@ impl DdexBuilder {
         self.stats.resources_count = self.resources.len() as u32;
     }
 
-    pub fn build(&mut self) -> PyResult<String> {
+    /// Build DDEX XML with the core builder.
+    ///
+    /// `request` is a build request dict (the core BuildRequest fields, see
+    /// `ddex_builder.build_request`); `header` and `version` are required. When it has no
+    /// `releases`, the releases added with `add_release`/`add_resource` are used. Nothing
+    /// is filled in: a missing value fails the build with an error naming the field.
+    #[pyo3(signature = (request = None))]
+    pub fn build(&mut self, request: Option<Bound<'_, PyAny>>) -> PyResult<String> {
         let start_time = std::time::Instant::now();
 
-        // Create a BuildRequest from stored releases and resources
-        let build_request = self.create_build_request_from_stored_data()?;
+        let build_request = self.build_request(request, None)?;
 
         // Use the actual DDEX builder
         let builder = DDEXBuilder::new();
@@ -564,14 +586,15 @@ impl DdexBuilder {
         Ok(result.xml)
     }
 
+    #[pyo3(signature = (fidelity_options = None, request = None))]
     pub fn build_with_fidelity(
         &mut self,
         fidelity_options: Option<&FidelityOptions>,
+        request: Option<Bound<'_, PyAny>>,
     ) -> PyResult<BuildResult> {
         let start_time = std::time::Instant::now();
 
-        // Create a BuildRequest from stored releases and resources
-        let build_request = self.create_build_request_from_stored_data()?;
+        let build_request = self.build_request(request, None)?;
 
         // Use the actual DDEX builder
         let builder = DDEXBuilder::new();
@@ -887,11 +910,12 @@ impl DdexBuilder {
     ///
     /// Returns:
     ///     str: Generated DDEX XML
-    #[pyo3(signature = (df, schema = None))]
+    #[pyo3(signature = (df, schema = None, request = None))]
     pub fn from_dataframe(
         &mut self,
         df: Bound<'_, PyAny>,
         schema: Option<&str>,
+        request: Option<Bound<'_, PyAny>>,
     ) -> PyResult<String> {
         // Import pandas functionality through PyO3
         let pandas = df.py().import("pandas")?;
@@ -931,331 +955,24 @@ impl DdexBuilder {
             }
         };
 
-        // Convert based on schema
-        match detected_schema {
-            "flat" => self.build_from_flat_df(df),
-            "releases" => self.build_from_releases_df(df),
-            "tracks" => self.build_from_tracks_df(df),
+        // Convert the rows to core release requests (only the values present), then build
+        // with the core builder; `request` supplies the header, version and the other
+        // message-level values.
+        let records = df.call_method1("to_dict", ("records",))?;
+        let records = records.downcast::<PyList>()?;
+        let releases = match detected_schema {
+            "flat" => releases_from_rows(records, true)?,
+            "releases" => releases_from_rows(records, false)?,
+            "tracks" => releases_from_track_rows(records)?,
             _ => unreachable!(),
-        }
-    }
-
-    fn build_from_flat_df(&self, df: Bound<'_, PyAny>) -> PyResult<String> {
-        // Convert DataFrame to records
-        let records = df.call_method1("to_dict", ("records",))?;
-        let records_list = records.downcast::<PyList>()?;
-
-        // Separate message and release rows
-        let mut releases = Vec::new();
-
-        for item in records_list.iter() {
-            let record = item.downcast::<PyDict>()?;
-
-            if let Ok(Some(row_type)) = record.get_item("type") {
-                if let Ok(type_str) = row_type.extract::<String>() {
-                    if type_str == "release" {
-                        // Extract release data from flattened row
-                        if let (Ok(Some(release_id)), Ok(Some(title)), Ok(Some(artist))) = (
-                            record.get_item("release_id"),
-                            record.get_item("title"),
-                            record.get_item("artist"),
-                        ) {
-                            releases.push(Release::new(
-                                release_id.extract()?,
-                                "Album".to_string(),
-                                title.extract()?,
-                                artist.extract()?,
-                                None,
-                                None,
-                                None,
-                                None,
-                                None,
-                                None,
-                                None,
-                                None,
-                            ));
-                        }
-                    }
-                }
-            }
-        }
-
-        self.build_xml_from_releases(releases)
-    }
-
-    fn build_from_releases_df(&self, df: Bound<'_, PyAny>) -> PyResult<String> {
-        // Each row is a complete release
-        let records = df.call_method1("to_dict", ("records",))?;
-        let records_list = records.downcast::<PyList>()?;
-
-        let mut releases = Vec::new();
-        for item in records_list.iter() {
-            let record = item.downcast::<PyDict>()?;
-
-            if let (Ok(Some(release_id)), Ok(Some(title))) =
-                (record.get_item("release_id"), record.get_item("title"))
-            {
-                let artist = record
-                    .get_item("artist")?
-                    .map(|v| v.extract())
-                    .transpose()?
-                    .unwrap_or_else(|| "Unknown Artist".to_string());
-
-                releases.push(Release::new(
-                    release_id.extract()?,
-                    "Album".to_string(),
-                    title.extract()?,
-                    artist,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                ));
-            }
-        }
-
-        self.build_xml_from_releases(releases)
-    }
-
-    fn build_from_tracks_df(&self, df: Bound<'_, PyAny>) -> PyResult<String> {
-        // Group tracks by release_id
-        let records = df.call_method1("to_dict", ("records",))?;
-        let records_list = records.downcast::<PyList>()?;
-
-        let mut tracks_by_release: std::collections::HashMap<String, Vec<Resource>> =
-            std::collections::HashMap::new();
-
-        for item in records_list.iter() {
-            let record = item.downcast::<PyDict>()?;
-
-            if let (Ok(Some(release_id)), Ok(Some(track_index)), Ok(Some(track_title))) = (
-                record.get_item("release_id"),
-                record.get_item("track_index"),
-                record.get_item("track_title"),
-            ) {
-                let release_id_str: String = release_id.extract()?;
-                let track_index_val: usize = track_index.extract()?;
-                let track_id = format!("A{}", track_index_val + 1); // Generate track ID like A1, A2, etc.
-
-                let artist = record
-                    .get_item("artist")?
-                    .map(|v| v.extract())
-                    .transpose()?
-                    .unwrap_or_else(|| "Unknown Artist".to_string());
-
-                let resource = Resource::new(
-                    track_id,
-                    "SoundRecording".to_string(),
-                    track_title.extract()?,
-                    artist,
-                    record.get_item("isrc")?.map(|v| v.extract()).transpose()?,
-                    record
-                        .get_item("duration")?
-                        .map(|v| v.extract())
-                        .transpose()?,
-                    None,
-                    None,
-                    None,
-                );
-
-                tracks_by_release
-                    .entry(release_id_str.clone())
-                    .or_insert_with(Vec::new)
-                    .push(resource);
-            }
-        }
-
-        // Create releases from grouped tracks
-        let mut releases = Vec::new();
-        let mut all_resources = Vec::new();
-
-        for (release_id, tracks) in tracks_by_release {
-            let release_title = records_list
-                .iter()
-                .filter_map(|item| {
-                    let record = item.downcast::<PyDict>().ok()?;
-                    let rid = record
-                        .get_item("release_id")
-                        .ok()??
-                        .extract::<String>()
-                        .ok()?;
-                    if rid == release_id {
-                        record.get_item("release_title").ok()??.extract().ok()
-                    } else {
-                        None
-                    }
-                })
-                .next()
-                .unwrap_or_else(|| format!("Release {}", release_id));
-
-            // Add tracks to all resources
-            all_resources.extend(tracks.clone());
-
-            releases.push(Release::new(
-                release_id,
-                "Album".to_string(),
-                release_title,
-                "Various Artists".to_string(),
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-            ));
-        }
-
-        self.build_xml_from_releases_and_resources(releases, all_resources)
-    }
-
-    fn build_xml_from_releases_and_resources(
-        &self,
-        releases: Vec<Release>,
-        resources: Vec<Resource>,
-    ) -> PyResult<String> {
-        // Generate basic DDEX XML structure
-        let mut xml = String::new();
-        xml.push_str(r#"<?xml version="1.0" encoding="UTF-8"?>"#);
-        xml.push_str(r#"<NewReleaseMessage xmlns="http://ddex.net/xml/ern/43" MessageSchemaVersionId="ern/43" LanguageAndScriptCode="en">"#);
-
-        // Message header
-        xml.push_str("<MessageHeader>");
-        xml.push_str(&format!("<MessageId>{}</MessageId>", uuid::Uuid::new_v4()));
-        xml.push_str("<MessageSender>");
-        xml.push_str("<PartyName><FullName>DDEX Suite</FullName></PartyName>");
-        xml.push_str("</MessageSender>");
-        xml.push_str("<MessageRecipient>");
-        xml.push_str("<PartyName><FullName>Recipient</FullName></PartyName>");
-        xml.push_str("</MessageRecipient>");
-        xml.push_str(&format!(
-            "<MessageCreatedDateTime>{}</MessageCreatedDateTime>",
-            chrono::Utc::now().to_rfc3339()
-        ));
-        xml.push_str("</MessageHeader>");
-
-        // Resource List (tracks)
-        if !resources.is_empty() {
-            xml.push_str("<ResourceList>");
-            for resource in resources {
-                xml.push_str("<SoundRecording>");
-                xml.push_str(&format!(
-                    "<ResourceReference>{}</ResourceReference>",
-                    resource.resource_id
-                ));
-                if let Some(isrc) = &resource.isrc {
-                    xml.push_str("<ResourceId>");
-                    xml.push_str(&format!("<ISRC>{}</ISRC>", isrc));
-                    xml.push_str("</ResourceId>");
-                }
-                xml.push_str("<ReferenceTitle>");
-                xml.push_str(&format!("<TitleText>{}</TitleText>", resource.title));
-                xml.push_str("</ReferenceTitle>");
-                if let Some(duration) = &resource.duration {
-                    xml.push_str(&format!("<Duration>{}</Duration>", duration));
-                }
-                xml.push_str("<DisplayArtist>");
-                xml.push_str("<PartyName>");
-                xml.push_str(&format!("<FullName>{}</FullName>", resource.artist));
-                xml.push_str("</PartyName>");
-                xml.push_str("</DisplayArtist>");
-                xml.push_str("</SoundRecording>");
-            }
-            xml.push_str("</ResourceList>");
-        }
-
-        // Release List
-        if !releases.is_empty() {
-            xml.push_str("<ReleaseList>");
-            for release in releases {
-                xml.push_str("<Release>");
-                xml.push_str(&format!(
-                    "<ReleaseReference>{}</ReleaseReference>",
-                    release.release_id
-                ));
-                xml.push_str("<ReleaseId>");
-                xml.push_str(&format!(
-                    "<ProprietaryId>{}</ProprietaryId>",
-                    release.release_id
-                ));
-                xml.push_str("</ReleaseId>");
-                xml.push_str("<ReferenceTitle>");
-                xml.push_str(&format!("<TitleText>{}</TitleText>", release.title));
-                xml.push_str("</ReferenceTitle>");
-                if !release.artist.is_empty() {
-                    xml.push_str("<DisplayArtist>");
-                    xml.push_str("<PartyName>");
-                    xml.push_str(&format!("<FullName>{}</FullName>", release.artist));
-                    xml.push_str("</PartyName>");
-                    xml.push_str("</DisplayArtist>");
-                }
-                xml.push_str("</Release>");
-            }
-            xml.push_str("</ReleaseList>");
-        }
-
-        xml.push_str("</NewReleaseMessage>");
-        Ok(xml)
-    }
-
-    fn build_xml_from_releases(&self, releases: Vec<Release>) -> PyResult<String> {
-        // Generate basic DDEX XML structure
-        let mut xml = String::new();
-        xml.push_str(r#"<?xml version="1.0" encoding="UTF-8"?>"#);
-        xml.push_str(r#"<NewReleaseMessage xmlns="http://ddex.net/xml/ern/43" MessageSchemaVersionId="ern/43" LanguageAndScriptCode="en">"#);
-
-        // Message header
-        xml.push_str("<MessageHeader>");
-        xml.push_str(&format!("<MessageId>{}</MessageId>", uuid::Uuid::new_v4()));
-        xml.push_str("<MessageSender>");
-        xml.push_str("<PartyName><FullName>DDEX Suite</FullName></PartyName>");
-        xml.push_str("</MessageSender>");
-        xml.push_str("<MessageRecipient>");
-        xml.push_str("<PartyName><FullName>Recipient</FullName></PartyName>");
-        xml.push_str("</MessageRecipient>");
-        xml.push_str(&format!(
-            "<MessageCreatedDateTime>{}</MessageCreatedDateTime>",
-            chrono::Utc::now().to_rfc3339()
-        ));
-        xml.push_str("</MessageHeader>");
-
-        // Releases
-        if !releases.is_empty() {
-            xml.push_str("<ReleaseList>");
-            for release in releases {
-                xml.push_str("<Release>");
-                xml.push_str(&format!(
-                    "<ReleaseReference>{}</ReleaseReference>",
-                    release.release_id
-                ));
-                xml.push_str("<ReleaseId>");
-                xml.push_str(&format!(
-                    "<ProprietaryId>{}</ProprietaryId>",
-                    release.release_id
-                ));
-                xml.push_str("</ReleaseId>");
-                xml.push_str("<ReferenceTitle>");
-                xml.push_str(&format!("<TitleText>{}</TitleText>", release.title));
-                xml.push_str("</ReferenceTitle>");
-                if !release.artist.is_empty() {
-                    xml.push_str("<DisplayArtist>");
-                    xml.push_str("<PartyName>");
-                    xml.push_str(&format!("<FullName>{}</FullName>", release.artist));
-                    xml.push_str("</PartyName>");
-                    xml.push_str("</DisplayArtist>");
-                }
-                xml.push_str("</Release>");
-            }
-            xml.push_str("</ReleaseList>");
-        }
-
-        xml.push_str("</NewReleaseMessage>");
-        Ok(xml)
+        };
+        let build_request = self.build_request(request, Some(releases))?;
+        let result = DDEXBuilder::new()
+            .build(build_request, BuildOptions::default())
+            .map_err(|e| {
+                PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Build failed: {}", e))
+            })?;
+        Ok(result.xml)
     }
 
     fn dict_to_release(&self, record: &Bound<'_, PyDict>) -> PyResult<Release> {
@@ -1266,9 +983,10 @@ impl DdexBuilder {
 
         let release_type: String = record
             .get_item("release_type")?
-            .map(|v| v.extract())
-            .transpose()?
-            .unwrap_or_else(|| "Album".to_string());
+            .ok_or_else(|| {
+                PyErr::new::<pyo3::exceptions::PyKeyError, _>("release_type is required")
+            })?
+            .extract()?;
 
         let title: String = record
             .get_item("title")?
@@ -1312,6 +1030,11 @@ impl DdexBuilder {
             .map(|v| v.extract())
             .transpose()?;
 
+        let parental_warning_type: Option<String> = record
+            .get_item("parental_warning_type")?
+            .map(|v| v.extract())
+            .transpose()?;
+
         Ok(Release::new(
             release_id,
             release_type,
@@ -1325,6 +1048,7 @@ impl DdexBuilder {
             parental_warning,
             Some(track_ids),
             metadata,
+            parental_warning_type,
         ))
     }
 
@@ -1338,9 +1062,10 @@ impl DdexBuilder {
 
         let resource_type: String = record
             .get_item("resource_type")?
-            .map(|v| v.extract())
-            .transpose()?
-            .unwrap_or_else(|| "SoundRecording".to_string());
+            .ok_or_else(|| {
+                PyErr::new::<pyo3::exceptions::PyKeyError, _>("resource_type is required")
+            })?
+            .extract()?;
 
         let title: String = record
             .get_item("title")?
@@ -1374,6 +1099,15 @@ impl DdexBuilder {
             .map(|v| v.extract())
             .transpose()?;
 
+        let ddex_type: Option<String> = record
+            .get_item("ddex_type")?
+            .map(|v| v.extract())
+            .transpose()?;
+        let parental_warning_type: Option<String> = record
+            .get_item("parental_warning_type")?
+            .map(|v| v.extract())
+            .transpose()?;
+
         Ok(Resource::new(
             resource_id,
             resource_type,
@@ -1384,6 +1118,8 @@ impl DdexBuilder {
             track_number,
             volume_number,
             metadata,
+            ddex_type,
+            parental_warning_type,
         ))
     }
 
@@ -1396,26 +1132,25 @@ impl DdexBuilder {
     }
 }
 
+/// Build several messages with the core builder; each item is a build request dict (see
+/// `DdexBuilder.build`). Fails on the first request that does not build, naming its index.
 #[pyfunction]
 pub fn batch_build(requests: Vec<Bound<'_, PyAny>>) -> PyResult<Vec<String>> {
     let mut results = Vec::new();
-
-    for _request in requests {
-        // Create a simple placeholder result for each request
-        let result = format!(
-            r#"<?xml version="1.0" encoding="UTF-8"?>
-<NewReleaseMessage xmlns="http://ddex.net/xml/ern/43">
-  <MessageHeader>
-    <MessageId>{}</MessageId>
-    <MessageSender><PartyName>DDEX Suite</PartyName></MessageSender>
-    <MessageRecipient><PartyName>Recipient</PartyName></MessageRecipient>
-  </MessageHeader>
-</NewReleaseMessage>"#,
-            uuid::Uuid::new_v4()
-        );
-        results.push(result);
+    for (i, item) in requests.into_iter().enumerate() {
+        let request = request_from_py(&item).map_err(|e| {
+            PyValueError::new_err(format!("batch request {}: {}", i, e))
+        })?;
+        let result = DDEXBuilder::new()
+            .build(request, BuildOptions::default())
+            .map_err(|e| {
+                PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+                    "batch request {}: Build failed: {}",
+                    i, e
+                ))
+            })?;
+        results.push(result.xml);
     }
-
     Ok(results)
 }
 
@@ -1533,57 +1268,66 @@ impl DdexBuilder {
         })
     }
 
-    fn create_build_request_from_stored_data(&self) -> Result<BuildRequest, PyErr> {
-        // Create message header
-        let header = MessageHeaderRequest {
-            message_id: Some(uuid::Uuid::new_v4().to_string()),
-            message_sender: PartyRequest {
-                party_name: vec![LocalizedStringRequest {
-                    text: "DDEX Suite".to_string(),
-                    language_code: None,
-                }],
-                party_id: None,
-                party_reference: None,
-            },
-            message_recipient: PartyRequest {
-                party_name: vec![LocalizedStringRequest {
-                    text: "Recipient".to_string(),
-                    language_code: None,
-                }],
-                party_id: None,
-                party_reference: None,
-            },
-            message_control_type: None,
-            message_created_date_time: Some(chrono::Utc::now().to_rfc3339()),
+    /// The core build request: `request` as given (missing `releases`/`deals` mean none),
+    /// with `releases` (from a DataFrame) or else the stored releases when it has none.
+    fn build_request(
+        &self,
+        request: Option<Bound<'_, PyAny>>,
+        releases: Option<Vec<ReleaseRequest>>,
+    ) -> PyResult<BuildRequest> {
+        let mut build_request = match request {
+            Some(r) => request_from_py(&r)?,
+            None => request_from_json(serde_json::json!({}))?,
         };
+        if let Some(releases) = releases {
+            if !build_request.releases.is_empty() {
+                return Err(PyValueError::new_err(
+                    "pass releases either in the DataFrame or in the request, not both",
+                ));
+            }
+            build_request.releases = releases;
+        } else if build_request.releases.is_empty() {
+            build_request.releases = self.stored_releases()?;
+        }
+        Ok(build_request)
+    }
 
-        // Convert releases
+    /// Releases added with `add_release`/`add_resource`, using only the values given.
+    fn stored_releases(&self) -> PyResult<Vec<ReleaseRequest>> {
         let mut releases = Vec::new();
         for release in &self.releases {
-            let tracks = self
-                .resources
-                .iter()
-                .filter(|resource| release.track_ids.contains(&resource.resource_id))
-                .map(|resource| TrackRequest {
+            let mut tracks = Vec::new();
+            for track_id in &release.track_ids {
+                let resource = self
+                    .resources
+                    .iter()
+                    .find(|r| &r.resource_id == track_id)
+                    .ok_or_else(|| {
+                        PyValueError::new_err(format!(
+                            "release {} lists track {} but no resource with that id was added",
+                            release.release_id, track_id
+                        ))
+                    })?;
+                tracks.push(TrackRequest {
                     track_id: resource.resource_id.clone(),
                     resource_reference: Some(resource.resource_id.clone()),
-                    isrc: resource
-                        .isrc
-                        .clone()
-                        .unwrap_or_else(|| "TEMP00000000".to_string()),
+                    isrc: resource.isrc.clone().unwrap_or_default(),
                     title: resource.title.clone(),
-                    duration: resource
-                        .duration
-                        .clone()
-                        .unwrap_or_else(|| "PT180S".to_string()),
+                    duration: resource.duration.clone().unwrap_or_default(),
                     artist: resource.artist.clone(),
+                    resource_kind: resource_kind(&resource.resource_type, &resource.resource_id)?,
+                    resource_type: resource.ddex_type.clone().map(Into::into),
+                    parental_warning_type: resource.parental_warning_type.clone(),
+                    disc_number: resource.volume_number.and_then(|n| u32::try_from(n).ok()),
+                    sequence_number: resource.track_number.and_then(|n| u32::try_from(n).ok()),
                     ..Default::default()
-                })
-                .collect();
-
+                });
+            }
             releases.push(ReleaseRequest {
                 release_id: release.release_id.clone(),
-                release_reference: Some(release.release_id.clone()),
+                // Generated by the core's ID strategy (a release ID such as a GRid is not a
+                // valid ERN 4.x ReleaseReference)
+                release_reference: None,
                 title: vec![LocalizedStringRequest {
                     text: release.title.clone(),
                     language_code: None,
@@ -1593,22 +1337,202 @@ impl DdexBuilder {
                 release_date: release.release_date.clone(),
                 upc: release.upc.clone(),
                 tracks,
-                resource_references: Some(release.track_ids.clone()),
+                resource_references: None,
+                release_type: Some(release.release_type.clone().into()),
+                genre: release.genre.clone(),
+                parental_warning_type: release.parental_warning_type.clone(),
                 ..Default::default()
             });
         }
-
-        // Create build request
-        Ok(BuildRequest {
-            header,
-            version: "4.3".to_string(),
-            profile: Some("AudioAlbum".to_string()),
-            releases,
-            deals: vec![], // Empty for now
-            extensions: None,
-            ..Default::default()
-        })
+        Ok(releases)
     }
+}
+
+/// "SoundRecording" or "Video" (the stored/DataFrame resource kind).
+fn resource_kind(value: &str, resource_id: &str) -> PyResult<ResourceKind> {
+    match value {
+        "SoundRecording" => Ok(ResourceKind::SoundRecording),
+        "Video" => Ok(ResourceKind::Video),
+        other => Err(PyValueError::new_err(format!(
+            "resource {}: resource_type must be \"SoundRecording\" or \"Video\", got {:?}",
+            resource_id, other
+        ))),
+    }
+}
+
+fn request_from_json(mut value: serde_json::Value) -> PyResult<BuildRequest> {
+    let object = value
+        .as_object_mut()
+        .ok_or_else(|| PyValueError::new_err("the build request must be a dict"))?;
+    object
+        .entry("releases")
+        .or_insert_with(|| serde_json::json!([]));
+    object.entry("deals").or_insert_with(|| serde_json::json!([]));
+    serde_json::from_value(value)
+        .map_err(|e| PyValueError::new_err(format!("Invalid build request: {}", e)))
+}
+
+/// A build request from a Python dict (via `json.dumps`, so only JSON values are allowed).
+fn request_from_py(request: &Bound<'_, PyAny>) -> PyResult<BuildRequest> {
+    let json = request.py().import("json")?;
+    let text: String = json.call_method1("dumps", (request,))?.extract()?;
+    let value: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| PyValueError::new_err(format!("Invalid build request: {}", e)))?;
+    request_from_json(value)
+}
+
+/// A DataFrame cell as text: `None`/NaN are missing; numbers are written without a
+/// trailing `.0` when integral (pandas turns integer columns with gaps into floats).
+fn cell(record: &Bound<'_, PyDict>, key: &str) -> PyResult<Option<String>> {
+    let Some(value) = record.get_item(key)? else {
+        return Ok(None);
+    };
+    if value.is_none() {
+        return Ok(None);
+    }
+    if let Ok(text) = value.extract::<String>() {
+        return Ok(Some(text));
+    }
+    if let Ok(n) = value.extract::<i64>() {
+        return Ok(Some(n.to_string()));
+    }
+    if let Ok(f) = value.extract::<f64>() {
+        if f.is_nan() {
+            return Ok(None);
+        }
+        return Ok(Some(if f.fract() == 0.0 {
+            format!("{}", f as i64)
+        } else {
+            f.to_string()
+        }));
+    }
+    Ok(Some(value.str()?.extract()?))
+}
+
+fn cell_u32(record: &Bound<'_, PyDict>, key: &str) -> PyResult<Option<u32>> {
+    cell(record, key)?
+        .map(|v| {
+            v.parse::<u32>().map_err(|_| {
+                PyValueError::new_err(format!("column {}: {:?} is not a whole number", key, v))
+            })
+        })
+        .transpose()
+}
+
+/// A release date: kept as given, or the date part of an RFC 3339 date-time (the parser's
+/// DataFrames carry date-times).
+fn date_cell(record: &Bound<'_, PyDict>, key: &str) -> PyResult<Option<String>> {
+    Ok(cell(record, key)?.map(|v| match chrono::DateTime::parse_from_rfc3339(&v) {
+        Ok(dt) => dt.format("%Y-%m-%d").to_string(),
+        Err(_) => v,
+    }))
+}
+
+/// A duration: kept as given (ISO 8601), or numeric seconds (the parser's DataFrames)
+/// written as ISO 8601.
+fn duration_cell(record: &Bound<'_, PyDict>, key: &str) -> PyResult<Option<String>> {
+    Ok(cell(record, key)?.map(|v| match v.parse::<f64>() {
+        Ok(seconds) => {
+            let whole = seconds.trunc() as u64;
+            let fraction = seconds - seconds.trunc();
+            if fraction == 0.0 {
+                format!("PT{}M{}S", whole / 60, whole % 60)
+            } else {
+                format!("PT{}M{}S", whole / 60, (whole % 60) as f64 + fraction)
+            }
+        }
+        Err(_) => v,
+    }))
+}
+
+fn release_from_row(record: &Bound<'_, PyDict>, prefix: &str) -> PyResult<ReleaseRequest> {
+    let col = |name: &str| format!("{}{}", prefix, name);
+    let release_id = cell(record, "release_id")?
+        .ok_or_else(|| PyValueError::new_err("column release_id is required"))?;
+    Ok(ReleaseRequest {
+        release_id,
+        release_reference: cell(record, "release_reference")?,
+        title: cell(record, &col("title"))?
+            .map(|text| {
+                vec![LocalizedStringRequest {
+                    text,
+                    language_code: None,
+                }]
+            })
+            .unwrap_or_default(),
+        artist: cell(record, &col("artist"))?.unwrap_or_default(),
+        label: cell(record, &col("label"))?,
+        release_date: date_cell(record, &col("date"))?
+            .or(date_cell(record, "release_date")?),
+        upc: cell(record, &col("upc"))?.or(cell(record, "upc")?),
+        release_type: cell(record, "release_type")?.map(Into::into),
+        genre: cell(record, &col("genre"))?,
+        sub_genre: cell(record, &col("sub_genre"))?,
+        parental_warning_type: cell(record, &col("parental_warning_type"))?,
+        ..Default::default()
+    })
+}
+
+/// 'flat' / 'releases' schema: one release per row (flat: rows with type == "release").
+fn releases_from_rows(records: &Bound<'_, PyList>, flat: bool) -> PyResult<Vec<ReleaseRequest>> {
+    let mut releases = Vec::new();
+    for item in records.iter() {
+        let record = item.downcast::<PyDict>()?;
+        if flat && cell(record, "type")?.as_deref() != Some("release") {
+            continue;
+        }
+        releases.push(release_from_row(record, "")?);
+    }
+    Ok(releases)
+}
+
+/// 'tracks' schema: one track per row, grouped into releases by `release_id` in order of
+/// first appearance. Release-level values come from `release_`-prefixed columns
+/// (`release_title`, `release_artist`, `release_label`, `release_genre`,
+/// `release_parental_warning_type`, ...) and `release_type`.
+fn releases_from_track_rows(records: &Bound<'_, PyList>) -> PyResult<Vec<ReleaseRequest>> {
+    let mut releases: Vec<ReleaseRequest> = Vec::new();
+    for item in records.iter() {
+        let record = item.downcast::<PyDict>()?;
+        let release_id = cell(record, "release_id")?
+            .ok_or_else(|| PyValueError::new_err("column release_id is required"))?;
+        let index = match releases.iter().position(|r| r.release_id == release_id) {
+            Some(i) => i,
+            None => {
+                releases.push(release_from_row(record, "release_")?);
+                releases.len() - 1
+            }
+        };
+        // Track reference: the track_id column, else derived from the row's track_index.
+        let track_id = match cell(record, "track_id")? {
+            Some(id) => id,
+            None => {
+                let i = cell_u32(record, "track_index")?.ok_or_else(|| {
+                    PyValueError::new_err("column track_id (or track_index) is required")
+                })?;
+                format!("A{}", i + 1)
+            }
+        };
+        let kind = cell(record, "resource_kind")?;
+        releases[index].tracks.push(TrackRequest {
+            resource_reference: Some(track_id.clone()),
+            isrc: cell(record, "isrc")?.unwrap_or_default(),
+            title: cell(record, "track_title")?.unwrap_or_default(),
+            duration: duration_cell(record, "duration")?.unwrap_or_default(),
+            artist: cell(record, "artist")?.unwrap_or_default(),
+            resource_kind: match kind {
+                Some(k) => resource_kind(&k, &track_id)?,
+                None => ResourceKind::SoundRecording,
+            },
+            resource_type: cell(record, "resource_type")?.map(Into::into),
+            parental_warning_type: cell(record, "parental_warning_type")?,
+            disc_number: cell_u32(record, "disc_number")?,
+            sequence_number: cell_u32(record, "track_number")?,
+            track_id,
+            ..Default::default()
+        });
+    }
+    Ok(releases)
 }
 
 #[pymodule]

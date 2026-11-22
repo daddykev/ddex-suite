@@ -104,3 +104,24 @@ fn rejects_unsupported_version() {
         "{err}"
     );
 }
+
+/// The streaming writer only writes the 3.8-style tree, so ERN 4.x targets are refused
+/// instead of producing schema-invalid output.
+#[test]
+fn streaming_writer_rejects_ern4_targets() {
+    use ddex_builder::streaming::StreamingBuilder;
+    for version in ["4.2", "4.3", "ern/43"] {
+        let mut builder = StreamingBuilder::new(Vec::new()).unwrap();
+        let err = builder
+            .start_message(&request(version).header, version)
+            .expect_err("4.x must be rejected");
+        assert!(
+            err.to_string().contains("not yet supported by the streaming writer"),
+            "{version}: {err}"
+        );
+    }
+    let mut builder = StreamingBuilder::new(Vec::new()).unwrap();
+    builder
+        .start_message(&request("3.8.2").header, "3.8.2")
+        .expect("3.8.2 is still accepted");
+}

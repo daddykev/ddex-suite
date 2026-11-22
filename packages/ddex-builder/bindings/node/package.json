@@ -28,6 +28,7 @@
   "files": [
     "index.js",
     "index.d.ts",
+    "build-request.d.ts",
     "dist/**/*",
     "js/**/*",
     "*.node"
@@ -54,7 +55,8 @@
     "prepublishOnly": "napi prepublish -t npm",
     "artifacts": "napi artifacts",
     "version": "napi version",
-    "test": "node test.js"
+    "test": "node test.js",
+    "test:smoke": "node smoke-ern43.js"
   },
   "engines": {
     "node": ">=14.0.0"

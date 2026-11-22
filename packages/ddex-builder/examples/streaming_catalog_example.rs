@@ -67,7 +67,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         "Streaming {release_count} releases x {TRACKS_PER_RELEASE} tracks to {}",
         output_path.display()
     );
-    builder.start_message(&header, "ern/43")?;
+    // The streaming writer does not support ERN 4.x yet (use DDEXBuilder::build for 4.2/4.3)
+    builder.start_message(&header, "3.8.2")?;
 
     // ERN puts all resources before all releases, so write every sound
     // recording first and remember the references for each release.
