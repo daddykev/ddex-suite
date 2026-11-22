@@ -120,6 +120,37 @@ jobs:
       - name: Import, parse and build
         run: python scripts/release_smoke.py "examples/Samples43/1 Audio.xml"
 
+  # The README renders on PyPI (twine check --strict) and each wheel / sdist holds what it
+  # should: the package modules and the native extension, no caches or build leftovers.
+  pypi-check:
+    name: twine check and contents
+    needs: [wheels, sdist]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "{wheel,sdist}-*"
+          path: dist
+          merge-multiple: true
+      - run: python -m pip install twine
+      - name: twine check --strict
+        run: twine check --strict dist/*
+      - name: Contents
+        run: |
+          set -euo pipefail
+          for f in dist/*.whl; do
+            echo "== $f"; python -m zipfile -l "$f" | awk 'NR>1 {print $1}' | tee files.txt
+            if grep -E '__pycache__|\.pyc$' files.txt; then echo "build leftovers in $f"; exit 1; fi
+            grep -E '^ddex_(parser|builder)/_internal\.' files.txt >/dev/null || { echo "no native extension in $f"; exit 1; }
+          done
+          for f in dist/*.tar.gz; do
+            echo "== $f ($(tar -tzf "$f" | wc -l) files)"
+            if tar -tzf "$f" | grep -E '__pycache__|\.pyc$|/target/|/node_modules/'; then echo "leftovers in $f"; exit 1; fi
+          done
+
   # ---------------------------------------------------------------- npm
   node-binaries:
     name: node ${{ matrix.package }} ${{ matrix.platform.name }}
@@ -201,3 +232,34 @@ jobs:
       - name: Import, parse and build
         working-directory: ${{ runner.temp }}/app
         run: node "$GITHUB_WORKSPACE/scripts/release_smoke.js" "$GITHUB_WORKSPACE/examples/Samples43/1 Audio.xml"
+
+  # Pack every npm package the release publishes (the two main packages and the eight
+  # platform packages, each with its binary) and check each tarball's exact file list.
+  npm-pack-check:
+    name: npm pack contents
+    needs: node-binaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: node-*
+          path: binaries
+          merge-multiple: true
+      - name: Pack
+        run: |
+          set -euo pipefail
+          mkdir -p packs
+          for pkg in ddex-parser ddex-builder; do
+            dir="packages/$pkg/bindings/node"
+            for platform in darwin-arm64 darwin-x64 linux-x64-gnu win32-x64-msvc; do
+              cp "binaries/$pkg-node.$platform.node" "$dir/npm/$platform/"
+              npm pack "./$dir/npm/$platform" --ignore-scripts --pack-destination packs
+            done
+            npm pack "./$dir" --ignore-scripts --pack-destination packs
+          done
+      - name: Check the tarballs
+        run: python3 scripts/check_npm_packs.py packs --version "$(node -p "require('./packages/ddex-parser/bindings/node/package.json').version")"
