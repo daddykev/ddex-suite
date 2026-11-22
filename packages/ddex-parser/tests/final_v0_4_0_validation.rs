@@ -378,7 +378,12 @@ fn generate_release_certificate() {
 
     println!("{}", cert);
 
-    if fs::write("RELEASE_READY_CERTIFICATE.txt", &cert).is_ok() {
+    if fs::write(
+        std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join("RELEASE_READY_CERTIFICATE.txt"),
+        &cert,
+    )
+    .is_ok()
+    {
         println!("\n📜 Release certificate saved to RELEASE_READY_CERTIFICATE.txt");
     }
 }
@@ -424,7 +429,13 @@ fn generate_partial_certificate(passed: usize, total: usize) {
 
     println!("{}", cert);
 
-    if fs::write("DEVELOPMENT_STATUS_CERTIFICATE.txt", &cert).is_ok() {
+    if fs::write(
+        std::path::Path::new(env!("CARGO_TARGET_TMPDIR"))
+            .join("DEVELOPMENT_STATUS_CERTIFICATE.txt"),
+        &cert,
+    )
+    .is_ok()
+    {
         println!("\n📋 Development status saved to DEVELOPMENT_STATUS_CERTIFICATE.txt");
     }
 }

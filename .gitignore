@@ -146,6 +146,10 @@ wasm-pack.log
 # Testing & Benchmarks
 # =========================
 # Test outputs
+# Reports/certificates historically written by tests (tests now write under target/)
+*_CERTIFICATE.txt
+*PERFORMANCE_REPORT.md
+*.snap.new
 test-results/
 test-output/
 *.log

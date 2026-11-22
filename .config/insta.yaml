@@ -1,0 +1,5 @@
+# Never write pending snapshots (.snap.new) into the source tree during a plain
+# `cargo test`; mismatches just fail with a diff. To review/accept changes run
+# `cargo insta test --review` (or set INSTA_UPDATE=new), which overrides this.
+behavior:
+  update: "no"

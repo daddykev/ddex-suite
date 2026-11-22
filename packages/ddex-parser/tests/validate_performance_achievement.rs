@@ -308,7 +308,10 @@ fn generate_performance_certificate(throughput: f64) {
     println!("{}", certificate);
 
     // Write certificate to file
-    if let Err(e) = fs::write("PERFORMANCE_CERTIFICATE.txt", &certificate) {
+    if let Err(e) = fs::write(
+        std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join("PERFORMANCE_CERTIFICATE.txt"),
+        &certificate,
+    ) {
         println!("Warning: Could not write certificate file: {}", e);
     } else {
         println!("\n📜 Performance certificate saved to PERFORMANCE_CERTIFICATE.txt");
@@ -353,7 +356,10 @@ fn generate_performance_report() {
         chrono::Local::now().format("%Y-%m-%d %H:%M:%S")
     ));
 
-    if let Err(e) = fs::write("PERFORMANCE_REPORT.md", &report) {
+    if let Err(e) = fs::write(
+        std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join("PERFORMANCE_REPORT.md"),
+        &report,
+    ) {
         println!("Warning: Could not write report file: {}", e);
     } else {
         println!("📊 Detailed report saved to PERFORMANCE_REPORT.md");

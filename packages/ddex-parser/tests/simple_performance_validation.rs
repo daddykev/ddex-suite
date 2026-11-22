@@ -141,7 +141,10 @@ the complete streaming parser implementation.
         (throughput / 280.0) * 100.0
     );
 
-    if let Ok(()) = fs::write("SIMPLE_PERFORMANCE_REPORT.md", &report) {
+    if let Ok(()) = fs::write(
+        std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join("SIMPLE_PERFORMANCE_REPORT.md"),
+        &report,
+    ) {
         println!("📊 Simple performance report saved");
     }
 }
@@ -224,7 +227,13 @@ fn generate_achievement_certificate(throughput: f64) {
 
     println!("{}", certificate);
 
-    if fs::write("DEVELOPMENT_PERFORMANCE_CERTIFICATE.txt", &certificate).is_ok() {
+    if fs::write(
+        std::path::Path::new(env!("CARGO_TARGET_TMPDIR"))
+            .join("DEVELOPMENT_PERFORMANCE_CERTIFICATE.txt"),
+        &certificate,
+    )
+    .is_ok()
+    {
         println!("📜 Development certificate saved");
     }
 }
