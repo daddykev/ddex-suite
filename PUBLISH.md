@@ -34,6 +34,14 @@ Each wheel, the sdists and each Node platform are install-tested on a matching r
 sample, build an ERN 4.3 message and parse it back). Do not publish unless every job is
 green.
 
+macOS: every macOS job runs on `macos-latest` (Apple Silicon). The x86_64 wheels and the
+darwin-x64 Node binaries are cross-compiled there (`--target x86_64-apple-darwin`), as
+GitHub's last Intel image, `macos-15-intel`, is retired in August 2027. The build jobs
+check each macOS native file with `file` and `lipo -archs` (x86_64 or arm64 only, not
+universal). The x86_64 artifacts are then install-tested on the same Apple Silicon
+runner, with an x86_64 Python 3.10 and an x64 Node 22 running under Rosetta 2 (the jobs
+check `platform.machine()` / `process.arch`). They are never run on Intel hardware.
+
 ## 3. Publish, in this order
 
 ### crates.io

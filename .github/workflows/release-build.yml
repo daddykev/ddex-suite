@@ -13,6 +13,9 @@ env:
 
 jobs:
   # ---------------------------------------------------------------- PyPI
+  # macOS: both wheels build on macos-latest (Apple Silicon); x86_64 is cross-compiled there,
+  # as GitHub's last Intel image (macos-15-intel) is retired in August 2027. Each macOS
+  # wheel's native extension is checked with lipo for the expected architecture.
   wheels:
     name: wheel ${{ matrix.package }} ${{ matrix.platform.name }}
     runs-on: ${{ matrix.platform.runner }}
@@ -24,13 +27,13 @@ jobs:
           - { name: manylinux-x86_64, runner: ubuntu-latest, target: x86_64-unknown-linux-gnu, manylinux: "2_28" }
           - { name: manylinux-aarch64, runner: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu, manylinux: "2_28" }
           - { name: musllinux-x86_64, runner: ubuntu-latest, target: x86_64-unknown-linux-musl, manylinux: musllinux_1_2 }
-          - { name: macos-x86_64, runner: macos-13, target: x86_64-apple-darwin }
-          - { name: macos-arm64, runner: macos-14, target: aarch64-apple-darwin }
+          - { name: macos-x86_64, runner: macos-latest, target: x86_64-apple-darwin, arch: x86_64 }
+          - { name: macos-arm64, runner: macos-latest, target: aarch64-apple-darwin, arch: arm64 }
           - { name: windows-x64, runner: windows-latest, target: x86_64-pc-windows-msvc }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # abi3-py310 (the pyo3 feature): one cp310-abi3 wheel per platform for Python 3.10+.
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.10"
       - name: Build abi3 wheel
@@ -40,7 +43,23 @@ jobs:
           target: ${{ matrix.platform.target }}
           manylinux: ${{ matrix.platform.manylinux || 'auto' }}
           args: --release --out dist
-      - uses: actions/upload-artifact@v4
+      - name: Check the native extension's architecture (macOS)
+        if: ${{ matrix.platform.arch }}
+        working-directory: packages/${{ matrix.package }}/bindings/python
+        env:
+          ARCH: ${{ matrix.platform.arch }}
+        run: |
+          set -euo pipefail
+          for whl in dist/*.whl; do
+            rm -rf "$RUNNER_TEMP/whl" && mkdir -p "$RUNNER_TEMP/whl"
+            unzip -q "$whl" -d "$RUNNER_TEMP/whl"
+            for so in "$RUNNER_TEMP"/whl/ddex_*/_internal*.so; do
+              file "$so"
+              archs="$(lipo -archs "$so")"
+              [ "$archs" = "$ARCH" ] || { echo "$so: architectures '$archs', expected '$ARCH'"; exit 1; }
+            done
+          done
+      - uses: actions/upload-artifact@v7
         with:
           name: wheel-${{ matrix.package }}-${{ matrix.platform.name }}
           path: packages/${{ matrix.package }}/bindings/python/dist/*.whl
@@ -53,14 +72,14 @@ jobs:
       matrix:
         package: [ddex-parser, ddex-builder]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:
           working-directory: packages/${{ matrix.package }}/bindings/python
           command: sdist
           args: --out dist
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: sdist-${{ matrix.package }}
           path: packages/${{ matrix.package }}/bindings/python/dist/*.tar.gz
@@ -68,7 +87,8 @@ jobs:
 
   # Install each wheel on a matching runner with the oldest supported Python (3.10): import
   # it and parse (or build) with an official sample. The musllinux wheel is tested in an
-  # Alpine container.
+  # Alpine container. The macOS x86_64 wheel is tested on macos-latest (Apple Silicon) with
+  # an x86_64 Python running under Rosetta 2.
   wheel-install-test:
     name: install-test wheel ${{ matrix.platform.name }}
     needs: wheels
@@ -80,17 +100,28 @@ jobs:
           - { name: manylinux-x86_64, runner: ubuntu-latest }
           - { name: manylinux-aarch64, runner: ubuntu-24.04-arm }
           - { name: musllinux-x86_64, runner: ubuntu-latest, container: "python:3.10-alpine" }
-          - { name: macos-x86_64, runner: macos-13 }
-          - { name: macos-arm64, runner: macos-14 }
+          - { name: macos-x86_64, runner: macos-latest, arch: x64, machine: x86_64 }
+          - { name: macos-arm64, runner: macos-latest, machine: arm64 }
           - { name: windows-x64, runner: windows-latest }
     container: ${{ matrix.platform.container || '' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - name: Install Rosetta 2
+        if: ${{ matrix.platform.arch == 'x64' }}
+        run: arch -x86_64 /usr/bin/true 2>/dev/null || sudo softwareupdate --install-rosetta --agree-to-license
+      - uses: actions/setup-python@v7
         if: ${{ !matrix.platform.container }}
         with:
           python-version: "3.10"
-      - uses: actions/download-artifact@v4
+          architecture: ${{ matrix.platform.arch || '' }}
+      - name: Check the interpreter's architecture
+        if: ${{ matrix.platform.machine }}
+        env:
+          MACHINE: ${{ matrix.platform.machine }}
+        run: |
+          python -c "import platform; print(platform.machine())"
+          test "$(python -c 'import platform; print(platform.machine())')" = "$MACHINE"
+      - uses: actions/download-artifact@v8
         with:
           pattern: wheel-*-${{ matrix.platform.name }}
           path: wheels
@@ -107,12 +138,12 @@ jobs:
     needs: sdist
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: sdist-*
           path: sdist
@@ -129,10 +160,10 @@ jobs:
     needs: [wheels, sdist]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: "{wheel,sdist}-*"
           path: dist
@@ -155,6 +186,8 @@ jobs:
           done
 
   # ---------------------------------------------------------------- npm
+  # macOS: both binaries build on macos-latest (Apple Silicon); darwin-x64 is cross-compiled
+  # and checked with lipo (see the wheels job).
   node-binaries:
     name: node ${{ matrix.package }} ${{ matrix.platform.name }}
     runs-on: ${{ matrix.platform.runner }}
@@ -163,8 +196,8 @@ jobs:
       matrix:
         package: [ddex-parser, ddex-builder]
         platform:
-          - { name: darwin-arm64, runner: macos-14, target: aarch64-apple-darwin }
-          - { name: darwin-x64, runner: macos-13, target: x86_64-apple-darwin }
+          - { name: darwin-arm64, runner: macos-latest, target: aarch64-apple-darwin, arch: arm64 }
+          - { name: darwin-x64, runner: macos-latest, target: x86_64-apple-darwin, arch: x86_64 }
           - { name: linux-x64-gnu, runner: ubuntu-22.04, target: x86_64-unknown-linux-gnu }
           - { name: win32-x64-msvc, runner: windows-latest, target: x86_64-pc-windows-msvc }
     defaults:
@@ -172,22 +205,32 @@ jobs:
         shell: bash
         working-directory: packages/${{ matrix.package }}/bindings/node
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.platform.target }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
       - run: npm install --no-audit --no-fund  # package-lock.json is not tracked
       - name: Build the native binary
         run: npx napi build --platform --release --target ${{ matrix.platform.target }}
-      - uses: actions/upload-artifact@v4
+      - name: Check the binary's architecture (macOS)
+        if: ${{ matrix.platform.arch }}
+        env:
+          ARCH: ${{ matrix.platform.arch }}
+          NODE_FILE: ${{ matrix.package }}-node.${{ matrix.platform.name }}.node
+        run: |
+          file "$NODE_FILE"
+          archs="$(lipo -archs "$NODE_FILE")"
+          [ "$archs" = "$ARCH" ] || { echo "$NODE_FILE: architectures '$archs', expected '$ARCH'"; exit 1; }
+      - uses: actions/upload-artifact@v7
         with:
           name: node-${{ matrix.package }}-${{ matrix.platform.name }}
           path: packages/${{ matrix.package }}/bindings/node/*.${{ matrix.platform.name }}.node
           if-no-files-found: error
 
+  # darwin-x64 is tested on macos-latest (Apple Silicon) with an x64 Node under Rosetta 2.
   node-install-test:
     name: install-test node ${{ matrix.platform.name }}
     needs: node-binaries
@@ -196,19 +239,30 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - { name: darwin-arm64, runner: macos-14 }
-          - { name: darwin-x64, runner: macos-13 }
+          - { name: darwin-arm64, runner: macos-latest, node-arch: arm64 }
+          - { name: darwin-x64, runner: macos-latest, arch: x64, node-arch: x64 }
           - { name: linux-x64-gnu, runner: ubuntu-latest }
           - { name: win32-x64-msvc, runner: windows-latest }
     defaults:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - name: Install Rosetta 2
+        if: ${{ matrix.platform.arch == 'x64' }}
+        run: arch -x86_64 /usr/bin/true 2>/dev/null || sudo softwareupdate --install-rosetta --agree-to-license
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
-      - uses: actions/download-artifact@v4
+          architecture: ${{ matrix.platform.arch || '' }}
+      - name: Check Node's architecture
+        if: ${{ matrix.platform.node-arch }}
+        env:
+          NODE_ARCH: ${{ matrix.platform.node-arch }}
+        run: |
+          node -p process.arch
+          test "$(node -p process.arch)" = "$NODE_ARCH"
+      - uses: actions/download-artifact@v8
         with:
           pattern: node-*-${{ matrix.platform.name }}
           path: binaries
@@ -243,11 +297,11 @@ jobs:
     needs: node-binaries
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: node-*
           path: binaries
