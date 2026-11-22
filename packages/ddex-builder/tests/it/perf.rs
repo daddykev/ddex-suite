@@ -154,7 +154,8 @@ fn create_test_request(track_count: usize) -> BuildRequest {
             isrc: format!("TEST{:08}", i + 1), // 12 chars total
             title: format!("Test Track {}", i + 1),
             duration: format!("PT{}M{}S", 3 + (i % 4), 15 + (i % 45)),
-            artist: format!("Artist {}", (i % 5) + 1), // Simulate repeated artists
+            artist: format!("Artist {}", (i % 5) + 1), // Simulate repeated artists,
+            ..Default::default()
         });
     }
 
@@ -201,9 +202,11 @@ fn create_test_request(track_count: usize) -> BuildRequest {
             upc: Some("123456789012".to_string()),
             tracks,
             resource_references: None,
+            ..Default::default()
         }],
         deals: vec![],
         extensions: None,
+        ..Default::default()
     }
 }
 

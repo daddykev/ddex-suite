@@ -374,11 +374,14 @@ mod metadata_helpers {
                     title: text.to_string(),
                     duration: "PT3M".to_string(),
                     artist: text.to_string(),
+                    ..Default::default()
                 }],
                 resource_references: None,
+                ..Default::default()
             }],
             deals: vec![],
             extensions: None,
+            ..Default::default()
         }
     }
 

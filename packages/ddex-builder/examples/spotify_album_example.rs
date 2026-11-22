@@ -245,6 +245,7 @@ fn create_spotify_album_request() -> BuildRequest {
 
         // Extensions: Custom metadata (not used in this example)
         extensions: None,
+        ..Default::default()
     }
 }
 
@@ -271,6 +272,7 @@ fn create_album_release() -> ReleaseRequest {
             "R7".to_string(),
             "R8".to_string(),
         ]),
+        ..Default::default()
     }
 }
 
@@ -283,6 +285,7 @@ fn create_album_tracks() -> Vec<TrackRequest> {
             title: "Neon Dreams".to_string(),
             duration: "PT4M23S".to_string(),
             artist: "The Wavelength Collective".to_string(),
+            ..Default::default()
         },
         TrackRequest {
             track_id: "TRACK_002".to_string(),
@@ -291,6 +294,7 @@ fn create_album_tracks() -> Vec<TrackRequest> {
             title: "Synthetic Sunrise".to_string(),
             duration: "PT3M57S".to_string(),
             artist: "The Wavelength Collective".to_string(),
+            ..Default::default()
         },
         TrackRequest {
             track_id: "TRACK_003".to_string(),
@@ -299,6 +303,7 @@ fn create_album_tracks() -> Vec<TrackRequest> {
             title: "Digital Pulse".to_string(),
             duration: "PT5M12S".to_string(),
             artist: "The Wavelength Collective".to_string(),
+            ..Default::default()
         },
         TrackRequest {
             track_id: "TRACK_004".to_string(),
@@ -307,6 +312,7 @@ fn create_album_tracks() -> Vec<TrackRequest> {
             title: "Cyber Meditation".to_string(),
             duration: "PT6M45S".to_string(),
             artist: "The Wavelength Collective".to_string(),
+            ..Default::default()
         },
         TrackRequest {
             track_id: "TRACK_005".to_string(),
@@ -315,6 +321,7 @@ fn create_album_tracks() -> Vec<TrackRequest> {
             title: "Binary Sunset".to_string(),
             duration: "PT4M31S".to_string(),
             artist: "The Wavelength Collective".to_string(),
+            ..Default::default()
         },
         TrackRequest {
             track_id: "TRACK_006".to_string(),
@@ -323,6 +330,7 @@ fn create_album_tracks() -> Vec<TrackRequest> {
             title: "Algorithmic Love".to_string(),
             duration: "PT3M44S".to_string(),
             artist: "The Wavelength Collective feat. Echo Siren".to_string(),
+            ..Default::default()
         },
         TrackRequest {
             track_id: "TRACK_007".to_string(),
@@ -331,6 +339,7 @@ fn create_album_tracks() -> Vec<TrackRequest> {
             title: "Data Stream Dreams".to_string(),
             duration: "PT7M18S".to_string(),
             artist: "The Wavelength Collective".to_string(),
+            ..Default::default()
         },
         TrackRequest {
             track_id: "TRACK_008".to_string(),
@@ -339,6 +348,7 @@ fn create_album_tracks() -> Vec<TrackRequest> {
             title: "Virtual Reality".to_string(),
             duration: "PT4M56S".to_string(),
             artist: "The Wavelength Collective".to_string(),
+            ..Default::default()
         },
     ]
 }
@@ -350,6 +360,7 @@ fn create_spotify_streaming_deal() -> DealRequest {
             commercial_model_type: "SubscriptionModel".to_string(),
             territory_code: vec!["Worldwide".to_string()],
             start_date: Some("2024-03-15".to_string()),
+            ..Default::default()
         },
         release_references: vec!["REL_REF_001".to_string()],
     }

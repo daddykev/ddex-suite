@@ -110,6 +110,7 @@
 //! #     releases: vec![],
 //! #     deals: vec![],
 //! #     extensions: None,
+//! #     ..Default::default()
 //! # };
 //!
 //! // Build the same request 3 times and compare bytes and hashes

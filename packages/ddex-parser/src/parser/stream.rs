@@ -494,6 +494,9 @@ impl<'a, R: BufRead> ReleaseIterator<'a, R> {
             display_title: Vec::new(),
             display_artist_name: Vec::new(),
             resource_group: None,
+            release_type_user_defined_value: None,
+            parental_warning_type: Vec::new(),
+            release_label_reference: Vec::new(),
         };
 
         self.parser.buffer.clear();

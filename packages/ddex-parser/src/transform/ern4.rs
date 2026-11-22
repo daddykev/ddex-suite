@@ -12,8 +12,8 @@ use crate::error::ParseError;
 use crate::parser::xml_validator::XmlValidator;
 use ddex_core::models::common::{Identifier, IdentifierType, LocalizedString};
 use ddex_core::models::graph::{
-    Artist, DisplayText, LinkedReleaseResourceReference, Party, Release, ReleaseType, Resource,
-    ResourceGroup, ResourceGroupContentItem, ResourceType, TrackRelease,
+    Artist, DisplayText, Genre, LinkedReleaseResourceReference, Party, Release, ReleaseType,
+    Resource, ResourceGroup, ResourceGroupContentItem, ResourceType, TrackRelease,
 };
 use ddex_core::models::versions::ERNVersion;
 use quick_xml::events::{BytesStart, Event};
@@ -147,6 +147,27 @@ pub(crate) fn read_subtree<R: BufRead>(
     }
 }
 
+/// Attributes of the 4.x root element (e.g. `LanguageAndScriptCode`, `AvsVersionId`),
+/// keyed by their qualified names; namespace declarations are left out.
+pub(crate) fn root_attributes(
+    e: &BytesStart,
+) -> Result<ddex_core::models::AttributeMap, ParseError> {
+    let mut map = ddex_core::models::AttributeMap::new();
+    for attr in e.attributes() {
+        let attr = attr.map_err(|err| ParseError::XmlError(format!("Invalid attribute: {}", err)))?;
+        let key = String::from_utf8_lossy(attr.key.as_ref()).into_owned();
+        if key == "xmlns" || key.starts_with("xmlns:") {
+            continue;
+        }
+        let value = attr
+            .unescape_value()
+            .map_err(|err| ParseError::XmlError(format!("Invalid attribute value: {}", err)))?
+            .into_owned();
+        map.insert_str(&key, value);
+    }
+    Ok(map)
+}
+
 // ---------------------------------------------------------------------------
 // Shared pieces
 // ---------------------------------------------------------------------------
@@ -257,6 +278,27 @@ fn resource_group(node: &XNode) -> ResourceGroup {
     }
 }
 
+/// `Genre` entries (`GenreText` is mandatory; a `Genre` without one is skipped).
+fn genres(parent: &XNode) -> Vec<Genre> {
+    parent
+        .children_named("Genre")
+        .filter_map(|g| {
+            Some(Genre {
+                genre_text: g.child_value("GenreText")?,
+                sub_genre: g.child_value("SubGenre"),
+                attributes: None,
+                extensions: None,
+                comments: None,
+            })
+        })
+        .collect()
+}
+
+/// Text values of the direct children named `name`, in document order.
+fn values(parent: &XNode, name: &str) -> Vec<String> {
+    parent.children_named(name).filter_map(XNode::value).collect()
+}
+
 fn to_localized(texts: &[DisplayText]) -> Vec<LocalizedString> {
     texts
         .iter()
@@ -290,7 +332,7 @@ pub(crate) fn release(node: &XNode, version: ERNVersion) -> Release {
             "Compilation" => ReleaseType::Compilation,
             _ => ReleaseType::Other(t),
         }),
-        genre: Vec::new(),
+        genre: genres(node),
         release_resource_reference_list: Vec::new(),
         display_artist: display_artists(node),
         party_list: Vec::new(),
@@ -301,6 +343,12 @@ pub(crate) fn release(node: &XNode, version: ERNVersion) -> Release {
         display_title: display_titles(node),
         display_artist_name: display_texts(node, "DisplayArtistName"),
         resource_group: node.child("ResourceGroup").map(resource_group),
+        release_type_user_defined_value: node
+            .child("ReleaseType")
+            .and_then(|t| t.attr("UserDefinedValue"))
+            .map(str::to_string),
+        parental_warning_type: values(node, "ParentalWarningType"),
+        release_label_reference: values(node, "ReleaseLabelReference"),
         attributes: None,
         extensions: None,
         comments: None,
@@ -320,10 +368,8 @@ pub(crate) fn track_release(node: &XNode) -> Option<TrackRelease> {
         display_title: display_titles(node),
         release_resource_reference: node.child_value("ReleaseResourceReference")?,
         linked_release_resource_references: linked_references(node),
-        release_label_reference: node
-            .children_named("ReleaseLabelReference")
-            .filter_map(XNode::value)
-            .collect(),
+        release_label_reference: values(node, "ReleaseLabelReference"),
+        genre: genres(node),
         is_main_release: node.attr_bool("IsMainRelease"),
     })
 }
@@ -403,6 +449,15 @@ pub(crate) fn resource(node: &XNode, resource_type: ResourceType, version: ERNVe
                 value: isrc,
             });
         }
+        for pid in rid.children_named("ProprietaryId") {
+            if let Some(value) = pid.value() {
+                resource_id.push(Identifier {
+                    id_type: IdentifierType::Proprietary,
+                    namespace: pid.attr("Namespace").map(str::to_string),
+                    value,
+                });
+            }
+        }
     }
     let display_title_text = display_texts(node, "DisplayTitleText");
     Resource {
@@ -425,5 +480,11 @@ pub(crate) fn resource(node: &XNode, resource_type: ResourceType, version: ERNVe
         display_title: display_titles(node),
         display_artist_name: display_texts(node, "DisplayArtistName"),
         display_artist: display_artists(node),
+        type_value: node.child_value("Type"),
+        type_user_defined_value: node
+            .child("Type")
+            .and_then(|t| t.attr("UserDefinedValue"))
+            .map(str::to_string),
+        parental_warning_type: values(node, "ParentalWarningType"),
     }
 }

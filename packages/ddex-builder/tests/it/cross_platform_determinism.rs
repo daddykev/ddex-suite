@@ -59,6 +59,7 @@ fn create_platform_agnostic_request() -> BuildRequest {
             upc: Some("123456789012".to_string()),
             tracks: Vec::new(),
             resource_references: None,
+            ..Default::default()
         }],
         deals: vec![DealRequest {
             deal_reference: Some("PLAT_DEAL001".to_string()),
@@ -66,6 +67,7 @@ fn create_platform_agnostic_request() -> BuildRequest {
                 commercial_model_type: "FreeOfChargeModel".to_string(),
                 territory_code: vec!["Worldwide".to_string()],
                 start_date: Some("2024-01-01".to_string()),
+                ..Default::default()
             },
             release_references: vec!["PLAT_REL001".to_string()],
         }],
@@ -76,6 +78,7 @@ fn create_platform_agnostic_request() -> BuildRequest {
             ext.insert("determinismCheck".to_string(), "enabled".to_string());
             ext
         }),
+        ..Default::default()
     }
 }
 

@@ -92,6 +92,9 @@ pub struct TrackRelease {
     pub linked_release_resource_references: Vec<LinkedReleaseResourceReference>,
     #[serde(default)]
     pub release_label_reference: Vec<String>,
+    /// `Genre` entries, in document order.
+    #[serde(default)]
+    pub genre: Vec<super::Genre>,
     /// ERN 4.3 `@IsMainRelease`; `None` when absent (always absent in 4.2).
     #[serde(default)]
     pub is_main_release: Option<bool>,

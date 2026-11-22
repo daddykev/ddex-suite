@@ -295,8 +295,11 @@ impl XmlValidator {
                 });
             }
 
-            // Validate attribute value doesn't contain invalid characters
-            if attr_value.contains('<') || attr_value.contains('&') && !attr_value.contains(';') {
+            // Validate the raw (still escaped) value: a literal '<', or a '&' that does not
+            // start a reference, is not well-formed. Escaped `&lt;` / `&amp;` are fine, so the
+            // decoded value may contain '<' and '&'.
+            let raw = &attr.value;
+            if raw.contains(&b'<') || raw.contains(&b'&') && !raw.contains(&b';') {
                 return Err(ParseError::InvalidAttribute {
                     message: format!("Invalid character in attribute value: '{}'", attr_value),
                     position: self.current_position,

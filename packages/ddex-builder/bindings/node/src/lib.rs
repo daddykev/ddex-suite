@@ -596,6 +596,7 @@ impl DdexBuilder {
                             .map(|s| s.to_string()),
                         tracks: vec![], // No tracks in the simple format for now
                         resource_references: None,
+                        ..Default::default()
                     });
                 }
             }
@@ -609,6 +610,7 @@ impl DdexBuilder {
             releases,
             deals: vec![], // Empty for now
             extensions: None,
+            ..Default::default()
         })
     }
 
@@ -656,6 +658,7 @@ impl DdexBuilder {
                         .clone()
                         .unwrap_or_else(|| "PT3M00S".to_string()),
                     artist: resource.artist.clone(),
+                    ..Default::default()
                 })
                 .collect();
 
@@ -672,6 +675,7 @@ impl DdexBuilder {
                 upc: release.upc.clone(),
                 tracks,
                 resource_references: Some(release.track_ids.clone()),
+                ..Default::default()
             });
         }
 
@@ -683,6 +687,7 @@ impl DdexBuilder {
             releases,
             deals: vec![], // Empty for now
             extensions: None,
+            ..Default::default()
         })
     }
 }

@@ -57,6 +57,7 @@ fn create_test_build_request() -> BuildRequest {
             upc: None,
             tracks: Vec::new(),
             resource_references: None,
+            ..Default::default()
         }],
         deals: vec![DealRequest {
             deal_reference: Some("DEAL001".to_string()),
@@ -64,10 +65,12 @@ fn create_test_build_request() -> BuildRequest {
                 commercial_model_type: "FreeOfChargeModel".to_string(),
                 territory_code: vec!["Worldwide".to_string()],
                 start_date: Some("2024-01-01".to_string()),
+                ..Default::default()
             },
             release_references: vec!["REL001".to_string()],
         }],
         extensions: Some(IndexMap::new()),
+        ..Default::default()
     }
 }
 
@@ -130,6 +133,7 @@ fn create_complex_build_request() -> BuildRequest {
             upc: Some("123456789012".to_string()),
             tracks: Vec::new(),
             resource_references: None,
+            ..Default::default()
         }],
         deals: (0..5)
             .map(|i| DealRequest {
@@ -138,11 +142,13 @@ fn create_complex_build_request() -> BuildRequest {
                     commercial_model_type: "FreeOfChargeModel".to_string(),
                     territory_code: vec!["Worldwide".to_string()],
                     start_date: Some("2024-01-01".to_string()),
+                    ..Default::default()
                 },
                 release_references: vec![format!("REL{:04}", i)],
             })
             .collect(),
         extensions: Some(extensions),
+        ..Default::default()
     }
 }
 
@@ -412,6 +418,7 @@ fn test_large_dataset_determinism() {
             upc: Some(format!("{:012}", i)),
             tracks: Vec::new(),
             resource_references: None,
+            ..Default::default()
         }
     }).collect();
 

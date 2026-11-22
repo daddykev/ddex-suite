@@ -55,6 +55,7 @@ fn test_audio_album_golden() {
                     title: "Track One".to_string(),
                     duration: "PT3M45S".to_string(),
                     artist: "Test Artist".to_string(),
+                    ..Default::default()
                 },
                 TrackRequest {
                     track_id: "TRK002".to_string(),
@@ -63,12 +64,15 @@ fn test_audio_album_golden() {
                     title: "Track Two".to_string(),
                     duration: "PT4M20S".to_string(),
                     artist: "Test Artist feat. Guest".to_string(),
+                    ..Default::default()
                 },
             ],
             resource_references: None,
+            ..Default::default()
         }],
         deals: vec![],
         extensions: None,
+        ..Default::default()
     };
 
     let options = BuildOptions {
@@ -240,6 +244,7 @@ fn create_test_request() -> BuildRequest {
                     title: "Test Track".to_string(),
                     duration: "PT3M30S".to_string(),
                     artist: "Test Artist".to_string(),
+                    ..Default::default()
                 },
                 TrackRequest {
                     track_id: "TRK002".to_string(),
@@ -248,11 +253,14 @@ fn create_test_request() -> BuildRequest {
                     title: "Another Track".to_string(),
                     duration: "PT4M00S".to_string(),
                     artist: "Test Artist".to_string(),
+                    ..Default::default()
                 },
             ],
             resource_references: None,
+            ..Default::default()
         }],
         deals: vec![],
         extensions: None,
+        ..Default::default()
     }
 }

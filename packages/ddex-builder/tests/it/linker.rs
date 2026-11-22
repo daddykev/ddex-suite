@@ -284,6 +284,7 @@ fn create_test_build_request() -> BuildRequest {
                     title: "Track 1".to_string(),
                     duration: "PT3M30S".to_string(),
                     artist: "Test Artist".to_string(),
+                    ..Default::default()
                 },
                 TrackRequest {
                     track_id: "TRACK_002".to_string(),
@@ -292,11 +293,14 @@ fn create_test_build_request() -> BuildRequest {
                     title: "Track 2".to_string(),
                     duration: "PT4M15S".to_string(),
                     artist: "Test Artist".to_string(),
+                    ..Default::default()
                 },
             ],
             resource_references: None,
+            ..Default::default()
         }],
         deals: vec![],
         extensions: None,
+        ..Default::default()
     }
 }

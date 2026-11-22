@@ -79,6 +79,8 @@ impl GraphBuilder {
                                     // are read by `ern4`; 3.8.x keeps its original code path unchanged.
         let is_ern4 = matches!(self.version, ERNVersion::V4_2 | ERNVersion::V4_3);
         let mut in_party_list = false;
+        // ERN 4.x root attributes (LanguageAndScriptCode, AvsVersionId, ...)
+        let mut root_attributes = None;
 
         // Parse with XML validation and depth tracking
         let mut buf = Vec::new();
@@ -98,6 +100,12 @@ impl GraphBuilder {
                             depth: validator.get_depth(),
                             limit: 100,
                         });
+                    }
+
+                    if is_ern4 && root_attributes.is_none() {
+                        if let Event::Start(ref e) = event {
+                            root_attributes = Some(ern4::root_attributes(e)?);
+                        }
                     }
 
                     match event {
@@ -194,7 +202,7 @@ impl GraphBuilder {
             extensions: None,
             legacy_extensions: None,
             comments: None,
-            attributes: None,
+            attributes: root_attributes,
             track_releases,
         })
     }
@@ -712,6 +720,9 @@ impl GraphBuilder {
             display_title: Vec::new(),
             display_artist_name: Vec::new(),
             resource_group: None,
+            release_type_user_defined_value: None,
+            parental_warning_type: Vec::new(),
+            release_label_reference: Vec::new(),
         };
 
         Ok(release)
@@ -910,6 +921,9 @@ impl GraphBuilder {
             display_title: Vec::new(),
             display_artist_name: Vec::new(),
             display_artist: Vec::new(),
+            type_value: None,
+            type_user_defined_value: None,
+            parental_warning_type: Vec::new(),
         };
 
         Ok(resource)
@@ -1128,13 +1142,16 @@ impl GraphBuilder {
                                     in_validity_period = false;
                                 }
                                 b"StartDate" if in_start_date => {
-                                    if !current_text.trim().is_empty() {
-                                        if let Ok(parsed_date) =
-                                            DateTime::parse_from_rfc3339(current_text.trim())
-                                        {
-                                            current.start_date =
-                                                Some(parsed_date.with_timezone(&Utc));
-                                        }
+                                    let text = current_text.trim();
+                                    if let Ok(parsed_date) = DateTime::parse_from_rfc3339(text) {
+                                        current.start_date = Some(parsed_date.with_timezone(&Utc));
+                                    } else if let Ok(date) =
+                                        chrono::NaiveDate::parse_from_str(text, "%Y-%m-%d")
+                                    {
+                                        // xs:date (the 4.x StartDate type): midnight UTC
+                                        current.start_date = date
+                                            .and_hms_opt(0, 0, 0)
+                                            .map(|dt| dt.and_utc());
                                     }
                                     in_start_date = false;
                                     current_text.clear();

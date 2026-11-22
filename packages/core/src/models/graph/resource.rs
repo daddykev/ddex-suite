@@ -34,6 +34,15 @@ pub struct Resource {
     /// (empty for 3.8.x).
     #[serde(default)]
     pub display_artist: Vec<Artist>,
+    /// ERN 4.x `Type` (e.g. `MusicalWorkSoundRecording`); `None` for 3.8.x.
+    #[serde(default)]
+    pub type_value: Option<String>,
+    /// ERN 4.x `Type/@UserDefinedValue` (with `Type` `UserDefined`).
+    #[serde(default)]
+    pub type_user_defined_value: Option<String>,
+    /// ERN 4.x `ParentalWarningType` values, in document order (empty for 3.8.x).
+    #[serde(default)]
+    pub parental_warning_type: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

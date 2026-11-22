@@ -1491,6 +1491,7 @@ impl DdexBuilder {
                             .ok_or_else(|| missing("duration", &track.track_id))?,
                         // Empty when the parsed track has no artist; builder validation decides.
                         artist: track.display_artist.clone().unwrap_or_default(),
+                        ..Default::default()
                     })
                 })
                 .collect::<PyResult<_>>()?;
@@ -1516,6 +1517,7 @@ impl DdexBuilder {
                 resource_references: Some(
                     release.tracks.iter().map(|t| t.track_id.clone()).collect(),
                 ),
+                ..Default::default()
             });
         }
 
@@ -1527,6 +1529,7 @@ impl DdexBuilder {
             releases,
             deals: vec![],
             extensions: None,
+            ..Default::default()
         })
     }
 
@@ -1574,6 +1577,7 @@ impl DdexBuilder {
                         .clone()
                         .unwrap_or_else(|| "PT180S".to_string()),
                     artist: resource.artist.clone(),
+                    ..Default::default()
                 })
                 .collect();
 
@@ -1590,6 +1594,7 @@ impl DdexBuilder {
                 upc: release.upc.clone(),
                 tracks,
                 resource_references: Some(release.track_ids.clone()),
+                ..Default::default()
             });
         }
 
@@ -1601,6 +1606,7 @@ impl DdexBuilder {
             releases,
             deals: vec![], // Empty for now
             extensions: None,
+            ..Default::default()
         })
     }
 }

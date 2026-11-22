@@ -35,6 +35,15 @@ pub struct Release {
     /// ERN 4.x `ResourceGroup` tree (`None` for 3.8.x).
     #[serde(default)]
     pub resource_group: Option<ResourceGroup>,
+    /// ERN 4.x `ReleaseType/@UserDefinedValue` (with `ReleaseType` `UserDefined`).
+    #[serde(default)]
+    pub release_type_user_defined_value: Option<String>,
+    /// ERN 4.x `ParentalWarningType` values, in document order (empty for 3.8.x).
+    #[serde(default)]
+    pub parental_warning_type: Vec<String>,
+    /// ERN 4.x `ReleaseLabelReference` values (party references), in document order.
+    #[serde(default)]
+    pub release_label_reference: Vec<String>,
     /// All XML attributes (standard and custom)
     pub attributes: Option<AttributeMap>,
     /// Extensions for release
@@ -52,7 +61,7 @@ pub enum ReleaseType {
     Other(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Genre {
     pub genre_text: String,
     pub sub_genre: Option<String>,

@@ -1,0 +1,91 @@
+---
+source: packages/ddex-builder/tests/it/ern382_output.rs
+expression: "build(CanonMode::DbC14n)"
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/382" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" MessageSchemaVersionId="ern/3.8.2">
+  <MessageHeader>
+    <MessageId>MSG-382</MessageId>
+    <MessageCreatedDateTime>2024-09-13T12:00:00Z</MessageCreatedDateTime>
+    <MessageSender>
+      <PartyId>PADPIDA0000000001</PartyId>
+      <PartyName>Example Label</PartyName>
+    </MessageSender>
+    <MessageRecipient>
+      <PartyId>PADPIDA0000000002</PartyId>
+      <PartyName>Example DSP</PartyName>
+    </MessageRecipient>
+    <MessageThreadId>MSG-382</MessageThreadId>
+  </MessageHeader>
+  <ResourceList>
+    <SoundRecording>
+      <ReferenceTitle>
+        <TitleText>Say "hi" it's 🎵</TitleText>
+      </ReferenceTitle>
+      <Duration>PT3M42S</Duration>
+      <ResourceId>
+        <ISRC>USRT12400001</ISRC>
+      </ResourceId>
+      <ResourceReference>A1</ResourceReference>
+    </SoundRecording>
+    <SoundRecording>
+      <ReferenceTitle>
+        <TitleText>أغنية</TitleText>
+      </ReferenceTitle>
+      <Duration>PT3M42S</Duration>
+      <ResourceId>
+        <ISRC>USRT12400002</ISRC>
+      </ResourceId>
+      <ResourceReference>A2</ResourceReference>
+    </SoundRecording>
+    <SoundRecording>
+      <ReferenceTitle>
+        <TitleText>Three</TitleText>
+      </ReferenceTitle>
+      <Duration>PT3M42S</Duration>
+      <ResourceId>
+        <ISRC>USRT12400003</ISRC>
+      </ResourceId>
+      <ResourceReference>A1001</ResourceReference>
+    </SoundRecording>
+  </ResourceList>
+  <ReleaseList>
+    <Release>
+      <ReleaseReference>R1</ReleaseReference>
+      <ReleaseId>
+        <GRid>A1-ABCDE-0000000001-M</GRid>
+      </ReleaseId>
+      <ReleaseId>
+        <ICPN>123456789012</ICPN>
+      </ReleaseId>
+      <ReferenceTitle>
+        <TitleText LanguageAndScriptCode="en">Album</TitleText>
+      </ReferenceTitle>
+      <ReferenceTitle>
+        <TitleText LanguageAndScriptCode="es">Álbum</TitleText>
+      </ReferenceTitle>
+      <DisplayArtistName>
+        <FullName>Artist &amp; Friends</FullName>
+      </DisplayArtistName>
+      <LabelName>
+        <LabelName>Label &lt;Records&gt;</LabelName>
+      </LabelName>
+      <ReleaseDate>2024-01-01</ReleaseDate>
+      <ReleaseResourceReference>A1</ReleaseResourceReference>
+      <ReleaseResourceReference>A2</ReleaseResourceReference>
+    </Release>
+    <Release>
+      <ReleaseReference>R2</ReleaseReference>
+      <ReleaseId>
+        <GRid>REL2</GRid>
+      </ReleaseId>
+      <ReferenceTitle>
+        <TitleText>&lt;script&gt;alert('x')&lt;/script&gt;</TitleText>
+      </ReferenceTitle>
+      <DisplayArtistName>
+        <FullName>Other</FullName>
+      </DisplayArtistName>
+      <ReleaseResourceReference>A1001</ReleaseResourceReference>
+    </Release>
+  </ReleaseList>
+</ern:NewReleaseMessage>

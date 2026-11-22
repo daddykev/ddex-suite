@@ -11,6 +11,11 @@ use serde::{Deserialize, Serialize};
 /// including message header, releases, deals, and any extensions.
 /// The structure is designed for deterministic output with stable ordering.
 ///
+/// All request structs implement [`Default`], so callers can set the fields they need
+/// and fill in the rest with `..Default::default()`. Fields marked "ERN 4.x" are only
+/// written for 4.2/4.3 targets; when the 4.x schema requires one of them and it is
+/// missing, the build fails with an error naming the field (nothing is filled in).
+///
 /// # Example
 /// ```
 /// use ddex_builder::builder::{BuildRequest, MessageHeaderRequest, PartyRequest, LocalizedStringRequest};
@@ -42,9 +47,11 @@ use serde::{Deserialize, Serialize};
 ///     releases: vec![/* ReleaseRequest items */],
 ///     deals: vec![/* DealRequest items */],
 ///     extensions: None,
+///     language_and_script_code: Some("en".to_string()),
+///     avs_version_id: Some("12".to_string()),
 /// };
 /// ```
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BuildRequest {
     /// Message header containing sender, recipient, and message metadata
     pub header: MessageHeaderRequest,
@@ -64,6 +71,16 @@ pub struct BuildRequest {
 
     /// Custom extensions (uses IndexMap for deterministic ordering)
     pub extensions: Option<IndexMap<String, String>>,
+
+    /// ERN 4.x: `NewReleaseMessage/@LanguageAndScriptCode` (required by the 4.x schema),
+    /// the default language of the message's text, e.g. `"en"`.
+    #[serde(default)]
+    pub language_and_script_code: Option<String>,
+
+    /// ERN 4.3: `NewReleaseMessage/@AvsVersionId` (required by the 4.3 schema), the
+    /// version of the DDEX allowed-value sets the message's coded values come from.
+    #[serde(default)]
+    pub avs_version_id: Option<String>,
 }
 
 /// Message header information for DDEX messages
@@ -97,7 +114,7 @@ pub struct BuildRequest {
 ///     message_created_date_time: None, // Auto-generated if None
 /// };
 /// ```
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct MessageHeaderRequest {
     /// Unique message identifier (auto-generated if None)
     pub message_id: Option<String>,
@@ -105,7 +122,7 @@ pub struct MessageHeaderRequest {
     pub message_sender: PartyRequest,
     /// Party receiving the message
     pub message_recipient: PartyRequest,
-    /// Type of message control (e.g., "NewReleaseMessage", "PurgeReleaseMessage")
+    /// `MessageControlType` (AVS: `LiveMessage` or `TestMessage`)
     pub message_control_type: Option<String>,
     /// Message creation timestamp in ISO 8601 format (auto-generated if None)
     pub message_created_date_time: Option<String>,
@@ -135,7 +152,7 @@ pub struct MessageHeaderRequest {
 ///     party_reference: Some("PARTY_REF_001".to_string()),
 /// };
 /// ```
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct PartyRequest {
     /// Party names in multiple languages
     pub party_name: Vec<LocalizedStringRequest>,
@@ -165,12 +182,175 @@ pub struct PartyRequest {
 ///     language_code: Some("es".to_string()),
 /// };
 /// ```
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct LocalizedStringRequest {
     /// Text content
     pub text: String,
     /// ISO 639-1 language code (e.g., "en", "es", "fr")
     pub language_code: Option<String>,
+}
+
+/// A coded value from a DDEX allowed-value set (AVS), e.g. a `ReleaseType`.
+///
+/// `value` is the AVS term (`"Album"`, `"MusicalWorkSoundRecording"`, ...). For
+/// `"UserDefined"`, put the actual value in `user_defined_value` (and optionally the
+/// party that defines it in `namespace`); they become the `UserDefinedValue` and
+/// `Namespace` attributes. In JSON (and from Python/Node) either a plain string or an
+/// object `{"value": ..., "namespace": ..., "user_defined_value": ...}` is accepted.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+pub struct AvsValueRequest {
+    /// The AVS term
+    pub value: String,
+    /// `@Namespace`: the party that defined a user-defined value
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub namespace: Option<String>,
+    /// `@UserDefinedValue`, used with `value: "UserDefined"`
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user_defined_value: Option<String>,
+}
+
+impl<'de> Deserialize<'de> for AvsValueRequest {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum Repr {
+            Plain(String),
+            Full {
+                value: String,
+                #[serde(default)]
+                namespace: Option<String>,
+                #[serde(default)]
+                user_defined_value: Option<String>,
+            },
+        }
+        Ok(match Repr::deserialize(deserializer)? {
+            Repr::Plain(value) => AvsValueRequest {
+                value,
+                ..Default::default()
+            },
+            Repr::Full {
+                value,
+                namespace,
+                user_defined_value,
+            } => AvsValueRequest {
+                value,
+                namespace,
+                user_defined_value,
+            },
+        })
+    }
+}
+
+impl From<&str> for AvsValueRequest {
+    fn from(value: &str) -> Self {
+        AvsValueRequest {
+            value: value.to_string(),
+            ..Default::default()
+        }
+    }
+}
+
+impl From<String> for AvsValueRequest {
+    fn from(value: String) -> Self {
+        AvsValueRequest {
+            value,
+            ..Default::default()
+        }
+    }
+}
+
+/// A proprietary identifier (`ProprietaryId` with its required `@Namespace`).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProprietaryIdRequest {
+    /// `@Namespace`: the party that issued the identifier (e.g. a DPID)
+    pub namespace: String,
+    /// The identifier
+    pub value: String,
+}
+
+/// ERN 4.x: the identifiers of a release, written as one `ReleaseId` element.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReleaseIdRequest {
+    /// `GRid`
+    #[serde(default)]
+    pub grid: Option<String>,
+    /// `ICPN` (UPC/EAN)
+    #[serde(default)]
+    pub icpn: Option<String>,
+    /// `ProprietaryId`s
+    #[serde(default)]
+    pub proprietary_ids: Vec<ProprietaryIdRequest>,
+}
+
+impl ReleaseIdRequest {
+    /// True when no identifier is set.
+    pub fn is_empty(&self) -> bool {
+        self.grid.is_none() && self.icpn.is_none() && self.proprietary_ids.is_empty()
+    }
+}
+
+/// ERN 4.x: one node of a release's `ResourceGroup` tree.
+///
+/// The top-level node is `Release/ResourceGroup` (it has no type). Nested groups are
+/// written as `ResourceGroup` children and need `resource_group_type` (the 4.x schema
+/// requires `@ResourceGroupType` on them, e.g. `"Component"` for a disc).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ResourceGroupRequest {
+    /// `@ResourceGroupType` (required on nested groups, not allowed on the top level)
+    #[serde(default)]
+    pub resource_group_type: Option<String>,
+    /// `SequenceNumber`
+    #[serde(default)]
+    pub sequence_number: Option<u32>,
+    /// Nested groups (written before the content items, as the schema requires)
+    #[serde(default)]
+    pub resource_groups: Vec<ResourceGroupRequest>,
+    /// `ResourceGroupContentItem`s
+    #[serde(default)]
+    pub content_items: Vec<ResourceGroupContentItemRequest>,
+}
+
+/// ERN 4.x: a `ResourceGroupContentItem`, pointing at one of the release's tracks.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ResourceGroupContentItemRequest {
+    /// `SequenceNumber`
+    #[serde(default)]
+    pub sequence_number: Option<u32>,
+    /// `ReleaseResourceReference`: the `resource_reference` of a track in this release
+    pub resource_reference: String,
+}
+
+/// ERN 4.x: a `TrackRelease` for one track (a release of exactly that resource).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TrackReleaseRequest {
+    /// `ReleaseReference` (pattern `R[\d\-_a-zA-Z]+`)
+    pub release_reference: String,
+    /// `ReleaseId` (required, at least one identifier)
+    #[serde(default)]
+    pub release_ids: ReleaseIdRequest,
+    /// `DisplayTitleText` / `DisplayTitle` (optional)
+    #[serde(default)]
+    pub title: Option<String>,
+    /// `Genre/GenreText` (required)
+    #[serde(default)]
+    pub genre: Option<String>,
+    /// `Genre/SubGenre`
+    #[serde(default)]
+    pub sub_genre: Option<String>,
+    /// Label name, written as a `PartyList` party referenced by `ReleaseLabelReference`
+    /// (required)
+    #[serde(default)]
+    pub label: Option<String>,
+}
+
+/// The kind of resource a [`TrackRequest`] describes.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ResourceKind {
+    /// `SoundRecording` (the default)
+    #[default]
+    SoundRecording,
+    /// `Video` (ERN 4.x only)
+    Video,
 }
 
 /// Release information request
@@ -201,22 +381,27 @@ pub struct LocalizedStringRequest {
 ///             title: "Here Comes The Sun".to_string(),
 ///             duration: "PT3M5S".to_string(),
 ///             artist: "The Beatles".to_string(),
+///             ..Default::default()
 ///         }
 ///     ],
 ///     resource_references: Some(vec!["RES_001".to_string()]),
+///     ..Default::default()
 /// };
 /// ```
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ReleaseRequest {
-    /// Release identifier (e.g., GRid, Proprietary ID)
+    /// Release identifier, written as `ReleaseId/GRid` (unless `release_ids` is set for
+    /// an ERN 4.x target)
     pub release_id: String,
     /// Internal reference for this release within the message
     pub release_reference: Option<String>,
     /// Release titles in multiple languages
     pub title: Vec<LocalizedStringRequest>,
-    /// Main artist name for the release
+    /// Main artist name for the release (ERN 4.x: `DisplayArtistName`, and a
+    /// `DisplayArtist` party with role `MainArtist` unless `artist_role` says otherwise)
     pub artist: String,
-    /// Record label name
+    /// Record label name (ERN 4.x: required, written as a `PartyList` party referenced
+    /// by `ReleaseLabelReference`)
     pub label: Option<String>,
     /// Release date in YYYY-MM-DD format
     pub release_date: Option<String>,
@@ -226,6 +411,32 @@ pub struct ReleaseRequest {
     pub tracks: Vec<TrackRequest>,
     /// References to resources for linking purposes
     pub resource_references: Option<Vec<String>>,
+
+    /// ERN 4.x: `ReleaseType` (required), e.g. `"Album"`
+    #[serde(default)]
+    pub release_type: Option<AvsValueRequest>,
+    /// ERN 4.x: `Genre/GenreText` (required)
+    #[serde(default)]
+    pub genre: Option<String>,
+    /// ERN 4.x: `Genre/SubGenre`
+    #[serde(default)]
+    pub sub_genre: Option<String>,
+    /// ERN 4.x: `ParentalWarningType` (required), e.g. `"NotExplicit"`; pass DDEX's own
+    /// `"NoAdviceAvailable"` / `"Unknown"` explicitly when that is what you mean
+    #[serde(default)]
+    pub parental_warning_type: Option<String>,
+    /// ERN 4.x: `DisplayArtistRole` of `artist` (default `MainArtist`)
+    #[serde(default)]
+    pub artist_role: Option<AvsValueRequest>,
+    /// ERN 4.x: all identifiers of the release, written as the one `ReleaseId`. When
+    /// unset, `ReleaseId` holds `release_id` as `GRid` and `upc` as `ICPN`.
+    #[serde(default)]
+    pub release_ids: Option<ReleaseIdRequest>,
+    /// ERN 4.x: the `ResourceGroup` tree. When unset, tracks with a `disc_number` are
+    /// grouped into one `Component` group per disc, otherwise all tracks go into a
+    /// single group. Cannot be combined with per-track `disc_number`/`sequence_number`.
+    #[serde(default)]
+    pub resource_group: Option<ResourceGroupRequest>,
 }
 
 /// Track information request
@@ -244,9 +455,10 @@ pub struct ReleaseRequest {
 ///     title: "Bohemian Rhapsody".to_string(),
 ///     duration: "PT5M55S".to_string(), // 5 minutes 55 seconds
 ///     artist: "Queen".to_string(),
+///     ..Default::default()
 /// };
 /// ```
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TrackRequest {
     /// Unique identifier for this track within the message
     pub track_id: String,
@@ -260,6 +472,32 @@ pub struct TrackRequest {
     pub duration: String,
     /// Track artist name (may differ from release artist for compilations)
     pub artist: String,
+
+    /// ERN 4.x: `SoundRecording` (default) or `Video`
+    #[serde(default)]
+    pub resource_kind: ResourceKind,
+    /// ERN 4.x: the resource's `Type` (required), e.g. `"MusicalWorkSoundRecording"`
+    /// or `"MusicalWorkVideoScreen"`
+    #[serde(default)]
+    pub resource_type: Option<AvsValueRequest>,
+    /// ERN 4.x: `ParentalWarningType` (required)
+    #[serde(default)]
+    pub parental_warning_type: Option<String>,
+    /// ERN 4.x: `DisplayArtistRole` of `artist` (default `MainArtist`)
+    #[serde(default)]
+    pub artist_role: Option<AvsValueRequest>,
+    /// ERN 4.x: disc number; tracks with one are grouped into `Component` groups
+    #[serde(default)]
+    pub disc_number: Option<u32>,
+    /// ERN 4.x: `ResourceGroupContentItem/SequenceNumber`
+    #[serde(default)]
+    pub sequence_number: Option<u32>,
+    /// ERN 4.x: `ProprietaryId`s written next to the ISRC in `ResourceId`
+    #[serde(default)]
+    pub proprietary_ids: Vec<ProprietaryIdRequest>,
+    /// ERN 4.x: a `TrackRelease` for this track
+    #[serde(default)]
+    pub track_release: Option<TrackReleaseRequest>,
 }
 
 /// Commercial deal request
@@ -277,11 +515,12 @@ pub struct TrackRequest {
 ///         commercial_model_type: "PayAsYouGoModel".to_string(),
 ///         territory_code: vec!["Worldwide".to_string()],
 ///         start_date: Some("2024-01-01".to_string()),
+///         ..Default::default()
 ///     },
 ///     release_references: vec!["REL_001".to_string()],
 /// };
 /// ```
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct DealRequest {
     /// Reference identifier for this deal within the message
     pub deal_reference: Option<String>,
@@ -304,16 +543,24 @@ pub struct DealRequest {
 ///     commercial_model_type: "SubscriptionModel".to_string(),
 ///     territory_code: vec!["US".to_string(), "CA".to_string(), "MX".to_string()],
 ///     start_date: Some("2024-01-01".to_string()),
+///     ..Default::default()
 /// };
 /// ```
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct DealTerms {
-    /// Type of commercial model (e.g., "PayAsYouGoModel", "SubscriptionModel", "FreeOfChargeModel")
+    /// Type of commercial model (e.g., "PayAsYouGoModel", "SubscriptionModel", "FreeOfChargeModel");
+    /// ERN 4.x: omitted when empty
     pub commercial_model_type: String,
     /// Territory codes where deal applies (ISO 3166-1 alpha-2 codes or "Worldwide")
     pub territory_code: Vec<String>,
-    /// Deal start date in YYYY-MM-DD format (optional)
+    /// Deal start date in YYYY-MM-DD format (ERN 4.x: required, `ValidityPeriod/StartDate`)
     pub start_date: Option<String>,
+    /// ERN 4.x: deal end date in YYYY-MM-DD format (`ValidityPeriod/EndDate`)
+    #[serde(default)]
+    pub end_date: Option<String>,
+    /// ERN 4.x: `UseType`s, e.g. `"Stream"`, `"PermanentDownload"`
+    #[serde(default)]
+    pub use_types: Vec<String>,
 }
 
 /// Build options

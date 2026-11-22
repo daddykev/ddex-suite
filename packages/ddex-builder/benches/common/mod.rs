@@ -41,9 +41,11 @@ pub fn request_with_tracks(track_count: usize) -> BuildRequest {
                     title: format!("Track {}", i + 1),
                     duration: format!("PT{}M{}S", 2 + i % 4, (i * 7) % 60),
                     artist: "Benchmark Artist".to_string(),
+                    ..Default::default()
                 })
                 .collect(),
             resource_references: None,
+            ..Default::default()
         }]
     };
 
@@ -61,5 +63,6 @@ pub fn request_with_tracks(track_count: usize) -> BuildRequest {
         releases,
         deals: vec![],
         extensions: None,
+        ..Default::default()
     }
 }

@@ -34,6 +34,7 @@ fuzz_target!(|input: FuzzInput| {
             output_format: ddex_builder::builder::OutputFormat::Xml,
             preset: None,
             validate_schema: false,
+            ..Default::default()
         };
         
         let options = BuildOptions::default();

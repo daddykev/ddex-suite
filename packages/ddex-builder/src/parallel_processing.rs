@@ -614,6 +614,7 @@ mod tests {
             releases: vec![],
             deals: vec![],
             extensions: None,
+            ..Default::default()
         };
 
         let analysis = WorkloadAnalyzer::analyze_workload(&request);
@@ -633,6 +634,7 @@ mod tests {
             title: "Test Track".to_string(),
             duration: "PT3M30S".to_string(),
             artist: "Test Artist".to_string(),
+            ..Default::default()
         };
 
         let result = processor.validate_track(&valid_track);
@@ -645,6 +647,7 @@ mod tests {
             title: "".to_string(),        // Empty
             duration: "3:30".to_string(), // Wrong format
             artist: "Test Artist".to_string(),
+            ..Default::default()
         };
 
         let result = processor.validate_track(&invalid_track);

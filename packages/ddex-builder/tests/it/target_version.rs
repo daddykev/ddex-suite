@@ -48,11 +48,14 @@ fn request(version: &str) -> BuildRequest {
                 title: "Version Test Track".to_string(),
                 duration: "PT3M0S".to_string(),
                 artist: "Example Artist".to_string(),
+                ..Default::default()
             }],
             resource_references: None,
+            ..Default::default()
         }],
         deals: vec![],
         extensions: None,
+        ..Default::default()
     }
 }
 

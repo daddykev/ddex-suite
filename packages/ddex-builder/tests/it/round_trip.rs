@@ -33,6 +33,7 @@ fn track(n: u32, isrc: &str, title: &str, duration: &str) -> TrackRequest {
         title: title.to_string(),
         duration: duration.to_string(),
         artist: "Round Trip Artist".to_string(),
+        ..Default::default()
     }
 }
 
@@ -62,9 +63,11 @@ fn original_request() -> BuildRequest {
                 track(2, "USRT12400002", "Track Two", "PT4M05S"),
             ],
             resource_references: None,
+            ..Default::default()
         }],
         deals: vec![],
         extensions: None,
+        ..Default::default()
     }
 }
 
@@ -138,13 +141,16 @@ fn request_from(parsed: &ParsedERNMessage, template: &BuildRequest) -> BuildRequ
                         title: t.title.clone().unwrap_or_default(),
                         duration: t.duration.map(iso_duration).unwrap_or_default(),
                         artist: t.display_artist.clone().unwrap_or_default(),
+                        ..Default::default()
                     })
                     .collect(),
                 resource_references: None,
+                ..Default::default()
             })
             .collect(),
         deals: vec![],
         extensions: None,
+        ..Default::default()
     }
 }
 

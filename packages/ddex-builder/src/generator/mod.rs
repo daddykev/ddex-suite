@@ -60,6 +60,7 @@
 //! #     releases: vec![],
 //! #     deals: vec![],
 //! #     extensions: None,
+//! #     ..Default::default()
 //! # };
 //!
 //! let mut generator = ASTGenerator::new("4.3".to_string());

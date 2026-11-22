@@ -53,6 +53,7 @@ fn test_linker_with_xml_generation() {
                     title: "First Linked Track".to_string(),
                     duration: "PT3M00S".to_string(),
                     artist: "Linked Artist".to_string(),
+                    ..Default::default()
                 },
                 TrackRequest {
                     track_id: "TRK_002".to_string(),
@@ -61,12 +62,15 @@ fn test_linker_with_xml_generation() {
                     title: "Second Linked Track".to_string(),
                     duration: "PT4M00S".to_string(),
                     artist: "Linked Artist".to_string(),
+                    ..Default::default()
                 },
             ],
-            resource_references: None, // Will be auto-generated
+            resource_references: None, // Will be auto-generated,
+            ..Default::default()
         }],
         deals: vec![],
         extensions: None,
+        ..Default::default()
     };
 
     // Auto-link all references
@@ -154,10 +158,13 @@ fn create_simple_request() -> BuildRequest {
                 title: "Track".to_string(),
                 duration: "PT3M".to_string(),
                 artist: "Artist".to_string(),
+                ..Default::default()
             }],
             resource_references: None,
+            ..Default::default()
         }],
         deals: vec![],
         extensions: None,
+        ..Default::default()
     }
 }
