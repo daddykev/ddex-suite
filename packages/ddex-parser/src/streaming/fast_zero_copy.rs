@@ -1,10 +1,8 @@
-//! Fast zero-copy streaming parser optimized for maximum throughput
+//! Experimental low-level streaming parser (`FastZeroCopyParser`)
 //!
-//! This implementation focuses on:
-//! - True streaming (not batch processing)
-//! - Minimal allocations using string interning
-//! - Fast pattern matching with memchr
-//! - Simple but efficient element extraction
+//! It reads the input in chunks, finds elements with memchr and interns strings to
+//! limit allocations. Despite the name it copies element content. It yields raw elements,
+//! not the release model.
 
 use crate::error::ParseError;
 use crate::streaming::{WorkingStreamingElement, WorkingStreamingStats};
@@ -13,7 +11,7 @@ use std::collections::HashMap;
 use std::io::BufRead;
 use std::time::Instant;
 
-/// Fast zero-copy streaming parser
+/// Experimental chunked streaming parser (copies element content despite its name)
 pub struct FastZeroCopyParser {
     /// Buffer for reading chunks
     read_buffer: Vec<u8>,

@@ -1,10 +1,16 @@
 # ddex-builder (Python)
 
-Deterministic DDEX ERN XML builder for Python, a native extension over the Rust
+DDEX ERN XML builder for Python, a native extension over the Rust
 [`ddex-builder`](https://crates.io/crates/ddex-builder) crate. Part of
 [DDEX Suite](https://github.com/daddykev/ddex-suite). It writes ERN 4.3, 4.2, 3.8.2 and
 3.8.1 from a build request (a dict) or a pandas DataFrame, canonicalized with
-DB-C14N/1.0 so the same request always produces the same bytes.
+DB-C14N/1.0 (fixed namespace prefixes, sorted attributes, consistent formatting,
+elements in XSD order).
+
+Byte-for-byte determinism is not complete yet: a message ID, release and resource
+references and `message_created_date_time` that the request leaves out are generated
+(random UUIDs, the current time), so two builds of the same request can differ. Full
+determinism is planned for 0.6.0.
 
 > **0.5.0 has breaking changes.** `build(request)` and `from_dataframe(df, schema,
 > request)` run the core builder (nothing is filled in), and importing without the native

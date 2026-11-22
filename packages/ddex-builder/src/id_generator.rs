@@ -1,5 +1,8 @@
 // packages/ddex-builder/src/id_generator.rs
-//! Stable hash-based ID generation for deterministic DDEX messages
+//! Stable hash-based (content-derived) ID generation
+//!
+//! Known issue: when `DDEXBuilder::build` generates a `MessageId` with this strategy, it
+//! includes today's date, so the ID changes daily (KNOWN_ISSUES.md; a fix is planned for 0.6.0).
 
 use blake3;
 use indexmap::IndexMap;
@@ -39,7 +42,7 @@ impl Default for StableHashConfig {
 pub enum HashAlgorithm {
     /// SHA-256
     Sha256,
-    /// Blake3 (faster, more secure)
+    /// BLAKE3
     Blake3,
 }
 

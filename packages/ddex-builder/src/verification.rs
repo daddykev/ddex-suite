@@ -1,15 +1,14 @@
-//! Build Verification for Perfect Fidelity Engine
+//! Build verification for the fidelity options
 //!
-//! This module provides comprehensive verification capabilities for the DDEX Builder,
-//! ensuring that generated XML meets fidelity requirements and can successfully
-//! round-trip through the parser.
+//! This module checks generated XML against the configured fidelity requirements and
+//! whether it round-trips through the parser.
 
 use crate::{error::BuildError, CanonicalizationAlgorithm, FidelityOptions};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
-/// Build verifier for Perfect Fidelity Engine
+/// Build verifier for the fidelity options
 pub struct BuildVerifier {
     config: VerificationConfig,
 }

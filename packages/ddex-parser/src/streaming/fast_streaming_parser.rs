@@ -1,5 +1,7 @@
 // src/streaming/fast_streaming_parser.rs
-//! Ultra-high-performance streaming DDEX parser targeting 280+ MB/s throughput
+//! Experimental memchr-based streaming DDEX parser (the fast path behind
+//! `SecurityConfig::relaxed()`). Known bug: its conversion returns no releases or
+//! resources (KNOWN_ISSUES.md). Measured figures are in `dev-docs/PERFORMANCE.md`.
 
 #[allow(dead_code)] // Experimental high-performance streaming parser
 use crate::error::ParseError;
@@ -9,7 +11,7 @@ use memchr::memmem;
 use std::io::BufRead;
 use std::time::{Duration, Instant};
 
-/// High-performance streaming parser optimized for 280+ MB/s
+/// Experimental memchr-based streaming parser (see the module docs for its known bug)
 pub struct FastStreamingParser {
     // Pre-compiled SIMD-accelerated pattern matchers
     release_start: memmem::Finder<'static>,
@@ -32,7 +34,7 @@ pub struct FastStreamingParser {
 pub struct FastStreamingElement {
     /// Element type (Release, Resource, Party, etc.)
     pub element_type: FastElementType,
-    /// Raw XML content (zero-copy reference)
+    /// Raw XML content of the element (an owned copy)
     pub raw_content: Vec<u8>,
     /// Byte position in original stream
     pub position: u64,
@@ -269,7 +271,7 @@ impl FastStreamingParser {
     }
 }
 
-/// High-performance streaming iterator
+/// Streaming iterator over the fast streaming parser's elements
 #[allow(dead_code)]
 pub struct FastStreamingIterator {
     elements: Vec<FastStreamingElement>,

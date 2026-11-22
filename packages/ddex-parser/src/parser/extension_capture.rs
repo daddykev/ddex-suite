@@ -1,8 +1,8 @@
 //! Extension capture system for preserving unknown XML elements and namespaces
 //!
 //! This module provides functionality to capture and preserve XML fragments that are
-//! not part of the standard DDEX schema, enabling perfect round-trip fidelity for
-//! documents containing proprietary extensions.
+//! not part of the standard DDEX schema, so that documents containing proprietary
+//! extensions keep them for round trips.
 
 use crate::utf8_utils;
 use ddex_core::models::{

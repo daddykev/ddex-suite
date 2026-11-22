@@ -1,7 +1,9 @@
 //! Determinism guarantees and validation for DDEX Builder
 //!
-//! This module defines and enforces the determinism guarantees provided by the DDEX Builder.
-//! All guarantees are tested and validated to ensure consistent, reproducible XML output.
+//! This module defines the builder's determinism guarantees (ordering, formatting, ...)
+//! and a validator that checks a build request against them. They do not yet make the
+//! whole message byte-for-byte reproducible: generated IDs and timestamps can differ
+//! between builds (see the [`determinism`](crate::determinism) module; planned for 0.6.0).
 
 use crate::determinism::{DeterminismConfig, DeterminismVerifier};
 use crate::error::BuildError;

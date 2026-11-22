@@ -1,14 +1,14 @@
-//! Round-trip testing for Perfect Fidelity Engine
+//! Round-trip testing for the fidelity options
 //!
-//! This module provides comprehensive round-trip testing capabilities,
-//! ensuring that XML can successfully go through Parse → Build → Parse cycles
-//! with perfect fidelity preservation.
+//! This module runs Parse → Build → Parse cycles and reports what changed. Round trips
+//! are not lossless in 0.5.0: data the build request cannot carry yet (contributors,
+//! P and C lines, images, ...) is lost.
 
 use crate::{error::BuildError, FidelityOptions};
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
 
-/// Round-trip tester for Perfect Fidelity Engine
+/// Round-trip tester for the fidelity options
 pub struct RoundTripTester {
     fidelity_options: FidelityOptions,
 }

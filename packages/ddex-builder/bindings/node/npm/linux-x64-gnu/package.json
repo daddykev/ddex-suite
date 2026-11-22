@@ -19,7 +19,6 @@
     "builder",
     "music",
     "metadata",
-    "deterministic",
     "native"
   ],
   "license": "MIT",

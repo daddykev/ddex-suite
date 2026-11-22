@@ -1,4 +1,4 @@
-//! Extension preservation system for perfect round-trip fidelity
+//! Extension preservation system for round trips
 //!
 //! This module provides comprehensive XML fragment preservation to maintain
 //! unknown elements, namespaces, and attributes that are not part of the

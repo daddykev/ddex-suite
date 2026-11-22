@@ -1,7 +1,7 @@
 {
   "name": "ddex-builder",
   "version": "0.5.0",
-  "description": "Deterministic DDEX ERN XML builder (ERN 4.3, 4.2, 3.8.2) for Node.js, native Rust addon",
+  "description": "DDEX ERN XML builder (ERN 4.3, 4.2, 3.8.2) for Node.js, native Rust addon",
   "keywords": [
     "ddex",
     "ern",
@@ -9,7 +9,6 @@
     "builder",
     "music",
     "metadata",
-    "deterministic",
     "native"
   ],
   "main": "index.js",

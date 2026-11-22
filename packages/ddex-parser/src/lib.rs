@@ -95,14 +95,17 @@ impl DDEXParser {
         Ok(WorkingStreamIterator::new(reader, version))
     }
 
-    /// High-performance zero-copy streaming parser (280+ MB/s)
+    /// Experimental low-level streaming iterator (`FastZeroCopyIterator`) that assumes
+    /// ERN 4.3. It yields raw elements, not the release model; for measured throughput see
+    /// `dev-docs/PERFORMANCE.md`.
     #[cfg(feature = "zero-copy")]
     pub fn stream_zero_copy<R: std::io::BufRead>(&self, reader: R) -> FastZeroCopyIterator<R> {
         let version = ddex_core::models::versions::ERNVersion::V4_3;
         FastZeroCopyIterator::new(reader, version)
     }
 
-    /// Zero-copy streaming with version detection
+    /// Experimental low-level streaming iterator (`FastZeroCopyIterator`) with version
+    /// detection
     #[cfg(feature = "zero-copy")]
     pub fn stream_zero_copy_with_version_detection<R: std::io::BufRead + std::io::Seek>(
         &self,
@@ -114,7 +117,9 @@ impl DDEXParser {
         Ok(FastZeroCopyIterator::new(reader, version))
     }
 
-    /// Multi-core parallel streaming parser for maximum throughput (target: 280+ MB/s)
+    /// Experimental parallel streaming iterator that assumes ERN 4.3. It yields raw
+    /// elements, not the release model, and does not currently scale with the thread count
+    /// (planned for 0.6.0; see `dev-docs/PERFORMANCE.md`).
     pub fn stream_parallel<R: std::io::BufRead>(&self, reader: R) -> ParallelStreamingIterator<R> {
         let version = ddex_core::models::versions::ERNVersion::V4_3;
         ParallelStreamingIterator::new(reader, version)
@@ -141,7 +146,9 @@ impl DDEXParser {
         Ok(ParallelStreamingIterator::new(reader, version))
     }
 
-    /// Parse using the fast streaming parser for maximum performance
+    /// Parse with the experimental fast streaming path (`FastStreamingParser`), used when
+    /// `SecurityConfig::relaxed()` / `enable_fast_streaming` is set. Known bug: it returns no
+    /// releases or resources (KNOWN_ISSUES.md); use [`DDEXParser::parse`].
     pub fn parse_fast_streaming<R: std::io::BufRead>(
         &mut self,
         mut reader: R,
