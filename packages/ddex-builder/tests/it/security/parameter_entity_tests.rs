@@ -581,7 +581,7 @@ fn test_secure_xml_reader_parameter_protection() {
 
 /// Test parameter entity attack variations and evasions
 #[test]
-#[ignore = "known bug or wrong expectation (security policy decision needed): mixed-case \"<!eNtItY\" evasions are not flagged (they are not well-formed XML either)"]
+#[ignore = "known bug: validate_xml_content ignores allow_dtd = false and only pattern-matches `<!ENTITY` / `SYSTEM` case-sensitively, so a DOCTYPE with mixed-case `<!Entity … System` is accepted"]
 fn test_parameter_entity_evasions() {
     let config = SecurityConfig::default();
     let validator = InputValidator::new(config);

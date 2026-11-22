@@ -309,3 +309,140 @@ mod test_utilities {
 }
 
 pub use test_utilities::*;
+
+/// Helpers that push free-text metadata through the real `DDEXBuilder`.
+///
+/// Security policy: SQL/HTML/JS-looking text in metadata is not an XML-level
+/// threat. The builder must accept it, write it XML-escaped, and a reader of the
+/// output must get the original text back.
+mod metadata_helpers {
+    use ddex_builder::builder::{
+        BuildOptions, BuildRequest, DDEXBuilder, LocalizedStringRequest, MessageHeaderRequest,
+        PartyRequest, ReleaseRequest, TrackRequest,
+    };
+    use quick_xml::events::Event;
+    use quick_xml::Reader;
+
+    /// Characters that may not appear anywhere in an XML 1.0 document.
+    pub fn is_illegal_xml_char(c: char) -> bool {
+        matches!(
+            c,
+            '\u{0}'..='\u{8}' | '\u{B}' | '\u{C}' | '\u{E}'..='\u{1F}' | '\u{FFFE}' | '\u{FFFF}'
+        )
+    }
+
+    fn localized(text: &str) -> Vec<LocalizedStringRequest> {
+        vec![LocalizedStringRequest {
+            text: text.to_string(),
+            language_code: None,
+        }]
+    }
+
+    /// A minimal ERN 4.3 request whose free-text fields (release and track
+    /// titles, artist names, sender name) all carry `text`.
+    pub fn build_request_with_metadata(text: &str) -> BuildRequest {
+        BuildRequest {
+            header: MessageHeaderRequest {
+                message_id: Some("MSG001".to_string()),
+                message_sender: PartyRequest {
+                    party_name: localized(text),
+                    party_id: Some("SENDER".to_string()),
+                    party_reference: None,
+                },
+                message_recipient: PartyRequest {
+                    party_name: localized("Recipient"),
+                    party_id: Some("RECIPIENT".to_string()),
+                    party_reference: None,
+                },
+                message_control_type: None,
+                message_created_date_time: None,
+            },
+            version: "4.3".to_string(),
+            profile: None,
+            releases: vec![ReleaseRequest {
+                release_id: "REL001".to_string(),
+                release_reference: None,
+                title: localized(text),
+                artist: text.to_string(),
+                label: None,
+                release_date: None,
+                upc: None,
+                tracks: vec![TrackRequest {
+                    track_id: "TRK001".to_string(),
+                    resource_reference: None,
+                    isrc: "USRC11111111".to_string(),
+                    title: text.to_string(),
+                    duration: "PT3M".to_string(),
+                    artist: text.to_string(),
+                }],
+                resource_references: None,
+            }],
+            deals: vec![],
+            extensions: None,
+        }
+    }
+
+    /// Build `build_request_with_metadata(text)` and return the XML.
+    pub fn build_with_metadata(text: &str) -> String {
+        DDEXBuilder::new()
+            .build(build_request_with_metadata(text), BuildOptions::default())
+            .unwrap_or_else(|e| panic!("builder rejected metadata {:?}: {:?}", text, e))
+            .xml
+    }
+
+    /// Parse `xml` and return the unescaped text of every element whose local
+    /// name is one of `names`. Panics if the document is not well-formed or
+    /// carries a DOCTYPE.
+    pub fn element_texts(xml: &str, names: &[&str]) -> Vec<String> {
+        let mut reader = Reader::from_str(xml);
+        let mut texts = Vec::new();
+        let mut current: Option<String> = None;
+        loop {
+            match reader.read_event() {
+                Ok(Event::Start(e)) => {
+                    let local = String::from_utf8_lossy(e.local_name().as_ref()).to_string();
+                    current = names.contains(&local.as_str()).then(String::new);
+                }
+                Ok(Event::Text(t)) => {
+                    if let Some(buf) = current.as_mut() {
+                        buf.push_str(&t.unescape().expect("valid escapes in builder output"));
+                    }
+                }
+                Ok(Event::End(_)) => {
+                    if let Some(text) = current.take() {
+                        texts.push(text);
+                    }
+                }
+                Ok(Event::DocType(d)) => panic!("builder output carries a DOCTYPE: {:?}", d),
+                Ok(Event::Eof) => break,
+                Ok(_) => {}
+                Err(e) => panic!("builder output is not well-formed XML: {}\n{}", e, xml),
+            }
+        }
+        texts
+    }
+
+    /// Assert that `text` is accepted by the builder, XML-escaped in the output,
+    /// and read back unchanged from every metadata element it was written to.
+    pub fn assert_metadata_passes_through_builder(text: &str) {
+        let xml = build_with_metadata(text);
+        let texts = element_texts(&xml, &["TitleText", "FullName", "PartyName"]);
+        // release title + track title + release artist + sender name
+        assert!(
+            texts.iter().filter(|t| t.as_str() == text).count() >= 4,
+            "metadata {:?} did not round-trip through the builder output; got {:?}",
+            text,
+            texts
+        );
+        if text.contains('<') || text.contains('&') {
+            assert!(
+                !xml.contains(text),
+                "metadata {:?} was written unescaped:\n{}",
+                text,
+                xml
+            );
+        }
+    }
+}
+
+pub use metadata_helpers::*;

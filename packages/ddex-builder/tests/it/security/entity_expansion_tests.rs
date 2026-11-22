@@ -481,7 +481,7 @@ fn test_entity_expansion_edge_cases() {
 
 /// Test that reasonable entity usage is still allowed
 #[test]
-#[ignore = "known bug or wrong expectation (security policy decision needed): every internal entity declaration is rejected (\"XML entity declaration detected\"), even small reasonable ones"]
+#[ignore = "known bug: validate_xml_content ignores allow_dtd; with allow_dtd = true it still rejects every internal entity declaration, even small ones (\"XML entity declaration detected\")"]
 fn test_reasonable_entities_allowed() {
     let config = SecurityConfig {
         allow_dtd: true, // Temporarily allow DTD for this test

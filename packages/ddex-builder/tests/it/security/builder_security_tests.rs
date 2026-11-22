@@ -8,10 +8,14 @@
 //! - Secure handling of user-provided content
 //! - Protection against malformed input structures
 
+use super::{
+    assert_metadata_passes_through_builder, build_request_with_metadata, build_with_metadata,
+    is_illegal_xml_char,
+};
 use ddex_builder::{
-    builder::DDEXBuilder,
+    builder::{BuildRequest, DDEXBuilder},
     error::BuildError,
-    security::{OutputSanitizer, SecurityConfig},
+    security::{InputValidator, OutputSanitizer, SecurityConfig},
 };
 use serde_json::json;
 
@@ -71,11 +75,31 @@ fn test_build_input_validation() {
         }]
     });
 
+    // Control characters illegal in XML 1.0 may be rejected; if the input is
+    // accepted, they must be filtered out before reaching XML
     let result = builder.validate_json_input(&control_chars_json.to_string());
-    // Control characters should be filtered or rejected
+    if result.is_ok() {
+        let validator = InputValidator::new(SecurityConfig::default());
+        for value in [
+            "MSG\u{0001}\u{0002}\u{0003}",
+            "Test\u{0008}Song\u{007F}",
+            "Artist\u{001F}Name",
+        ] {
+            let sanitized = validator
+                .validate_string(value, "json_field")
+                .expect("validate_json_input accepted this value");
+            assert!(
+                !sanitized.chars().any(is_illegal_xml_char),
+                "Illegal XML control character left in {:?}",
+                sanitized
+            );
+        }
+    }
+    // (What the builder itself does with them is pinned by
+    // test_illegal_xml_chars_never_reach_builder_output.)
 
-    // Test with malicious Unicode sequences
-    let unicode_attack_json = json!({
+    // Zero-width characters and RTL override are legitimate Unicode: accept unchanged
+    let unicode_json = json!({
         "messageHeader": {
             "messageId": "MSG001",
             "messageThreadId": "THREAD\u{202E}reversed"
@@ -86,19 +110,66 @@ fn test_build_input_validation() {
         }]
     });
 
-    let result = builder.validate_json_input(&unicode_attack_json.to_string());
-    // Unicode attacks should be detected or normalized
+    let result = builder.validate_json_input(&unicode_json.to_string());
+    assert!(
+        result.is_ok(),
+        "Legitimate Unicode (zero-width, RTL override) should be accepted: {:?}",
+        result
+    );
+    let validator = InputValidator::new(SecurityConfig::default());
+    for value in [
+        "THREAD\u{202E}reversed",
+        "Test\u{200B}Song",
+        "Artist\u{FEFF}Name",
+    ] {
+        assert_eq!(
+            validator
+                .validate_string(value, "json_field")
+                .as_deref()
+                .ok(),
+            Some(value),
+            "Legitimate Unicode should pass through validate_string unchanged"
+        );
+        assert_metadata_passes_through_builder(value);
+    }
+}
+
+/// Characters that are illegal in XML 1.0 may be rejected or dropped by the
+/// builder, but must never be written into the output (that would make it
+/// not well-formed).
+#[test]
+#[ignore = "known bug: DDEXBuilder writes every XML-illegal C0 control character (U+0000-U+0008, U+000B, U+000C, U+000E-U+001F) into the output verbatim; text escaping only handles & < >"]
+fn test_illegal_xml_chars_never_reach_builder_output() {
+    let illegal: Vec<char> = (0u32..0x20)
+        .filter_map(char::from_u32)
+        .filter(|c| is_illegal_xml_char(*c))
+        .collect();
+
+    let mut leaked = Vec::new();
+    for c in illegal {
+        let text = format!("Test{}Song", c);
+        match DDEXBuilder::new().build(build_request_with_metadata(&text), Default::default()) {
+            Ok(result) if result.xml.chars().any(is_illegal_xml_char) => leaked.push(c),
+            _ => {}
+        }
+    }
+    assert!(
+        leaked.is_empty(),
+        "Illegal XML characters written to builder output: {:?}",
+        leaked
+    );
 }
 
 /// Test output validation and sanitization
 #[test]
-#[ignore = "known bug: OutputSanitizer::sanitize_xml_output HTML-escapes the whole document instead of rejecting sensitive content"]
+#[ignore = "known bug: OutputSanitizer::sanitize_xml_output HTML-escapes (rewrites) well-formed documents and misses sensitive elements such as `<ddex:Password>`"]
 fn test_output_validation() {
     let config = SecurityConfig::default();
     let sanitizer = OutputSanitizer::new(config);
 
-    // Test XML with potentially dangerous content
-    let dangerous_xml = r#"<ddex:NewReleaseMessage xmlns:ddex="http://ddex.net/xml/ern/43">
+    // Well-formed XML with a script-looking element is not an XML-level threat:
+    // the sanitizer must accept it and must not rewrite a valid document
+    let script_xml = r#"<ddex:NewReleaseMessage xmlns:ddex="http://ddex.net/xml/ern/43">
         <ddex:ReleaseList>
             <ddex:Release>
                 <ddex:ReferenceTitle>
@@ -108,8 +179,13 @@ fn test_output_validation() {
         </ddex:ReleaseList>
     </ddex:NewReleaseMessage>"#;
 
-    let result = sanitizer.sanitize_xml_output(dangerous_xml);
-    // Should detect and reject dangerous content
+    let result = sanitizer.sanitize_xml_output(script_xml);
+    assert_eq!(
+        result.as_deref().ok(),
+        Some(script_xml),
+        "Well-formed output should be accepted unchanged: {:?}",
+        result
+    );
 
     // Test XML with sensitive data patterns
     let sensitive_xml = r#"<ddex:NewReleaseMessage xmlns:ddex="http://ddex.net/xml/ern/43">
@@ -163,13 +239,16 @@ fn test_output_validation() {
     );
 }
 
-/// Test build-time XXE prevention
+/// Build-time XXE prevention: DOCTYPE, ENTITY and entity-reference text inside
+/// JSON string *values* is only metadata text. It is escaped on output (see
+/// `xxe_prevention_tests::test_ddex_builder_xxe_protection`), so input
+/// validation must accept it rather than reject it.
 #[test]
-#[ignore = "known bug or wrong expectation (security policy decision needed): InputValidator::validate_json_content accepts JSON whose string values contain DOCTYPE text"]
+#[ignore = "known bug: validate_string rejects metadata text containing entity-reference-like `&name;` or path-like `/etc/` fragments"]
 fn test_build_time_xxe_prevention() {
     let builder = DDEXBuilder::new();
 
-    // Test JSON that could generate XXE-vulnerable XML
+    // JSON whose values look like an XXE attack
     let xxe_attempt_json = json!({
         "messageHeader": {
             "messageId": "<!DOCTYPE test [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><root>&xxe;</root>",
@@ -183,8 +262,8 @@ fn test_build_time_xxe_prevention() {
 
     let result = builder.validate_json_input(&xxe_attempt_json.to_string());
     assert!(
-        result.is_err(),
-        "JSON with XXE patterns should be rejected: {:?}",
+        result.is_ok(),
+        "JSON whose values contain XXE-looking text should be accepted: {:?}",
         result
     );
 
@@ -202,8 +281,27 @@ fn test_build_time_xxe_prevention() {
 
     let result = builder.validate_json_input(&entity_json.to_string());
     assert!(
-        result.is_err(),
-        "JSON with entity references should be rejected: {:?}",
+        result.is_ok(),
+        "JSON whose values contain entity-reference-looking text should be accepted: {:?}",
+        result
+    );
+
+    // Entity-like text next to markup and quotes, as in a free-text comment
+    let comment_json = json!({
+        "messageHeader": {
+            "messageId": "MSG001",
+            "messageThreadId": "THREAD001"
+        },
+        "releases": [{
+            "title": "Song",
+            "comment": "This has <tags> and &entities; and \"quotes\""
+        }]
+    });
+
+    let result = builder.validate_json_input(&comment_json.to_string());
+    assert!(
+        result.is_ok(),
+        "JSON with entity-like text in a comment should be accepted: {:?}",
         result
     );
 
@@ -221,8 +319,8 @@ fn test_build_time_xxe_prevention() {
 
     let result = builder.validate_json_input(&doctype_json.to_string());
     assert!(
-        result.is_err(),
-        "JSON with DOCTYPE declarations should be rejected: {:?}",
+        result.is_ok(),
+        "JSON whose values contain DOCTYPE text should be accepted: {:?}",
         result
     );
 }
@@ -241,27 +339,28 @@ fn test_secure_content_handling() {
         "releases": [{
             "title": "Song with <special> & \"quoted\" content",
             "artists": ["Artist & Co.", "The <Band>"],
-            "comment": "This has <tags> and &entities; and \"quotes\""
+            "comment": "This has <tags> and \"quotes\""
         }]
     });
+    // (Entity-like text such as `&entities;` is covered by test_build_time_xxe_prevention.)
 
-    // This should either be rejected or properly escaped in the output
+    // HTML-like text must be accepted and escaped in the output
     let result = builder.validate_json_input(&html_content_json.to_string());
+    assert!(
+        result.is_ok(),
+        "HTML-like metadata text should be accepted: {:?}",
+        result
+    );
 
-    if result.is_ok() {
-        // If input validation passes, ensure output is properly escaped
-        match builder.build_from_json(&html_content_json.to_string()) {
-            Ok(xml_output) => {
-                // Verify that special characters are properly escaped in XML
-                assert!(xml_output.contains("&lt;special&gt;"));
-                assert!(xml_output.contains("&amp;"));
-                assert!(xml_output.contains("&quot;"));
-                assert!(!xml_output.contains("<special>"));
-            }
-            Err(_) => {
-                // Also acceptable - rejection during build
-            }
-        }
+    let xml_output = build_with_metadata("Song with <special> & \"quoted\" content");
+    assert!(xml_output.contains("Song with &lt;special&gt; &amp; "));
+    assert!(!xml_output.contains("<special>"));
+    for text in [
+        "Song with <special> & \"quoted\" content",
+        "Artist & Co.",
+        "The <Band>",
+    ] {
+        assert_metadata_passes_through_builder(text);
     }
 
     // Test with various quote styles
@@ -278,7 +377,19 @@ fn test_secure_content_handling() {
     });
 
     let result = builder.validate_json_input(&quote_variations_json.to_string());
-    // Should handle various quote styles securely
+    assert!(
+        result.is_ok(),
+        "Metadata with single and double quotes should be accepted: {:?}",
+        result
+    );
+    for text in [
+        "Song with 'single quotes'",
+        "Artist with \"double quotes\"",
+        "Mixed 'quotes\" test",
+        "Nested \"quotes 'within' quotes\"",
+    ] {
+        assert_metadata_passes_through_builder(text);
+    }
 
     // Test with mathematical and special symbols
     let symbols_json = json!({
@@ -294,12 +405,25 @@ fn test_secure_content_handling() {
     });
 
     let result = builder.validate_json_input(&symbols_json.to_string());
-    // Should handle Unicode symbols appropriately
+    assert!(
+        result.is_ok(),
+        "Metadata with Unicode symbols should be accepted: {:?}",
+        result
+    );
+    for text in [
+        "Song with symbols: ±∑∏∫∆∇⊂⊃∈∉∪∩",
+        "Artist™",
+        "Band®",
+        "Group©",
+        "Math: 1+1=2, 2×3=6, 4÷2=2, √4=2",
+        "🎵 Song 🎶",
+    ] {
+        assert_metadata_passes_through_builder(text);
+    }
 }
 
 /// Test protection against malformed input structures
 #[test]
-#[ignore = "known bug or wrong expectation (security policy decision needed): validate_json_input accepts JSON with wrong data types (no schema check)"]
 fn test_malformed_input_protection() {
     let builder = DDEXBuilder::new();
 
@@ -341,39 +465,65 @@ fn test_malformed_input_protection() {
         "Deeply nested JSON should be rejected due to depth limits"
     );
 
-    // Test with unexpected data types
-    let type_confusion_json = json!({
-        "messageHeader": {
-            "messageId": 123, // Should be string
-            "messageThreadId": ["array", "instead", "of", "string"]
-        },
-        "releases": "should_be_array_not_string"
+    // Schema checks are not part of the security validator: wrong types and
+    // missing fields are rejected when JSON is deserialized into the builder's
+    // real input model, `BuildRequest`.
+    let party = json!({ "party_name": [{ "text": "Label", "language_code": null }], "party_id": null, "party_reference": null });
+    let header = json!({
+        "message_id": "MSG001",
+        "message_sender": party,
+        "message_recipient": party,
+        "message_control_type": null,
+        "message_created_date_time": null
     });
-
-    let result = builder.validate_json_input(&type_confusion_json.to_string());
+    let valid = json!({
+        "header": header,
+        "version": "4.3",
+        "profile": null,
+        "releases": [],
+        "deals": [],
+        "extensions": null
+    });
     assert!(
-        result.is_err(),
-        "JSON with wrong data types should be rejected: {:?}",
-        result
+        serde_json::from_value::<BuildRequest>(valid.clone()).is_ok(),
+        "Baseline BuildRequest JSON should deserialize"
     );
+
+    // Test with unexpected data types
+    let type_confusions = [
+        ("version", json!(4.3)),
+        ("releases", json!("should_be_array_not_string")),
+        (
+            "header",
+            json!({
+                "message_id": 123, // Should be string
+                "message_sender": ["array", "instead", "of", "object"],
+                "message_recipient": party
+            }),
+        ),
+    ];
+    for (field, bad_value) in type_confusions {
+        let mut request = valid.clone();
+        request[field] = bad_value;
+        let result = serde_json::from_value::<BuildRequest>(request);
+        assert!(
+            result.is_err(),
+            "BuildRequest with a wrongly typed `{}` should be rejected",
+            field
+        );
+    }
 
     // Test with missing required fields
-    let incomplete_json = json!({
-        "messageHeader": {
-            "messageId": "MSG001"
-            // Missing messageThreadId
-        },
-        "releases": [{
-            // Missing title and artists
-        }]
-    });
-
-    let result = builder.validate_json_input(&incomplete_json.to_string());
-    assert!(
-        result.is_err(),
-        "Incomplete JSON should be rejected: {:?}",
-        result
-    );
+    for field in ["header", "version", "releases", "deals"] {
+        let mut request = valid.clone();
+        request.as_object_mut().unwrap().remove(field);
+        let result = serde_json::from_value::<BuildRequest>(request);
+        assert!(
+            result.is_err(),
+            "BuildRequest without `{}` should be rejected",
+            field
+        );
+    }
 }
 
 /// Test rate limiting and DoS protection
@@ -501,10 +651,11 @@ fn test_secure_logging() {
     );
 }
 
-// Helper trait to extend DDEXBuilder with validation methods
+// Test-local helper: DDEXBuilder has no JSON-input validation of its own, so this
+// composes InputValidator::validate_json_content with validate_string on every
+// JSON key and string value.
 trait DDEXBuilderExt {
     fn validate_json_input(&self, json: &str) -> Result<(), BuildError>;
-    fn build_from_json(&self, json: &str) -> Result<String, BuildError>;
 }
 
 impl DDEXBuilderExt for DDEXBuilder {
@@ -550,23 +701,5 @@ impl DDEXBuilderExt for DDEXBuilder {
         validate_json_strings(&parsed, &validator)?;
 
         Ok(())
-    }
-
-    fn build_from_json(&self, json: &str) -> Result<String, BuildError> {
-        // Placeholder implementation - would build XML from JSON
-        // After validating input, generate safe XML output
-
-        self.validate_json_input(json)?;
-
-        // This would contain the actual build logic
-        // For testing purposes, return a simple valid XML
-        Ok(r#"<?xml version="1.0" encoding="UTF-8"?>
-<ddex:NewReleaseMessage xmlns:ddex="http://ddex.net/xml/ern/43">
-    <ddex:MessageHeader>
-        <ddex:MessageId>MSG001</ddex:MessageId>
-        <ddex:MessageThreadId>THREAD001</ddex:MessageThreadId>
-    </ddex:MessageHeader>
-</ddex:NewReleaseMessage>"#
-            .to_string())
     }
 }

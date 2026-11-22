@@ -4,7 +4,6 @@
 //! covering all major attack vectors and platform-specific edge cases.
 
 use ddex_builder::security::path_validator::{PathValidationConfig, PathValidator};
-use std::collections::HashSet;
 use std::path::PathBuf;
 
 /// Test basic path validation functionality

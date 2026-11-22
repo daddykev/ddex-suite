@@ -14,7 +14,6 @@
 //! - Mixed attack vectors
 
 use ddex_builder::{
-    builder::DDEXBuilder,
     error::BuildError,
     security::{InputValidator, SecureXmlReader, SecurityConfig},
 };
@@ -650,14 +649,13 @@ fn test_valid_xml_still_works() {
     );
 }
 
-/// Integration test: Verify that DDEXBuilder rejects XXE attacks
+/// Integration test: XXE text inside a JSON string value is only metadata text.
+/// It must be accepted, and DDEXBuilder must write it escaped, so the output has
+/// no DOCTYPE, no entity declaration and no entity reference.
 #[test]
-#[ignore = "known bug or wrong expectation (security policy decision needed): validate_json_content accepts JSON whose string values contain XXE text"]
 fn test_ddex_builder_xxe_protection() {
-    let builder = DDEXBuilder::new();
-
-    // Test that builder rejects malicious XML input if it processes XML directly
-    // Note: This test may need to be adapted based on how DDEXBuilder handles input
+    let xxe_text =
+        "<!DOCTYPE test [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><root>&xxe;</root>";
 
     let xxe_json = r#"{
         "messageHeader": {
@@ -665,16 +663,26 @@ fn test_ddex_builder_xxe_protection() {
         }
     }"#;
 
-    // The builder should sanitize input and reject dangerous content
-    // This test assumes the builder validates string content for safety
     let result = ddex_builder::security::InputValidator::new(
         ddex_builder::security::SecurityConfig::default(),
     )
     .validate_json_content(xxe_json);
-
-    // The specific error may vary based on implementation
     assert!(
-        result.is_err(),
-        "DDEXBuilder should reject input containing XXE attempts"
+        result.is_ok(),
+        "JSON whose string values contain XXE text should be accepted: {:?}",
+        result
+    );
+
+    // element_texts panics on a DOCTYPE or malformed output; the text must come back unchanged
+    super::assert_metadata_passes_through_builder(xxe_text);
+    let xml = super::build_with_metadata(xxe_text);
+    assert!(!xml.contains("<!DOCTYPE"), "DOCTYPE leaked into output");
+    assert!(
+        !xml.contains("<!ENTITY"),
+        "ENTITY declaration leaked into output"
+    );
+    assert!(
+        !xml.contains("&xxe;"),
+        "entity reference leaked into output"
     );
 }
