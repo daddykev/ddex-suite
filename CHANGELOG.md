@@ -365,6 +365,19 @@ Parser: absent optional values are now reported as `None` / `null` instead of in
 - Python: the `sender` column of the flat DataFrame is the sender's name (or `None`)
   instead of a Rust debug dump of the whole organization.
 
+Node parser (0.5.0):
+- `ParsedMessage.resources` is typed `Record<string, JsResource>` (it was `any`) and its
+  values have the camelCase keys of `JsResource` (`resourceId`, `pLine`, `durationSeconds`,
+  ...) like the rest of the Node API; they were snake_case (`resource_id`, `p_line`, ...).
+  Absent values are omitted instead of `null`, as for the other objects.
+  Migration: `resources.A1.resource_id` → `resources.A1.resourceId`.
+- The parse options `mode`, `autoThreshold`, `enableStreaming` and `streamingThreshold`
+  are typed `never` and throw when given; they were accepted and ignored (the Node parser
+  always reads the whole document). Remove them.
+- Removed `DdexParser.stream()` and `ReleaseStream` (with `StreamOptions`,
+  `StreamedRelease`, `ProgressInfo`): `stream()` ignored its input and returned three
+  hard-coded "Test Release" objects. Use `parse` / `parseSync`.
+
 WASM builder (0.5.0):
 - `WasmDdexBuilder.build(request)` runs the core builder: it takes the core build request
   (the same `BuildRequest` type as the Node binding, included in the generated `.d.ts`)

@@ -113,8 +113,9 @@ export interface JsTrackGroup {
   sequenceNumber?: number
 }
 /**
- * A resource. Note: the values of `ParsedMessage.resources` are plain objects whose keys
- * are snake_case (`resource_id`, `p_line`, ...), not the camelCase names of this interface.
+ * A resource (the values of `ParsedMessage.resources`). It reaches JS through serde, so the
+ * serde names must match the camelCase names napi gives the other objects; absent values
+ * are omitted as napi does (`test-types.js` checks the keys against index.d.ts).
  */
 export interface JsResource {
   resourceId: string
@@ -146,12 +147,12 @@ export interface JsDeal {
 }
 export interface ParseOptions {
   /**
-   * Not used: parsing always uses the complete parser, whatever the input size (the
-   * core's experimental streaming mode is not exposed here).
+   * Removed in 0.5.0: parsing always uses the complete parser, whatever the input size
+   * (the core's experimental streaming mode is not exposed in Node). Passing it throws.
    */
-  mode?: string
-  /** Not used (no automatic switch to streaming since 0.5.0). */
-  autoThreshold?: number
+  mode?: never
+  /** Removed in 0.5.0 (see `mode`). Passing it throws. */
+  autoThreshold?: never
   resolveReferences?: boolean
   includeRaw?: boolean
   maxMemory?: number
@@ -166,19 +167,15 @@ export interface ParseOptions {
   preserveNamespacePrefixes?: boolean
   canonicalization?: string
   collectStatistics?: boolean
-  /** Not used (see `mode`). */
-  enableStreaming?: boolean
-  /** Not used (see `mode`). */
-  streamingThreshold?: number
+  /** Removed in 0.5.0 (see `mode`). Passing it throws. */
+  enableStreaming?: never
+  /** Removed in 0.5.0 (see `mode`). Passing it throws. */
+  streamingThreshold?: never
   validationLevel?: string
   extensionValidation?: boolean
   enableChecksums?: boolean
   memoryLimit?: number
   enableDetailedErrors?: boolean
-}
-export interface StreamOptions {
-  chunkSize?: number
-  maxMemory?: number
 }
 export interface ParsedMessage {
   messageId: string
@@ -198,7 +195,8 @@ export interface ParsedMessage {
   resourceCount: number
   totalDurationSeconds: number
   releases: Array<JsRelease>
-  resources: any
+  /** Resources by resource reference. */
+  resources: Record<string, JsResource>
   deals: Array<JsDeal>
   statistics?: ParseStatistics
   fidelityInfo?: FidelityInfo
@@ -236,28 +234,12 @@ export interface DetailedError {
   context?: string
   suggestions: Array<string>
 }
-export interface StreamedRelease {
-  releaseReference: string
-  title: string
-  releaseType?: string
-  resourceCount: number
-}
-export interface ProgressInfo {
-  bytesProcessed: number
-  releasesParsed: number
-  elapsedMs: number
-}
 export declare class DdexParser {
   constructor()
   detectVersion(xml: string): string
   parseSync(xml: string, options?: ParseOptions | undefined | null): ParsedMessage
   parse(xml: string, options?: ParseOptions | undefined | null): Promise<ParsedMessage>
   sanityCheck(xml: string): Promise<SanityCheckResult>
-  stream(xml: string, options?: StreamOptions | undefined | null): ReleaseStream
   /** Get detailed error information for debugging - useful for error handling in JavaScript */
   getDetailedError(xml: string): DetailedError
-}
-export declare class ReleaseStream {
-  next(): Promise<StreamedRelease | null>
-  progress(): Promise<ProgressInfo>
 }

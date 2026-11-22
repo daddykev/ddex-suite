@@ -310,7 +310,6 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { DdexParser, ReleaseStream } = nativeBinding
+const { DdexParser } = nativeBinding
 
 module.exports.DdexParser = DdexParser
-module.exports.ReleaseStream = ReleaseStream

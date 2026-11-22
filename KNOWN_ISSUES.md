@@ -67,10 +67,14 @@ decision needed)". The security policy above does not settle them:
 - ddex-parser ERN 3.8.x: only the first `ResourceGroup` of the default
   `ReleaseDetailsByTerritory` block is kept in the graph; resource `ProprietaryId`s
   (`SoundRecordingId`, `VideoId`, `ImageId`) are not read.
-- Node parser binding: the values of `ParsedMessage.resources` have snake_case keys
-  (`resource_id`, `p_line`, ...) while the generated `JsResource` interface is camelCase
-  (`resources` is typed `any`). The `mode` / `autoThreshold` / `enableStreaming` /
-  `streamingThreshold` options are accepted and ignored.
+- Node parser binding: apart from `collectStatistics`, the `ParseOptions` are accepted and
+  have no effect on parsing (`resolveReferences`, `includeRaw`, `maxMemory`, `timeoutMs`,
+  `allowBlocking`, `chunkSize`, `validationLevel`, `extensionValidation`,
+  `enableChecksums`, `memoryLimit`, `enableDetailedErrors`; the fidelity options are
+  only echoed back in `fidelityInfo`). `statistics` (with `collectStatistics`) reports 0
+  for the parse time, memory, element/attribute/comment counts and file size. (The
+  removed streaming options `mode` / `autoThreshold` / `enableStreaming` /
+  `streamingThreshold` throw since 0.5.0.)
 - ddex-builder timing tests (`--features perf-tests`, release build) miss their targets on
   the development machine, also on `main` (4–6 of `perf::test_*_performance`,
   `test_performance_regression_benchmark`, `security_fixes::…::test_performance_impact_benchmark`;

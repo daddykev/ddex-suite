@@ -42,9 +42,9 @@ function ern43() {
   assert.equal(t.trackReleaseGenre, 'Pop');
   assert.equal(t.trackReleaseSubGenre, 'Electropop');
   assert.equal(t.genre ?? null, null, '4.x resources carry no genre');
-  // resources: plain objects with snake_case keys
-  assert.equal(parsed.resources.A2.c_line.text, '(C) 2024 Details Records');
-  assert.equal(parsed.resources.A2.parental_warning, 'NotExplicit');
+  // resources: camelCase keys, like the rest of the API (JsResource)
+  assert.equal(parsed.resources.A2.cLine.text, '(C) 2024 Details Records');
+  assert.equal(parsed.resources.A2.parentalWarning, 'NotExplicit');
   assert.equal(parsed.deals[0].endDate, '2025-09-19T00:00:00+00:00');
 }
 
