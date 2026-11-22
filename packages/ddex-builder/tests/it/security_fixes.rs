@@ -12,7 +12,9 @@ use ddex_builder::security::{
     ErrorMode, ErrorSanitizer, PathValidator, SanitizerConfig,
 };
 use std::io::{Error, ErrorKind};
+#[cfg(feature = "perf-tests")]
 use std::path::Path;
+#[cfg(feature = "perf-tests")]
 use std::time::Instant;
 
 /// Test suite for comprehensive security integration
