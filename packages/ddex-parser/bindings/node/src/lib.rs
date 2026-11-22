@@ -364,37 +364,68 @@ fn convert_resources_to_js_object(
     serde_json::Value::Object(js_resources)
 }
 
-/// The streaming options removed in 0.5.0 are rejected instead of silently ignored.
+/// Every parse option was removed in 0.4.6 (the streaming ones, and the ones that had no
+/// effect). They are rejected instead of silently ignored.
 fn reject_removed_options(options: &ParseOptions) -> Result<()> {
-    let removed = [
+    let streaming = [
         ("mode", options.mode.is_some()),
         ("autoThreshold", options.auto_threshold.is_some()),
         ("enableStreaming", options.enable_streaming.is_some()),
         ("streamingThreshold", options.streaming_threshold.is_some()),
     ];
-    let given: Vec<&str> = removed
-        .iter()
-        .filter(|(_, set)| *set)
-        .map(|(name, _)| *name)
-        .collect();
-    if given.is_empty() {
+    let no_effect = [
+        ("resolveReferences", options.resolve_references.is_some()),
+        ("includeRaw", options.include_raw.is_some()),
+        ("maxMemory", options.max_memory.is_some()),
+        ("timeoutMs", options.timeout_ms.is_some()),
+        ("allowBlocking", options.allow_blocking.is_some()),
+        ("chunkSize", options.chunk_size.is_some()),
+        ("fidelityLevel", options.fidelity_level.is_some()),
+        ("preserveComments", options.preserve_comments.is_some()),
+        ("preserveProcessingInstructions", options.preserve_processing_instructions.is_some()),
+        ("preserveExtensions", options.preserve_extensions.is_some()),
+        ("preserveAttributeOrder", options.preserve_attribute_order.is_some()),
+        ("preserveNamespacePrefixes", options.preserve_namespace_prefixes.is_some()),
+        ("canonicalization", options.canonicalization.is_some()),
+        ("collectStatistics", options.collect_statistics.is_some()),
+        ("validationLevel", options.validation_level.is_some()),
+        ("extensionValidation", options.extension_validation.is_some()),
+        ("enableChecksums", options.enable_checksums.is_some()),
+        ("memoryLimit", options.memory_limit.is_some()),
+        ("enableDetailedErrors", options.enable_detailed_errors.is_some()),
+    ];
+    let names = |list: &[(&'static str, bool)]| -> Vec<&'static str> {
+        list.iter()
+            .filter(|(_, set)| *set)
+            .map(|(name, _)| *name)
+            .collect()
+    };
+    let (streaming, no_effect) = (names(&streaming), names(&no_effect));
+    let mut reasons = Vec::new();
+    if !streaming.is_empty() {
+        reasons.push(format!(
+            "{} were removed in 0.4.6: the Node parser always uses the complete parser, whatever \
+             the input size (streaming is not available in Node)",
+            streaming.join(", ")
+        ));
+    }
+    if !no_effect.is_empty() {
+        reasons.push(format!(
+            "{} were removed in 0.4.6: they had no effect on parsing",
+            no_effect.join(", ")
+        ));
+    }
+    if reasons.is_empty() {
         return Ok(());
     }
     Err(napi::Error::new(
         napi::Status::InvalidArg,
-        format!(
-            "Parse option(s) {} were removed in 0.5.0: the Node parser always uses the complete \
-             parser, whatever the input size (streaming is not available in Node). Remove them.",
-            given.join(", ")
-        ),
+        format!("Parse option(s) {}. Remove them.", reasons.join("; ")),
     ))
 }
 
 /// Convert ParsedERNMessage to Node.js ParsedMessage structure
-fn convert_parsed_message(
-    parsed: ParsedERNMessage,
-    options: Option<&ParseOptions>,
-) -> ParsedMessage {
+fn convert_parsed_message(parsed: ParsedERNMessage) -> ParsedMessage {
     let flat = parsed.flat; // Take ownership instead of borrowing
 
     // Convert the actual data structures
@@ -406,41 +437,6 @@ fn convert_parsed_message(
     let release_count = releases.len() as u32;
     let resource_count = flat.resources.len() as u32;
     let deal_count = deals.len() as u32;
-
-    // Generate statistics if requested
-    let statistics = if options.and_then(|o| o.collect_statistics).unwrap_or(false) {
-        Some(ParseStatistics {
-            parse_time_ms: 0.0,   // TODO: Add timing
-            memory_used_bytes: 0, // TODO: Add memory tracking
-            element_count: 0,     // TODO: Count elements during parsing
-            attribute_count: 0,   // TODO: Count attributes during parsing
-            comment_count: 0,     // TODO: Count comments during parsing
-            extension_count: if parsed.extensions.is_some() { 1 } else { 0 },
-            namespace_count: 1, // TODO: Count namespaces during parsing
-            file_size_bytes: 0, // TODO: Track file size
-        })
-    } else {
-        None
-    };
-
-    // Generate fidelity info based on options
-    let fidelity_info = options.map(|opts| FidelityInfo {
-        fidelity_level: opts
-            .fidelity_level
-            .clone()
-            .unwrap_or_else(|| "balanced".to_string()),
-        canonicalization_algorithm: opts
-            .canonicalization
-            .clone()
-            .unwrap_or_else(|| "db_c14n".to_string()),
-        comments_preserved: opts.preserve_comments.unwrap_or(false),
-        extensions_preserved: opts.preserve_extensions.unwrap_or(true),
-        processing_instructions_preserved: opts
-            .preserve_processing_instructions
-            .unwrap_or(false),
-        attribute_order_preserved: opts.preserve_attribute_order.unwrap_or(true),
-        namespace_prefixes_preserved: opts.preserve_namespace_prefixes.unwrap_or(true),
-    });
 
     ParsedMessage {
         message_id: flat.message_id.clone(),
@@ -465,9 +461,6 @@ fn convert_parsed_message(
         releases,
         resources: resources_obj,
         deals,
-
-        statistics,
-        fidelity_info,
     }
 }
 
@@ -759,7 +752,7 @@ impl DdexParser {
 
                 // Convert the Rust ParsedERNMessage to Node.js ParsedMessage
                 // All data is now real parsed data - no mock data possible at this point
-                let result = convert_parsed_message(parsed_message, options.as_ref());
+                let result = convert_parsed_message(parsed_message);
                 Ok(result)
             }
             Err(parse_error) => {
@@ -886,43 +879,81 @@ impl DdexParser {
     }
 }
 
+/// Options accepted by `parse` / `parseSync`. None are supported in 0.4.6: every field
+/// is a removed option, and passing any of them throws (they used to be ignored).
 #[napi(object)]
 #[derive(Default)]
 pub struct ParseOptions {
-    /// Removed in 0.5.0: parsing always uses the complete parser, whatever the input size
+    /// Removed in 0.4.6: parsing always uses the complete parser, whatever the input size
     /// (the core's experimental streaming mode is not exposed in Node). Passing it throws.
     #[napi(ts_type = "never")]
     pub mode: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (see `mode`). Passing it throws.
+    /// Removed in 0.4.6 (see `mode`). Passing it throws.
     #[napi(ts_type = "never")]
     pub auto_threshold: Option<serde_json::Value>,
-    pub resolve_references: Option<bool>,
-    pub include_raw: Option<bool>,
-    pub max_memory: Option<u32>,
-    pub timeout_ms: Option<u32>,
-    pub allow_blocking: Option<bool>,
-    pub chunk_size: Option<u32>,
-
-    // Perfect Fidelity Engine options
-    pub fidelity_level: Option<String>, // "fast", "balanced", "perfect"
-    pub preserve_comments: Option<bool>,
-    pub preserve_processing_instructions: Option<bool>,
-    pub preserve_extensions: Option<bool>,
-    pub preserve_attribute_order: Option<bool>,
-    pub preserve_namespace_prefixes: Option<bool>,
-    pub canonicalization: Option<String>, // "none", "c14n", "c14n11", "db_c14n"
-    pub collect_statistics: Option<bool>,
-    /// Removed in 0.5.0 (see `mode`). Passing it throws.
+    /// Removed in 0.4.6 (see `mode`). Passing it throws.
     #[napi(ts_type = "never")]
     pub enable_streaming: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (see `mode`). Passing it throws.
+    /// Removed in 0.4.6 (see `mode`). Passing it throws.
     #[napi(ts_type = "never")]
     pub streaming_threshold: Option<serde_json::Value>,
-    pub validation_level: Option<String>, // "none", "basic", "standard", "strict"
-    pub extension_validation: Option<bool>,
-    pub enable_checksums: Option<bool>,
-    pub memory_limit: Option<u32>,
-    pub enable_detailed_errors: Option<bool>,
+    /// Removed in 0.4.6: it had no effect on parsing. Passing it throws.
+    #[napi(ts_type = "never")]
+    pub resolve_references: Option<serde_json::Value>,
+    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub include_raw: Option<serde_json::Value>,
+    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub max_memory: Option<serde_json::Value>,
+    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub timeout_ms: Option<serde_json::Value>,
+    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub allow_blocking: Option<serde_json::Value>,
+    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub chunk_size: Option<serde_json::Value>,
+    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub fidelity_level: Option<serde_json::Value>,
+    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub preserve_comments: Option<serde_json::Value>,
+    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub preserve_processing_instructions: Option<serde_json::Value>,
+    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub preserve_extensions: Option<serde_json::Value>,
+    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub preserve_attribute_order: Option<serde_json::Value>,
+    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub preserve_namespace_prefixes: Option<serde_json::Value>,
+    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub canonicalization: Option<serde_json::Value>,
+    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub collect_statistics: Option<serde_json::Value>,
+    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub validation_level: Option<serde_json::Value>,
+    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub extension_validation: Option<serde_json::Value>,
+    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub enable_checksums: Option<serde_json::Value>,
+    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub memory_limit: Option<serde_json::Value>,
+    /// Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws.
+    #[napi(ts_type = "never")]
+    pub enable_detailed_errors: Option<serde_json::Value>,
 }
 
 #[napi(object)]
@@ -952,33 +983,6 @@ pub struct ParsedMessage {
     #[napi(ts_type = "Record<string, JsResource>")]
     pub resources: serde_json::Value,
     pub deals: Vec<JsDeal>,
-
-    // Perfect Fidelity Engine results
-    pub statistics: Option<ParseStatistics>,
-    pub fidelity_info: Option<FidelityInfo>,
-}
-
-#[napi(object)]
-pub struct ParseStatistics {
-    pub parse_time_ms: f64,
-    pub memory_used_bytes: u32,
-    pub element_count: u32,
-    pub attribute_count: u32,
-    pub comment_count: u32,
-    pub extension_count: u32,
-    pub namespace_count: u32,
-    pub file_size_bytes: u32,
-}
-
-#[napi(object)]
-pub struct FidelityInfo {
-    pub fidelity_level: String,
-    pub canonicalization_algorithm: String,
-    pub comments_preserved: bool,
-    pub extensions_preserved: bool,
-    pub processing_instructions_preserved: bool,
-    pub attribute_order_preserved: bool,
-    pub namespace_prefixes_preserved: bool,
 }
 
 #[napi(object)]

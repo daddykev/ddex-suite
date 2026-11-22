@@ -13,7 +13,7 @@ Fully functional DDEX XML parser for JavaScript and TypeScript with complete dat
 ```bash
 npm install ddex-parser
 # or for specific version
-npm install ddex-parser@0.4.4
+npm install ddex-parser@0.4.6
 # or
 yarn add ddex-parser
 ```
@@ -89,10 +89,10 @@ result.flattened.tracks.forEach(track => {
 ## Features
 
 ### 🚀 Blazing Performance
-- **15x faster** than traditional XML parsers
+- Rust core: a typical ERN 4.3 album (75 KB) parses in about 3.4 ms (measured, Apple M1 Pro)
 - Native Node.js addon with Rust performance
 - Optimized WASM for browsers (<500KB gzipped)
-- Streaming support for large catalog files
+- The complete parser for every input size (inputs up to 100 MB; no streaming in Node)
 
 ### 🌐 Cross-Platform Compatibility
 - **Node.js 16+** with native bindings
@@ -141,10 +141,6 @@ interface ParsedMessage {
   releases: Release[];              // Full release objects with tracks
   resources: { [key: string]: Resource }; // Resource dictionary with IDs as keys
   deals: Deal[];                   // Complete deal information
-
-  // Enhanced features
-  statistics?: ParseStatistics;
-  fidelityInfo?: FidelityInfo;
 }
 
 interface Release {
@@ -216,11 +212,14 @@ class DdexParser {
   // Utilities
   detectVersion(xml: string): string;
   sanityCheck(xml: string): Promise<SanityCheckResult>;
-
-  // Streaming (returns async iterator)
-  stream(xml: string, options?: StreamOptions): ReleaseStream;
 }
 ```
+
+`options` is accepted for compatibility but no option is supported: since 0.4.6 every
+`ParseOptions` field throws (the streaming options `mode`, `autoThreshold`,
+`enableStreaming`, `streamingThreshold`, and the ones that had no effect, such as
+`resolveReferences`, `includeRaw`, `collectStatistics` and the fidelity options).
+`ParsedMessage.statistics` and `fidelityInfo` were removed, and so was `stream()`.
 
 ## Comprehensive Usage Examples
 

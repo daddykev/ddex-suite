@@ -22,7 +22,7 @@ Classification and history: `dev-docs/TEST_TRIAGE.md`.
 | Bug | Test(s) |
 |---|---|
 | ERN 3.8.x targets: Video resources are rejected (`resource_kind is Video`; the 3.8 generator writes `SoundRecording`s only) | `it::ern38_round_trip` (expected failures: 12 YouTube video samples, 9 official 4.x samples with videos) |
-| ERN 3.8.x targets: `ReleaseIdRequest` has no ISRC, so a 3.8.2 release (or track release) identified only by `ReleaseId/ISRC` cannot be rebuilt (the parser reads it since 0.5.0) | `it::ern38_round_trip` (expected failures: the 8 YouTube 3.8.2 audio samples `721620118165_*`, `USGCV1172318_*`) |
+| ERN 3.8.x targets: `ReleaseIdRequest` has no ISRC, so a 3.8.2 release (or track release) identified only by `ReleaseId/ISRC` cannot be rebuilt (the parser reads it since 0.4.6) | `it::ern38_round_trip` (expected failures: the 8 YouTube 3.8.2 audio samples `721620118165_*`, `USGCV1172318_*`) |
 | ERN 3.8.2 target: an empty `MessageId` (`<MessageId/>`, valid `xs:string`, parsed as `""`) is reported as missing, while the 4.x targets write it | `it::ern38_round_trip::official_4x_samples_rebuilt_as_ern382` (expected failures: Samples42/43 `8 DjMix.xml`) |
 | The request model cannot express a present but empty title: `TrackRequest.title` / release title `""` mean "not given" and the build fails with the required-field error (whitespace-only titles are written faithfully) | `it::whitespace_round_trip::empty_title_is_reported_missing_by_the_builder` |
 | The stable-hash MessageId includes `Utc::now()`'s date (`builder.rs`, `generate_stable_hash_ids`), so output changes daily and the golden snapshot goes stale | `it::golden_files::test_audio_album_golden` |
@@ -51,30 +51,29 @@ decision needed)". The security policy above does not settle them:
 | Bug | Test(s) |
 |---|---|
 | Native `ParsedERNMessage.message_id` is a method, not the documented `str` attribute | `tests/test_parser.py::TestDDEXParser::test_parse_string`, `test_parse_bytes`, `test_parse_async`, `test_convenience_function` |
-| Native `detect_version` returns `"V4_3"`, while the pure-Python fallback and the docs use `"4.3"` | `tests/test_parser.py::TestDDEXParser::test_detect_version` |
+| Native `detect_version` returns `"V4_3"`, while the docs use `"4.3"` | `tests/test_parser.py::TestDDEXParser::test_detect_version` |
 
 ## Not pinned by a test (seen during the cleanup)
 
-- ddex-parser `ParseMode::Stream` (experimental, opt-in since 0.5.0; `parse()` never selects
+- ddex-parser `ParseMode::Stream` (experimental, opt-in since 0.4.6; `parse()` never selects
   it): `parser/stream.rs` reads a subset of the fields (no territory details, dates, P/C
   lines, genres, labels, track layout, ...) and still trims text.
 - ddex-parser ERN 3.8.x release display artists: each `DisplayArtist/PartyName/FullName`
   becomes an artist with the role `MainArtist` regardless of its `ArtistRole` (kept as
-  before 0.5.0 so no existing value changed; 3.8.x track artists use the real role).
+  before 0.4.6 so no existing value changed; 3.8.x track artists use the real role).
 - ddex-parser: with several `ValidityPeriod`s in one deal, the last start / end date
   given wins; `StartDateTime` / `EndDateTime` are not read; the flat deal has no
   `CommercialModelType` (Node `commercialModel` is always null).
 - ddex-parser ERN 3.8.x: only the first `ResourceGroup` of the default
   `ReleaseDetailsByTerritory` block is kept in the graph; resource `ProprietaryId`s
   (`SoundRecordingId`, `VideoId`, `ImageId`) are not read.
-- Node parser binding: apart from `collectStatistics`, the `ParseOptions` are accepted and
-  have no effect on parsing (`resolveReferences`, `includeRaw`, `maxMemory`, `timeoutMs`,
-  `allowBlocking`, `chunkSize`, `validationLevel`, `extensionValidation`,
-  `enableChecksums`, `memoryLimit`, `enableDetailedErrors`; the fidelity options are
-  only echoed back in `fidelityInfo`). `statistics` (with `collectStatistics`) reports 0
-  for the parse time, memory, element/attribute/comment counts and file size. (The
-  removed streaming options `mode` / `autoThreshold` / `enableStreaming` /
-  `streamingThreshold` throw since 0.5.0.)
+- Node parser binding: `parse` / `parseSync` take no working options. Every
+  `ParseOptions` field throws since 0.4.6: the streaming ones (`mode`, `autoThreshold`,
+  `enableStreaming`, `streamingThreshold`) and the ones that had no effect
+  (`resolveReferences`, `includeRaw`, `maxMemory`, `timeoutMs`, `allowBlocking`,
+  `chunkSize`, the fidelity options, `collectStatistics`, `validationLevel`, ...).
+  `ParsedMessage.statistics` (all zeros) and `fidelityInfo` (an echo of the options) were
+  removed.
 - ERN 3.8.1 builder output is not XSD-checked: no official 3.8.1 schema can be obtained
   (DDEX no longer serves ERN 3.x XSDs, and no archived copy of the 3.8.1 one exists). It
   is the 3.8.2 document in the 381 namespace (`it::ern38_xsd`), and the content models
@@ -87,5 +86,4 @@ decision needed)". The security policy above does not settle them:
 - ddex-builder `DDEXBuilder::diff_xml` / `diff_xml_with_config` / `diff_request_with_xml` are stubs: `parse_xml_to_ast` wraps the whole document in one text node, so any difference is reported as a single `/#text` modification. The `DiffEngine` itself works on real ASTs.
 - ddex-builder CLI: `build` writes a placeholder document (`build_ddex_xml` returns `<xml><!-- DDEX XML would be generated here --></xml>`), and `--validate` never fails (`validate_input_data` returns `Ok(())`). Presets and the target version set on `ddex_builder::Builder` do not affect `DDEXBuilder::build` output. (The no-op `batch` subcommand was removed for the same reason.)
 - The Node builder binding's `validateStructure` reports `isValid: true` for invalid XML (`npm test` prints it without failing).
-- The Python parser reports `__version__ == "0.4.3"` while the package is 0.4.5.
 - ERN prefixed local elements (`<ern:PartyId>`, not schema-valid) are handled inconsistently: some are found, `MessageSender/PartyId` is not.

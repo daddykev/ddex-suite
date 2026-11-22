@@ -2,7 +2,7 @@
 // walks the whole ParsedMessage of the official ERN 4.3 (and 4.2) samples recursively,
 // including resources, tracks and deals, and checks that each key is declared on its
 // interface with a value of the declared type, and that every required key is present.
-// Also checks that the streaming options removed in 0.5.0 are rejected.
+// Also checks that the parse options removed in 0.4.6 are rejected.
 //
 // Run with: npm test (after `npm run build`).
 
@@ -81,22 +81,25 @@ for (const file of files) {
   const xml = fs.readFileSync(file, 'utf8');
   const where = path.relative(examples, file);
   checkInterface(parser.parseSync(xml), 'ParsedMessage', where);
-  // statistics / fidelityInfo are only present with options.
-  checkInterface(parser.parseSync(xml, { collectStatistics: true }), 'ParsedMessage', where);
 }
 
 for (const name of ['ParsedMessage', 'JsRelease', 'JsTrack', 'JsResource', 'JsDeal', 'JsCopyright',
-  'JsArtist', 'JsTrackGroup', 'JsGenre', 'ParseStatistics', 'FidelityInfo']) {
+  'JsArtist', 'JsTrackGroup', 'JsGenre']) {
   assert.ok(visited[name] > 0, `no ${name} in the samples' output: the walk did not cover it`);
 }
 
-// --- Removed streaming options are rejected, not ignored
+// --- Removed parse options are rejected, not ignored: every field of ParseOptions
 const sample = fs.readFileSync(path.join(examples, 'Samples43', '1 Audio.xml'), 'utf8');
-for (const option of [{ mode: 'stream' }, { autoThreshold: 1 }, { enableStreaming: true }, { streamingThreshold: 1 }]) {
-  const name = Object.keys(option)[0];
-  assert.throws(() => parser.parseSync(sample, option), new RegExp(`${name}.*removed in 0\\.5\\.0`));
+const optionNames = Object.keys(interfaces.ParseOptions);
+assert.ok(optionNames.includes('mode') && optionNames.includes('collectStatistics'));
+for (const name of optionNames) {
+  assert.equal(interfaces.ParseOptions[name].type, 'never', `ParseOptions.${name} should be never`);
+  assert.throws(() => parser.parseSync(sample, { [name]: 1 }), new RegExp(`${name}.*removed in 0\\.4\\.6`));
 }
-assert.equal(typeof parser.stream, 'undefined', 'stream() was removed in 0.5.0');
+assert.ok(parser.parseSync(sample, {}).releases.length > 0, 'an empty options object is accepted');
+const parsed = parser.parseSync(sample);
+assert.ok(!('statistics' in parsed) && !('fidelityInfo' in parsed), 'statistics / fidelityInfo were removed');
+assert.equal(typeof parser.stream, 'undefined', 'stream() was removed in 0.4.6');
 
 console.log(`ok - parse output keys match index.d.ts (${files.length} samples; ` +
   `${visited.JsResource} resources, ${visited.JsTrack} tracks, ${visited.JsDeal} deals)`);

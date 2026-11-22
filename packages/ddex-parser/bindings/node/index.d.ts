@@ -145,37 +145,60 @@ export interface JsDeal {
   restrictions: Array<string>
   commercialModel?: string
 }
+/**
+ * Options accepted by `parse` / `parseSync`. None are supported in 0.4.6: every field
+ * is a removed option, and passing any of them throws (they used to be ignored).
+ */
 export interface ParseOptions {
   /**
-   * Removed in 0.5.0: parsing always uses the complete parser, whatever the input size
+   * Removed in 0.4.6: parsing always uses the complete parser, whatever the input size
    * (the core's experimental streaming mode is not exposed in Node). Passing it throws.
    */
   mode?: never
-  /** Removed in 0.5.0 (see `mode`). Passing it throws. */
+  /** Removed in 0.4.6 (see `mode`). Passing it throws. */
   autoThreshold?: never
-  resolveReferences?: boolean
-  includeRaw?: boolean
-  maxMemory?: number
-  timeoutMs?: number
-  allowBlocking?: boolean
-  chunkSize?: number
-  fidelityLevel?: string
-  preserveComments?: boolean
-  preserveProcessingInstructions?: boolean
-  preserveExtensions?: boolean
-  preserveAttributeOrder?: boolean
-  preserveNamespacePrefixes?: boolean
-  canonicalization?: string
-  collectStatistics?: boolean
-  /** Removed in 0.5.0 (see `mode`). Passing it throws. */
+  /** Removed in 0.4.6 (see `mode`). Passing it throws. */
   enableStreaming?: never
-  /** Removed in 0.5.0 (see `mode`). Passing it throws. */
+  /** Removed in 0.4.6 (see `mode`). Passing it throws. */
   streamingThreshold?: never
-  validationLevel?: string
-  extensionValidation?: boolean
-  enableChecksums?: boolean
-  memoryLimit?: number
-  enableDetailedErrors?: boolean
+  /** Removed in 0.4.6: it had no effect on parsing. Passing it throws. */
+  resolveReferences?: never
+  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  includeRaw?: never
+  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  maxMemory?: never
+  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  timeoutMs?: never
+  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  allowBlocking?: never
+  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  chunkSize?: never
+  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  fidelityLevel?: never
+  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  preserveComments?: never
+  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  preserveProcessingInstructions?: never
+  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  preserveExtensions?: never
+  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  preserveAttributeOrder?: never
+  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  preserveNamespacePrefixes?: never
+  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  canonicalization?: never
+  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  collectStatistics?: never
+  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  validationLevel?: never
+  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  extensionValidation?: never
+  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  enableChecksums?: never
+  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  memoryLimit?: never
+  /** Removed in 0.4.6 (no effect; see `resolveReferences`). Passing it throws. */
+  enableDetailedErrors?: never
 }
 export interface ParsedMessage {
   messageId: string
@@ -198,27 +221,6 @@ export interface ParsedMessage {
   /** Resources by resource reference. */
   resources: Record<string, JsResource>
   deals: Array<JsDeal>
-  statistics?: ParseStatistics
-  fidelityInfo?: FidelityInfo
-}
-export interface ParseStatistics {
-  parseTimeMs: number
-  memoryUsedBytes: number
-  elementCount: number
-  attributeCount: number
-  commentCount: number
-  extensionCount: number
-  namespaceCount: number
-  fileSizeBytes: number
-}
-export interface FidelityInfo {
-  fidelityLevel: string
-  canonicalizationAlgorithm: string
-  commentsPreserved: boolean
-  extensionsPreserved: boolean
-  processingInstructionsPreserved: boolean
-  attributeOrderPreserved: boolean
-  namespacePrefixesPreserved: boolean
 }
 export interface SanityCheckResult {
   isValid: boolean
