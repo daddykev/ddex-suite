@@ -9,8 +9,6 @@ use console::style;
 use ddex_builder::presets::{DdexVersion, MessageProfile};
 use ddex_builder::*;
 use indexmap::IndexMap;
-use indicatif::{ProgressBar, ProgressStyle};
-use rayon::prelude::*;
 use serde_json::Value as JsonValue;
 use std::fs;
 use std::io::{self, Read, Write};
@@ -59,8 +57,6 @@ enum Commands {
     Validate(ValidateCommand),
     /// Generate schemas for validation
     Schema(SchemaCommand),
-    /// Process multiple files in parallel
-    Batch(BatchCommand),
     /// Validate determinism guarantees
     Guarantees(GuaranteesCommand),
     /// List and apply partner presets
@@ -219,25 +215,6 @@ struct SchemaCommand {
     /// Include documentation in schema
     #[arg(long)]
     with_docs: bool,
-}
-
-#[derive(Args)]
-struct BatchCommand {
-    /// Configuration file for batch processing
-    #[arg(short, long)]
-    config: PathBuf,
-
-    /// Number of worker threads
-    #[arg(short, long, default_value_t = num_cpus::get())]
-    workers: usize,
-
-    /// Continue processing on errors
-    #[arg(long)]
-    continue_on_error: bool,
-
-    /// Generate summary report
-    #[arg(long)]
-    report: Option<PathBuf>,
 }
 
 #[derive(Args)]
@@ -562,7 +539,6 @@ fn main() {
         Commands::Diff(cmd) => handle_diff_command(cmd, &config),
         Commands::Validate(cmd) => handle_validate_command(cmd, &config),
         Commands::Schema(cmd) => handle_schema_command(cmd, &config),
-        Commands::Batch(cmd) => handle_batch_command(cmd, &config),
         Commands::Guarantees(cmd) => handle_guarantees_command(cmd, &config),
         Commands::Preset(cmd) => handle_preset_command(cmd, &config),
         Commands::Watch(cmd) => handle_watch_command(cmd, &config),
@@ -862,83 +838,6 @@ fn handle_schema_command(
         println!("{} Schema generated successfully", style("✓").green());
         println!("  Format: {:?}", cmd.format);
         println!("  Version: {:?}", cmd.version);
-    }
-
-    Ok(())
-}
-
-fn handle_batch_command(
-    cmd: BatchCommand,
-    _config: &ConfigFile,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let batch_config = load_batch_config(&cmd.config)?;
-
-    // Setup thread pool
-    let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(cmd.workers)
-        .build()?;
-
-    let progress_bar = if !is_quiet() {
-        let pb = ProgressBar::new(batch_config.tasks.len() as u64);
-        pb.set_style(
-            ProgressStyle::default_bar()
-                .template("[{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} {msg}")
-                .unwrap(),
-        );
-        Some(pb)
-    } else {
-        None
-    };
-
-    let results: Vec<BatchResult> = pool.install(|| {
-        batch_config
-            .tasks
-            .par_iter()
-            .enumerate()
-            .map(|(i, task)| {
-                let result = process_batch_task(task);
-                if let Some(pb) = &progress_bar {
-                    pb.set_message(format!("Processing {}", task.input_file.display()));
-                    pb.inc(1);
-                }
-                BatchResult {
-                    task_id: i,
-                    success: result.is_ok(),
-                    error: result.err().map(|e| e.to_string()),
-                }
-            })
-            .collect()
-    });
-
-    if let Some(pb) = &progress_bar {
-        pb.finish_with_message("Batch processing completed");
-    }
-
-    // Generate report
-    let successful = results.iter().filter(|r| r.success).count();
-    let failed = results.len() - successful;
-
-    if !is_quiet() {
-        println!("\n{} Batch processing completed", style("✓").green());
-        println!("  Successful: {}", successful);
-        if failed > 0 {
-            println!("  Failed: {}", style(failed).red());
-        }
-    }
-
-    if let Some(report_path) = cmd.report {
-        let report = BatchReport {
-            total_tasks: results.len(),
-            successful,
-            failed,
-            results,
-        };
-        let report_json = serde_json::to_string_pretty(&report)?;
-        fs::write(report_path, report_json)?;
-    }
-
-    if failed > 0 && !cmd.continue_on_error {
-        process::exit(1);
     }
 
     Ok(())
@@ -1449,17 +1348,6 @@ fn format_junit_results(
     Ok("<testsuite><!-- JUnit results would be here --></testsuite>".to_string())
 }
 
-fn load_batch_config(path: &Path) -> Result<BatchConfig, Box<dyn std::error::Error>> {
-    let content = fs::read_to_string(path)?;
-    let config: BatchConfig = serde_yaml::from_str(&content)?;
-    Ok(config)
-}
-
-fn process_batch_task(_task: &BatchTask) -> Result<(), Box<dyn std::error::Error>> {
-    // TODO: Implement batch task processing
-    Ok(())
-}
-
 fn is_quiet() -> bool {
     std::env::var("DDEX_QUIET").unwrap_or_default() == "1"
 }
@@ -1688,37 +1576,6 @@ fn find_first_difference(a: &str, b: &str) -> Option<usize> {
                 None
             }
         })
-}
-
-// Data structures for batch processing
-
-#[derive(serde::Deserialize)]
-struct BatchConfig {
-    tasks: Vec<BatchTask>,
-}
-
-#[derive(serde::Deserialize)]
-struct BatchTask {
-    input_file: PathBuf,
-    output_file: PathBuf,
-    preset: Option<String>,
-    version: Option<String>,
-    validate: Option<bool>,
-}
-
-#[derive(serde::Serialize)]
-struct BatchResult {
-    task_id: usize,
-    success: bool,
-    error: Option<String>,
-}
-
-#[derive(serde::Serialize)]
-struct BatchReport {
-    total_tasks: usize,
-    successful: usize,
-    failed: usize,
-    results: Vec<BatchResult>,
 }
 
 // Data structures for preset commands

@@ -60,7 +60,6 @@ urlencoding = "2.1"
 # CLI dependencies
 clap = { version = "4.4", features = ["derive", "env", "color"] }
 clap_complete = "4.4"
-indicatif = "0.17"
 console = "0.15"
 is-terminal = "0.4"
 

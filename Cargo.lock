@@ -553,7 +553,6 @@ dependencies = [
  "hex",
  "html-escape",
  "indexmap",
- "indicatif",
  "insta",
  "is-terminal",
  "log",
