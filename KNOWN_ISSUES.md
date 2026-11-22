@@ -53,6 +53,9 @@ decision needed)". The security policy above does not settle them:
 
 ## Not pinned by a test (seen during the cleanup)
 
+- ddex-parser `FastStreamingParser::new(StreamingConfig)` ignores the config: buffer size, `max_memory` and the `SecurityConfig` limits are not applied on the fast path (`SecurityConfig::relaxed()` / `enable_fast_streaming`).
+- ddex-builder `DDEXBuilder::diff_xml` / `diff_xml_with_config` / `diff_request_with_xml` are stubs: `parse_xml_to_ast` wraps the whole document in one text node, so any difference is reported as a single `/#text` modification. The `DiffEngine` itself works on real ASTs.
+- ddex-builder CLI: `build` writes a placeholder document (`build_ddex_xml` returns `<xml><!-- DDEX XML would be generated here --></xml>`), and `--validate` never fails (`validate_input_data` returns `Ok(())`). Presets and the target version set on `ddex_builder::Builder` do not affect `DDEXBuilder::build` output. (The no-op `batch` subcommand was removed for the same reason.)
 - The Node builder binding's `validateStructure` reports `isValid: true` for invalid XML (`npm test` prints it without failing).
 - The Python parser reports `__version__ == "0.4.3"` while the package is 0.4.5.
 - ERN prefixed local elements (`<ern:PartyId>`, not schema-valid) are handled inconsistently: some are found, `MessageSender/PartyId` is not.
