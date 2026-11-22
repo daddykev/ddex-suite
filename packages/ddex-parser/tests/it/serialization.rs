@@ -1,4 +1,4 @@
-//! The WASM binding returns `serde_wasm_bindgen::to_value(&ParsedERNMessage)`, so the 0.5.0
+//! The WASM binding returns `serde_wasm_bindgen::to_value(&ParsedERNMessage)`, so the 0.4.6
 //! fields reach JavaScript through the models' `Serialize` impls. This checks that shape
 //! (via serde_json, same impls): the new fields are present, and absent values serialize
 //! as null / [] rather than being invented or dropped.

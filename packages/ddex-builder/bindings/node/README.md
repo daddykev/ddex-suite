@@ -13,7 +13,7 @@ Generate deterministic, industry-compliant DDEX XML files from JavaScript/TypeSc
 ```bash
 npm install ddex-builder
 # or for specific version
-npm install ddex-builder@0.4.4
+npm install ddex-builder@0.4.6
 # or
 yarn add ddex-builder
 ```

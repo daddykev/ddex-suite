@@ -14,7 +14,7 @@ order with ISRC, title (DisplayTitleText, else DisplayTitle/TitleText, IsDefault
 display artist (DisplayArtistName, else PartyList names), Duration, the enclosing group
 path, the item SequenceNumber and the linked TrackRelease.
 
-`details()` computes the 0.5.0 fields independently: MessageControlType; per main Release
+`details()` computes the 0.4.6 fields independently: MessageControlType; per main Release
 the default and full lists of genres, parental warnings, release / original release
 dates, the default P/C line and the label (first ReleaseLabelReference -> PartyList name);
 per track the default parental warning, P/C line (4.3: in the Edition) and TrackRelease
@@ -155,7 +155,7 @@ def oracle(path):
 
 
 # ---------------------------------------------------------------------------
-# 0.5.0 fields: dates, P/C lines, genres, parental warnings, label, MessageControlType,
+# 0.4.6 fields: dates, P/C lines, genres, parental warnings, label, MessageControlType,
 # TrackRelease genre, deal dates. Text is taken exactly as written (lxml text, no strip),
 # as the parser keeps xs:string values; references are collapsed (xs:IDREF).
 # ---------------------------------------------------------------------------

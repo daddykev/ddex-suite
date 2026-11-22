@@ -14,7 +14,7 @@ Categories:
   placeholder assertions.
 - **DEFER**: exercises only streaming implementations that may be removed. Gated
   behind the `legacy-streaming-tests` feature (off by default).
-- **PERF**: since 0.5.0, timings are benchmarks that report numbers
+- **PERF**: since 0.4.6, timings are benchmarks that report numbers
   (`cargo bench`, recorded in `dev-docs/PERFORMANCE.md`). The `perf-tests` feature keeps
   only a few sanity limits (about 10× the recorded timings, release mode only):
   `cargo test --release --features perf-tests perf::`.
@@ -99,7 +99,7 @@ and runs every inline test a second time (~97 s). Bin-target tests disabled
 | streaming::parallel_parser | 4 | pass (flaky) | DEFER (2) + PERF (`test_parallel_speedup_measurement`, `test_thread_scaling`) | |
 | streaming::{perf_analysis, zero_copy_benchmark, parallel_benchmark} | 10 | 1–2 fail (flaky) | PERF | Incl. `test_specific_parallel_speedup` |
 | streaming/simple_test.rs | 2 | not compiled (not in module tree) | DELETE (A) | Orphaned test file |
-| streaming/accumulator.rs tests | 4 | not compiled (module not declared) | out of scope | Dead library source, not a test file. Noted for the v0.5.0 streaming cleanup |
+| streaming/accumulator.rs tests | 4 | not compiled (module not declared) | out of scope | Dead library source, not a test file. Noted for the v0.4.6 streaming cleanup |
 
 ## ddex-builder: integration tests
 
@@ -158,7 +158,7 @@ and runs every inline test a second time (~97 s). Bin-target tests disabled
 | ddex-builder test_import.py | 4 | pass, but each test `return`s a bool, so failures can't fail | REWRITE | Use asserts |
 
 Also seen: the Python parser reports `__version__ == "0.4.3"` while the package is
-0.4.5. Version-consistency is v0.5.0 packaging work and not touched here.
+0.4.5. Version-consistency is v0.4.6 packaging work and not touched here.
 
 ## Outcomes after the fix-up commits
 
@@ -221,7 +221,7 @@ Things the triage couldn't predict, found while making the KEEP/REWRITE tests pa
   `round_trip`); `ern4_support` gained the 3.8.2 schema in its tooling check and a few
   helpers made public for the 3.8 round trip.
 
-## parser-completeness: 0.5.0 parser fields, whitespace, large files
+## parser-completeness: 0.4.6 parser fields, whitespace, large files
 
 - **New (ddex-parser `tests/it`):** `whitespace` (4.3 and 3.8.2: text exact per the XSD
   whiteSpace facet, references and typed values collapsed, CRLF normalized, `&#13;` kept,
@@ -248,7 +248,7 @@ Things the triage couldn't predict, found while making the KEEP/REWRITE tests pa
   `ern38_population.py` checks that each new field is populated exactly where the 3.8.x
   XML has it (repository fixtures and the YouTube 3.8.2 samples: no misses, nothing
   invented).
-- **perf-tests (0.5.0):** the wall-clock pass/fail tests became criterion benches
+- **perf-tests (0.4.6):** the wall-clock pass/fail tests became criterion benches
   (`ddex-parser` `throughput`, `ddex-builder` `performance` / `security`); the
   `perf-tests` feature keeps five sanity limits (`perf::`). The builder benches used an
   incomplete ERN 4.3 request, so they timed a validation error; they now build for real

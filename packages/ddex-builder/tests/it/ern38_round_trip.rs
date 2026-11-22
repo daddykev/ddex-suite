@@ -36,12 +36,12 @@ const EXPECTED_FAILURES: &[(&str, &str, &str)] = &[
     (
         "youtube/721620118165_",
         "requires an identifier in Release/ReleaseId (track release)",
-        "builder: ReleaseIdRequest has no ISRC; the TrackReleases' only identifier is ReleaseId/ISRC (parsed since 0.5.0)",
+        "builder: ReleaseIdRequest has no ISRC; the TrackReleases' only identifier is ReleaseId/ISRC (parsed since 0.4.6)",
     ),
     (
         "youtube/USGCV1172318_",
         "requires an identifier in Release/ReleaseId (releases[0].release_ids)",
-        "builder: ReleaseIdRequest has no ISRC; the release's only identifier is ReleaseId/ISRC (parsed since 0.5.0)",
+        "builder: ReleaseIdRequest has no ISRC; the release's only identifier is ReleaseId/ISRC (parsed since 0.4.6)",
     ),
     (
         "youtube/QZ6RS1700001_music_video",

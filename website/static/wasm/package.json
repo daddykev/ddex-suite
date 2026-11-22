@@ -4,7 +4,7 @@
   "collaborators": [
     "DDEX Parser Contributors"
   ],
-  "version": "0.4.2",
+  "version": "0.4.6",
   "license": "MIT",
   "files": [
     "ddex_parser_wasm_bg.wasm",

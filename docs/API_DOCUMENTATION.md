@@ -213,7 +213,7 @@ interface ParseOptions {
     // Mode selection
     mode: 'auto' | 'dom' | 'stream';     // 'dom' (default) / 'auto': the complete parser at any size.
                                           // 'stream': experimental, opt-in; reads a subset of fields.
-    autoThreshold: number;                // Unused since 0.5.0 (no automatic switch to streaming)
+    autoThreshold: number;                // Unused since 0.4.6 (no automatic switch to streaming)
     
     // Data options  
     representation: 'both' | 'graph' | 'flat';
@@ -298,7 +298,7 @@ interface DeterminismConfig {
 | 100MB     | <5s        | <50MB        | Stream | Memory bounded; experimental, opt-in (`mode: 'stream'`), subset of fields |
 | 1GB       | <60s       | <100MB       | Stream | Experimental, opt-in; CPU/cache sensitive |
 
-Since 0.5.0 `parse()` uses the complete DOM parser for every input size; the streaming
+Since 0.4.6 `parse()` uses the complete DOM parser for every input size; the streaming
 path is never selected automatically.
 
 ### Builder Performance

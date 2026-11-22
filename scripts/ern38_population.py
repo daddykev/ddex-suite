@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Which 0.5.0 fields ddex-parser populates for ERN 3.8.x files, checked against lxml.
+"""Which 0.4.6 fields ddex-parser populates for ERN 3.8.x files, checked against lxml.
 
 Usage (from the repo root, with lxml installed):
     cargo build --release -p ddex-parser --bin ddex-parser

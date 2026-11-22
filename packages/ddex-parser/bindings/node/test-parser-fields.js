@@ -1,4 +1,4 @@
-// Smoke test for the 0.5.0 parser fields through the Node binding: MessageControlType,
+// Smoke test for the 0.4.6 parser fields through the Node binding: MessageControlType,
 // release identifiers (ISRC, ProprietaryId), dates (default + territorial lists, partial
 // dates as written), P/C lines, genres, parental warnings, labels, 3.8.x track artists and
 // layout, TrackRelease genre, resource details and deal EndDate.
@@ -81,4 +81,4 @@ function ern382() {
 
 ern43();
 ern382();
-console.log('ok - Node binding exposes the 0.5.0 parser fields (ERN 4.3 and 3.8.2)');
+console.log('ok - Node binding exposes the 0.4.6 parser fields (ERN 4.3 and 3.8.2)');

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- ERN 4.3 with the 0.5.0 parser fields: MessageControlType, release dates (territorial,
+<!-- ERN 4.3 with the 0.4.6 parser fields: MessageControlType, release dates (territorial,
      default, partial), P/C lines (release, SoundRecordingEdition, Image), genres (default and
      territorial), parental warnings, label via ReleaseLabelReference, TrackRelease genre and a
      deal EndDate. -->

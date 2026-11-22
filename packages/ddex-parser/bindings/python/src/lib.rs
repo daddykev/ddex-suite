@@ -638,7 +638,7 @@ fn dates_list<'py>(
     Ok(list)
 }
 
-/// The 0.5.0 release columns (releases schema). Absent values are None / empty lists.
+/// The 0.4.6 release columns (releases schema). Absent values are None / empty lists.
 fn set_release_detail_items(
     py: Python,
     row: &Bound<'_, PyDict>,
@@ -683,7 +683,7 @@ fn set_release_detail_items(
     Ok(())
 }
 
-/// The 0.5.0 track columns (tracks schema). Absent values are None / empty lists.
+/// The 0.4.6 track columns (tracks schema). Absent values are None / empty lists.
 fn set_track_detail_items(
     py: Python,
     row: &Bound<'_, PyDict>,

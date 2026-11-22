@@ -1,4 +1,4 @@
-"""Smoke test for the 0.5.0 parser fields through the Python binding: the deals() and
+"""Smoke test for the 0.4.6 parser fields through the Python binding: the deals() and
 message_control_type() accessors and the new DataFrame columns (release identifiers,
 dates, P/C lines, genres, parental warnings, labels, 3.8.x track artists and layout,
 TrackRelease genre). Absent values are None.

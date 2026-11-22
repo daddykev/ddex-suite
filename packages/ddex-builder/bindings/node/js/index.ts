@@ -1,7 +1,7 @@
 /**
  * @fileoverview DDEX Builder Node.js API - High-performance DDEX XML generation
  * @module ddex-builder
- * @version 0.4.2
+ * @version 0.4.6
  * @author Kevin Marques Moo
  * @license MIT
  */
