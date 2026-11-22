@@ -177,4 +177,28 @@ Things the triage couldn't predict, found while making the KEEP/REWRITE tests pa
   (`message_id` is a method; `detect_version` returns `V4_3`), now
   `xfail(strict=True)`.
 
+## builder-ern4: schema-valid ERN 4.2/4.3 builder output
+
+- **Round trip (builder):** both tests are KEEP again and run for 4.2 and 4.3
+  (`it::round_trip`): the output validates against the official XSDs, the parser
+  reads it back, and build → parse → build is byte-identical.
+- **Un-ignored:** `security::builder_security_tests::test_illegal_xml_chars_never_reach_builder_output`
+  (the builder now rejects XML-illegal characters, naming the field; the test asserts
+  that).
+- **Script-escaping assertions fixed:** `test_output_validation` and
+  `test_output_sanitization_pipeline` build script-looking metadata through the real
+  builder and assert it comes out as escaped text, never a raw element. Both stay
+  KEEP-IGNORED for their other assertions (OutputSanitizer bugs). New non-ignored
+  `script_metadata_is_escaped_in_builder_output` covers the escaping.
+- **New:** `ern4_xsd` (xmllint against the official XSDs; fails, not skips, without
+  xmllint unless `DDEX_SKIP_XSD=1`), `ern4_samples` (19 official samples: parse → build
+  → XSD → re-parse), `ern4_escaping` (proptest), `ern382_output` (3.8.2 snapshots),
+  parser `ern4_build_inputs`; Node `smoke-ern43.js` (`npm run test:smoke`), Python
+  `test_smoke_ern43.py`.
+- **Rewritten expectations:** canonicalizer unit tests that pinned whitespace collapsing
+  and the old (schema-invalid) 4.3 reorder now pin exact text and 4.x document order.
+  Tests that build 4.3 for other purposes (determinism, linker, security helpers) get
+  explicit 4.x test data (`ern4_support::ern4_test_data`); their dangling deal
+  references, non-pattern references and 100-release message were fixed in the data.
+
 The full list of known bugs lives in `KNOWN_ISSUES.md`.

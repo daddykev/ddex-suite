@@ -499,7 +499,9 @@ pub fn request_from_parsed(parsed: &ParsedERNMessage, version: &str) -> BuildReq
                 .map(|tr| TrackReleaseRequest {
                     release_reference: tr.release_reference.clone(),
                     release_ids: release_ids(&tr.release_id),
-                    title: DisplayText::pick_default(&tr.display_title_text).map(|d| d.text.clone()),
+                    title: DisplayText::pick_default(&tr.display_title_text)
+                        .or_else(|| DisplayText::pick_default(&tr.display_title))
+                        .map(|d| d.text.clone()),
                     genre: tr.genre.first().map(|g| g.genre_text.clone()),
                     sub_genre: tr.genre.first().and_then(|g| g.sub_genre.clone()),
                     label: tr

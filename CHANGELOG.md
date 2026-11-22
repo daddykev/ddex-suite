@@ -35,8 +35,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the display texts with their `IsDefault` / language / territory attributes.
 - `scripts/ern4_oracle.py` / `scripts/compare_ern4_oracle.py`: an lxml oracle
   (independent of the parser) and a comparison against the parser's flat output.
+- `scripts/fetch_ddex_schemas.sh`: downloads the official ERN 4.2 / 4.3 XSDs and the
+  allowed-value-set schemas they import into `schemas/` (gitignored: the DDEX licence
+  does not allow redistributing them), verifies pinned SHA-256 hashes (with re-pinning
+  instructions when DDEX updates the unversioned `allowed-value-sets.xsd`) and points the
+  imports at the local copies. The builder's XSD tests run it when the schemas are
+  missing.
+- Parser graph model, for rebuilding parsed 4.x messages: `Release.genre` (was always
+  empty), `Release.release_type_user_defined_value`, `Release.parental_warning_type`,
+  `Release.release_label_reference`; `Resource.type_value`,
+  `Resource.type_user_defined_value`, `Resource.parental_warning_type` and
+  `ResourceId/ProprietaryId` identifiers; `TrackRelease.genre`; `ERNMessage.attributes`
+  holds the 4.x root attributes (`LanguageAndScriptCode`, `AvsVersionId`, ...).
 
 ### Fixed
+- **ERN 4.2 / 4.3 builder output is schema-valid.** It was a 3.8-style tree (no
+  `ReleaseType`, `ReferenceTitle` instead of `DisplayTitleText`, no `PartyList` or
+  `ResourceGroup`, header elements out of order, no `DealList`) that failed XSD
+  validation and that ddex-parser rejected. The builder now writes the 4.x structure per
+  the official XSDs: 4.x `MessageHeader`; a `PartyList` built from the release/track
+  artists and labels with deterministic references (`P1`, `P2`, ... in order of first
+  appearance); `SoundRecording` / `Video` with `Type`, `ResourceId` (4.3: inside
+  `SoundRecordingEdition` / `VideoEdition`), `DisplayTitleText` / `DisplayTitle`,
+  `DisplayArtistName` / `DisplayArtist` (`ArtistPartyReference` + `DisplayArtistRole`),
+  `Duration`, `ParentalWarningType`; `Release` with `ReleaseType`, one `ReleaseId`
+  (GRid / ICPN / ProprietaryIds merged), `ReleaseLabelReference`, `Genre`,
+  `ParentalWarningType` and a `ResourceGroup` tree (the request's tree, one `Component`
+  group per disc, or one flat group; `SequenceNumber`s kept); optional `TrackRelease`s;
+  and a 4.x `DealList`. The DB-C14N canonicalizer keeps 4.x document order (its reorder
+  tables are 3.8-only and produced schema-invalid 4.x).
+  - Verified with xmllint against the official XSDs (minimal single, multi-track
+    album, multi-disc album, release with video; canonical and pretty output).
+  - The parse → build → re-parse round trip passes for 4.2 and 4.3, and build → parse →
+    build is byte-identical.
+  - All 19 official 4.2/4.3 samples (`examples/Samples42`, `Samples43`) rebuild to
+    schema-valid XML whose re-parsed release title / ICPN / type / display artist,
+    track count, per-track ISRC / title / duration / disc / position, deal count and
+    deal release references equal the original's. Data the build request does not carry
+    yet is not rebuilt: contributors, P/C lines, technical details and delivery files,
+    images and texts (and their `ResourceGroupContentItem`s / linked resource
+    references), cue sheets and chapters, additional titles and subtitles, `RelatedRelease`
+    / `RelatedResource`, release visibility, keywords / synopsis, original release date,
+    party IDs and name details in `PartyList`, `SentOnBehalfOf`, `MessageThreadId`,
+    `MessageFileName`, `MessageControlType` (not read by the parser),
+    `ReleaseProfileVersionId`, `AdministratingRecordCompany`,
+    `IsMultiArtistCompilation`, release `Duration`, deal price information, distribution
+    channels, pre-order flags and `EndDate` (not read by the parser), all but the first
+    `ReleaseType` / `ReleaseLabelReference` / `Genre` / `ParentalWarningType`, multiple
+    `DisplayArtist`s (one party named after the `DisplayArtistName` is written),
+    `Namespace` on a user-defined `ReleaseType`, and territory / language / `IsDefault` /
+    `SequenceNumber` attributes on display texts, artists and labels.
+- Builder output escaping: attribute values escape `"` and `'` as well as `&`, `<`, `>`,
+  and tab / LF / CR as character references; text escapes CR as `&#13;`, so every
+  character reads back unchanged. The canonicalizer no longer double-escapes attribute
+  values (`&` came out as `&amp;amp;`).
+- Builder text content is written exactly: the canonicalizer no longer trims leading /
+  trailing whitespace, collapses newlines to spaces, or turns whitespace-only text into
+  an empty element. This changes 3.8.2 DB-C14N output only for text with leading,
+  trailing, whitespace-only or multi-line content.
+- ddex-parser rejected well-formed attribute values containing an escaped `&` or `<`
+  (`UserDefinedValue="Box &amp; Book"`): the check ran on the unescaped value.
+- ddex-parser reads xs:date deal `StartDate`s (`2004-04-01`, the 4.x type); only
+  RFC 3339 date-times were parsed before, so 4.x deal start dates were always empty.
 - Valid ERN files without `Deal/DealReference` no longer fail with "Missing required
   DDEX field: Deal/DealReference" (#1). Thanks to @jontybrook for #2 (optional
   `DealReference`), #3 (resources without `ReferenceTitle`, e.g. cover images) and
@@ -74,7 +134,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   main TrackRelease is promoted).
 
 ### Changed (breaking)
-Absent optional values are now reported as `None` / `null` instead of invented values:
+Builder (ERN 4.x output, build requests and bindings):
+- New build-request fields, all optional (`#[serde(default)]`, so JSON requests without
+  them still deserialize): `BuildRequest.language_and_script_code`, `avs_version_id`;
+  `ReleaseRequest.release_type`, `genre`, `sub_genre`, `parental_warning_type`,
+  `artist_role`, `release_ids`, `resource_group`; `TrackRequest.resource_kind`
+  (`SoundRecording` / `Video`), `resource_type`, `parental_warning_type`, `artist_role`,
+  `disc_number`, `sequence_number`, `proprietary_ids`, `track_release`;
+  `DealTerms.end_date`, `use_types`. New types `AvsValueRequest` (a plain string or
+  `{value, namespace, user_defined_value}`), `ProprietaryIdRequest`, `ReleaseIdRequest`,
+  `ResourceGroupRequest`, `ResourceGroupContentItemRequest`, `TrackReleaseRequest`,
+  `ResourceKind`. Every public request struct implements `Default`. **Rust struct
+  literals of `BuildRequest`, `ReleaseRequest`, `TrackRequest` and `DealTerms` must add
+  the new fields or end with `..Default::default()`.**
+- ERN 4.2 / 4.3 builds that lack data the 4.x schema requires now fail with one error
+  per missing field instead of producing invalid XML, e.g.
+  `ERN 4.3 requires Release/ReleaseType (releases[0].release_type)`. Nothing is filled
+  in. Required for 4.x: `language_and_script_code`; `avs_version_id` (4.3); sender and
+  recipient `party_id`, which must be a DPID (`PADPIDA...`); one release with
+  `release_type`, `genre`, `parental_warning_type`, `label`, an artist, a title and an
+  identifier; per track `resource_type`, `parental_warning_type`, ISRC or proprietary
+  ID, title, artist and an xs:duration; per deal a `start_date` and release references
+  that exist in the message. Also rejected for 4.x: more than one release per message,
+  references that don't match the XSD patterns (`R…`, `A…`), invalid dates, a nested
+  resource group without `resource_group_type`, and resource groups combined with
+  per-track `disc_number` / `sequence_number`. The only derived value is
+  `DisplayArtistRole` `MainArtist` for `artist` (override with `artist_role`).
+- Builds whose text contains characters XML 1.0 does not allow (C0 controls other than
+  tab / LF / CR, U+FFFE, U+FFFF) fail with an error naming the field, for every ERN
+  version. Previously they produced XML that was not well-formed.
+- Video resources (`resource_kind: Video`) are rejected for 3.8.x targets.
+- The streaming writer (`streaming::StreamingBuilder`, Node `StreamingDdexBuilder`)
+  rejects ERN 4.2 / 4.3 targets ("not yet supported by the streaming writer"; use
+  `DDEXBuilder::build`). Its 3.8 output is unchanged.
+- Node.js: `DdexBuilder.build(request)` / `buildWithFidelity(request, …)` take a build
+  request (the core `BuildRequest` fields, typed in the new `build-request.d.ts`) and
+  build it with the core builder. `header` and `version` are required; without
+  `releases`, the releases added with `addRelease` / `addResource` are used. The
+  binding no longer invents a "DDEX Suite" sender, a `TEMP00000000` ISRC, a `PT3M00S`
+  duration, "Untitled" / "Unknown Artist" or a silent `4.3` version: a missing value is
+  the core builder's error. `Release.parentalWarningType`, `Resource.ddexType` and
+  `Resource.parentalWarningType` are new. **`batchBuild` (and the wrapper's
+  `buildBatch`) is removed: it returned hard-coded XML.**
+- Python: `DdexBuilder.build(request=None)` and `build_with_fidelity(…, request=None)`
+  work the same way (request types in `ddex_builder.build_request`), without the
+  invented sender, `TEMP00000000` ISRC, `PT180S` duration or default version.
+  `from_dataframe(df, schema=None, request=None)` builds with the core builder (it wrote
+  its own unescaped, 3.8-shaped XML), takes the header / version from `request`, and no
+  longer fills in "Album", "Unknown Artist", "Various Artists" or "Release {id}".
+  `batch_build` builds each request dict with the core builder (it returned placeholder
+  XML). `Release.parental_warning_type`, `Resource.ddex_type` and
+  `Resource.parental_warning_type` are new. Without the native extension, building
+  raises instead of returning mock XML.
+
+Parser: absent optional values are now reported as `None` / `null` instead of invented values:
 - `ParsedDeal.deal_id`: `String` → `Option<String>` (no more `DEAL_AUTO_{n}`)
 - `ParsedTrack.title`, `ParsedResource.title`: `String` → `Option<String>` (the resource
   reference is no longer used as a title)

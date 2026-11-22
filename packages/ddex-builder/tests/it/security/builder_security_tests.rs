@@ -138,25 +138,56 @@ fn test_build_input_validation() {
 /// builder, but must never be written into the output (that would make it
 /// not well-formed).
 #[test]
-#[ignore = "known bug: DDEXBuilder writes every XML-illegal C0 control character (U+0000-U+0008, U+000B, U+000C, U+000E-U+001F) into the output verbatim; text escaping only handles & < >"]
 fn test_illegal_xml_chars_never_reach_builder_output() {
+    // Policy: characters XML 1.0 does not allow are rejected, with an error naming the field
     let illegal: Vec<char> = (0u32..0x20)
         .filter_map(char::from_u32)
+        .chain(['\u{FFFE}', '\u{FFFF}'])
         .filter(|c| is_illegal_xml_char(*c))
         .collect();
+    assert_eq!(illegal.len(), 31);
 
-    let mut leaked = Vec::new();
+    let mut accepted = Vec::new();
     for c in illegal {
         let text = format!("Test{}Song", c);
         match DDEXBuilder::new().build(build_request_with_metadata(&text), Default::default()) {
-            Ok(result) if result.xml.chars().any(is_illegal_xml_char) => leaked.push(c),
-            _ => {}
+            Err(ddex_builder::BuildError::InvalidFormat { field, message }) => {
+                assert!(field.starts_with("header.") || field.starts_with("releases["), "{field}");
+                assert!(message.contains(&format!("U+{:04X}", c as u32)), "{message}");
+            }
+            Err(e) => panic!("unexpected error for U+{:04X}: {e}", c as u32),
+            Ok(_) => accepted.push(c),
         }
     }
     assert!(
-        leaked.is_empty(),
-        "Illegal XML characters written to builder output: {:?}",
-        leaked
+        accepted.is_empty(),
+        "Illegal XML characters accepted by the builder: {:?}",
+        accepted
+    );
+}
+
+/// Script-looking metadata is written as escaped text by the real builder.
+#[test]
+fn script_metadata_is_escaped_in_builder_output() {
+    for payload in [
+        "<script>alert('XSS')</script>",
+        "<img src=x onerror=alert('XSS')>",
+        "</TitleText><script>x</script><TitleText>",
+    ] {
+        let xml = build_with_metadata(payload);
+        assert_script_escaped(&xml);
+        assert_metadata_passes_through_builder(payload);
+    }
+}
+
+/// `xml` (builder output for script metadata) holds no raw script/img element and does
+/// hold the escaped text.
+fn assert_script_escaped(xml: &str) {
+    assert!(!xml.contains("<script"), "raw <script> element in builder output:\n{xml}");
+    assert!(!xml.contains("<img"), "raw <img> element in builder output:\n{xml}");
+    assert!(
+        xml.contains("&lt;script&gt;") || xml.contains("&lt;img "),
+        "escaped script text missing from builder output:\n{xml}"
     );
 }
 
@@ -167,23 +198,16 @@ fn test_output_validation() {
     let config = SecurityConfig::default();
     let sanitizer = OutputSanitizer::new(config);
 
-    // Well-formed XML with a script-looking element is not an XML-level threat:
-    // the sanitizer must accept it and must not rewrite a valid document
-    let script_xml = r#"<ddex:NewReleaseMessage xmlns:ddex="http://ddex.net/xml/ern/43">
-        <ddex:ReleaseList>
-            <ddex:Release>
-                <ddex:ReferenceTitle>
-                    <ddex:TitleText><script>alert('XSS')</script></ddex:TitleText>
-                </ddex:ReferenceTitle>
-            </ddex:Release>
-        </ddex:ReleaseList>
-    </ddex:NewReleaseMessage>"#;
+    // Script-looking metadata comes out of the real builder as escaped text, never as a
+    // raw element; the sanitizer must accept that output and must not rewrite it
+    let script_xml = build_with_metadata("<script>alert('XSS')</script>");
+    assert_script_escaped(&script_xml);
 
-    let result = sanitizer.sanitize_xml_output(script_xml);
+    let result = sanitizer.sanitize_xml_output(&script_xml);
     assert_eq!(
         result.as_deref().ok(),
-        Some(script_xml),
-        "Well-formed output should be accepted unchanged: {:?}",
+        Some(script_xml.as_str()),
+        "Well-formed builder output should be accepted unchanged: {:?}",
         result
     );
 

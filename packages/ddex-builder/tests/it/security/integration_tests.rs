@@ -176,32 +176,42 @@ fn test_output_sanitization_pipeline() {
         );
     }
 
+    // Script-looking metadata comes out of the real builder as escaped text, never as a
+    // raw element
+    let script_output = build_with_metadata("<script>alert('XSS')</script>");
+    assert!(
+        !script_output.contains("<script>"),
+        "raw <script> element in builder output:\n{}",
+        script_output
+    );
+    assert!(
+        script_output.contains("&lt;script&gt;alert('XSS')&lt;/script&gt;"),
+        "escaped script text missing from builder output:\n{}",
+        script_output
+    );
+
     // Test safe outputs: well-formed XML must be accepted and not rewritten.
-    // A `<script>` element is not an XML-level threat.
     let safe_outputs = vec![
         (
             "Simple valid XML",
-            r#"<root><child>safe content</child></root>"#,
+            r#"<root><child>safe content</child></root>"#.to_string(),
         ),
-        (
-            "Script in XML",
-            r#"<root><script>alert('XSS')</script></root>"#,
-        ),
+        ("Builder output with script-looking metadata", script_output),
         (
             "XML with escaped entities",
-            r#"<root>&lt;content&gt; &amp; &quot;quotes&quot;</root>"#,
+            r#"<root>&lt;content&gt; &amp; &quot;quotes&quot;</root>"#.to_string(),
         ),
         (
             "DDEX structure",
-            r#"<ddex:NewReleaseMessage xmlns:ddex="http://ddex.net/xml/ern/43"><ddex:MessageHeader><ddex:MessageId>MSG123</ddex:MessageId></ddex:MessageHeader></ddex:NewReleaseMessage>"#,
+            r#"<ddex:NewReleaseMessage xmlns:ddex="http://ddex.net/xml/ern/43"><ddex:MessageHeader><ddex:MessageId>MSG123</ddex:MessageId></ddex:MessageHeader></ddex:NewReleaseMessage>"#.to_string(),
         ),
     ];
 
     for (description, output) in safe_outputs {
-        let result = sanitizer.sanitize_xml_output(output);
+        let result = sanitizer.sanitize_xml_output(&output);
         assert_eq!(
             result.as_deref().ok(),
-            Some(output),
+            Some(output.as_str()),
             "{} should be allowed unchanged by output sanitizer: {:?}",
             description,
             result
