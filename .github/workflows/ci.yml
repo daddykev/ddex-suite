@@ -1,0 +1,172 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  fmt:
+    name: cargo fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+
+  clippy:
+    name: cargo clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      # Errors fail the job; warnings are reported. ddex-builder's determinism lint
+      # (disallowed HashMap/HashSet, `[lints.clippy] disallowed_types = "deny"`) still fails
+      # in existing code, so it is allowed here and enforced in `clippy-builder-determinism`.
+      - run: cargo clippy --workspace --all-targets -- -A clippy::disallowed_types
+
+  clippy-builder-determinism:
+    name: cargo clippy ddex-builder (disallowed HashMap/HashSet; allowed to fail until 0.6.0)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      # TODO(0.6.0): replace the remaining HashMap/HashSet uses in ddex-builder (about 50
+      # errors) and fold this into the clippy job.
+      - run: cargo clippy -p ddex-builder --all-targets
+
+  test:
+    name: cargo test (-D warnings)
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -D warnings
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install xmllint
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+      - name: Fetch the DDEX schemas and YouTube's ERN 3.8.2 samples
+        run: |
+          sh scripts/fetch_ddex_schemas.sh
+          sh scripts/fetch_ern382_samples.sh
+      - name: cargo test --workspace
+        run: cargo test --workspace
+      - name: Build all targets with --features perf-tests
+        run: cargo build --workspace --all-targets --features ddex-builder/perf-tests,ddex-parser/perf-tests
+
+  xsd:
+    name: XSD validation of builder output
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install xmllint
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+      - name: Fetch the DDEX schemas
+        run: sh scripts/fetch_ddex_schemas.sh
+      - name: Builder XSD tests (Rust)
+        run: cargo test -p ddex-builder --test it -- xsd round_trip samples escaping
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --locked
+      - name: WASM builder output (XSD-validated)
+        working-directory: packages/ddex-builder/bindings/wasm
+        run: npm test
+      - name: WASM parser builds
+        working-directory: packages/ddex-parser/bindings/wasm
+        run: wasm-pack build --target web --release
+
+  node:
+    name: Node bindings
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: ddex-parser (build, test)
+        working-directory: packages/ddex-parser/bindings/node
+        run: |
+          npm ci
+          npm run build
+          npm test
+      - name: ddex-builder (build; tests build ERN 4.3 / 3.8.2 and read it back with the parser)
+        working-directory: packages/ddex-builder/bindings/node
+        run: |
+          npm ci
+          npm run build
+          npm test
+
+  python:
+    name: Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install build and test tools
+        run: python -m pip install --upgrade pip maturin pytest pytest-asyncio pandas
+      - name: ddex-parser (maturin build, pytest)
+        working-directory: packages/ddex-parser/bindings/python
+        run: |
+          maturin build --release --out dist-ci
+          python -m pip install --force-reinstall dist-ci/*.whl
+          cd tests && python -m pytest -v
+      - name: ddex-builder (maturin build, pytest)
+        working-directory: packages/ddex-builder/bindings/python
+        run: |
+          maturin build --release --out dist-ci
+          python -m pip install --force-reinstall dist-ci/*.whl
+          mkdir -p /tmp/builder-tests && cp test_*.py /tmp/builder-tests/
+          cd /tmp/builder-tests && python -m pytest -v
+
+  oracle:
+    name: ERN 4.x oracle comparison
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install lxml
+      - run: cargo build --release -p ddex-parser --bin ddex-parser
+      - name: Compare the parser with the lxml oracle (official 4.2 / 4.3 samples)
+        run: python scripts/compare_ern4_oracle.py --parser target/release/ddex-parser examples/Samples42/*.xml examples/Samples43/*.xml

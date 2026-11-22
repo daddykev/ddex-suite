@@ -22,7 +22,6 @@ test-assets/
 .cargo/*
 !/.cargo/config.toml
 .claude/
-.github/
 .dockerignore
 
 PUBLISH.md
