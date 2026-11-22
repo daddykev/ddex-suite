@@ -309,3 +309,4 @@ temp/
 # YouTube's ERN 3.8.2 sample messages, fetched by scripts/fetch_ern382_samples.sh (not redistributed)
 /samples/
 **/bindings/wasm/pkg-node/
+packages/*/bindings/node/docs/

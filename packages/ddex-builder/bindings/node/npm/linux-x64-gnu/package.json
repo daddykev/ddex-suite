@@ -11,25 +11,32 @@
   "files": [
     "ddex-builder-node.linux-x64-gnu.node"
   ],
-  "description": "DDEX XML builder with deterministic output and smart normalization",
+  "description": "The linux-x64-gnu native binary of ddex-builder (installed automatically by ddex-builder)",
   "keywords": [
     "ddex",
+    "ern",
     "xml",
     "builder",
     "music",
+    "metadata",
     "deterministic",
-    "canonicalization"
+    "native"
   ],
   "license": "MIT",
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=18.0.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/daddykev/ddex-suite.git",
-    "directory": "packages/ddex-builder/bindings/node"
+    "url": "git+https://github.com/daddykev/ddex-suite.git",
+    "directory": "packages/ddex-builder/bindings/node/npm/linux-x64-gnu"
   },
   "libc": [
     "glibc"
-  ]
+  ],
+  "homepage": "https://ddex-suite.org",
+  "bugs": {
+    "url": "https://github.com/daddykev/ddex-suite/issues"
+  },
+  "author": "Kevin Marques Moo"
 }

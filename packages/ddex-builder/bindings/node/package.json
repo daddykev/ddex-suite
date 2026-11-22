@@ -1,36 +1,38 @@
 {
   "name": "ddex-builder",
   "version": "0.5.0",
-  "description": "DDEX XML builder with deterministic output and smart normalization",
+  "description": "Deterministic DDEX ERN XML builder (ERN 4.3, 4.2, 3.8.2) for Node.js, native Rust addon",
   "keywords": [
     "ddex",
+    "ern",
     "xml",
     "builder",
     "music",
+    "metadata",
     "deterministic",
-    "canonicalization"
+    "native"
   ],
   "main": "index.js",
   "types": "index.d.ts",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/daddykev/ddex-suite.git",
+    "url": "git+https://github.com/daddykev/ddex-suite.git",
     "directory": "packages/ddex-builder/bindings/node"
   },
   "exports": {
     ".": {
-      "import": "./index.js",
+      "types": "./index.d.ts",
       "require": "./index.js",
-      "types": "./index.d.ts"
+      "import": "./index.js"
     }
   },
   "files": [
     "index.js",
     "index.d.ts",
     "build-request.d.ts",
-    "dist/**/*",
-    "js/**/*"
+    "README.md",
+    "LICENSE"
   ],
   "napi": {
     "name": "ddex-builder-node",
@@ -45,24 +47,27 @@
     "build": "napi build --platform --release && npm run build:ts",
     "build:debug": "napi build --platform",
     "build:ts": "tsc",
-    "docs": "typedoc",
     "artifacts": "napi artifacts",
     "version": "napi version",
     "test": "node smoke-ern43.js && node smoke-ern382.js"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=18.0.0"
   },
   "devDependencies": {
     "@napi-rs/cli": "^2.18.4",
     "@types/node": "^20.19.13",
-    "typescript": "^5.6.0",
-    "typedoc": "^0.26.0"
+    "typescript": "^5.6.0"
   },
   "optionalDependencies": {
     "ddex-builder-darwin-arm64": "0.5.0",
     "ddex-builder-darwin-x64": "0.5.0",
     "ddex-builder-linux-x64-gnu": "0.5.0",
     "ddex-builder-win32-x64-msvc": "0.5.0"
-  }
+  },
+  "homepage": "https://ddex-suite.org",
+  "bugs": {
+    "url": "https://github.com/daddykev/ddex-suite/issues"
+  },
+  "author": "Kevin Marques Moo"
 }

@@ -1,7 +1,7 @@
 {
   "name": "ddex-parser",
   "version": "0.5.0",
-  "description": "DDEX XML parser with native and WASM bindings",
+  "description": "DDEX ERN XML parser (ERN 3.8.x, 4.2, 4.3) for Node.js, native Rust addon",
   "main": "index.js",
   "types": "index.d.ts",
   "exports": {
@@ -39,23 +39,21 @@
   },
   "keywords": [
     "ddex",
+    "ern",
     "xml",
     "parser",
     "music",
     "metadata",
-    "ern",
-    "native",
-    "rust",
-    "wasm"
+    "native"
   ],
   "author": "Kevin Marques Moo",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/daddykev/ddex-suite.git",
-    "directory": "packages/ddex-parser"
+    "directory": "packages/ddex-parser/bindings/node"
   },
-  "homepage": "https://github.com/daddykev/ddex-suite/tree/main/packages/ddex-parser",
+  "homepage": "https://ddex-suite.org",
   "bugs": {
     "url": "https://github.com/daddykev/ddex-suite/issues"
   },

@@ -5,19 +5,18 @@ edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Deterministic DDEX XML builder with smart normalization"
-keywords = ["ddex", "xml", "builder", "deterministic", "music"]
+description = "Deterministic DDEX ERN XML builder (ERN 4.3, 4.2, 3.8.2) with DB-C14N canonical output"
+keywords = ["ddex", "ern", "xml", "builder", "music"]
 categories = ["encoding", "multimedia::audio"]
 documentation = "https://docs.rs/ddex-builder"
 readme = "README.md"
-homepage = "https://github.com/daddykev/ddex-suite"
-exclude = [
-    "*.bak", "*.backup", "*.log", "*.tmp",
-    "bindings/**/*",
-    "fuzz/**/*", 
-    "tests/integration/**/*",
-    "*.profdata", "*.profraw"
-]
+homepage.workspace = true
+rust-version.workspace = true
+include = ["/src/**/*.rs", "/Cargo.toml", "/README.md", "/LICENSE"]
+
+[package.metadata.docs.rs]
+# Default features, as in CI (`cargo doc --no-deps --workspace --lib`).
+features = []
 
 [dependencies]
 # Core dependency

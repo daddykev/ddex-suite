@@ -6,13 +6,18 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 authors.workspace = true
-description = "High-performance DDEX XML parser with SIMD optimization (40+ MB/s)"
-keywords = ["ddex", "xml", "parser", "music", "metadata"]
+description = "DDEX ERN XML parser (ERN 3.8.x, 4.2, 4.3) with a flat and a graph model"
+keywords = ["ddex", "ern", "xml", "parser", "music"]
 categories = ["parser-implementations", "multimedia::audio"]
 documentation = "https://docs.rs/ddex-parser"
 readme = "README.md"
-homepage = "https://github.com/daddykev/ddex-suite"
-exclude = ["*.bak", "*.backup", "*.log", "*.tmp", "tests/integration/*.ts"]
+homepage.workspace = true
+rust-version.workspace = true
+include = ["/src/**/*.rs", "/build.rs", "/Cargo.toml", "/README.md", "/LICENSE"]
+
+[package.metadata.docs.rs]
+# Default features, as in CI (`cargo doc --no-deps --workspace --lib`).
+features = []
 
 [dependencies]
 # Core dependency
