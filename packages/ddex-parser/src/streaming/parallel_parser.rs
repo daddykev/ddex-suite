@@ -394,7 +394,7 @@ pub struct ParallelBenchmarkResult {
     pub target_achieved: bool,
 }
 
-#[cfg(test)]
+#[cfg(all(test, any(feature = "legacy-streaming-tests", feature = "perf-tests")))]
 mod tests {
     use super::*;
     use std::io::Cursor;
@@ -485,6 +485,7 @@ mod tests {
         xml.into_bytes()
     }
 
+    #[cfg(feature = "legacy-streaming-tests")]
     #[test]
     fn test_parallel_basic_functionality() {
         let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -522,6 +523,7 @@ mod tests {
         println!("✅ Parallel parser basic test passed!");
     }
 
+    #[cfg(feature = "perf-tests")]
     #[test]
     fn test_parallel_speedup_measurement() {
         // Generate 50MB test data
@@ -548,6 +550,7 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "legacy-streaming-tests")]
     #[test]
     fn test_element_boundary_detection() {
         let parser = ParallelStreamingParser::new();
@@ -565,6 +568,7 @@ mod tests {
         );
     }
 
+    #[cfg(feature = "perf-tests")]
     #[test]
     fn test_thread_scaling() {
         if num_cpus::get() < 4 {

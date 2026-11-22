@@ -84,7 +84,7 @@ pub fn verify_comprehensive_parser() {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "legacy-streaming-tests"))]
 mod tests {
     use super::*;
 

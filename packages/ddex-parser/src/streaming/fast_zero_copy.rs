@@ -406,7 +406,7 @@ impl<R: BufRead> Iterator for FastZeroCopyIterator<R> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "legacy-streaming-tests"))]
 mod tests {
     use super::*;
     use std::io::Cursor;

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/382" 
+                       MessageSchemaVersionId="ern/382">
+  <MessageHeader>
+    <MessageThreadId>Thread_382_001</MessageThreadId>
+    <MessageId>MSG_382_001</MessageId>
+    <MessageSender>
+      <PartyName>Test Label 382</PartyName>
+      <PartyId>LABEL382</PartyId>
+    </MessageSender>
+    <MessageRecipient>
+      <PartyName>Test DSP</PartyName>
+      <PartyId>DSP001</PartyId>
+    </MessageRecipient>
+    <MessageCreatedDateTime>2025-01-01T12:00:00Z</MessageCreatedDateTime>
+  </MessageHeader>
+  <ReleaseList>
+    <Release>
+      <ReleaseId>
+        <GRid>A1-B2C3D-4E5F6G-H</GRid>
+      </ReleaseId>
+      <ReferenceTitle>
+        <TitleText>Test Album 3.8.2</TitleText>
+      </ReferenceTitle>
+      <ReleaseType>Album</ReleaseType>
+    </Release>
+  </ReleaseList>
+</ern:NewReleaseMessage>

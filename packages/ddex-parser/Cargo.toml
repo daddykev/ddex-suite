@@ -76,15 +76,23 @@ simd = []
 bench = []
 zero-copy = []  # High-performance zero-copy streaming parser
 performance-debug = []  # Enable performance logging and metrics output
+# Test-only: throughput/latency/speedup assertions (meaningful in release mode only):
+#   cargo test -p ddex-parser --release --features perf-tests
+perf-tests = []
+# Test-only: tests for streaming implementations slated for removal
+legacy-streaming-tests = []
 
 # Binaries
 [[bin]]
 name = "ddex-parser"
 path = "src/main.rs"
+# main.rs re-declares the library modules, so its unit tests would duplicate the lib's.
+test = false
 
 [[bin]]
 name = "generate-bench-report"
 path = "src/bin/bench_report.rs"
+test = false
 required-features = ["async"]
 
 # Benchmarks

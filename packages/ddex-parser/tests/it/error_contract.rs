@@ -1,4 +1,3 @@
-// core/tests/error_contract_test.rs
 use ddex_parser::DDEXParser;
 
 #[test]

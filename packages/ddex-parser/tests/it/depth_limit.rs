@@ -127,3 +127,17 @@ fn create_deep_xml(depth: usize) -> String {
 
     xml
 }
+
+/// Regression: sibling elements must not accumulate depth (10 sibling releases sit at
+/// depth 3, not 13+). Formerly tests/test_depth_fix.rs.
+#[test]
+fn sibling_elements_do_not_accumulate_depth() {
+    let releases: String = (0..10)
+        .map(|i| crate::common::ern43_release(&format!("R{i}"), &format!("Title {i}"), "Artist"))
+        .collect();
+    let xml = crate::common::ern43_message(&format!("<ReleaseList>{releases}</ReleaseList>"));
+
+    let parsed = crate::common::parse_str(&xml)
+        .unwrap_or_else(|e| panic!("10 sibling releases must parse: {e:?}"));
+    assert_eq!(parsed.flat.releases.len(), 10);
+}

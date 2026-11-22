@@ -16,22 +16,22 @@ pub mod verification;
 pub mod working_impl;
 pub mod zero_copy_parser;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "legacy-streaming-tests"))]
 pub mod comprehensive_tests;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "legacy-streaming-tests"))]
 pub mod debug_test;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "perf-tests"))]
 pub mod perf_analysis;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "perf-tests"))]
 pub mod zero_copy_benchmark;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "perf-tests"))]
 pub mod parallel_benchmark;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "legacy-streaming-tests"))]
 pub mod consistency_test;
 
 pub use element::ParsedElement;

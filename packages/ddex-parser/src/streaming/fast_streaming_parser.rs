@@ -411,6 +411,7 @@ mod tests {
         println!("Throughput: {:.2} MB/s", stats.throughput_mbps);
     }
 
+    #[cfg(feature = "perf-tests")]
     #[test]
     fn test_performance_target() {
         let mut parser = create_fast_parser();

@@ -1,4 +1,3 @@
-// core/tests/version_detection.rs
 use ddex_core::models::versions::ERNVersion;
 use ddex_parser::DDEXParser;
 use std::io::Cursor;

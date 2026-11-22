@@ -927,7 +927,7 @@ impl ZeroCopyIterator {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "legacy-streaming-tests"))]
 mod tests {
     use super::*;
 

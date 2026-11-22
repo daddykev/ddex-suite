@@ -1,4 +1,4 @@
-// Test to prevent regression of playground parsing issues
+//! Regression tests for the playground v0.4.3 sample messages.
 use ddex_parser::error::ParseError;
 use ddex_parser::DDEXParser;
 use std::io::Cursor;
@@ -72,20 +72,21 @@ mod playground_regression_tests {
         );
 
         let parsed = result.unwrap();
-        assert_eq!(parsed.message_id, "MSG_PLAYGROUND_2024");
-        assert!(parsed.releases.len() > 0);
+        assert_eq!(parsed.flat.message_id, "MSG_PLAYGROUND_2024");
+        assert!(!parsed.flat.releases.is_empty());
 
         // Verify sender/recipient data is parsed correctly
-        assert!(parsed.sender.is_some());
-        assert!(parsed.recipient.is_some());
 
-        let sender = parsed.sender.unwrap();
-        let recipient = parsed.recipient.unwrap();
+        let sender = &parsed.flat.sender;
+        let recipient = &parsed.flat.recipient;
 
         // These fields should be populated from the XML
-        assert_eq!(sender.name, "Playground Record Label");
+        assert_eq!(sender.name.as_deref(), Some("Playground Record Label"));
         assert_eq!(sender.id, "PLAYGROUND_LABEL");
-        assert_eq!(recipient.name, "Playground Streaming Platform");
+        assert_eq!(
+            recipient.name.as_deref(),
+            Some("Playground Streaming Platform")
+        );
         assert_eq!(recipient.id, "PLAYGROUND_DSP");
     }
 
@@ -152,8 +153,8 @@ mod playground_regression_tests {
         );
 
         let parsed = result.unwrap();
-        assert_eq!(parsed.message_id, "MSG_PLAYGROUND_42_2024");
-        assert!(parsed.releases.len() > 0);
+        assert_eq!(parsed.flat.message_id, "MSG_PLAYGROUND_42_2024");
+        assert!(!parsed.flat.releases.is_empty());
     }
 
     // Test simplified PartyName format (the format that was failing)
@@ -196,15 +197,15 @@ mod playground_regression_tests {
         );
 
         let parsed = result.unwrap();
-        assert_eq!(parsed.message_id, "TEST_SIMPLIFIED");
+        assert_eq!(parsed.flat.message_id, "TEST_SIMPLIFIED");
 
         // Verify both PartyId and simplified PartyName are captured
-        let sender = parsed.sender.unwrap();
-        let recipient = parsed.recipient.unwrap();
+        let sender = &parsed.flat.sender;
+        let recipient = &parsed.flat.recipient;
 
-        assert_eq!(sender.name, "Simple Label Name");
+        assert_eq!(sender.name.as_deref(), Some("Simple Label Name"));
         assert_eq!(sender.id, "SIMPLE_LABEL");
-        assert_eq!(recipient.name, "Simple DSP Name");
+        assert_eq!(recipient.name.as_deref(), Some("Simple DSP Name"));
         assert_eq!(recipient.id, "SIMPLE_DSP");
     }
 

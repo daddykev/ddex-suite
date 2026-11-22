@@ -584,3 +584,42 @@ fn ern42_isrc_and_43_edition_isrc_agree() {
     assert_eq!(isrcs(&a42), isrcs(&a43));
     assert!(isrcs(&a42).iter().all(Option::is_some));
 }
+
+/// Track counts for every official 4.2/4.3 sample, as produced by the independent lxml
+/// oracle (`scripts/ern4_oracle.py`; see tests/fixtures/README.md). Guards the core
+/// ResourceGroup-walk regression without needing Python.
+#[test]
+fn official_samples_track_counts_match_oracle() {
+    // (dir, file, main releases, tracks)
+    let expected = [
+        ("Samples42", "1 Audio.xml", 1, 21),
+        ("Samples42", "2 Video.xml", 1, 2),
+        ("Samples42", "3 MixedMedia.xml", 1, 17),
+        ("Samples42", "4 SimpleAudioSingle.xml", 1, 1),
+        ("Samples42", "5 SimpleVideoSingle.xml", 1, 1),
+        ("Samples42", "6 Ringtone.xml", 1, 1),
+        ("Samples42", "7 LongformMusicalWorkVideo.xml", 1, 2),
+        ("Samples42", "8 DjMix.xml", 1, 1),
+        ("Samples42", "Variant BoxedSet.xml", 1, 121),
+        ("Samples42", "Variant Classical.xml", 1, 12),
+        ("Samples43", "1 Audio.xml", 1, 21),
+        ("Samples43", "2 Video.xml", 1, 2),
+        ("Samples43", "3 MixedMedia.xml", 1, 17),
+        ("Samples43", "4 SimpleAudioSingle.xml", 1, 1),
+        ("Samples43", "5 SimpleVideoSingle.xml", 1, 1),
+        ("Samples43", "6 Ringtone.xml", 1, 1),
+        ("Samples43", "7 LongformMusicalWorkVideo.xml", 1, 2),
+        ("Samples43", "8 DjMix.xml", 1, 1),
+        ("Samples43", "Variant Classical.xml", 1, 12),
+    ];
+    for (dir, file, releases, tracks) in expected {
+        let message = sample(dir, file);
+        assert_eq!(
+            message.flat.releases.len(),
+            releases,
+            "{dir}/{file}: releases"
+        );
+        let got: usize = message.flat.releases.iter().map(|r| r.tracks.len()).sum();
+        assert_eq!(got, tracks, "{dir}/{file}: tracks");
+    }
+}

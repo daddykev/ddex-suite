@@ -319,7 +319,7 @@ pub mod type_conversion_examples {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "legacy-streaming-tests"))]
 mod tests {
     use super::type_conversion_examples::*;
     use super::*;
