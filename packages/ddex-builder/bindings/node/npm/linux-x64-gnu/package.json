@@ -1,0 +1,35 @@
+{
+  "name": "ddex-builder-linux-x64-gnu",
+  "version": "0.4.6",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "main": "ddex-builder-node.linux-x64-gnu.node",
+  "files": [
+    "ddex-builder-node.linux-x64-gnu.node"
+  ],
+  "description": "DDEX XML builder with deterministic output and smart normalization",
+  "keywords": [
+    "ddex",
+    "xml",
+    "builder",
+    "music",
+    "deterministic",
+    "canonicalization"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daddykev/ddex-suite.git",
+    "directory": "packages/ddex-builder/bindings/node"
+  },
+  "libc": [
+    "glibc"
+  ]
+}

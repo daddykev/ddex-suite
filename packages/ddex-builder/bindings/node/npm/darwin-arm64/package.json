@@ -1,0 +1,32 @@
+{
+  "name": "ddex-builder-darwin-arm64",
+  "version": "0.4.6",
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "main": "ddex-builder-node.darwin-arm64.node",
+  "files": [
+    "ddex-builder-node.darwin-arm64.node"
+  ],
+  "description": "DDEX XML builder with deterministic output and smart normalization",
+  "keywords": [
+    "ddex",
+    "xml",
+    "builder",
+    "music",
+    "deterministic",
+    "canonicalization"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daddykev/ddex-suite.git",
+    "directory": "packages/ddex-builder/bindings/node"
+  }
+}

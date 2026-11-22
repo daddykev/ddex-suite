@@ -1,0 +1,189 @@
+#!/usr/bin/env python3
+"""Check that every released version reference in the repository agrees.
+
+The reference is `[workspace.package] version` in the root Cargo.toml. Checked:
+- every workspace member's Cargo.toml (crates and binding crates): the package version
+  (or `version.workspace = true`) and the `version` of internal path dependencies
+  (ddex-core / ddex-parser / ddex-builder);
+- the Node packages' package.json (ddex-parser, ddex-builder), their
+  optionalDependencies on the platform packages, and each platform package under
+  `npm/<platform>/package.json`;
+- the Python packages' pyproject.toml, and that `__version__` is read from the package
+  metadata (no hard-coded version string);
+- the WASM builder package.json and website/static/wasm/package.json;
+- website/package.json and the ddex-parser / ddex-builder dependencies of
+  website/functions/package.json (a `^x.y.z` range must name the version).
+
+Usage: python3 scripts/check_versions.py        (exit status 1 on any disagreement)
+"""
+
+import json
+import re
+import sys
+from pathlib import Path
+
+try:
+    import tomllib  # Python 3.11+
+except ModuleNotFoundError:  # pragma: no cover
+    tomllib = None
+
+ROOT = Path(__file__).resolve().parent.parent
+INTERNAL_CRATES = ("ddex-core", "ddex-parser", "ddex-builder")
+
+
+def load_toml(path):
+    text = path.read_text(encoding="utf-8")
+    if tomllib is not None:
+        return tomllib.loads(text)
+    return minimal_toml(text)
+
+
+def minimal_toml(text):
+    """Enough TOML for this check on Python < 3.11: tables, `key = "string"`,
+    `key.workspace = true`, `[workspace] members = [...]` and inline dependency tables."""
+    data, table = {}, None
+    lines = iter(text.splitlines())
+    for raw in lines:
+        line = raw.split("#", 1)[0].strip() if not raw.strip().startswith("#") else ""
+        if not line:
+            continue
+        m = re.match(r"^\[+([^\]]+)\]+$", line)
+        if m:
+            table = data
+            for part in m.group(1).split("."):
+                table = table.setdefault(part.strip().strip('"'), {})
+            continue
+        m = re.match(r'^([\w.-]+)\s*=\s*(.*)$', line)
+        if not m or table is None:
+            continue
+        key, value = m.group(1), m.group(2).strip()
+        if value.startswith("[") and not value.endswith("]"):
+            while not value.rstrip().endswith("]"):
+                value += next(lines).split("#", 1)[0].strip()
+        if "." in key and value == "true":
+            k, sub = key.split(".", 1)
+            table[k] = {sub: True}
+        elif value.startswith('"'):
+            table[key] = value.strip('"')
+        elif value.startswith("["):
+            table[key] = re.findall(r'"([^"]*)"', value)
+        elif value.startswith("{"):
+            entry = {}
+            for k, v in re.findall(r'([\w-]+)\s*=\s*("[^"]*"|\[[^\]]*\]|\w+)', value):
+                entry[k] = v.strip('"')
+            table[key] = entry
+    return data
+
+
+class Checker:
+    def __init__(self, expected):
+        self.expected = expected
+        self.rows = []
+        self.failures = 0
+
+    def check(self, where, found):
+        ok = found == self.expected
+        self.failures += not ok
+        self.rows.append((ok, where, found))
+
+    def fail(self, where, message):
+        self.failures += 1
+        self.rows.append((False, where, message))
+
+    def report(self):
+        width = max(len(w) for _, w, _ in self.rows)
+        for ok, where, found in self.rows:
+            print(f"{'ok  ' if ok else 'FAIL'} {where:<{width}}  {found}")
+        print()
+        if self.failures:
+            print(f"{self.failures} version reference(s) disagree with {self.expected}")
+        else:
+            print(f"all {len(self.rows)} version references are {self.expected}")
+
+
+def rel(path):
+    return path.relative_to(ROOT).as_posix()
+
+
+def check_cargo(c, workspace):
+    for member in workspace["workspace"]["members"]:
+        path = ROOT / member / "Cargo.toml"
+        manifest = load_toml(path)
+        package = manifest["package"]
+        version = package.get("version")
+        if isinstance(version, dict) and version.get("workspace"):
+            c.check(f"{rel(path)} [package] version (workspace)", c.expected)
+        else:
+            c.check(f"{rel(path)} [package] version", version)
+        for section in ("dependencies", "build-dependencies"):
+            for name, dep in manifest.get(section, {}).items():
+                if name in INTERNAL_CRATES and isinstance(dep, dict) and "version" in dep:
+                    c.check(f"{rel(path)} [{section}] {name}", dep["version"].lstrip("=^~"))
+
+
+def check_node(c):
+    for pkg in ("ddex-parser", "ddex-builder"):
+        node = ROOT / "packages" / pkg / "bindings" / "node"
+        manifest = json.loads((node / "package.json").read_text(encoding="utf-8"))
+        c.check(f"{rel(node / 'package.json')} version", manifest.get("version"))
+        optional = manifest.get("optionalDependencies", {})
+        platforms = sorted(p for p in (node / "npm").glob("*/package.json"))
+        if not platforms:
+            c.fail(rel(node / "npm"), "no platform packages (npm/<platform>/package.json)")
+        for platform in platforms:
+            pm = json.loads(platform.read_text(encoding="utf-8"))
+            c.check(f"{rel(platform)} version", pm.get("version"))
+            name = pm.get("name")
+            if name not in optional:
+                c.fail(f"{rel(node / 'package.json')} optionalDependencies", f"{name} missing")
+        for name, version in optional.items():
+            c.check(f"{rel(node / 'package.json')} optionalDependencies {name}", version)
+            if not (node / "npm" / name[len(pkg) + 1:] / "package.json").is_file():
+                c.fail(f"{rel(node / 'package.json')} optionalDependencies", f"{name}: no npm/ directory")
+
+
+def check_python(c):
+    for pkg, module in (("ddex-parser", "ddex_parser"), ("ddex-builder", "ddex_builder")):
+        py = ROOT / "packages" / pkg / "bindings" / "python"
+        project = load_toml(py / "pyproject.toml")["project"]
+        c.check(f"{rel(py / 'pyproject.toml')} [project] version", project.get("version"))
+        init = py / "python" / module / "__init__.py"
+        text = init.read_text(encoding="utf-8")
+        hard_coded = re.findall(r'^\s*__version__\s*=\s*["\']([^"\']+)["\']', text, re.M)
+        if hard_coded:
+            c.fail(f"{rel(init)} __version__", f"hard-coded {hard_coded[0]!r}")
+        elif not re.search(rf'__version__\s*=\s*(_?version|metadata\.version)\(\s*["\']{pkg}["\']\s*\)', text):
+            c.fail(f"{rel(init)} __version__", f'not read with importlib.metadata.version("{pkg}")')
+        else:
+            c.check(f"{rel(init)} __version__ (package metadata)", c.expected)
+
+
+def check_json_version(c, path):
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    c.check(f"{rel(path)} version", manifest.get("version"))
+
+
+def check_website(c):
+    check_json_version(c, ROOT / "website" / "package.json")
+    check_json_version(c, ROOT / "website" / "static" / "wasm" / "package.json")
+    functions = ROOT / "website" / "functions" / "package.json"
+    deps = json.loads(functions.read_text(encoding="utf-8")).get("dependencies", {})
+    for name in ("ddex-parser", "ddex-builder"):
+        c.check(f"{rel(functions)} dependencies {name}", deps.get(name, "").lstrip("^~="))
+
+
+def main():
+    workspace = load_toml(ROOT / "Cargo.toml")
+    expected = workspace["workspace"]["package"]["version"]
+    c = Checker(expected)
+    check_cargo(c, workspace)
+    check_node(c)
+    check_python(c)
+    check_json_version(c, ROOT / "packages" / "ddex-builder" / "bindings" / "wasm" / "package.json")
+    check_website(c)
+    c.report()
+    return 1 if c.failures else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

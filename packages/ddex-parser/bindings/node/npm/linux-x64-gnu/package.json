@@ -1,0 +1,43 @@
+{
+  "name": "ddex-parser-linux-x64-gnu",
+  "version": "0.4.6",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "main": "ddex-parser-node.linux-x64-gnu.node",
+  "files": [
+    "ddex-parser-node.linux-x64-gnu.node"
+  ],
+  "description": "DDEX XML parser with native and WASM bindings",
+  "keywords": [
+    "ddex",
+    "xml",
+    "parser",
+    "music",
+    "metadata",
+    "ern",
+    "native",
+    "rust",
+    "wasm"
+  ],
+  "author": "Kevin Marques Moo",
+  "homepage": "https://github.com/daddykev/ddex-suite/tree/main/packages/ddex-parser",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/daddykev/ddex-suite.git",
+    "directory": "packages/ddex-parser"
+  },
+  "bugs": {
+    "url": "https://github.com/daddykev/ddex-suite/issues"
+  },
+  "libc": [
+    "glibc"
+  ]
+}

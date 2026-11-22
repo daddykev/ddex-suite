@@ -1,0 +1,32 @@
+{
+  "name": "ddex-builder-win32-x64-msvc",
+  "version": "0.4.6",
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "main": "ddex-builder-node.win32-x64-msvc.node",
+  "files": [
+    "ddex-builder-node.win32-x64-msvc.node"
+  ],
+  "description": "DDEX XML builder with deterministic output and smart normalization",
+  "keywords": [
+    "ddex",
+    "xml",
+    "builder",
+    "music",
+    "deterministic",
+    "canonicalization"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daddykev/ddex-suite.git",
+    "directory": "packages/ddex-builder/bindings/node"
+  }
+}

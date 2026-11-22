@@ -1,6 +1,6 @@
 {
   "name": "ddex-builder",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "description": "DDEX XML builder with deterministic output and smart normalization",
   "keywords": [
     "ddex",
@@ -30,20 +30,14 @@
     "index.d.ts",
     "build-request.d.ts",
     "dist/**/*",
-    "js/**/*",
-    "*.node"
+    "js/**/*"
   ],
   "napi": {
     "name": "ddex-builder-node",
     "triples": {
       "defaults": true,
       "additional": [
-        "x86_64-unknown-linux-musl",
-        "aarch64-unknown-linux-gnu",
-        "aarch64-apple-darwin",
-        "aarch64-linux-android",
-        "arm-linux-androideabi",
-        "armv7-unknown-linux-gnueabihf"
+        "aarch64-apple-darwin"
       ]
     }
   },
@@ -52,11 +46,9 @@
     "build:debug": "napi build --platform",
     "build:ts": "tsc",
     "docs": "typedoc",
-    "prepublishOnly": "napi prepublish -t npm",
     "artifacts": "napi artifacts",
     "version": "napi version",
-    "test": "node test.js",
-    "test:smoke": "node smoke-ern43.js && node smoke-ern382.js"
+    "test": "node smoke-ern43.js && node smoke-ern382.js"
   },
   "engines": {
     "node": ">=14.0.0"
@@ -68,14 +60,9 @@
     "typedoc": "^0.26.0"
   },
   "optionalDependencies": {
-    "ddex-builder-win32-x64-msvc": "0.4.5",
-    "ddex-builder-darwin-x64": "0.4.5",
-    "ddex-builder-linux-x64-gnu": "0.4.5",
-    "ddex-builder-linux-x64-musl": "0.4.5",
-    "ddex-builder-linux-arm64-gnu": "0.4.5",
-    "ddex-builder-darwin-arm64": "0.4.5",
-    "ddex-builder-android-arm64": "0.4.5",
-    "ddex-builder-android-arm-eabi": "0.4.5",
-    "ddex-builder-linux-arm-gnueabihf": "0.4.5"
+    "ddex-builder-darwin-arm64": "0.4.6",
+    "ddex-builder-darwin-x64": "0.4.6",
+    "ddex-builder-linux-x64-gnu": "0.4.6",
+    "ddex-builder-win32-x64-msvc": "0.4.6"
   }
 }

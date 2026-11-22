@@ -116,13 +116,13 @@ jobs:
       - name: ddex-parser (build, test)
         working-directory: packages/ddex-parser/bindings/node
         run: |
-          npm ci
+          npm install --no-audit --no-fund  # package-lock.json is not tracked
           npm run build
           npm test
       - name: ddex-builder (build; tests build ERN 4.3 / 3.8.2 and read it back with the parser)
         working-directory: packages/ddex-builder/bindings/node
         run: |
-          npm ci
+          npm install --no-audit --no-fund  # package-lock.json is not tracked
           npm run build
           npm test
 

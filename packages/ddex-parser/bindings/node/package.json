@@ -1,6 +1,6 @@
 {
   "name": "ddex-parser",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "description": "DDEX XML parser with native and WASM bindings",
   "main": "index.js",
   "types": "index.d.ts",
@@ -14,7 +14,6 @@
   "files": [
     "index.js",
     "index.d.ts",
-    "*.node",
     "README.md",
     "LICENSE"
   ],
@@ -23,13 +22,7 @@
     "triples": {
       "defaults": true,
       "additional": [
-        "x86_64-unknown-linux-gnu",
-        "x86_64-unknown-linux-musl",
-        "aarch64-unknown-linux-gnu",
-        "aarch64-apple-darwin",
-        "aarch64-linux-android",
-        "arm-linux-androideabi",
-        "armv7-unknown-linux-gnueabihf"
+        "aarch64-apple-darwin"
       ]
     }
   },
@@ -37,7 +30,6 @@
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
     "build:ts": "tsc",
-    "prepublishOnly": "napi prepublish -t npm",
     "artifacts": "napi artifacts",
     "version": "napi version",
     "test": "node test-manual.js && node test-community-prs.js && node test-ern4-tracks.js && node test-parser-fields.js && node test-types.js"
@@ -73,14 +65,9 @@
     "typescript": "^5.9.2"
   },
   "optionalDependencies": {
-    "ddex-parser-win32-x64-msvc": "0.4.5",
-    "ddex-parser-darwin-x64": "0.4.5",
-    "ddex-parser-linux-x64-gnu": "0.4.5",
-    "ddex-parser-linux-x64-musl": "0.4.5",
-    "ddex-parser-linux-arm64-gnu": "0.4.5",
-    "ddex-parser-darwin-arm64": "0.4.5",
-    "ddex-parser-android-arm64": "0.4.5",
-    "ddex-parser-android-arm-eabi": "0.4.5",
-    "ddex-parser-linux-arm-gnueabihf": "0.4.5"
+    "ddex-parser-darwin-arm64": "0.4.6",
+    "ddex-parser-darwin-x64": "0.4.6",
+    "ddex-parser-linux-x64-gnu": "0.4.6",
+    "ddex-parser-win32-x64-msvc": "0.4.6"
   }
 }
