@@ -22,7 +22,7 @@ jobs:
     name: cargo fmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
@@ -32,7 +32,7 @@ jobs:
     name: cargo clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -46,7 +46,7 @@ jobs:
     name: cargo clippy ddex-builder (disallowed HashMap/HashSet; allowed to fail until 0.6.0)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -65,7 +65,7 @@ jobs:
     env:
       RUSTFLAGS: -D warnings
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Install xmllint
@@ -88,7 +88,7 @@ jobs:
       # crate's [package.metadata.docs.rs]; --lib, as docs.rs documents the library only.
       RUSTDOCFLAGS: -D warnings
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       # The Python bindings' libs share their names with the crates they wrap (ddex_parser,
@@ -100,7 +100,7 @@ jobs:
     name: MSRV (rust-version 1.82)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@1.82
       - uses: Swatinem/rust-cache@v2
       - run: cargo check --locked -p ddex-core -p ddex-parser -p ddex-builder
@@ -109,7 +109,7 @@ jobs:
     name: cargo package (the published crates build from their packaged files)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       # Packages the three crates together (ddex-parser and ddex-builder resolve the
@@ -126,13 +126,13 @@ jobs:
     name: README examples (Node and Python)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Build the Node packages
@@ -149,6 +149,9 @@ jobs:
           python scripts/readme_examples.py --lang js --workdir "$RUNNER_TEMP/app"
           --sample "examples/Samples43/1 Audio.xml"
           README.md packages/ddex-parser/bindings/node/README.md packages/ddex-builder/bindings/node/README.md
+      - name: Release smoke test (js; the release build runs it on each installed platform)
+        working-directory: ${{ runner.temp }}/app
+        run: node "$GITHUB_WORKSPACE/scripts/release_smoke.js" "$GITHUB_WORKSPACE/examples/Samples43/1 Audio.xml"
       - name: Build and install the Python packages
         run: |
           python -m pip install --upgrade pip maturin pandas
@@ -161,17 +164,19 @@ jobs:
           python scripts/readme_examples.py --lang python --workdir "$RUNNER_TEMP/py"
           --sample "examples/Samples43/1 Audio.xml"
           README.md packages/ddex-parser/bindings/python/README.md packages/ddex-builder/bindings/python/README.md
+      - name: Release smoke test (python; the release build runs it on each installed wheel)
+        run: python scripts/release_smoke.py "examples/Samples43/1 Audio.xml"
 
   xsd:
     name: XSD validation of builder output
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
       - name: Install xmllint
@@ -193,10 +198,10 @@ jobs:
     name: Node bindings
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
       - name: ddex-parser (build, test)
@@ -220,10 +225,10 @@ jobs:
       matrix:
         python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
       - name: Install build and test tools
@@ -246,10 +251,10 @@ jobs:
     name: ERN 4.x oracle comparison
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: python -m pip install lxml
