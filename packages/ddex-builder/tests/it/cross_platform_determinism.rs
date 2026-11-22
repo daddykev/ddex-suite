@@ -20,7 +20,12 @@ use sha2::{Digest, Sha256};
 
 /// Creates a platform-agnostic test build request
 /// Uses only data that should behave identically across platforms
+/// The request below plus the values ERN 4.x requires (see `ern4_support::ern4_test_data`).
 fn create_platform_agnostic_request() -> BuildRequest {
+    crate::ern4_support::ern4_test_data(create_platform_agnostic_request_base())
+}
+
+fn create_platform_agnostic_request_base() -> BuildRequest {
     BuildRequest {
         header: MessageHeaderRequest {
             message_id: Some("PLAT001".to_string()),
@@ -47,8 +52,8 @@ fn create_platform_agnostic_request() -> BuildRequest {
         version: "ern/43".to_string(),
         profile: Some("PlatformTestProfile".to_string()),
         releases: vec![ReleaseRequest {
-            release_id: "PLAT_REL001".to_string(),
-            release_reference: Some("PLAT_REL001".to_string()),
+            release_id: "R_PLAT001".to_string(),
+            release_reference: Some("R_PLAT001".to_string()),
             title: vec![LocalizedStringRequest {
                 text: "Cross-Platform Test Album".to_string(),
                 language_code: Some("en".to_string()),
@@ -69,7 +74,7 @@ fn create_platform_agnostic_request() -> BuildRequest {
                 start_date: Some("2024-01-01".to_string()),
                 ..Default::default()
             },
-            release_references: vec!["PLAT_REL001".to_string()],
+            release_references: vec!["R_PLAT001".to_string()],
         }],
         extensions: Some({
             let mut ext = IndexMap::new();

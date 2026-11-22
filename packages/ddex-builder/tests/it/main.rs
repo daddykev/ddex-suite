@@ -9,6 +9,8 @@ mod cross_platform_determinism;
 mod determinism;
 mod entity_classification;
 mod ern382_output;
+mod ern4_support;
+mod ern4_xsd;
 mod error_sanitizer;
 mod golden_files;
 mod linker;

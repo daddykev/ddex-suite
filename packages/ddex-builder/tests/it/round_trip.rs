@@ -1,205 +1,114 @@
-//! Real round trip through both crates: BuildRequest → ddex-builder XML → ddex-parser →
-//! BuildRequest → XML again. Replaces the former ddex-parser test that used a hand-written
-//! quick-xml matcher and a string-template "builder" instead of the real crates.
+//! Real round trip through both crates, for ERN 4.2 and 4.3: BuildRequest -> ddex-builder
+//! XML (schema-valid) -> ddex-parser -> BuildRequest -> XML again (byte-identical).
 
-use ddex_builder::builder::{
-    LocalizedStringRequest, MessageHeaderRequest, PartyRequest, ReleaseRequest, TrackRequest,
+use crate::ern4_support::{
+    assert_xsd_valid, build, deal, header, parse, request_from_parsed, track, VERSIONS,
 };
-use ddex_builder::{BuildOptions, BuildRequest, DDEXBuilder};
-use ddex_core::models::flat::{Organization, ParsedERNMessage};
-use ddex_parser::DDEXParser;
-use std::io::Cursor;
+use ddex_builder::builder::{ReleaseIdRequest, ReleaseRequest, TrackRequest};
+use ddex_builder::BuildRequest;
 
-fn text(value: &str) -> Vec<LocalizedStringRequest> {
-    vec![LocalizedStringRequest {
-        text: value.to_string(),
-        language_code: None,
-    }]
-}
-
-fn party(id: &str, name: &str) -> PartyRequest {
-    PartyRequest {
-        party_name: text(name),
-        party_id: Some(id.to_string()),
-        party_reference: None,
-    }
-}
-
-fn track(n: u32, isrc: &str, title: &str, duration: &str) -> TrackRequest {
+fn round_trip_track(n: u32, isrc: &str, title: &str, duration: &str) -> TrackRequest {
     TrackRequest {
-        track_id: format!("TRK{n:03}"),
-        resource_reference: Some(format!("A{n}")),
         isrc: isrc.to_string(),
-        title: title.to_string(),
         duration: duration.to_string(),
         artist: "Round Trip Artist".to_string(),
-        ..Default::default()
+        ..track(n, title)
     }
 }
 
 /// A request with every value pinned (MessageId, created time, references), so the
 /// output is a pure function of the request.
-fn original_request() -> BuildRequest {
+fn original_request(version: &str) -> BuildRequest {
+    let mut header = header("RT-MSG-001");
+    header.message_sender.party_name[0].text = "Round Trip Label".to_string();
+    header.message_recipient.party_name[0].text = "Round Trip DSP".to_string();
+    // Not read back by the parser, so not part of a byte-identical rebuild
+    header.message_control_type = None;
     BuildRequest {
-        header: MessageHeaderRequest {
-            message_id: Some("RT-MSG-001".to_string()),
-            message_sender: party("PADPIDA0000000001", "Round Trip Label"),
-            message_recipient: party("PADPIDA0000000002", "Round Trip DSP"),
-            message_control_type: Some("LiveMessage".to_string()),
-            message_created_date_time: Some("2024-09-13T12:00:00Z".to_string()),
-        },
-        version: "4.3".to_string(),
-        profile: Some("AudioAlbum".to_string()),
+        header,
+        version: version.to_string(),
+        profile: None,
         releases: vec![ReleaseRequest {
-            release_id: "REL001".to_string(),
             release_reference: Some("R1".to_string()),
-            title: text("Round Trip Album"),
+            title: crate::ern4_support::text("Round Trip Album"),
             artist: "Round Trip Artist".to_string(),
-            label: None,
-            release_date: None,
-            upc: None,
+            label: Some("Round Trip Records".to_string()),
             tracks: vec![
-                track(1, "USRT12400001", "Track One", "PT3M42S"),
-                track(2, "USRT12400002", "Track Two", "PT4M05S"),
+                round_trip_track(1, "USRT12400001", "Track One", "PT3M42S"),
+                round_trip_track(2, "USRT12400002", "Track Two", "PT4M5S"),
             ],
-            resource_references: None,
+            release_type: Some("Album".into()),
+            genre: Some("Pop".to_string()),
+            parental_warning_type: Some("NotExplicit".to_string()),
+            release_ids: Some(ReleaseIdRequest {
+                grid: Some("A1-ABCDE-0000000001-M".to_string()),
+                icpn: Some("123456789012".to_string()),
+                ..Default::default()
+            }),
             ..Default::default()
         }],
-        deals: vec![],
+        deals: vec![deal(&["R1"], "SubscriptionModel", "OnDemandStream")],
         extensions: None,
-        ..Default::default()
-    }
-}
-
-fn build(request: BuildRequest) -> String {
-    let result = DDEXBuilder::new()
-        .build(request, BuildOptions::default())
-        .expect("build");
-    assert!(
-        result.errors.is_empty(),
-        "build errors: {:?}",
-        result.errors
-    );
-    result.xml
-}
-
-fn parse(xml: &str) -> ParsedERNMessage {
-    DDEXParser::new()
-        .parse(Cursor::new(xml.as_bytes()))
-        .unwrap_or_else(|e| panic!("parser rejected builder output: {e}\n{xml}"))
-}
-
-fn iso_duration(d: std::time::Duration) -> String {
-    let s = d.as_secs();
-    format!("PT{}M{:02}S", s / 60, s % 60)
-}
-
-fn party_from(org: &Organization) -> PartyRequest {
-    PartyRequest {
-        party_name: org.name.as_deref().map(text).unwrap_or_default(),
-        party_id: Some(org.id.clone()),
-        party_reference: None,
-    }
-}
-
-/// Map the parser's flattened model back onto a BuildRequest.
-fn request_from(parsed: &ParsedERNMessage, template: &BuildRequest) -> BuildRequest {
-    let flat = &parsed.flat;
-    BuildRequest {
-        header: MessageHeaderRequest {
-            message_id: Some(flat.message_id.clone()),
-            message_sender: party_from(&flat.sender),
-            message_recipient: party_from(&flat.recipient),
-            message_control_type: template.header.message_control_type.clone(),
-            message_created_date_time: Some(
-                flat.message_date
-                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
-            ),
-        },
-        version: template.version.clone(),
-        profile: template.profile.clone(),
-        releases: flat
-            .releases
-            .iter()
-            .zip(&template.releases)
-            .map(|(release, original)| ReleaseRequest {
-                release_id: original.release_id.clone(),
-                release_reference: Some(release.release_id.clone()),
-                title: text(release.default_title.as_deref().unwrap_or_default()),
-                artist: release.display_artist.clone().unwrap_or_default(),
-                label: None,
-                release_date: None,
-                upc: None,
-                tracks: release
-                    .tracks
-                    .iter()
-                    .zip(&original.tracks)
-                    .map(|(t, o)| TrackRequest {
-                        track_id: o.track_id.clone(),
-                        resource_reference: Some(t.track_id.clone()),
-                        isrc: t.isrc.clone().unwrap_or_default(),
-                        title: t.title.clone().unwrap_or_default(),
-                        duration: t.duration.map(iso_duration).unwrap_or_default(),
-                        artist: t.display_artist.clone().unwrap_or_default(),
-                        ..Default::default()
-                    })
-                    .collect(),
-                resource_references: None,
-                ..Default::default()
-            })
-            .collect(),
-        deals: vec![],
-        extensions: None,
-        ..Default::default()
+        language_and_script_code: Some("en".to_string()),
+        avs_version_id: (version == "4.3").then(|| "12".to_string()),
     }
 }
 
 #[test]
-#[ignore = "known bug: for ERN 4.3 the builder writes a 3.8-style tree (no Release/ReleaseType, ReferenceTitle instead of DisplayTitleText, no ResourceGroup, MessageCreatedDateTime before MessageSender), which the parser rejects or reads without titles"]
 fn parser_reads_back_what_the_builder_wrote() {
-    let xml = build(original_request());
-    let parsed = parse(&xml);
-    let flat = &parsed.flat;
+    for version in VERSIONS {
+        let xml = build(original_request(version));
+        assert_xsd_valid(&xml, version, "round-trip request");
+        let parsed = parse(&xml);
+        let flat = &parsed.flat;
 
-    assert_eq!(flat.message_id, "RT-MSG-001");
-    assert_eq!(flat.sender.id, "PADPIDA0000000001");
-    assert_eq!(flat.sender.name.as_deref(), Some("Round Trip Label"));
-    assert_eq!(flat.recipient.id, "PADPIDA0000000002");
-    assert_eq!(flat.releases.len(), 1);
+        assert_eq!(flat.message_id, "RT-MSG-001", "{version}");
+        assert_eq!(flat.sender.id, "PADPIDA0000000001", "{version}");
+        assert_eq!(flat.sender.name.as_deref(), Some("Round Trip Label"), "{version}");
+        assert_eq!(flat.recipient.id, "PADPIDA0000000002", "{version}");
+        assert_eq!(flat.releases.len(), 1, "{version}");
 
-    let release = &flat.releases[0];
-    assert_eq!(release.default_title.as_deref(), Some("Round Trip Album"));
-    assert_eq!(release.display_artist.as_deref(), Some("Round Trip Artist"));
+        let release = &flat.releases[0];
+        assert_eq!(release.default_title.as_deref(), Some("Round Trip Album"), "{version}");
+        assert_eq!(release.display_artist.as_deref(), Some("Round Trip Artist"), "{version}");
+        assert_eq!(release.release_type, "Album", "{version}");
+        assert_eq!(release.genre.as_deref(), Some("Pop"), "{version}");
+        assert_eq!(release.identifiers.upc.as_deref(), Some("123456789012"), "{version}");
 
-    let tracks: Vec<_> = release
-        .tracks
-        .iter()
-        .map(|t| {
-            (
-                t.isrc.as_deref(),
-                t.title.as_deref(),
-                t.duration.map(|d| d.as_secs()),
-            )
-        })
-        .collect();
-    assert_eq!(
-        tracks,
-        [
-            (Some("USRT12400001"), Some("Track One"), Some(222)),
-            (Some("USRT12400002"), Some("Track Two"), Some(245)),
-        ]
-    );
+        let tracks: Vec<_> = release
+            .tracks
+            .iter()
+            .map(|t| {
+                (
+                    t.isrc.as_deref(),
+                    t.title.as_deref(),
+                    t.duration.map(|d| d.as_secs()),
+                    t.position,
+                )
+            })
+            .collect();
+        assert_eq!(
+            tracks,
+            [
+                (Some("USRT12400001"), Some("Track One"), Some(222), 1),
+                (Some("USRT12400002"), Some("Track Two"), Some(245), 2),
+            ],
+            "{version}"
+        );
+        assert_eq!(flat.deals.len(), 1, "{version}");
+        assert_eq!(flat.deals[0].releases, ["R1"], "{version}");
+    }
 }
 
 #[test]
-#[ignore = "known bug: for ERN 4.3 the builder writes a 3.8-style tree (no Release/ReleaseType, ReferenceTitle instead of DisplayTitleText, no ResourceGroup, MessageCreatedDateTime before MessageSender), which the parser rejects or reads without titles"]
 fn rebuilding_from_parsed_output_is_byte_identical() {
-    let original = original_request();
-    let first = build(original.clone());
-    let rebuilt_request = request_from(&parse(&first), &original);
-    let second = build(rebuilt_request);
-    assert_eq!(
-        first, second,
-        "build → parse → build must reproduce the same bytes"
-    );
+    for version in VERSIONS {
+        let first = build(original_request(version));
+        let rebuilt_request = request_from_parsed(&parse(&first), version);
+        let second = build(rebuilt_request);
+        assert_eq!(
+            first, second,
+            "ERN {version}: build -> parse -> build must reproduce the same bytes"
+        );
+    }
 }

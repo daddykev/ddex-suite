@@ -107,9 +107,21 @@
 //! #     },
 //! #     version: "4.3".to_string(),
 //! #     profile: None,
-//! #     releases: vec![],
+//! #     releases: vec![ddex_builder::builder::ReleaseRequest {
+//! #         release_id: "A1-ABCDE-0000000001-M".to_string(),
+//! #         release_reference: Some("R1".to_string()),
+//! #         title: vec![LocalizedStringRequest { text: "Album".to_string(), language_code: None }],
+//! #         artist: "Artist".to_string(),
+//! #         label: Some("Label".to_string()),
+//! #         release_type: Some("Album".into()),
+//! #         genre: Some("Pop".to_string()),
+//! #         parental_warning_type: Some("NotExplicit".to_string()),
+//! #         ..Default::default()
+//! #     }],
 //! #     deals: vec![],
 //! #     extensions: None,
+//! #     language_and_script_code: Some("en".to_string()),
+//! #     avs_version_id: Some("12".to_string()),
 //! #     ..Default::default()
 //! # };
 //!

@@ -10,7 +10,7 @@
 
 use ddex_builder::builder::{
     BuildOptions, DealRequest, LocalizedStringRequest, MessageHeaderRequest, PartyRequest,
-    ReleaseRequest,
+    ReleaseRequest, TrackRequest,
 };
 use ddex_builder::{BuildRequest, DDEXBuilder};
 use indexmap::IndexMap;
@@ -19,7 +19,12 @@ use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Create a basic test build request
+/// The request below plus the values ERN 4.x requires (see `ern4_support::ern4_test_data`).
 fn create_test_build_request() -> BuildRequest {
+    crate::ern4_support::ern4_test_data(create_test_build_request_base())
+}
+
+fn create_test_build_request_base() -> BuildRequest {
     BuildRequest {
         header: MessageHeaderRequest {
             message_id: Some("MSG001".to_string()),
@@ -75,7 +80,12 @@ fn create_test_build_request() -> BuildRequest {
 }
 
 /// Create a complex build request with many fields that could cause non-determinism
+/// The request below plus the values ERN 4.x requires (see `ern4_support::ern4_test_data`).
 fn create_complex_build_request() -> BuildRequest {
+    crate::ern4_support::ern4_test_data(create_complex_build_request_base())
+}
+
+fn create_complex_build_request_base() -> BuildRequest {
     let mut extensions = IndexMap::new();
     extensions.insert(
         "customField1".to_string(),
@@ -144,7 +154,8 @@ fn create_complex_build_request() -> BuildRequest {
                     start_date: Some("2024-01-01".to_string()),
                     ..Default::default()
                 },
-                release_references: vec![format!("REL{:04}", i)],
+                // The message's one release (ERN 4.x: a deal must reference it)
+                release_references: vec!["REL001".to_string()],
             })
             .collect(),
         extensions: Some(extensions),
@@ -403,27 +414,25 @@ fn test_unicode_normalization_determinism() {
 
 #[test]
 fn test_large_dataset_determinism() {
-    // Create a build request with many releases and deals
-    let large_releases: Vec<ReleaseRequest> = (0..100).map(|i| {
-        ReleaseRequest {
-            release_id: format!("REL{:04}", i),
-            release_reference: Some(format!("REL{:04}", i)),
-            title: vec![LocalizedStringRequest {
-                text: format!("Release {} with very long title that contains lots of metadata and information", i),
-                language_code: None,
-            }],
+    // One release with many tracks (ERN 4.x allows one Release per message)
+    let large_tracks: Vec<TrackRequest> = (0..100)
+        .map(|i| TrackRequest {
+            track_id: format!("TRK{:04}", i),
+            resource_reference: Some(format!("A{:04}", i)),
+            isrc: format!("USRT1{:07}", i),
+            title: format!(
+                "Track {} with very long title that contains lots of metadata and information",
+                i
+            ),
+            duration: format!("PT{}M{}S", 2 + i % 4, (i * 7) % 60),
             artist: format!("Artist {}", i % 10),
-            label: Some(format!("Label {}", i % 5)),
-            release_date: Some("2024-01-01".to_string()),
-            upc: Some(format!("{:012}", i)),
-            tracks: Vec::new(),
-            resource_references: None,
             ..Default::default()
-        }
-    }).collect();
+        })
+        .collect();
 
     let mut request = create_test_build_request();
-    request.releases = large_releases;
+    request.releases[0].tracks = large_tracks;
+    let request = crate::ern4_support::ern4_test_data(request);
 
     let builder = DDEXBuilder::new();
 

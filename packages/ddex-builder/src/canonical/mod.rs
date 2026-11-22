@@ -141,8 +141,10 @@ impl DB_C14N {
     }
 
     fn parse_xml(&self, xml: &str) -> Result<XmlDocument, super::error::BuildError> {
+        // Text is kept exactly as written. Only whitespace-only text between elements
+        // (indentation) is dropped; a leaf element keeps all of its text, even if that text
+        // is only whitespace.
         let mut reader = Reader::from_str(xml);
-        reader.config_mut().trim_text(true);
 
         let mut buf = Vec::new();
         let mut element_stack: Vec<XmlElement> = Vec::new();
@@ -151,15 +153,8 @@ impl DB_C14N {
         loop {
             match reader.read_event_into(&mut buf) {
                 Ok(Event::Start(ref e)) => {
-                    // Save any accumulated text
-                    if !text_content.trim().is_empty() {
-                        if let Some(parent) = element_stack.last_mut() {
-                            parent
-                                .children
-                                .push(XmlNode::Text(text_content.trim().to_string()));
-                        }
-                        text_content.clear();
-                    }
+                    // Text before a child element: keep it unless it is indentation
+                    flush_text(&mut element_stack, &mut text_content, false);
 
                     let name = String::from_utf8_lossy(e.name().as_ref()).to_string();
                     let mut attributes = IndexMap::new();
@@ -172,7 +167,15 @@ impl DB_C14N {
                             ))
                         })?;
                         let key = String::from_utf8_lossy(attr.key.as_ref()).to_string();
-                        let value = String::from_utf8_lossy(&attr.value).to_string();
+                        let value = attr
+                            .unescape_value()
+                            .map_err(|e| {
+                                super::error::BuildError::XmlGeneration(format!(
+                                    "Attribute value error: {}",
+                                    e
+                                ))
+                            })?
+                            .into_owned();
                         attributes.insert(key, value);
                     }
 
@@ -186,15 +189,8 @@ impl DB_C14N {
                     element_stack.push(element);
                 }
                 Ok(Event::Empty(ref e)) => {
-                    // Save any accumulated text
-                    if !text_content.trim().is_empty() {
-                        if let Some(parent) = element_stack.last_mut() {
-                            parent
-                                .children
-                                .push(XmlNode::Text(text_content.trim().to_string()));
-                        }
-                        text_content.clear();
-                    }
+                    // Text before a child element: keep it unless it is indentation
+                    flush_text(&mut element_stack, &mut text_content, false);
 
                     let name = String::from_utf8_lossy(e.name().as_ref()).to_string();
                     let mut attributes = IndexMap::new();
@@ -207,7 +203,15 @@ impl DB_C14N {
                             ))
                         })?;
                         let key = String::from_utf8_lossy(attr.key.as_ref()).to_string();
-                        let value = String::from_utf8_lossy(&attr.value).to_string();
+                        let value = attr
+                            .unescape_value()
+                            .map_err(|e| {
+                                super::error::BuildError::XmlGeneration(format!(
+                                    "Attribute value error: {}",
+                                    e
+                                ))
+                            })?
+                            .into_owned();
                         attributes.insert(key, value);
                     }
 
@@ -226,15 +230,8 @@ impl DB_C14N {
                     }
                 }
                 Ok(Event::End(_)) => {
-                    // Save any accumulated text
-                    if !text_content.trim().is_empty() {
-                        if let Some(parent) = element_stack.last_mut() {
-                            parent
-                                .children
-                                .push(XmlNode::Text(text_content.trim().to_string()));
-                        }
-                        text_content.clear();
-                    }
+                    // Text at the end of an element: a leaf keeps it exactly
+                    flush_text(&mut element_stack, &mut text_content, true);
 
                     // Pop the completed element
                     if let Some(completed_element) = element_stack.pop() {
@@ -311,9 +308,8 @@ impl DB_C14N {
                 XmlNode::Element(ref mut child_element) => {
                     self.canonicalize_element(child_element, version)?;
                 }
-                XmlNode::Text(ref mut text) => {
-                    // Normalize whitespace in text content
-                    *text = self.normalize_whitespace(text);
+                XmlNode::Text(_) => {
+                    // Text content is kept exactly as written
                 }
                 XmlNode::Comment(_) => {
                     // Comments are preserved as-is
@@ -379,6 +375,12 @@ impl DB_C14N {
         parent_name: &str,
         version: &str,
     ) -> Result<(), super::error::BuildError> {
+        // ERN 4.x: the generator writes elements in XSD sequence order, which is the
+        // canonical order; the reorder tables below only describe 3.8.x.
+        if matches!(version, "4.2" | "42" | "4.3" | "43") {
+            return Ok(());
+        }
+
         let manager = rules::CanonicalNamespaceManager::new();
 
         if let Some(order) = manager.get_canonical_element_order(parent_name, version) {
@@ -406,17 +408,6 @@ impl DB_C14N {
         Ok(())
     }
 
-    fn normalize_whitespace(&self, text: &str) -> String {
-        // Normalize line endings to LF and trim whitespace
-        text.replace("\r\n", "\n")
-            .replace("\r", "\n")
-            .lines()
-            .map(|line| line.trim())
-            .filter(|line| !line.is_empty())
-            .collect::<Vec<_>>()
-            .join(" ")
-    }
-
     fn serialize_canonical(&self, doc: XmlDocument) -> Result<String, super::error::BuildError> {
         let mut output = Vec::new();
         // XML writer no longer used since we build the output manually
@@ -429,18 +420,11 @@ impl DB_C14N {
         // Serialize the root element with 2-space indentation
         self.serialize_element(&doc.root, &mut output, 0)?;
 
-        // Ensure no trailing whitespace and final newline
-        let result = String::from_utf8(output).map_err(|e| {
+        // The serializer never emits trailing whitespace of its own, and text content must
+        // not be altered, so the output is returned as written (it ends with one newline).
+        String::from_utf8(output).map_err(|e| {
             super::error::BuildError::XmlGeneration(format!("UTF-8 conversion error: {}", e))
-        })?;
-
-        let canonical = result
-            .lines()
-            .map(|line| line.trim_end()) // Remove trailing whitespace
-            .collect::<Vec<_>>()
-            .join("\n");
-
-        Ok(format!("{}\n", canonical))
+        })
     }
 
     fn serialize_element(
@@ -461,8 +445,7 @@ impl DB_C14N {
             output.push(b' ');
             output.extend_from_slice(key.as_bytes());
             output.extend_from_slice(b"=\"");
-            output
-                .extend_from_slice(html_escape::encode_double_quoted_attribute(&value).as_bytes());
+            output.extend_from_slice(crate::xml_escape::escape_attribute(value).as_bytes());
             output.push(b'"');
         }
 
@@ -483,7 +466,7 @@ impl DB_C14N {
                 // Inline text content
                 for child in &element.children {
                     if let XmlNode::Text(text) = child {
-                        output.extend_from_slice(html_escape::encode_text(text).as_bytes());
+                        output.extend_from_slice(crate::xml_escape::escape_text(text).as_bytes());
                     }
                 }
             } else {
@@ -496,14 +479,11 @@ impl DB_C14N {
                             self.serialize_element(child_element, output, indent_level + 1)?;
                         }
                         XmlNode::Text(text) => {
-                            if !text.trim().is_empty() {
-                                let child_indent = "  ".repeat(indent_level + 1);
-                                output.extend_from_slice(child_indent.as_bytes());
-                                output.extend_from_slice(
-                                    html_escape::encode_text(text.trim()).as_bytes(),
-                                );
-                                output.push(b'\n');
-                            }
+                            // Mixed content (not produced by the builder): kept exactly
+                            let child_indent = "  ".repeat(indent_level + 1);
+                            output.extend_from_slice(child_indent.as_bytes());
+                            output.extend_from_slice(crate::xml_escape::escape_text(text).as_bytes());
+                            output.push(b'\n');
                         }
                         XmlNode::Comment(comment) => {
                             let child_indent = "  ".repeat(indent_level + 1);
@@ -528,6 +508,25 @@ impl DB_C14N {
 
         Ok(())
     }
+}
+
+/// Move accumulated text into the current element. Whitespace-only text is dropped when it
+/// sits between elements (indentation); at the end of a leaf element (`closing` and no
+/// element children) it is kept, so text content survives exactly.
+fn flush_text(stack: &mut [XmlElement], text: &mut String, closing: bool) {
+    if text.is_empty() {
+        return;
+    }
+    if let Some(parent) = stack.last_mut() {
+        let is_leaf = !parent
+            .children
+            .iter()
+            .any(|c| matches!(c, XmlNode::Element(_)));
+        if !text.trim().is_empty() || (closing && is_leaf) {
+            parent.children.push(XmlNode::Text(std::mem::take(text)));
+        }
+    }
+    text.clear();
 }
 
 /// Internal XML document representation

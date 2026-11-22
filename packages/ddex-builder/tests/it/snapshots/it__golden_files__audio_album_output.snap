@@ -1,63 +1,119 @@
 ---
-source: packages/ddex-builder/tests/golden_files.rs
+source: packages/ddex-builder/tests/it/golden_files.rs
 expression: result.xml
 ---
 <?xml version="1.0" encoding="UTF-8"?>
-<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" MessageSchemaVersionId="ern/4.3">
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" AvsVersionId="12" LanguageAndScriptCode="en">
   <MessageHeader>
-    <MessageId>B3:384b9efb8b851a20399cb9d929cc204e56cac0b2e26cc8aa3dd96b89c1772cb7</MessageId>
-    <MessageCreatedDateTime>2025-01-01T00:00:00Z</MessageCreatedDateTime>
+    <MessageId>B3:34cda0e59e27c15365602aceac3db769caa26b4b46812c46e35e69adee4ae234</MessageId>
     <MessageSender>
-      <PartyName>Test Sender</PartyName>
+      <PartyId>PADPIDA0000000001</PartyId>
+      <PartyName>
+        <FullName>Test Sender</FullName>
+      </PartyName>
     </MessageSender>
     <MessageRecipient>
-      <PartyName>Test Recipient</PartyName>
+      <PartyId>PADPIDA0000000002</PartyId>
+      <PartyName>
+        <FullName>Test Recipient</FullName>
+      </PartyName>
     </MessageRecipient>
-    <MessageThreadId>B3:384b9efb8b851a20399cb9d929cc204e56cac0b2e26cc8aa3dd96b89c1772cb7</MessageThreadId>
+    <MessageCreatedDateTime>2025-01-01T00:00:00Z</MessageCreatedDateTime>
+    <MessageControlType>LiveMessage</MessageControlType>
   </MessageHeader>
+  <PartyList>
+    <Party>
+      <PartyReference>P1</PartyReference>
+      <PartyName>
+        <FullName>Test Artist</FullName>
+      </PartyName>
+    </Party>
+    <Party>
+      <PartyReference>P2</PartyReference>
+      <PartyName>
+        <FullName>Test Label</FullName>
+      </PartyName>
+    </Party>
+    <Party>
+      <PartyReference>P3</PartyReference>
+      <PartyName>
+        <FullName>Test Artist feat. Guest</FullName>
+      </PartyName>
+    </Party>
+  </PartyList>
   <ResourceList>
     <SoundRecording>
-      <ReferenceTitle>
-        <TitleText>Track One</TitleText>
-      </ReferenceTitle>
-      <Duration>PT3M45S</Duration>
-      <ResourceId>
-        <ISRC>USRC12345678</ISRC>
-      </ResourceId>
       <ResourceReference>A1</ResourceReference>
+      <Type>MusicalWorkSoundRecording</Type>
+      <SoundRecordingEdition>
+        <ResourceId>
+          <ISRC>USRC12345678</ISRC>
+        </ResourceId>
+      </SoundRecordingEdition>
+      <DisplayTitleText>Track One</DisplayTitleText>
+      <DisplayTitle>
+        <TitleText>Track One</TitleText>
+      </DisplayTitle>
+      <DisplayArtistName>Test Artist</DisplayArtistName>
+      <DisplayArtist>
+        <ArtistPartyReference>P1</ArtistPartyReference>
+        <DisplayArtistRole>MainArtist</DisplayArtistRole>
+      </DisplayArtist>
+      <Duration>PT3M45S</Duration>
+      <ParentalWarningType>NotExplicit</ParentalWarningType>
     </SoundRecording>
     <SoundRecording>
-      <ReferenceTitle>
-        <TitleText>Track Two</TitleText>
-      </ReferenceTitle>
-      <Duration>PT4M20S</Duration>
-      <ResourceId>
-        <ISRC>USRC12345679</ISRC>
-      </ResourceId>
       <ResourceReference>A2</ResourceReference>
+      <Type>MusicalWorkSoundRecording</Type>
+      <SoundRecordingEdition>
+        <ResourceId>
+          <ISRC>USRC12345679</ISRC>
+        </ResourceId>
+      </SoundRecordingEdition>
+      <DisplayTitleText>Track Two</DisplayTitleText>
+      <DisplayTitle>
+        <TitleText>Track Two</TitleText>
+      </DisplayTitle>
+      <DisplayArtistName>Test Artist feat. Guest</DisplayArtistName>
+      <DisplayArtist>
+        <ArtistPartyReference>P3</ArtistPartyReference>
+        <DisplayArtistRole>MainArtist</DisplayArtistRole>
+      </DisplayArtist>
+      <Duration>PT4M20S</Duration>
+      <ParentalWarningType>NotExplicit</ParentalWarningType>
     </SoundRecording>
   </ResourceList>
   <ReleaseList>
     <Release>
       <ReleaseReference>R1</ReleaseReference>
+      <ReleaseType>Album</ReleaseType>
       <ReleaseId>
         <GRid>REL001</GRid>
-      </ReleaseId>
-      <ReleaseId>
         <ICPN>123456789014</ICPN>
       </ReleaseId>
-      <ReferenceTitle>
-        <TitleText LanguageAndScriptCode="en">Test Album</TitleText>
-      </ReferenceTitle>
-      <DisplayArtistName>
-        <FullName>Test Artist</FullName>
-      </DisplayArtistName>
-      <LabelName>
-        <LabelName>Test Label</LabelName>
-      </LabelName>
+      <DisplayTitleText LanguageAndScriptCode="en">Test Album</DisplayTitleText>
+      <DisplayTitle LanguageAndScriptCode="en">
+        <TitleText>Test Album</TitleText>
+      </DisplayTitle>
+      <DisplayArtistName>Test Artist</DisplayArtistName>
+      <DisplayArtist>
+        <ArtistPartyReference>P1</ArtistPartyReference>
+        <DisplayArtistRole>MainArtist</DisplayArtistRole>
+      </DisplayArtist>
+      <ReleaseLabelReference>P2</ReleaseLabelReference>
+      <Genre>
+        <GenreText>Pop</GenreText>
+      </Genre>
       <ReleaseDate>2024-01-01</ReleaseDate>
-      <ReleaseResourceReference>A1</ReleaseResourceReference>
-      <ReleaseResourceReference>A2</ReleaseResourceReference>
+      <ParentalWarningType>NotExplicit</ParentalWarningType>
+      <ResourceGroup>
+        <ResourceGroupContentItem>
+          <ReleaseResourceReference>A1</ReleaseResourceReference>
+        </ResourceGroupContentItem>
+        <ResourceGroupContentItem>
+          <ReleaseResourceReference>A2</ReleaseResourceReference>
+        </ResourceGroupContentItem>
+      </ResourceGroup>
     </Release>
   </ReleaseList>
 </ern:NewReleaseMessage>

@@ -341,6 +341,10 @@ mod metadata_helpers {
     /// A minimal ERN 4.3 request whose free-text fields (release and track
     /// titles, artist names, sender name) all carry `text`.
     pub fn build_request_with_metadata(text: &str) -> BuildRequest {
+        crate::ern4_support::ern4_test_data(build_request_with_metadata_base(text))
+    }
+
+    fn build_request_with_metadata_base(text: &str) -> BuildRequest {
         BuildRequest {
             header: MessageHeaderRequest {
                 message_id: Some("MSG001".to_string()),

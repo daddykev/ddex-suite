@@ -303,3 +303,5 @@ pnpm-debug.log*
 tmp/
 temp/
 *.tm
+# Official DDEX XSDs, fetched by scripts/fetch_ddex_schemas.sh (DDEX licence: not redistributed)
+/schemas/

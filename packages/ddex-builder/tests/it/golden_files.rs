@@ -82,6 +82,7 @@ fn test_audio_album_golden() {
         stable_hash_config: None,
     };
 
+    let request = crate::ern4_support::ern4_test_data(request);
     let result = builder.build(request, options).unwrap();
 
     // Assert against golden file
@@ -200,7 +201,12 @@ fn test_profile_validation() {
     assert!(result.warnings[0].code == "ALBUM_TRACK_COUNT");
 }
 
+/// The request below plus the values ERN 4.x requires (see `ern4_support::ern4_test_data`).
 fn create_test_request() -> BuildRequest {
+    crate::ern4_support::ern4_test_data(create_test_request_base())
+}
+
+fn create_test_request_base() -> BuildRequest {
     BuildRequest {
         header: MessageHeaderRequest {
             message_id: None,

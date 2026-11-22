@@ -125,7 +125,8 @@ mod tests {
 
     #[test]
     fn test_element_ordering_message_header() {
-        let canonicalizer = create_test_canonicalizer();
+        // The reorder tables describe ERN 3.8.x (4.x keeps document order)
+        let canonicalizer = create_test_canonicalizer_with_version("3.8.2");
         let input = r#"<?xml version="1.0" encoding="UTF-8"?>
 <MessageHeader>
   <MessageSender>sender</MessageSender>
@@ -318,34 +319,35 @@ mod integration_tests {
 
     #[test]
     fn test_ern_43_canonicalization_snapshot() {
+        // ERN 4.x: elements keep document order (the builder writes XSD order); attributes
+        // are still sorted and indentation is normalized.
         let canonicalizer = create_test_canonicalizer_with_version("4.3");
         let input = r#"<?xml version="1.0" encoding="UTF-8"?>
-<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43" xmlns:avs="http://ddex.net/xml/avs" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <MessageHeader>
-    <MessageSender>TestSender</MessageSender>
-    <MessageRecipient>TestRecipient</MessageRecipient>
-    <MessageId>MSG_001</MessageId>
-    <MessageType>NewReleaseMessage</MessageType>
-    <MessageCreatedDateTime>2023-12-01T10:00:00Z</MessageCreatedDateTime>
-    <MessageControlType>LiveMessage</MessageControlType>
-  </MessageHeader>
-  <ReleaseList>
-    <Release>
-      <ReleaseDetailsByTerritory>
-        <TerritoryCode>Worldwide</TerritoryCode>
-      </ReleaseDetailsByTerritory>
-      <ReleaseId>
-        <GRid>A1234567890123456789</GRid>
-      </ReleaseId>
-      <ReferenceTitle>
-        <TitleText>Sample Release Title</TitleText>
-      </ReferenceTitle>
-      <ReleaseReference>REL_001</ReleaseReference>
-    </Release>
-  </ReleaseList>
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" LanguageAndScriptCode="en" AvsVersionId="12">
+    <MessageHeader>
+        <MessageId>MSG_001</MessageId>
+        <MessageSender><PartyId>PADPIDA0000000001</PartyId></MessageSender>
+        <MessageRecipient><PartyId>PADPIDA0000000002</PartyId></MessageRecipient>
+        <MessageCreatedDateTime>2023-12-01T10:00:00Z</MessageCreatedDateTime>
+        <MessageControlType>LiveMessage</MessageControlType>
+    </MessageHeader>
+    <ReleaseList>
+        <Release>
+            <ReleaseReference>R0</ReleaseReference>
+            <ReleaseType UserDefinedValue="Box &amp; Book" Namespace="PADPIDA0000000001">UserDefined</ReleaseType>
+            <ReleaseId><GRid>A1234567890123456789</GRid></ReleaseId>
+            <DisplayTitleText>  Sample  Release  </DisplayTitleText>
+        </Release>
+    </ReleaseList>
 </ern:NewReleaseMessage>"#;
 
         let result = canonicalizer.canonicalize(input).unwrap();
+        let header = result.find("<MessageHeader>").unwrap();
+        let sender = result.find("<MessageSender>").unwrap();
+        let created = result.find("<MessageCreatedDateTime>").unwrap();
+        assert!(header < sender && sender < created, "{result}");
+        assert!(result.contains("<DisplayTitleText>  Sample  Release  </DisplayTitleText>"));
+        assert!(result.contains(r#"Namespace="PADPIDA0000000001" UserDefinedValue="Box &amp; Book""#));
         assert_snapshot!(result);
     }
 
@@ -384,20 +386,24 @@ mod integration_tests {
                 r#"<?xml version="1.0"?><root>Hello World</root>"#,
                 "Hello World",
             ),
-            // Text with whitespace that should be normalized but preserved
+            // Text content is kept exactly, including leading/trailing/repeated spaces
             (
                 r#"<?xml version="1.0"?><root>  Multiple   spaces  </root>"#,
-                "Multiple   spaces",
+                "<root>  Multiple   spaces  </root>",
             ),
-            // Text with newlines that should be normalized
+            // ... and newlines
             (
                 r#"<?xml version="1.0"?>
 <root>
   Line 1
   Line 2
 </root>"#,
-                "Line 1 Line 2",
+                "<root>\n  Line 1\n  Line 2\n</root>",
             ),
+            // ... and whitespace-only text
+            (r#"<?xml version="1.0"?><root>   </root>"#, "<root>   </root>"),
+            // A carriage return survives as a character reference
+            (r#"<?xml version="1.0"?><root>a&#13;b</root>"#, "<root>a&#13;b</root>"),
         ];
 
         for (input, expected_text) in test_cases {

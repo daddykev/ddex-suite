@@ -717,6 +717,10 @@ impl DDEXBuilder {
         // 0. Reject target versions the builder cannot emit, instead of writing a bogus namespace.
         parse_target_version(&request.version)?;
 
+        // 0b. Reject characters that XML 1.0 does not allow (they cannot be escaped), so the
+        // output is well-formed for any accepted input.
+        super::xml_escape::check_request_chars(&request)?;
+
         // 1. Enhanced preflight checks with new validator
         let validator =
             super::preflight::PreflightValidator::new(super::preflight::ValidationConfig {

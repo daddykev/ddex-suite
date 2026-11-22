@@ -104,7 +104,8 @@ fn test_linker_with_xml_generation() {
         request.header.message_recipient.party_reference
     );
 
-    // Now build XML with linked references
+    // Now build XML with linked references (plus the values ERN 4.x requires)
+    let request = crate::ern4_support::ern4_test_data(request);
     let result = builder.build(request, BuildOptions::default()).unwrap();
 
     // Debug: Print the actual XML to see what we're getting
@@ -175,7 +176,12 @@ fn test_deterministic_linking() {
     );
 }
 
+/// The request below plus the values ERN 4.x requires (see `ern4_support::ern4_test_data`).
 fn create_simple_request() -> BuildRequest {
+    crate::ern4_support::ern4_test_data(create_simple_request_base())
+}
+
+fn create_simple_request_base() -> BuildRequest {
     BuildRequest {
         header: MessageHeaderRequest {
             message_id: Some("TEST".to_string()),

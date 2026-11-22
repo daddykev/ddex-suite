@@ -144,7 +144,12 @@ fn get_memory_usage() -> usize {
 }
 
 /// Create test request with specified number of tracks
+/// The request below plus the values ERN 4.x requires (see `ern4_support::ern4_test_data`).
 fn create_test_request(track_count: usize) -> BuildRequest {
+    crate::ern4_support::ern4_test_data(create_test_request_base(track_count))
+}
+
+fn create_test_request_base(track_count: usize) -> BuildRequest {
     let mut tracks = Vec::with_capacity(track_count);
 
     for i in 0..track_count {

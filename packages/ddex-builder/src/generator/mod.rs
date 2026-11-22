@@ -57,9 +57,21 @@
 //! #     },
 //! #     version: "4.3".to_string(),
 //! #     profile: None,
-//! #     releases: vec![],
+//! #     releases: vec![ddex_builder::builder::ReleaseRequest {
+//! #         release_id: "A1-ABCDE-0000000001-M".to_string(),
+//! #         release_reference: Some("R1".to_string()),
+//! #         title: vec![LocalizedStringRequest { text: "Album".to_string(), language_code: None }],
+//! #         artist: "Artist".to_string(),
+//! #         label: Some("Label".to_string()),
+//! #         release_type: Some("Album".into()),
+//! #         genre: Some("Pop".to_string()),
+//! #         parental_warning_type: Some("NotExplicit".to_string()),
+//! #         ..Default::default()
+//! #     }],
 //! #     deals: vec![],
 //! #     extensions: None,
+//! #     language_and_script_code: Some("en".to_string()),
+//! #     avs_version_id: Some("12".to_string()),
 //! #     ..Default::default()
 //! # };
 //!
@@ -85,6 +97,7 @@
 //! - Schema constraint violations
 //! - Data format issues
 
+mod ern4;
 pub mod optimized_xml_writer;
 pub mod xml_writer;
 
@@ -105,7 +118,28 @@ impl ASTGenerator {
     }
 
     /// Generate an AST from a build request
+    ///
+    /// ERN 4.2 and 4.3 are written by [`ern4`] following the official XSDs; 3.8.x keeps
+    /// the original 3.8-style tree below.
     pub fn generate(&mut self, request: &BuildRequest) -> Result<AST, BuildError> {
+        use ddex_core::models::versions::ERNVersion;
+        match crate::builder::parse_target_version(&self.version)? {
+            ERNVersion::V4_2 => return ern4::generate(request, ern4::Ern4Version::V42),
+            ERNVersion::V4_3 => return ern4::generate(request, ern4::Ern4Version::V43),
+            _ => {}
+        }
+        for (r, release) in request.releases.iter().enumerate() {
+            for (t, track) in release.tracks.iter().enumerate() {
+                if track.resource_kind == crate::builder::ResourceKind::Video {
+                    return Err(BuildError::InvalidFormat {
+                        field: format!("releases[{r}].tracks[{t}].resource_kind"),
+                        message: "Video resources are only supported for ERN 4.2/4.3 targets"
+                            .to_string(),
+                    });
+                }
+            }
+        }
+
         // Create root element based on version
         let mut root = Element::new("NewReleaseMessage");
         root.namespace = Some("ern".to_string());

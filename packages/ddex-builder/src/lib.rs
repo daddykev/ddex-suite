@@ -40,13 +40,17 @@
 //!     version: "4.3".to_string(),
 //!     profile: Some("AudioSingle".to_string()),
 //!     releases: vec![ReleaseRequest {
-//!         release_id: "REL001".to_string(),
+//!         release_id: "A1-ABCDE-0000000001-M".to_string(),
 //!         release_reference: Some("R1".to_string()),
 //!         title: text("Example Single"),
 //!         artist: "Example Artist".to_string(),
-//!         label: None,
+//!         label: Some("Example Records".to_string()),
 //!         release_date: None,
-//!         upc: None,
+//!         upc: Some("123456789012".to_string()),
+//!         // Required by ERN 4.x (the build fails, naming each one, if they are missing)
+//!         release_type: Some("Single".into()),
+//!         genre: Some("Pop".to_string()),
+//!         parental_warning_type: Some("NotExplicit".to_string()),
 //!         tracks: vec![TrackRequest {
 //!             track_id: "TRK001".to_string(),
 //!             resource_reference: Some("A1".to_string()),
@@ -54,6 +58,8 @@
 //!             title: "Example Track".to_string(),
 //!             duration: "PT3M0S".to_string(),
 //!             artist: "Example Artist".to_string(),
+//!             resource_type: Some("MusicalWorkSoundRecording".into()),
+//!             parental_warning_type: Some("NotExplicit".to_string()),
 //!             ..Default::default()
 //!         }],
 //!         resource_references: None,
@@ -61,7 +67,8 @@
 //!     }],
 //!     deals: vec![],
 //!     extensions: None,
-//!     ..Default::default()
+//!     language_and_script_code: Some("en".to_string()),
+//!     avs_version_id: Some("12".to_string()),
 //! };
 //!
 //! let result = DDEXBuilder::new().build(request, BuildOptions::default())?;
@@ -180,6 +187,7 @@ pub mod security;
 pub mod streaming;
 pub mod verification;
 pub mod versions;
+pub(crate) mod xml_escape;
 
 // Re-export main types
 pub use builder::{BuildOptions, BuildRequest, BuildResult, DDEXBuilder};

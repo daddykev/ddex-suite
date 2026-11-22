@@ -138,17 +138,11 @@ impl XmlWriter {
     }
 
     fn escape_text(&self, text: &str) -> String {
-        text.replace('&', "&amp;")
-            .replace('<', "&lt;")
-            .replace('>', "&gt;")
+        crate::xml_escape::escape_text(text)
     }
 
     fn escape_attribute(&self, text: &str) -> String {
-        text.replace('&', "&amp;")
-            .replace('<', "&lt;")
-            .replace('>', "&gt;")
-            .replace('"', "&quot;")
-            .replace('\'', "&apos;")
+        crate::xml_escape::escape_attribute(text)
     }
 
     /// Write a structured comment with position-aware formatting
