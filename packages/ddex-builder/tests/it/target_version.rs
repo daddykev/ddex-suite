@@ -8,13 +8,13 @@ use ddex_builder::builder::{
 use ddex_builder::{BuildOptions, BuildRequest, DDEXBuilder};
 use ddex_core::models::versions::ERNVersion;
 
-fn party(name: &str) -> PartyRequest {
+fn party(name: &str, id: &str) -> PartyRequest {
     PartyRequest {
         party_name: vec![LocalizedStringRequest {
             text: name.to_string(),
             language_code: None,
         }],
-        party_id: None,
+        party_id: Some(id.to_string()),
         party_reference: None,
     }
 }
@@ -23,8 +23,8 @@ fn request(version: &str) -> BuildRequest {
     BuildRequest {
         header: MessageHeaderRequest {
             message_id: Some("MSG-VERSION-TEST".to_string()),
-            message_sender: party("Example Sender"),
-            message_recipient: party("Example Recipient"),
+            message_sender: party("Example Sender", "PADPIDA0000000001"),
+            message_recipient: party("Example Recipient", "PADPIDA0000000002"),
             message_control_type: Some("LiveMessage".to_string()),
             message_created_date_time: Some("2026-01-01T00:00:00Z".to_string()),
         },

@@ -3,89 +3,174 @@ source: packages/ddex-builder/tests/it/ern382_output.rs
 expression: "build(CanonMode::Pretty)"
 ---
 <?xml version="1.0" encoding="UTF-8"?>
-<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/382" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" MessageSchemaVersionId="ern/3.8.2">
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/382" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" MessageSchemaVersionId="ern/382">
   <MessageHeader>
-    <MessageThreadId>MSG-382</MessageThreadId>
     <MessageId>MSG-382</MessageId>
-    <MessageCreatedDateTime>2024-09-13T12:00:00Z</MessageCreatedDateTime>
     <MessageSender>
       <PartyId>PADPIDA0000000001</PartyId>
-      <PartyName>Example Label</PartyName>
+      <PartyName>
+        <FullName>Example Label</FullName>
+      </PartyName>
     </MessageSender>
     <MessageRecipient>
       <PartyId>PADPIDA0000000002</PartyId>
-      <PartyName>Example DSP</PartyName>
+      <PartyName>
+        <FullName>Example DSP</FullName>
+      </PartyName>
     </MessageRecipient>
+    <MessageCreatedDateTime>2024-09-13T12:00:00Z</MessageCreatedDateTime>
+    <MessageControlType>LiveMessage</MessageControlType>
   </MessageHeader>
   <ResourceList>
     <SoundRecording>
-      <ResourceReference>A1</ResourceReference>
-      <ResourceId>
+      <SoundRecordingId>
         <ISRC>USRT12400001</ISRC>
-      </ResourceId>
+      </SoundRecordingId>
+      <ResourceReference>A1</ResourceReference>
       <ReferenceTitle>
         <TitleText>Say "hi" it's 🎵</TitleText>
       </ReferenceTitle>
       <Duration>PT3M42S</Duration>
+      <SoundRecordingDetailsByTerritory>
+        <TerritoryCode>Worldwide</TerritoryCode>
+        <DisplayArtist>
+          <PartyName>
+            <FullName>Artist</FullName>
+          </PartyName>
+          <ArtistRole>MainArtist</ArtistRole>
+        </DisplayArtist>
+        <DisplayArtistName>Artist</DisplayArtistName>
+      </SoundRecordingDetailsByTerritory>
     </SoundRecording>
     <SoundRecording>
-      <ResourceReference>A2</ResourceReference>
-      <ResourceId>
+      <SoundRecordingId>
         <ISRC>USRT12400002</ISRC>
-      </ResourceId>
+      </SoundRecordingId>
+      <ResourceReference>A2</ResourceReference>
       <ReferenceTitle>
         <TitleText>أغنية</TitleText>
       </ReferenceTitle>
       <Duration>PT3M42S</Duration>
+      <SoundRecordingDetailsByTerritory>
+        <TerritoryCode>Worldwide</TerritoryCode>
+        <DisplayArtist>
+          <PartyName>
+            <FullName>Feat</FullName>
+          </PartyName>
+          <ArtistRole>MainArtist</ArtistRole>
+        </DisplayArtist>
+        <DisplayArtistName>Feat</DisplayArtistName>
+      </SoundRecordingDetailsByTerritory>
     </SoundRecording>
     <SoundRecording>
-      <ResourceReference>A1001</ResourceReference>
-      <ResourceId>
+      <SoundRecordingId>
         <ISRC>USRT12400003</ISRC>
-      </ResourceId>
+      </SoundRecordingId>
+      <ResourceReference>A1001</ResourceReference>
       <ReferenceTitle>
         <TitleText>Three</TitleText>
       </ReferenceTitle>
       <Duration>PT3M42S</Duration>
+      <SoundRecordingDetailsByTerritory>
+        <TerritoryCode>Worldwide</TerritoryCode>
+        <DisplayArtist>
+          <PartyName>
+            <FullName>Other</FullName>
+          </PartyName>
+          <ArtistRole>MainArtist</ArtistRole>
+        </DisplayArtist>
+        <DisplayArtistName>Other</DisplayArtistName>
+      </SoundRecordingDetailsByTerritory>
     </SoundRecording>
   </ResourceList>
   <ReleaseList>
     <Release>
-      <ReleaseReference>R1</ReleaseReference>
       <ReleaseId>
         <GRid>A1-ABCDE-0000000001-M</GRid>
+        <ICPN>123456789012</ICPN>
       </ReleaseId>
+      <ReleaseReference>R1</ReleaseReference>
       <ReferenceTitle>
         <TitleText LanguageAndScriptCode="en">Album</TitleText>
       </ReferenceTitle>
-      <ReferenceTitle>
-        <TitleText LanguageAndScriptCode="es">Álbum</TitleText>
-      </ReferenceTitle>
-      <DisplayArtistName>
-        <FullName>Artist &amp; Friends</FullName>
-      </DisplayArtistName>
-      <LabelName>
+      <ReleaseResourceReferenceList>
+        <ReleaseResourceReference>A1</ReleaseResourceReference>
+        <ReleaseResourceReference>A2</ReleaseResourceReference>
+      </ReleaseResourceReferenceList>
+      <ReleaseDetailsByTerritory>
+        <TerritoryCode>Worldwide</TerritoryCode>
+        <DisplayArtistName>Artist &amp; Friends</DisplayArtistName>
         <LabelName>Label &lt;Records&gt;</LabelName>
-      </LabelName>
-      <ReleaseId>
-        <ICPN>123456789012</ICPN>
-      </ReleaseId>
-      <ReleaseDate>2024-01-01</ReleaseDate>
-      <ReleaseResourceReference>A1</ReleaseResourceReference>
-      <ReleaseResourceReference>A2</ReleaseResourceReference>
+        <Title LanguageAndScriptCode="en" TitleType="DisplayTitle">
+          <TitleText>Album</TitleText>
+        </Title>
+        <Title LanguageAndScriptCode="es" TitleType="DisplayTitle">
+          <TitleText>Álbum</TitleText>
+        </Title>
+        <DisplayArtist>
+          <PartyName>
+            <FullName>Artist &amp; Friends</FullName>
+          </PartyName>
+          <ArtistRole>MainArtist</ArtistRole>
+        </DisplayArtist>
+        <ResourceGroup>
+          <ResourceGroupContentItem>
+            <ReleaseResourceReference>A1</ReleaseResourceReference>
+          </ResourceGroupContentItem>
+          <ResourceGroupContentItem>
+            <ReleaseResourceReference>A2</ReleaseResourceReference>
+          </ResourceGroupContentItem>
+        </ResourceGroup>
+        <ReleaseDate>2024-01-01</ReleaseDate>
+      </ReleaseDetailsByTerritory>
     </Release>
     <Release>
-      <ReleaseReference>R2</ReleaseReference>
       <ReleaseId>
         <GRid>REL2</GRid>
       </ReleaseId>
+      <ReleaseReference>R2</ReleaseReference>
       <ReferenceTitle>
         <TitleText>&lt;script&gt;alert('x')&lt;/script&gt;</TitleText>
       </ReferenceTitle>
-      <DisplayArtistName>
-        <FullName>Other</FullName>
-      </DisplayArtistName>
-      <ReleaseResourceReference>A1001</ReleaseResourceReference>
+      <ReleaseResourceReferenceList>
+        <ReleaseResourceReference>A1001</ReleaseResourceReference>
+      </ReleaseResourceReferenceList>
+      <ReleaseDetailsByTerritory>
+        <TerritoryCode>Worldwide</TerritoryCode>
+        <DisplayArtistName>Other</DisplayArtistName>
+        <Title TitleType="DisplayTitle">
+          <TitleText>&lt;script&gt;alert('x')&lt;/script&gt;</TitleText>
+        </Title>
+        <DisplayArtist>
+          <PartyName>
+            <FullName>Other</FullName>
+          </PartyName>
+          <ArtistRole>MainArtist</ArtistRole>
+        </DisplayArtist>
+        <ResourceGroup>
+          <ResourceGroupContentItem>
+            <ReleaseResourceReference>A1001</ReleaseResourceReference>
+          </ResourceGroupContentItem>
+        </ResourceGroup>
+      </ReleaseDetailsByTerritory>
     </Release>
   </ReleaseList>
+  <DealList>
+    <ReleaseDeal>
+      <DealReleaseReference>R1</DealReleaseReference>
+      <Deal>
+        <DealReference>D1</DealReference>
+        <DealTerms>
+          <CommercialModelType>SubscriptionModel</CommercialModelType>
+          <Usage>
+            <UseType>OnDemandStream</UseType>
+          </Usage>
+          <TerritoryCode>Worldwide</TerritoryCode>
+          <ValidityPeriod>
+            <StartDate>2024-01-01</StartDate>
+          </ValidityPeriod>
+        </DealTerms>
+      </Deal>
+    </ReleaseDeal>
+  </DealList>
 </ern:NewReleaseMessage>

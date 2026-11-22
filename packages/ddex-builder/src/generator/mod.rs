@@ -97,14 +97,15 @@
 //! - Schema constraint violations
 //! - Data format issues
 
+mod ern38;
 mod ern4;
 pub mod optimized_xml_writer;
+mod shared;
 pub mod xml_writer;
 
-use crate::ast::{Element, AST}; // Removed unused Node import
-use crate::builder::{BuildRequest, ReleaseRequest};
+use crate::ast::AST;
+use crate::builder::BuildRequest;
 use crate::error::BuildError;
-use indexmap::IndexMap;
 
 /// AST generator for converting build requests to abstract syntax trees
 pub struct ASTGenerator {
@@ -119,284 +120,16 @@ impl ASTGenerator {
 
     /// Generate an AST from a build request
     ///
-    /// ERN 4.2 and 4.3 are written by [`ern4`] following the official XSDs; 3.8.x keeps
-    /// the original 3.8-style tree below.
+    /// Each version follows its official DDEX XSD: ERN 4.2 and 4.3 are written by [`ern4`],
+    /// ERN 3.8.2 and 3.8.1 by [`ern38`]. Both fail, naming every missing request field,
+    /// when the schema requires a value the request does not carry.
     pub fn generate(&mut self, request: &BuildRequest) -> Result<AST, BuildError> {
         use ddex_core::models::versions::ERNVersion;
         match crate::builder::parse_target_version(&self.version)? {
-            ERNVersion::V4_2 => return ern4::generate(request, ern4::Ern4Version::V42),
-            ERNVersion::V4_3 => return ern4::generate(request, ern4::Ern4Version::V43),
-            _ => {}
+            ERNVersion::V4_2 => ern4::generate(request, ern4::Ern4Version::V42),
+            ERNVersion::V4_3 => ern4::generate(request, ern4::Ern4Version::V43),
+            ERNVersion::V3_8_1 => ern38::generate(request, ern38::Ern38Version::V381),
+            ERNVersion::V3_8_2 => ern38::generate(request, ern38::Ern38Version::V382),
         }
-        for (r, release) in request.releases.iter().enumerate() {
-            for (t, track) in release.tracks.iter().enumerate() {
-                if track.resource_kind == crate::builder::ResourceKind::Video {
-                    return Err(BuildError::InvalidFormat {
-                        field: format!("releases[{r}].tracks[{t}].resource_kind"),
-                        message: "Video resources are only supported for ERN 4.2/4.3 targets"
-                            .to_string(),
-                    });
-                }
-            }
-        }
-
-        // Create root element based on version
-        let mut root = Element::new("NewReleaseMessage");
-        root.namespace = Some("ern".to_string());
-
-        // Add version attributes
-        root.attributes.insert(
-            "MessageSchemaVersionId".to_string(),
-            format!("ern/{}", self.version),
-        );
-
-        // Add MessageHeader
-        root.add_child(self.generate_message_header(request)?);
-
-        // Add ResourceList
-        root.add_child(self.generate_resource_list(&request.releases)?);
-
-        // Add ReleaseList
-        root.add_child(self.generate_release_list(&request.releases)?);
-
-        // Create namespaces map
-        let mut namespaces = IndexMap::new();
-        namespaces.insert(
-            "ern".to_string(),
-            format!("http://ddex.net/xml/ern/{}", self.version.replace('.', "")),
-        );
-        namespaces.insert(
-            "xsi".to_string(),
-            "http://www.w3.org/2001/XMLSchema-instance".to_string(),
-        );
-
-        Ok(AST {
-            root,
-            namespaces,
-            schema_location: None,
-        })
-    }
-
-    fn generate_message_header(&self, request: &BuildRequest) -> Result<Element, BuildError> {
-        let mut header = Element::new("MessageHeader");
-
-        // Add MessageThreadId (using MessageId for now)
-        if let Some(ref msg_id) = request.header.message_id {
-            header.add_child(Element::new("MessageThreadId").with_text(msg_id));
-            header.add_child(Element::new("MessageId").with_text(msg_id));
-        }
-
-        // Add MessageCreatedDateTime - use provided timestamp or current time
-        let created_time = request
-            .header
-            .message_created_date_time
-            .as_ref()
-            .map(|t| t.clone())
-            .unwrap_or_else(|| chrono::Utc::now().to_rfc3339());
-
-        header.add_child(Element::new("MessageCreatedDateTime").with_text(created_time));
-
-        // Add MessageSender
-        header.add_child(self.generate_party("MessageSender", &request.header.message_sender)?);
-
-        // Add MessageRecipient
-        header
-            .add_child(self.generate_party("MessageRecipient", &request.header.message_recipient)?);
-
-        Ok(header)
-    }
-
-    fn generate_party(
-        &self,
-        element_name: &str,
-        party: &crate::builder::PartyRequest,
-    ) -> Result<Element, BuildError> {
-        let mut party_elem = Element::new(element_name);
-
-        // Add PartyId if present
-        if let Some(ref party_id) = party.party_id {
-            party_elem.add_child(Element::new("PartyId").with_text(party_id));
-        }
-
-        // Add PartyReference if present (for linker support)
-        if let Some(ref party_ref) = party.party_reference {
-            party_elem.add_child(Element::new("PartyReference").with_text(party_ref));
-        }
-
-        // Add PartyName
-        for party_name in &party.party_name {
-            let mut name_elem = Element::new("PartyName");
-            if let Some(ref lang) = party_name.language_code {
-                name_elem
-                    .attributes
-                    .insert("LanguageCode".to_string(), lang.clone());
-            }
-            name_elem.add_text(&party_name.text);
-            party_elem.add_child(name_elem);
-        }
-
-        Ok(party_elem)
-    }
-
-    fn generate_resource_list(&self, releases: &[ReleaseRequest]) -> Result<Element, BuildError> {
-        let mut resource_list = Element::new("ResourceList");
-
-        // Generate resources from all tracks in all releases
-        for release in releases {
-            for track in &release.tracks {
-                let mut sound_recording = Element::new("SoundRecording");
-
-                // Add ResourceReference (use generated reference or create one)
-                // FIX: Create owned string instead of temporary
-                let resource_ref = track
-                    .resource_reference
-                    .clone()
-                    .unwrap_or_else(|| format!("A{}", track.track_id));
-                sound_recording
-                    .add_child(Element::new("ResourceReference").with_text(&resource_ref));
-
-                // Add ResourceId with ISRC
-                let mut resource_id = Element::new("ResourceId");
-                resource_id.add_child(Element::new("ISRC").with_text(&track.isrc));
-                sound_recording.add_child(resource_id);
-
-                // Add ReferenceTitle
-                let mut ref_title = Element::new("ReferenceTitle");
-                ref_title.add_child(Element::new("TitleText").with_text(&track.title));
-                sound_recording.add_child(ref_title);
-
-                // Add Duration (already in ISO 8601 format as String)
-                sound_recording.add_child(Element::new("Duration").with_text(&track.duration));
-
-                resource_list.add_child(sound_recording);
-            }
-        }
-
-        Ok(resource_list)
-    }
-
-    fn generate_release_list(&self, releases: &[ReleaseRequest]) -> Result<Element, BuildError> {
-        let mut release_list = Element::new("ReleaseList");
-
-        for release in releases {
-            let mut release_elem = Element::new("Release");
-
-            // Add ReleaseReference (use generated reference or create one)
-            // FIX: Create owned string instead of temporary
-            let release_ref = release
-                .release_reference
-                .clone()
-                .unwrap_or_else(|| format!("R{}", release.release_id));
-            release_elem.add_child(Element::new("ReleaseReference").with_text(&release_ref));
-
-            // Add ReleaseId
-            let mut release_id = Element::new("ReleaseId");
-            release_id.add_child(Element::new("GRid").with_text(&release.release_id));
-            release_elem.add_child(release_id);
-
-            // Add Title(s)
-            if !release.title.is_empty() {
-                for title in &release.title {
-                    let mut title_elem = Element::new("ReferenceTitle");
-                    let mut title_text = Element::new("TitleText").with_text(&title.text);
-                    if let Some(ref lang) = title.language_code {
-                        title_text
-                            .attributes
-                            .insert("LanguageAndScriptCode".to_string(), lang.clone());
-                    }
-                    title_elem.add_child(title_text);
-                    release_elem.add_child(title_elem);
-                }
-            }
-
-            // Add DisplayArtist
-            let mut display_artist_name = Element::new("DisplayArtistName");
-            display_artist_name.add_child(Element::new("FullName").with_text(&release.artist));
-            release_elem.add_child(display_artist_name);
-
-            // Add Label if present
-            if let Some(ref label) = release.label {
-                let mut label_name = Element::new("LabelName");
-                label_name.add_child(Element::new("LabelName").with_text(label));
-                release_elem.add_child(label_name);
-            }
-
-            // Add UPC if present
-            if let Some(ref upc) = release.upc {
-                let mut release_id_upc = Element::new("ReleaseId");
-                release_id_upc.add_child(Element::new("ICPN").with_text(upc));
-                release_elem.add_child(release_id_upc);
-            }
-
-            // Add ReleaseDate if present
-            if let Some(ref release_date) = release.release_date {
-                release_elem.add_child(Element::new("ReleaseDate").with_text(release_date));
-            }
-
-            // Add ReleaseResourceReferences
-            if let Some(ref resource_refs) = release.resource_references {
-                for resource_ref in resource_refs {
-                    release_elem.add_child(
-                        Element::new("ReleaseResourceReference").with_text(resource_ref),
-                    );
-                }
-            } else {
-                // Auto-generate from tracks if not provided
-                for track in &release.tracks {
-                    // FIX: Create owned string instead of temporary
-                    let resource_ref = track
-                        .resource_reference
-                        .clone()
-                        .unwrap_or_else(|| format!("A{}", track.track_id));
-                    release_elem.add_child(
-                        Element::new("ReleaseResourceReference").with_text(&resource_ref),
-                    );
-                }
-            }
-
-            release_list.add_child(release_elem);
-        }
-
-        Ok(release_list)
-    }
-
-    #[allow(dead_code)]
-    fn generate_deal_list(
-        &self,
-        deals: &[crate::builder::DealRequest],
-    ) -> Result<Element, BuildError> {
-        let mut deal_list = Element::new("DealList");
-
-        for deal in deals {
-            let mut deal_elem = Element::new("ReleaseDeal");
-
-            // Add DealReference if present
-            if let Some(ref deal_ref) = deal.deal_reference {
-                deal_elem.add_child(Element::new("DealReference").with_text(deal_ref));
-            }
-
-            // Add Deal terms (simplified for now)
-            let mut deal_terms = Element::new("Deal");
-            deal_terms.add_child(
-                Element::new("CommercialModelType")
-                    .with_text(&deal.deal_terms.commercial_model_type),
-            );
-
-            // Add territories
-            for territory in &deal.deal_terms.territory_code {
-                deal_terms.add_child(Element::new("TerritoryCode").with_text(territory));
-            }
-
-            deal_elem.add_child(deal_terms);
-
-            // Add DealReleaseReferences
-            for release_ref in &deal.release_references {
-                deal_elem.add_child(Element::new("DealReleaseReference").with_text(release_ref));
-            }
-
-            deal_list.add_child(deal_elem);
-        }
-
-        Ok(deal_list)
     }
 }

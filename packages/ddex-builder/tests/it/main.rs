@@ -9,6 +9,8 @@ mod cross_platform_determinism;
 mod determinism;
 mod entity_classification;
 mod ern382_output;
+mod ern38_round_trip;
+mod ern38_xsd;
 mod ern4_escaping;
 mod ern4_samples;
 mod ern4_support;

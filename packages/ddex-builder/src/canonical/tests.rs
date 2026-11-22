@@ -125,35 +125,28 @@ mod tests {
 
     #[test]
     fn test_element_ordering_message_header() {
-        // The reorder tables describe ERN 3.8.x (4.x keeps document order)
+        // ERN 3.8.x, like 4.x, keeps document order: the builder writes XSD sequence order
+        // (3.8.2 MessageHeader: MessageId, MessageSender, MessageRecipient,
+        // MessageCreatedDateTime), and the old reorder tables contradicted it.
         let canonicalizer = create_test_canonicalizer_with_version("3.8.2");
         let input = r#"<?xml version="1.0" encoding="UTF-8"?>
 <MessageHeader>
-  <MessageSender>sender</MessageSender>
   <MessageId>id</MessageId>
-  <MessageType>type</MessageType>
+  <MessageSender>sender</MessageSender>
+  <MessageRecipient>recipient</MessageRecipient>
+  <MessageCreatedDateTime>2024-01-01T00:00:00Z</MessageCreatedDateTime>
 </MessageHeader>"#;
 
         let result = canonicalizer.canonicalize(input).unwrap();
-        let lines: Vec<&str> = result.lines().collect();
-
-        // Find positions of elements
-        let id_pos = lines
-            .iter()
-            .position(|l| l.contains("<MessageId>"))
-            .unwrap();
-        let type_pos = lines
-            .iter()
-            .position(|l| l.contains("<MessageType>"))
-            .unwrap();
-        let sender_pos = lines
-            .iter()
-            .position(|l| l.contains("<MessageSender>"))
-            .unwrap();
-
-        // Should be in canonical order: Id, Type, Sender
-        assert!(id_pos < type_pos);
-        assert!(type_pos < sender_pos);
+        let position = |name: &str| {
+            result
+                .lines()
+                .position(|l| l.contains(&format!("<{name}>")))
+                .unwrap()
+        };
+        assert!(position("MessageId") < position("MessageSender"));
+        assert!(position("MessageSender") < position("MessageRecipient"));
+        assert!(position("MessageRecipient") < position("MessageCreatedDateTime"));
     }
 
     #[test]

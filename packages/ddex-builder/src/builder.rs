@@ -563,6 +563,17 @@ pub struct DealTerms {
     pub use_types: Vec<String>,
 }
 
+impl DealTerms {
+    /// True when no term is set (ERN 3.8.x then writes the `Deal` without `DealTerms`).
+    pub(crate) fn is_empty(&self) -> bool {
+        self.commercial_model_type.is_empty()
+            && self.territory_code.is_empty()
+            && self.use_types.is_empty()
+            && self.start_date.is_none()
+            && self.end_date.is_none()
+    }
+}
+
 /// Build options
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildOptions {
@@ -862,7 +873,9 @@ impl DDEXBuilder {
 
         // Generate deal references if missing
         for (idx, deal) in request.deals.iter_mut().enumerate() {
-            if deal.deal_reference.is_none() {
+            // A deal without terms is identified only by the caller's reference; one is not
+            // made up for it (the generator reports it as missing).
+            if deal.deal_reference.is_none() && !deal.deal_terms.is_empty() {
                 deal.deal_reference = Some(format!("D{}", idx + 1));
             }
         }
@@ -906,7 +919,9 @@ impl DDEXBuilder {
 
         // Generate deal references if missing
         for (idx, deal) in request.deals.iter_mut().enumerate() {
-            if deal.deal_reference.is_none() {
+            // A deal without terms is identified only by the caller's reference; one is not
+            // made up for it (the generator reports it as missing).
+            if deal.deal_reference.is_none() && !deal.deal_terms.is_empty() {
                 deal.deal_reference = Some(format!("D{}", idx + 1));
             }
         }
@@ -984,7 +999,9 @@ impl DDEXBuilder {
 
         // Generate deal references if missing
         for (_idx, deal) in request.deals.iter_mut().enumerate() {
-            if deal.deal_reference.is_none() {
+            // A deal without terms is identified only by the caller's reference; one is not
+            // made up for it (the generator reports it as missing).
+            if deal.deal_reference.is_none() && !deal.deal_terms.is_empty() {
                 // Create stable deal ID based on terms
                 let territories = deal.deal_terms.territory_code.join(",");
                 deal.deal_reference = Some(format!(

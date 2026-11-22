@@ -1,5 +1,5 @@
-//! Shared helpers for the ERN 4.x builder tests: complete build requests and XSD
-//! validation against the official DDEX schemas with `xmllint`.
+//! Shared helpers for the ERN 4.x (and 3.8.2) builder tests: complete build requests and
+//! XSD validation against the official DDEX schemas with `xmllint`.
 //!
 //! XSD validation needs `xmllint` (libxml2) and the schemas fetched by
 //! `scripts/fetch_ddex_schemas.sh` (run automatically when they are missing). If either is
@@ -236,14 +236,15 @@ fn ensure_xsd_tooling() -> &'static PathBuf {
         let root = repo_root();
         let schemas = root.join("schemas");
         let have = |v: &str| schemas.join(format!("ern/{v}/release-notification.xsd")).is_file();
-        if !(have("42") && have("43")) {
+        let have_all = || have("382") && have("42") && have("43");
+        if !have_all() {
             let script = root.join("scripts/fetch_ddex_schemas.sh");
             let out = Command::new("sh")
                 .arg(&script)
                 .output()
                 .unwrap_or_else(|e| panic!("could not run {}: {e}", script.display()));
             assert!(
-                out.status.success() && have("42") && have("43"),
+                out.status.success() && have_all(),
                 "fetching the DDEX XSDs failed ({}). Run scripts/fetch_ddex_schemas.sh (needs \
                  network access), or set DDEX_SKIP_XSD=1 to skip XSD validation explicitly.\n{}",
                 script.display(),
@@ -254,7 +255,8 @@ fn ensure_xsd_tooling() -> &'static PathBuf {
     })
 }
 
-/// Validate `xml` against the official ERN `version` XSD. Returns xmllint's errors.
+/// Validate `xml` against the official ERN `version` XSD (3.8.2, 4.2 or 4.3). Returns
+/// xmllint's errors.
 /// Panics if the tooling is missing (unless `DDEX_SKIP_XSD=1`, then always `Ok`).
 pub fn validate_xsd(xml: &str, version: &str) -> Result<(), String> {
     if xsd_skipped() {
@@ -339,7 +341,7 @@ use ddex_core::models::graph::{
     ResourceType, UseType,
 };
 
-fn iso_duration(seconds: u64) -> String {
+pub fn iso_duration(seconds: u64) -> String {
     format!("PT{}M{}S", seconds / 60, seconds % 60)
 }
 
@@ -360,7 +362,7 @@ fn party_name(graph: &ERNMessage, reference: &str) -> Option<String> {
         .map(|n| n.text.clone())
 }
 
-fn release_ids(ids: &[Identifier]) -> ReleaseIdRequest {
+pub fn release_ids(ids: &[Identifier]) -> ReleaseIdRequest {
     let mut out = ReleaseIdRequest::default();
     for id in ids {
         match id.id_type {
@@ -403,7 +405,7 @@ fn titles(texts: &[DisplayText]) -> Vec<LocalizedStringRequest> {
         .collect()
 }
 
-fn release_type_name(t: &ReleaseType) -> String {
+pub fn release_type_name(t: &ReleaseType) -> String {
     match t {
         ReleaseType::Album => "Album".to_string(),
         ReleaseType::Single => "Single".to_string(),
@@ -413,7 +415,7 @@ fn release_type_name(t: &ReleaseType) -> String {
     }
 }
 
-fn commercial_model_name(c: &CommercialModelType) -> String {
+pub fn commercial_model_name(c: &CommercialModelType) -> String {
     match c {
         CommercialModelType::PayAsYouGoModel => "PayAsYouGoModel".to_string(),
         CommercialModelType::SubscriptionModel => "SubscriptionModel".to_string(),
@@ -422,7 +424,7 @@ fn commercial_model_name(c: &CommercialModelType) -> String {
     }
 }
 
-fn use_type_name(u: &UseType) -> String {
+pub fn use_type_name(u: &UseType) -> String {
     match u {
         UseType::Stream => "Stream".to_string(),
         UseType::Download => "Download".to_string(),

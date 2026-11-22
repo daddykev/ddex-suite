@@ -375,9 +375,14 @@ impl DB_C14N {
         parent_name: &str,
         version: &str,
     ) -> Result<(), super::error::BuildError> {
-        // ERN 4.x: the generator writes elements in XSD sequence order, which is the
-        // canonical order; the reorder tables below only describe 3.8.x.
-        if matches!(version, "4.2" | "42" | "4.3" | "43") {
+        // ERN 3.8.x and 4.x: the generators write elements in XSD sequence order, which is
+        // the canonical order. The reorder tables in `rules` predate that and do not follow
+        // the XSD sequences (e.g. 3.8.2 MessageHeader, Release), so they are not applied to
+        // these versions.
+        if matches!(
+            version,
+            "3.8.1" | "381" | "3.8.2" | "382" | "4.2" | "42" | "4.3" | "43"
+        ) {
             return Ok(());
         }
 

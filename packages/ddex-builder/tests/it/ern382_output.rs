@@ -1,6 +1,7 @@
-//! Pins the builder's ERN 3.8.2 output byte for byte (insta snapshots), so changes made
-//! for other versions cannot alter it. Every value is fixed (MessageId, created time,
-//! references), so the output is a pure function of the request.
+//! Pins the builder's ERN 3.8.2 output byte for byte (insta snapshots), so every change to
+//! it is visible in review. Every value is fixed (MessageId, created time, references), so
+//! the output is a pure function of the request. The output is checked against the
+//! official 3.8.2 XSD as well (`ern38_xsd`).
 
 use ddex_builder::builder::{
     DealRequest, DealTerms, IdStrategy, LocalizedStringRequest, MessageHeaderRequest,
@@ -77,6 +78,7 @@ fn request() -> BuildRequest {
                 commercial_model_type: "SubscriptionModel".to_string(),
                 territory_code: vec!["Worldwide".to_string()],
                 start_date: Some("2024-01-01".to_string()),
+                use_types: vec!["OnDemandStream".to_string()],
                 ..Default::default()
             },
             release_references: vec!["R1".to_string()],
