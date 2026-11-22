@@ -138,9 +138,7 @@ fn test_fast_streaming_explicitly() {
     let cursor = Cursor::new(xml.as_bytes());
 
     // Directly call the fast streaming parser
-    let start = Instant::now();
     let result = parser.parse_fast_streaming(cursor);
-    let elapsed = start.elapsed();
 
     match result {
         Ok(message) => {

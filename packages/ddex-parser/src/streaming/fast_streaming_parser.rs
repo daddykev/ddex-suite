@@ -11,7 +11,6 @@ use std::time::{Duration, Instant};
 
 /// High-performance streaming parser optimized for 280+ MB/s
 pub struct FastStreamingParser {
-    config: StreamingConfig,
     // Pre-compiled SIMD-accelerated pattern matchers
     release_start: memmem::Finder<'static>,
     release_end: memmem::Finder<'static>,
@@ -67,9 +66,13 @@ pub struct FastParsingStats {
 }
 
 impl FastStreamingParser {
-    pub fn new(config: StreamingConfig) -> Self {
+    /// Create a fast streaming parser.
+    ///
+    /// Known limitation: `config` is currently ignored. The scanner applies none of
+    /// its settings (buffer size, `max_memory`, or the `SecurityConfig` limits);
+    /// see KNOWN_ISSUES.md.
+    pub fn new(_config: StreamingConfig) -> Self {
         Self {
-            config,
             // Pre-compile all patterns for SIMD acceleration
             release_start: memmem::Finder::new(b"<Release"),
             release_end: memmem::Finder::new(b"</Release>"),
@@ -340,7 +343,6 @@ impl Iterator for FastStreamingIterator {
 impl ExactSizeIterator for FastStreamingIterator {}
 
 /// Create a fast streaming parser with optimal configuration for performance
-#[allow(dead_code)]
 pub fn create_fast_parser() -> FastStreamingParser {
     let config = StreamingConfig {
         security: SecurityConfig::relaxed(), // Use relaxed for maximum performance
@@ -358,12 +360,6 @@ pub fn create_fast_parser() -> FastStreamingParser {
 mod tests {
     use super::*;
     use std::io::{BufReader, Cursor};
-
-    #[test]
-    fn test_fast_streaming_parser_creation() {
-        let parser = create_fast_parser();
-        assert_eq!(parser.config.buffer_size, 64 * 1024);
-    }
 
     #[test]
     fn test_fast_streaming_basic() {
@@ -474,8 +470,10 @@ mod tests {
         let cursor = Cursor::new(test_xml.as_bytes());
         let mut reader = BufReader::new(cursor);
 
+        #[cfg(feature = "performance-debug")]
         let start = Instant::now();
         let result = parser.parse_streaming(&mut reader, None);
+        #[cfg(feature = "performance-debug")]
         let elapsed = start.elapsed();
 
         assert!(result.is_ok());

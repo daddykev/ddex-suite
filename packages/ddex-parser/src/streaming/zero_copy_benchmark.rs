@@ -6,7 +6,7 @@
 
 use crate::error::ParseError;
 use crate::streaming::fast_zero_copy::FastZeroCopyIterator;
-use crate::streaming::{WorkingStreamIterator, WorkingStreamingStats};
+use crate::streaming::WorkingStreamIterator;
 use ddex_core::models::versions::ERNVersion;
 use std::io::Cursor;
 use std::time::Instant;

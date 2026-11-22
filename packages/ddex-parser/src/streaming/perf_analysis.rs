@@ -1,7 +1,7 @@
 //! Performance analysis and profiling for streaming parser
 
 use crate::error::ParseError;
-use crate::streaming::working_impl::{WorkingStreamIterator, WorkingStreamingElement};
+use crate::streaming::working_impl::WorkingStreamIterator;
 use ddex_core::models::versions::ERNVersion;
 use std::io::Cursor;
 use std::time::Instant;
@@ -123,7 +123,7 @@ fn profile_memory_allocations() {
     let start = Instant::now();
     for _ in 0..iterations {
         let cursor = Cursor::new(xml.as_bytes());
-        let mut iterator = WorkingStreamIterator::new(cursor, ERNVersion::V4_3);
+        let iterator = WorkingStreamIterator::new(cursor, ERNVersion::V4_3);
         let _: Vec<_> = iterator.collect();
     }
     let elapsed = start.elapsed();
@@ -264,7 +264,6 @@ impl PerformanceAnalyzer {
         let mut iterator = WorkingStreamIterator::new(cursor, ERNVersion::V4_3);
 
         let start = Instant::now();
-        let initial_stats = iterator.stats();
 
         let mut element_count = 0;
         let mut max_memory = 0;
@@ -283,7 +282,6 @@ impl PerformanceAnalyzer {
         }
 
         let parse_time = start.elapsed();
-        let final_stats = iterator.stats();
 
         let file_size_mb = data.len() as f64 / (1024.0 * 1024.0);
         let throughput = file_size_mb / parse_time.as_secs_f64();

@@ -326,7 +326,6 @@ impl GraphBuilder {
                 Ok(Event::End(ref e)) => {
                     match e.name().as_ref() {
                         b"MessageHeader" => {
-                            in_message_header = false;
                             break; // We're done parsing the header
                         }
                         b"MessageId" if in_message_header => {

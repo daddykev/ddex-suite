@@ -4,7 +4,7 @@ use std::io::Cursor;
 
 #[test]
 fn test_detect_version_382() {
-    let mut parser = DDEXParser::new();
+    let parser = DDEXParser::new();
     let xml = r#"<?xml version="1.0"?><ern:ReleaseList xmlns:ern="http://ddex.net/xml/ern/382"/>"#;
     let version = parser.detect_version(Cursor::new(xml)).unwrap();
     assert_eq!(version, ERNVersion::V3_8_2);
@@ -12,7 +12,7 @@ fn test_detect_version_382() {
 
 #[test]
 fn test_detect_version_42() {
-    let mut parser = DDEXParser::new();
+    let parser = DDEXParser::new();
     let xml =
         r#"<?xml version="1.0"?><ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/42"/>"#;
     let version = parser.detect_version(Cursor::new(xml)).unwrap();
@@ -21,7 +21,7 @@ fn test_detect_version_42() {
 
 #[test]
 fn test_detect_version_43() {
-    let mut parser = DDEXParser::new();
+    let parser = DDEXParser::new();
     let xml =
         r#"<?xml version="1.0"?><ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43"/>"#;
     let version = parser.detect_version(Cursor::new(xml)).unwrap();
@@ -30,7 +30,7 @@ fn test_detect_version_43() {
 
 #[test]
 fn test_detect_version_with_bom() {
-    let mut parser = DDEXParser::new();
+    let parser = DDEXParser::new();
     let xml_with_bom = b"\xef\xbb\xbf<?xml version=\"1.0\"?><ern:NewReleaseMessage xmlns:ern=\"http://ddex.net/xml/ern/43\"/>";
     let version = parser.detect_version(&xml_with_bom[..]).unwrap();
     assert_eq!(version, ERNVersion::V4_3);

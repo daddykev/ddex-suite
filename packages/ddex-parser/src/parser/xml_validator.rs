@@ -155,7 +155,7 @@ impl XmlValidator {
 
         if self.strict_validation {
             // Check if there's a matching start tag
-            if let Some((expected, depth)) = self.element_stack.pop() {
+            if let Some((expected, _depth)) = self.element_stack.pop() {
                 if expected != element_name {
                     // Debug: print stack state when mismatch occurs
                     // Debug logging disabled for production use

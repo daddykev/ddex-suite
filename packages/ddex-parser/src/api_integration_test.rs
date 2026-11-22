@@ -3,7 +3,7 @@
 #[cfg(test)]
 mod tests {
     use crate::streaming::WorkingStreamingElement;
-    use crate::{DDEXParser, ERNVersion};
+    use crate::DDEXParser;
     use std::io::Cursor;
 
     #[test]

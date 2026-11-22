@@ -361,7 +361,6 @@ impl<R: BufRead> StreamingParser<R> {
                     break;
                 }
                 Ok(Event::Eof) => {
-                    let location = self.get_current_location();
                     return Err(ParseError::XmlError("Unexpected EOF".to_string()));
                 }
                 Err(e) => {

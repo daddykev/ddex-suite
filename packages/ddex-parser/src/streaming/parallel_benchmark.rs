@@ -203,7 +203,7 @@ pub fn run_comprehensive_benchmark() -> Result<Vec<ComprehensiveBenchmarkResult>
         print!("   Working parser:      ");
         let start = Instant::now();
         let cursor = Cursor::new(&test_data);
-        let mut working_iterator = WorkingStreamIterator::new(cursor, ERNVersion::V4_3);
+        let working_iterator = WorkingStreamIterator::new(cursor, ERNVersion::V4_3);
         let working_elements: Result<Vec<_>, _> = working_iterator.collect();
         assert!(working_elements.is_ok(), "Working parser should succeed");
         let working_time = start.elapsed();
@@ -232,7 +232,7 @@ pub fn run_comprehensive_benchmark() -> Result<Vec<ComprehensiveBenchmarkResult>
         print!("   Parallel parser:     ");
         let start = Instant::now();
         let cursor = Cursor::new(&test_data);
-        let mut parallel_iterator = ParallelStreamingIterator::new(cursor, ERNVersion::V4_3);
+        let parallel_iterator = ParallelStreamingIterator::new(cursor, ERNVersion::V4_3);
         let parallel_elements: Result<Vec<_>, _> = parallel_iterator.collect();
         assert!(parallel_elements.is_ok(), "Parallel parser should succeed");
         let parallel_time = start.elapsed();
@@ -416,7 +416,7 @@ mod tests {
             if threads <= num_cpus::get() {
                 let start = Instant::now();
                 let cursor = Cursor::new(&data);
-                let mut iterator =
+                let iterator =
                     ParallelStreamingIterator::with_threads(cursor, ERNVersion::V4_3, threads);
                 let elements: Result<Vec<_>, _> = iterator.collect();
                 let elapsed = start.elapsed();

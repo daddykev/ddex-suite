@@ -1039,14 +1039,6 @@ fn format_tap_results(results: &[(PathBuf, ValidationResult)]) -> Result<String>
     Ok(output)
 }
 
-fn count_elements(data: &JsonValue) -> usize {
-    match data {
-        JsonValue::Object(map) => map.len() + map.values().map(count_elements).sum::<usize>(),
-        JsonValue::Array(arr) => arr.iter().map(count_elements).sum::<usize>(),
-        _ => 1,
-    }
-}
-
 fn count_elements_flat(flat: &ddex_core::models::flat::FlattenedMessage) -> usize {
     flat.releases.len() + flat.resources.len() + flat.deals.len() + flat.parties.len()
 }
