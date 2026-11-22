@@ -390,7 +390,8 @@ mod tests {
         assert_eq!(images[0].2, Some(1000));
     }
 
-    /// Test performance characteristics
+    /// Test performance characteristics (timing assertions: perf-tests only)
+    #[cfg(feature = "perf-tests")]
     #[test]
     fn test_performance_benchmarks() {
         // Create a moderately sized XML (similar to real-world releases)

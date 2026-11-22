@@ -1,26 +1,17 @@
 // src/streaming/mod.rs
 //! High-performance streaming DDEX parser implementation
 
-pub mod aligned_comprehensive;
-pub mod comprehensive;
 pub mod element;
 pub mod fast_streaming_parser;
 pub mod fast_zero_copy;
-pub mod fixed_comprehensive;
-pub mod iterator;
-pub mod minimal;
 pub mod parallel_parser;
-pub mod parser;
-pub mod state;
-pub mod verification;
 pub mod working_impl;
-pub mod zero_copy_parser;
 
-#[cfg(all(test, feature = "legacy-streaming-tests"))]
-pub mod comprehensive_tests;
+#[cfg(test)]
+mod comprehensive_tests;
 
-#[cfg(all(test, feature = "legacy-streaming-tests"))]
-pub mod debug_test;
+#[cfg(test)]
+mod debug_test;
 
 #[cfg(all(test, feature = "perf-tests"))]
 pub mod perf_analysis;
@@ -31,8 +22,8 @@ pub mod zero_copy_benchmark;
 #[cfg(all(test, feature = "perf-tests"))]
 pub mod parallel_benchmark;
 
-#[cfg(all(test, feature = "legacy-streaming-tests"))]
-pub mod consistency_test;
+#[cfg(test)]
+mod consistency_test;
 
 pub use element::ParsedElement;
 pub use fast_streaming_parser::{
@@ -40,14 +31,10 @@ pub use fast_streaming_parser::{
     FastStreamingIterator, FastStreamingParser,
 };
 pub use fast_zero_copy::{FastZeroCopyIterator, FastZeroCopyParser};
-pub use iterator::DDEXStreamIterator;
 pub use parallel_parser::{ParallelBenchmark, ParallelStreamingIterator, ParallelStreamingParser};
-pub use parser::StreamingDDEXParser;
-pub use state::{ParserState, ParsingContext};
 pub use working_impl::{
     WorkingStreamIterator, WorkingStreamingElement, WorkingStreamingParser, WorkingStreamingStats,
 };
-pub use zero_copy_parser::{ZeroCopyElement, ZeroCopyParser, ZeroCopyStreamIterator};
 
 use crate::parser::security::SecurityConfig;
 

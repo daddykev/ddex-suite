@@ -77,78 +77,6 @@ impl ParallelStreamingParser {
         Ok(elements)
     }
 
-    /// Find safe boundaries for parallel processing
-    ///
-    /// We split at complete element boundaries to ensure each thread
-    /// processes complete, valid XML elements
-    fn find_element_boundaries(&self, data: &[u8]) -> Vec<usize> {
-        let mut boundaries = vec![0];
-
-        // Look for Release element boundaries as they are typically large
-        let release_end = b"</Release>";
-        let mut pos = 0;
-
-        while let Some(end_pos) = self.find_pattern(&data[pos..], release_end) {
-            let abs_pos = pos + end_pos + release_end.len();
-            boundaries.push(abs_pos);
-            pos = abs_pos;
-
-            // Limit the number of boundaries to avoid too many small chunks
-            if boundaries.len() > self.worker_threads * 4 {
-                break;
-            }
-        }
-
-        // If we didn't find enough Release boundaries, try SoundRecording boundaries
-        if boundaries.len() < 4 {
-            let recording_end = b"</SoundRecording>";
-            pos = 0;
-
-            while let Some(end_pos) = self.find_pattern(&data[pos..], recording_end) {
-                let abs_pos = pos + end_pos + recording_end.len();
-                if !boundaries.contains(&abs_pos) {
-                    boundaries.push(abs_pos);
-                }
-                pos = abs_pos;
-
-                if boundaries.len() > self.worker_threads * 2 {
-                    break;
-                }
-            }
-        }
-
-        // Ensure we have the end boundary
-        if boundaries.last() != Some(&data.len()) {
-            boundaries.push(data.len());
-        }
-
-        boundaries.sort_unstable();
-        boundaries.dedup();
-        boundaries
-    }
-
-    /// Fast pattern finding using memchr
-    fn find_pattern(&self, data: &[u8], pattern: &[u8]) -> Option<usize> {
-        if pattern.is_empty() {
-            return None;
-        }
-
-        let mut pos = 0;
-        while let Some(first_byte_pos) = memchr::memchr(pattern[0], &data[pos..]) {
-            let abs_pos = pos + first_byte_pos;
-
-            if abs_pos + pattern.len() <= data.len()
-                && &data[abs_pos..abs_pos + pattern.len()] == pattern
-            {
-                return Some(abs_pos);
-            }
-
-            pos = abs_pos + 1;
-        }
-
-        None
-    }
-
     /// Get current performance statistics
     pub fn get_stats(&self) -> WorkingStreamingStats {
         let elapsed = self.start_time.elapsed();
@@ -182,7 +110,8 @@ impl Default for ParallelStreamingParser {
 
 /// Parallel streaming iterator for processing large files
 pub struct ParallelStreamingIterator<R: BufRead> {
-    reader: R,
+    // The input is read to the end in the constructor; only its type is kept.
+    _reader: std::marker::PhantomData<R>,
     parser: ParallelStreamingParser,
     buffer: Vec<u8>,
     finished: bool,
@@ -197,7 +126,7 @@ impl<R: BufRead> ParallelStreamingIterator<R> {
         let _ = reader.read_to_end(&mut buffer);
 
         Self {
-            reader,
+            _reader: std::marker::PhantomData,
             parser: ParallelStreamingParser::new(),
             buffer,
             finished: false,
@@ -211,7 +140,7 @@ impl<R: BufRead> ParallelStreamingIterator<R> {
         let _ = reader.read_to_end(&mut buffer);
 
         Self {
-            reader,
+            _reader: std::marker::PhantomData,
             parser: ParallelStreamingParser::with_threads(threads),
             buffer,
             finished: false,
@@ -394,7 +323,7 @@ pub struct ParallelBenchmarkResult {
     pub target_achieved: bool,
 }
 
-#[cfg(all(test, any(feature = "legacy-streaming-tests", feature = "perf-tests")))]
+#[cfg(test)]
 mod tests {
     use super::*;
     use std::io::Cursor;
@@ -485,7 +414,6 @@ mod tests {
         xml.into_bytes()
     }
 
-    #[cfg(feature = "legacy-streaming-tests")]
     #[test]
     fn test_parallel_basic_functionality() {
         let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -502,7 +430,7 @@ mod tests {
 </ern:NewReleaseMessage>"#;
 
         let cursor = Cursor::new(xml.as_bytes());
-        let mut iterator = ParallelStreamingIterator::new(cursor, ERNVersion::V4_3);
+        let iterator = ParallelStreamingIterator::new(cursor, ERNVersion::V4_3);
 
         let elements: Result<Vec<_>, _> = iterator.collect();
         assert!(elements.is_ok(), "Parallel parsing should work");
@@ -548,24 +476,6 @@ mod tests {
                 result.best_throughput
             );
         }
-    }
-
-    #[cfg(feature = "legacy-streaming-tests")]
-    #[test]
-    fn test_element_boundary_detection() {
-        let parser = ParallelStreamingParser::new();
-        let xml = b"<Release>content</Release><Release>more</Release>";
-
-        let boundaries = parser.find_element_boundaries(xml);
-        println!("Boundaries: {:?}", boundaries);
-
-        assert!(boundaries.len() >= 2, "Should find boundaries");
-        assert_eq!(boundaries[0], 0, "Should start at 0");
-        assert_eq!(
-            boundaries[boundaries.len() - 1],
-            xml.len(),
-            "Should end at data length"
-        );
     }
 
     #[cfg(feature = "perf-tests")]

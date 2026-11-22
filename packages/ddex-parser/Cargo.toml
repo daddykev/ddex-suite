@@ -80,7 +80,6 @@ performance-debug = []  # Enable performance logging and metrics output
 #   cargo test -p ddex-parser --release --features perf-tests
 perf-tests = []
 # Test-only: tests for streaming implementations slated for removal
-legacy-streaming-tests = []
 
 # Binaries
 [[bin]]

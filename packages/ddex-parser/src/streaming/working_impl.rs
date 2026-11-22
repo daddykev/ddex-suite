@@ -514,7 +514,7 @@ impl<R: BufRead> Iterator for WorkingStreamIterator<R> {
     }
 }
 
-#[cfg(all(test, feature = "legacy-streaming-tests"))]
+#[cfg(test)]
 mod tests {
     use super::*;
     use std::io::Cursor;

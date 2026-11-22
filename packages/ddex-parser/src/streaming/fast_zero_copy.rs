@@ -406,7 +406,7 @@ impl<R: BufRead> Iterator for FastZeroCopyIterator<R> {
     }
 }
 
-#[cfg(all(test, feature = "legacy-streaming-tests"))]
+#[cfg(test)]
 mod tests {
     use super::*;
     use std::io::Cursor;
@@ -427,7 +427,7 @@ mod tests {
 </ern:NewReleaseMessage>"#;
 
         let cursor = Cursor::new(xml.as_bytes());
-        let mut iterator = FastZeroCopyIterator::new(cursor, ERNVersion::V4_3);
+        let iterator = FastZeroCopyIterator::new(cursor, ERNVersion::V4_3);
 
         let elements: Result<Vec<_>, _> = iterator.collect();
         assert!(elements.is_ok(), "Fast zero-copy parsing should work");
