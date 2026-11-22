@@ -7,6 +7,8 @@ High-performance DDEX XML parser built in Rust with comprehensive security prote
 
 Part of the [DDEX Suite](https://github.com/daddykev/ddex-suite) - a comprehensive toolkit for working with DDEX metadata in the music industry.
 
+> **v0.4.6** - Complete parsing of dates, P/C lines, genres, labels and deal end dates in ERN 3.8.2 / 4.2 / 4.3; text kept exactly as written; `parse()` no longer switches to streaming above 10 MB. See the CHANGELOG for breaking changes.
+>
 > **v0.4.4 Released** - Enhanced validation with strict error handling! Parser now properly fails on missing required fields instead of using placeholders.
 >
 > **v0.4.3 Released** - Performance optimizations and enhanced stability.
@@ -78,54 +80,25 @@ println!("Tracks: {}", parsed.releases[0].track_count);
 
 ## Core Features
 
-### 🚀 Performance (v0.4.0 Validated)
+### 🚀 Performance (measured)
 
-#### SIMD-Optimized FastStreamingParser
-The v0.4.0 release delivers exceptional performance across different workload types:
+Criterion benches on an Apple M1 Pro, release profile (`cargo bench -p ddex-parser`;
+source: `dev-docs/PERFORMANCE.md` in the repository):
 
-| **Workload Type** | **Throughput** | **Use Case** |
-|------------------|---------------|--------------|
-| **Production DDEX** | **25-30 MB/s** | Real-world files with complex structures |
-| **Batch Processing** | **500-700 MB/s** | Uniform XML with repetitive patterns |
-| **Peak Performance** | **1,265 MB/s** | Optimal conditions, memory efficiency tests |
+| Input | `DDEXParser::parse` |
+|---|---:|
+| Official ERN 4.3 samples, 10–330 KB | 0.5–14 ms (about 20–24 MiB/s) |
+| `1 Audio.xml`, 75 KB (typical album) | 3.4 ms |
+| ~10 MB ERN 4.3 catalog | 441 ms (22.7 MiB/s) |
 
-#### Validated Production Metrics
-Real performance measurements from comprehensive test suite:
-- **11.57MB Production File**: 26.61 MB/s (10K releases + 5K resources)
-- **14.75MB Memory Test**: 1,265.26 MB/s (optimal conditions)
-- **1K Release Batch**: 504.80 MB/s (stress test)
-- **5K Release Batch**: 686.89 MB/s (stress test)
-- **10K Release Batch**: 634.74 MB/s (stress test)
-
-#### Memory Efficiency & Architecture
-- **O(1) Memory Usage**: <50MB peak regardless of file size
-- **SIMD Acceleration**: memchr-based pattern matching
-- **Multi-pass Scanning**: Separate optimized passes per element type
-- **Pre-allocated Buffers**: 50MB initial capacity prevents reallocation
-- **Element Processing**: ~100,000 elements/second sustained
-
-#### Why Performance Varies
-The SIMD-optimized parser achieves different throughput based on XML structure:
-- **Complex DDEX Files**: 25-30 MB/s (varied content, deep nesting)
-- **Uniform Patterns**: 500+ MB/s (repetitive structures, optimal for SIMD)
-- **Memory-bound Operations**: 1,200+ MB/s (cached data, minimal allocation)
-
-#### Build Mode Critical
-Performance is dramatically different between build modes:
-- **Debug Mode**: ~0.5 MB/s (unoptimized, development only)
-- **Release Mode**: 25-1,200+ MB/s (SIMD optimizations enabled)
-
-⚠️ **Critical**: Always build and test in release mode for production:
-```bash
-cargo build --release     # 50-100x faster than debug
-cargo test --release      # Accurate performance measurement
-cargo bench --release     # Benchmarking
-```
-
-#### Streaming & Security
-- **Large File Support**: >100MB files with constant memory usage
-- **Security Preserved**: All XXE and entity expansion protections maintained
-- **Configuration**: Enable via `SecurityConfig::relaxed()`
+- The low-level streaming iterators (no release/track model) scan the 10 MB catalog at
+  167–860 MiB/s. The parallel streaming iterator does not currently scale with the
+  thread count (planned for 0.6.0).
+- `FastStreamingParser` (the `SecurityConfig::relaxed()` fast path) scans at about
+  3 GiB/s but returns no releases or resources (see KNOWN_ISSUES.md).
+- Debug builds are 50–100× slower: measure with `cargo bench` or `--release`.
+- The v0.4.0 throughput figures (25–30 / 500–700 / 1,265 MB/s) were not reproduced and
+  have been removed.
 
 ### 🔒 Security First
 - Built-in XXE (XML External Entity) protection
@@ -155,7 +128,7 @@ const cleanDdex = await builder.build(messyVendorDdex, { normalize: true });
 ### 🌐 Cross-Platform Compatibility
 - **Node.js 16+** with native addon performance and complete data access
 - **Browser support** via optimized WASM (<500KB)
-- **Python 3.8+** with comprehensive type hints
+- **Python 3.9+** with comprehensive type hints
 - **TypeScript-first** with complete type definitions
 - **Complete DDEX data structure access** across all language bindings
 
@@ -165,32 +138,6 @@ const cleanDdex = await builder.build(messyVendorDdex, { normalize: true });
 - Territory and deal information parsing
 - Image and audio resource handling
 - Genre, mood, and classification support
-
-## Performance Benchmarks
-
-DDEX Parser v0.4.0 performance measurements:
-
-### Streaming Parser Performance (Release Mode)
-| File Size | Parse Time | Throughput | Elements/sec | Memory |
-|-----------|------------|------------|-------------|---------|
-| 10KB      | ~2ms       | ~5 MB/s    | ~50K/sec    | <1MB    |
-| 100KB     | ~8ms       | ~12 MB/s   | ~70K/sec    | <5MB    |
-| 1MB       | ~30ms      | ~35 MB/s   | ~90K/sec    | <20MB   |
-| 3.6MB     | ~80ms      | ~45 MB/s   | ~100K/sec   | <50MB   |
-
-### Build Mode Comparison
-| Mode          | Performance | Use Case           | Memory |
-|---------------|-------------|-------------------|---------|
-| **Debug**     | ~0.5 MB/s   | Development/Tests | Higher  |
-| **Release**   | 40+ MB/s    | Production        | Optimal |
-
-### Technology Stack Performance
-| Component         | Optimization      | Benefit                |
-|------------------|------------------|------------------------|
-| SIMD Pattern     | memchr library   | 10x faster searching   |
-| Pre-allocation   | 50MB buffers     | Zero reallocation      |
-| Multiple passes  | Element-specific | SIMD efficiency        |
-| Security bounds  | Configurable     | Memory protection      |
 
 ## Security
 

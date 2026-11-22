@@ -12,8 +12,12 @@ Generate deterministic, industry-compliant DDEX XML files from Python data struc
 ```bash
 pip install ddex-builder
 # or for specific version
-pip install ddex-builder==0.4.4
+pip install ddex-builder==0.4.6
 ```
+
+The package needs its native extension (included in the wheels for Linux, macOS and
+Windows). If it cannot be loaded, `import ddex_builder` raises an `ImportError` that names
+the cause and how to fix it; there is no pure-Python fallback.
 
 ## Version Notes
 **v0.4.4**: Enhanced compatibility with ddex-parser v0.4.4's strict validation. Improved round-trip workflows with better error handling.

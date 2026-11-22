@@ -5,15 +5,19 @@
 [![Downloads](https://img.shields.io/pypi/dm/ddex-parser.svg)](https://pypi.org/project/ddex-parser/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-High-performance DDEX XML parser for Python with built-in security features and comprehensive metadata extraction. Parse DDEX files 10x faster than traditional XML parsers with full support for all DDEX versions and profiles.
+High-performance DDEX XML parser for Python with built-in security features and comprehensive metadata extraction. Native Rust core, with support for all DDEX versions and profiles.
 
 ## Installation
 
 ```bash
 pip install ddex-parser
 # or for specific version
-pip install ddex-parser==0.4.4
+pip install ddex-parser==0.4.6
 ```
+
+The package needs its native extension (included in the wheels for Linux, macOS and
+Windows). If it cannot be loaded, `import ddex_parser` raises an `ImportError` that names
+the cause and how to fix it; there is no pure-Python fallback.
 
 ## Version Notes
 **v0.4.4**: Enhanced validation - Parser now properly fails on missing required fields instead of using placeholder values. Ensure your error handling can catch ValidationError exceptions for incomplete DDEX files.
@@ -44,7 +48,7 @@ print(tracks_df.head())
 ## Features
 
 ### 🚀 High Performance
-- **10x faster** than standard XML parsers
+- Rust core: a typical ERN 4.3 album (75 KB) parses in about 3.4 ms (measured, Apple M1 Pro)
 - Streaming support for large files (>100MB)
 - Memory-efficient processing
 - Native Rust implementation with Python bindings

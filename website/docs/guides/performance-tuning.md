@@ -19,14 +19,22 @@ Without proper optimization, processing a 100MB DDEX file might consume 1GB+ of 
 
 The DDEX Suite provides multiple optimization strategies including streaming parsers, memory-efficient builders, parallel processing, and intelligent caching to handle catalogs of any size efficiently.
 
-### Performance Targets
+### Measured Performance
 
-| Catalog Size | Target Processing Time | Memory Usage | Throughput |
-|--------------|----------------------|--------------|------------|
-| 10MB | &lt;5 seconds | &lt;50MB | 2MB/s |
-| 100MB | &lt;30 seconds | &lt;200MB | 3MB/s |
-| 1GB | &lt;5 minutes | &lt;500MB | 3.5MB/s |
-| 10GB+ | &lt;30 minutes | &lt;1GB | 6MB/s |
+Measured with the criterion benches (`cargo bench`) on an Apple M1 Pro, release profile.
+Source and caveats: `dev-docs/PERFORMANCE.md` in the repository. Your numbers will differ by machine.
+
+| Operation | Measured |
+|-----------|----------|
+| Parse an official ERN 4.3 sample (10–330 KB) | 0.5–14 ms (about 20–24 MiB/s) |
+| Parse `1 Audio.xml` (75 KB, typical album) | 3.4 ms |
+| Parse a ~10 MB ERN 4.3 catalog | 441 ms (22.7 MiB/s) |
+| Build ERN 4.3, 1 track | 2.7 ms |
+| Build ERN 4.3, 12 tracks | 11.4 ms |
+| Build ERN 4.3, 100 tracks | 80 ms |
+
+The parallel streaming iterator does not currently scale with the thread count (1 to 8
+threads all take 11.6 ms on the 10 MB catalog); making it scale is planned for 0.6.0.
 
 ## Memory Optimization
 

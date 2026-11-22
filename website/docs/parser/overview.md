@@ -13,9 +13,9 @@ DDEX Parser transforms complex DDEX XML messages into clean, structured data tha
 ## Key Features
 
 ### 🚀 Blazing Performance
-- **15x faster** than traditional XML parsers
-- Parse 10KB files in &lt;5ms, 100MB files in &lt;5s
-- Memory-efficient streaming for large catalogs
+- About 20–24 MiB/s on real ERN 4.3 documents: a typical album (75 KB) parses in 3.4 ms,
+  a ~10 MB catalog in 441 ms (criterion benches, Apple M1 Pro)
+- Experimental, opt-in streaming mode for large catalogs
 - Native Rust core with optimized language bindings
 
 ### 🔒 Security First

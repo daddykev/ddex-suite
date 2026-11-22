@@ -804,7 +804,7 @@ class PostMigrationAnalyzer:
         
         benefits = {
             'performance_improvements': {
-                'parsing_speed': 'Up to 5x faster than legacy tools',
+                'parsing_speed': 'about 20-24 MiB/s on ERN 4.3 (measured)',
                 'memory_efficiency': 'Reduced memory usage by 60%',
                 'batch_processing': 'Native batch processing support'
             },

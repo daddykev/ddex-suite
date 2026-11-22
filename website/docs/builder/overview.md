@@ -28,7 +28,7 @@ Pre-configured settings for major music platforms:
 
 ### 🚀 High Performance
 - **Native Rust core** with optimized language bindings
-- **Sub-millisecond** builds for typical releases (&lt;15ms average)
+- Builds a 12-track ERN 4.3 album in about 11 ms (about 0.8 ms per track plus 2 ms per message; criterion benches, Apple M1 Pro)
 - **Streaming generation** for massive catalogs (>100,000 tracks)
 - **Memory-efficient** processing with configurable limits
 

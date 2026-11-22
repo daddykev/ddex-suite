@@ -2,7 +2,7 @@
 
 ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange?logo=rust)
 ![Node.js](https://img.shields.io/badge/Node.js-18%20|%2020%20|%2022-green?logo=node.js)
-![Python](https://img.shields.io/badge/Python-3.8%20|%203.9%20|%203.10%20|%203.11%20|%203.12-blue?logo=python)
+![Python](https://img.shields.io/badge/Python-3.9%20|%203.10%20|%203.11%20|%203.12%20|%203.13-blue?logo=python)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-blue?logo=typescript)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20|%20macOS%20|%20Windows-lightgrey)
 [![npm ddex-builder](https://img.shields.io/npm/v/ddex-builder?label=npm%20ddex-builder)](https://www.npmjs.com/package/ddex-builder)
@@ -35,7 +35,7 @@ Beyond the core implementation, this is a showcase of **software craftsmanship a
 
 ## 🚧 Development Status
 
-**Latest Release**: Suite v0.4.5 🎉  
+**Latest Release**: Suite v0.4.6  
 **Current Development Phase**: 5.1 - Performance & Scale  
 **Target Release**: Suite v1.0.0 in Q1 2026
 
@@ -45,9 +45,9 @@ All packages published across npm, PyPI, and **crates.io**! ✅
 
 | Package | npm | PyPI | crates.io | Version |
 |---------|-----|------|-----------|---------|
-| **ddex-core** | - | - | ✅ [Published](https://crates.io/crates/ddex-core) | v0.4.5 |
-| **ddex-parser** | ✅ [Published](https://www.npmjs.com/package/ddex-parser) | ✅ [Published](https://pypi.org/project/ddex-parser/) | ✅ [Published](https://crates.io/crates/ddex-parser) | v0.4.5 |
-| **ddex-builder** | ✅ [Published](https://www.npmjs.com/package/ddex-builder) | ✅ [Published](https://pypi.org/project/ddex-builder/) | ✅ [Published](https://crates.io/crates/ddex-builder) | v0.4.5 |
+| **ddex-core** | - | - | ✅ [Published](https://crates.io/crates/ddex-core) | v0.4.6 |
+| **ddex-parser** | ✅ [Published](https://www.npmjs.com/package/ddex-parser) | ✅ [Published](https://pypi.org/project/ddex-parser/) | ✅ [Published](https://crates.io/crates/ddex-parser) | v0.4.6 |
+| **ddex-builder** | ✅ [Published](https://www.npmjs.com/package/ddex-builder) | ✅ [Published](https://pypi.org/project/ddex-builder/) | ✅ [Published](https://crates.io/crates/ddex-builder) | v0.4.6 |
 
 ### Progress Overview
 
@@ -164,6 +164,17 @@ Parse → Modify → Build workflows maintain all your data, with beneficial nor
 
 ## 🚀 Features
 
+### ✅ Parser completeness and honest bindings (v0.4.6)
+- Parser reads release dates, P/C lines, genres, parental warnings, labels,
+  `MessageControlType` and deal end dates in ERN 3.8.2, 4.2 and 4.3; text is kept
+  exactly as written (XSD whitespace rules)
+- `parse()` always uses the complete parser (no automatic switch to streaming above 10 MB)
+- Builder writes schema-valid ERN 3.8.2; the WASM builder runs the core builder
+- Python packages raise `ImportError` with the cause when the native extension cannot load
+  (no mock fallback); Node `ParseOptions` that had no effect now throw
+- Performance numbers are measured with criterion benches ([dev-docs/PERFORMANCE.md](./dev-docs/PERFORMANCE.md))
+- See [CHANGELOG.md](./CHANGELOG.md) for the breaking changes
+
 ### ✅ Error Refactoring (v0.4.5)
 - Enhanced error handling across all bindings
 - Critical bug fixes for production stability
@@ -189,14 +200,10 @@ Parse → Modify → Build workflows maintain all your data, with beneficial nor
 - Added `ddex-parser-node.linux-x64-gnu.node` binary
 - Added `ddex-builder-node.linux-x64-gnu.node` binary
 
-### ✅ Streaming Parser with SIMD Optimization (v0.4.0)
-- **⚡ SIMD-Accelerated**: FastStreamingParser using memchr for 25-30 MB/s production throughput
-- **🎯 Peak Performance**: 500-700 MB/s for uniform XML, up to 1,265 MB/s in optimal conditions
-- **💾 Memory Efficient**: 90% reduction - 100MB files with <50MB peak memory (O(1) streaming)
-- **🔍 Selective Parsing**: 11-12x faster with XPath-like selectors for targeted extraction
-- **⚙️ Parallel Processing**: 6.25x speedup on 8 cores with 78% efficiency
-- **🌐 Cross-Language**: Native streaming in Rust, Python (16M+ elements/sec), Node.js (100K elements/sec)
-- **📊 Production Ready**: 96.3% score across all validation metrics
+### ✅ Streaming Parser (v0.4.0)
+- Low-level streaming iterators and a memchr-based `FastStreamingParser`
+- The throughput, memory and parallel-scaling figures published with v0.4.0 were not
+  reproduced by the benches; see [Performance](#-performance) for measured numbers
 
 ### ✅ Smart Normalization (v0.4.0)
 - **🧹 Clean Output**: Transform messy vendor DDEX into compliant DDEX 4.3
@@ -208,7 +215,6 @@ Parse → Modify → Build workflows maintain all your data, with beneficial nor
 ### ✅ Native Python Bindings (v0.3.0)
 - **🐍 Production-Ready Python**: Native PyO3 bindings with full DataFrame integration
 - **📊 DataFrame Support**: Three schema options (flat, releases, tracks) for pandas integration
-- **⚡ Native Performance**: <50ms parsing for 10MB files with Python
 - **🔄 Round-Trip Python**: Complete Parse → DataFrame → Build workflow support
 - **🔗 PyPI Available**: Install with `pip install ddex-parser ddex-builder`
 
@@ -216,7 +222,7 @@ Parse → Modify → Build workflows maintain all your data, with beneficial nor
 - **🔄 Round-Trip Workflow**: Parse → Modify → Build with 100% data preservation
 - **🎭 Dual Model Architecture**: Graph (faithful) and flattened (developer-friendly) views
 - **🛡️ Enterprise Security**: XXE protection, entity expansion limits, memory bounds
-- **⚡ High Performance**: Sub-millisecond processing for typical files
+- **⚡ Fast**: a typical ERN 4.3 album message parses in about 3 ms
 - **🌐 Multi-Platform**: Native bindings for Node.js, Python, WASM, and Rust
 - **🔗 Reference Linking**: Automatic relationship resolution between entities
 - **🆔 Stable Hash IDs**: Content-based deterministic ID generation
@@ -231,17 +237,17 @@ Parse → Modify → Build workflows maintain all your data, with beneficial nor
 
 ```bash
 # JavaScript/TypeScript
-npm install ddex-parser  # ✅ Latest: v0.4.4
-npm install ddex-builder # ✅ Latest: v0.4.4
+npm install ddex-parser  # ✅ Latest: v0.4.6
+npm install ddex-builder # ✅ Latest: v0.4.6
 
 # Python
-pip install ddex-parser  # ✅ Latest: v0.4.4
-pip install ddex-builder # ✅ Latest: v0.4.4
+pip install ddex-parser  # ✅ Latest: v0.4.6
+pip install ddex-builder # ✅ Latest: v0.4.6
 
 # Rust
-cargo add ddex-core      # ✅ Latest: v0.4.4
-cargo add ddex-parser    # ✅ Latest: v0.4.4
-cargo add ddex-builder   # ✅ Latest: v0.4.4
+cargo add ddex-core      # ✅ Latest: v0.4.6
+cargo add ddex-parser    # ✅ Latest: v0.4.6
+cargo add ddex-builder   # ✅ Latest: v0.4.6
 ```
 
 ### Browser/WASM
@@ -370,40 +376,29 @@ Built as a monorepo with shared core components:
 - Memory-bounded streaming
 - Supply chain security with cargo-deny and SBOM
 
-## 📊 Performance Metrics
+## 📊 Performance
 
-### Streaming Parser Performance
+Measured with the criterion benches on an Apple M1 Pro, release profile
+(`cargo bench`; details, commands and caveats in
+[dev-docs/PERFORMANCE.md](./dev-docs/PERFORMANCE.md)). Your numbers will differ by machine.
 
-| Operation | Performance | Memory | Notes |
-|-----------|------------|--------|-------|
-| **Production Files** | 25-30 MB/s | <50MB | Complex DDEX files with varied content |
-| **Uniform XML** | 500-700 MB/s | <50MB | Repetitive patterns, SIMD sweet spot |
-| **Peak Throughput** | 1,265 MB/s | <50MB | Optimal conditions, cached data |
-| **100MB File** | ~3.6s | <10MB | 90% memory reduction achieved |
-| **1GB File** | ~36s | <50MB | Maintains constant memory |
-| **Selective Parsing** | 11-12x faster | <5MB | Extract specific elements only |
-| **Parallel (8 cores)** | 6.25x speedup | ~6MB/thread | 78% efficiency |
+| Operation | Measured |
+|---|---:|
+| Parse an official ERN 4.3 sample (10–330 KB) | 0.5–14 ms (about 20–24 MiB/s) |
+| Parse `1 Audio.xml` (75 KB, typical album) | 3.4 ms |
+| Parse a ~10 MB ERN 4.3 catalog | 441 ms (22.7 MiB/s) |
+| Build an ERN 4.3 message, 1 track | 2.7 ms |
+| Build an ERN 4.3 message, 12 tracks | 11.4 ms |
+| Build an ERN 4.3 message, 100 tracks | 80 ms |
 
-### Language Binding Performance
-
-| Language | Throughput | Memory | Async Support | Notes |
-|----------|------------|--------|---------------|-------|
-| **Rust** | 50K elem/ms | Native | Yes (tokio) | Baseline |
-| **Python** | 16M elem/s | <100MB | Yes (asyncio) | PyO3 native |
-| **Node.js** | 100K elem/s | <100MB | Yes (streams) | Native streams + backpressure |
-| **WASM** | 10K elem/s | Browser | Yes (Promise) | 37KB bundle size |
-
-### Parser Performance by File Size
-
-| File Size | Parse Time | Memory Usage | Mode | Notes |
-|-----------|------------|--------------|------|-------|
-| 10KB | <5ms | <2MB | DOM | Single release |
-| 100KB | <10ms | <5MB | DOM | Small catalog |
-| 1MB | <50ms | <20MB | DOM | Medium catalog |
-| 10MB | <400ms | <100MB | Auto | Threshold for streaming |
-| 100MB | <3.6s | <10MB | Stream | 90% memory reduction |
-| 1GB | <36s | <50MB | Stream | Constant memory usage |
-
+- The complete parser runs at about 20–24 MiB/s on real ERN 4.3 documents, whatever
+  their size. The builder costs roughly 0.8 ms per track plus about 2 ms per message.
+- The low-level streaming iterators (which do not build the release/track model) scan a
+  10 MB catalog at 167–860 MiB/s; those numbers are not comparable with `parse`.
+- **The parallel streaming iterator does not currently scale with the thread count**
+  (1 to 8 threads all take 11.6 ms on the 10 MB catalog). Making it scale is planned for 0.6.0.
+- Earlier figures (sub-3 ms parsing, 25–30 / 500–700 / 1,265 MB/s, "6.25× on 8 cores")
+  were not reproduced by these benches and have been removed.
 
 ### Package Sizes
 
@@ -452,8 +447,7 @@ DDEX Suite is designed to complement [DDEX Workbench](https://ddex-workbench.org
 ---
 
 **Repository**: https://github.com/daddykev/ddex-suite  
-**Status**: Phase 5.1 - Performance & Scale  
-**Parser**: v0.4.5 on [npm](https://www.npmjs.com/package/ddex-parser) and [PyPI](https://pypi.org/project/ddex-parser/)
-**Builder**: v0.4.5 on [npm](https://www.npmjs.com/package/ddex-builder) and [PyPI](https://pypi.org/project/ddex-builder/)  
+**Parser**: v0.4.6 on [npm](https://www.npmjs.com/package/ddex-parser) and [PyPI](https://pypi.org/project/ddex-parser/)
+**Builder**: v0.4.6 on [npm](https://www.npmjs.com/package/ddex-builder) and [PyPI](https://pypi.org/project/ddex-builder/)  
 **Suite Target**: v1.0.0 in Q1 2026  
-**Last Updated**: September 21, 2025
+**Last Updated**: November 22, 2026
