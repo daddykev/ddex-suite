@@ -29,15 +29,6 @@
             "value": "public, max-age=31536000, immutable"
           }
         ]
-      },
-      {
-        "source": "/wasm/**",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=3600"
-          }
-        ]
       }
     ],
     "cleanUrls": true,
@@ -52,8 +43,7 @@
         ".git",
         "firebase-debug.log",
         "firebase-debug.*.log",
-        "*.local",
-        "ddex-*-wasm"
+        "*.local"
       ]
     }
   ]

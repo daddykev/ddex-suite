@@ -1,3 +1,0 @@
-{
-  "xmlContent": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><NewReleaseMessage xmlns=\"http://ddex.net/xml/ern/382\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://ddex.net/xml/ern/382 http://ddex.net/xml/ern/382/release-notification.xsd\" MessageSchemaVersionId=\"ern/382\" BusinessTransactionId=\"bt-1\" LanguageAndScriptCode=\"en\"><MessageHeader><MessageThreadId>thread-1</MessageThreadId><MessageId>msg-1</MessageId><MessageCreatedDateTime>2024-01-01T00:00:00Z</MessageCreatedDateTime><MessageSender><PartyId Namespace=\"test\">sender-1</PartyId></MessageSender><MessageRecipient><PartyId Namespace=\"test\">recipient-1</PartyId></MessageRecipient></MessageHeader><UpdateIndicator>OriginalMessage</UpdateIndicator></NewReleaseMessage>"
-}

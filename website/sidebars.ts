@@ -1,101 +1,23 @@
 import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
 
-// This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
-
-/**
- * Creating a sidebar enables you to:
- - create an ordered group of docs
- - render a sidebar for each doc of that group
- - provide next/previous navigation
-
- The sidebars can be generated from the filesystem, or explicitly defined here.
-
- Create as many sidebars as you want.
- */
+// The sidebar lists every docs page. A page that is not listed here must not exist
+// (docs/ holds exactly these files).
 const sidebars: SidebarsConfig = {
-  // Main documentation sidebar with logical organization
-  tutorialSidebar: [
+  docs: [
     'intro',
-    {
-      type: 'category',
-      label: 'Getting Started',
-      items: [
-        'getting-started/index',
-      ],
-    },
-    {
-      type: 'doc',
-      id: 'use-cases',
-      label: 'Use Cases',
-    },
-    {
-      type: 'category',
-      label: 'DDEX Parser',
-      items: [
-        'parser/index',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'DDEX Builder',
-      items: [
-        'builder/index',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'API Reference',
-      items: [
-        'api/index',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Examples',
-      items: [
-        'examples/index',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Guides',
-      items: [
-        'guides/index',
-        {
-          type: 'category',
-          label: 'Parser Guides',
-          items: [
-            'guides/parser/basic-parsing',
-            'guides/parser/large-files',
-            'guides/parser/error-handling',
-            'guides/parser/performance',
-            'guides/parser/dataframes',
-          ],
-        },
-        {
-          type: 'category',
-          label: 'Builder Guides',
-          items: [
-            'guides/builder/from-scratch',
-            'guides/builder/partner-outputs',
-          ],
-        },
-        {
-          type: 'category',
-          label: 'Troubleshooting',
-          items: [
-            'guides/troubleshooting/common-issues',
-          ],
-        },
-        {
-          type: 'category',
-          label: 'Reference',
-          items: [
-            'guides/reference/dsp-requirements',
-          ],
-        },
-      ],
-    },
+    'installation',
+    'quick-start-parsing',
+    'quick-start-building',
+    'parse-output',
+    'build-request',
+    'ern-versions',
+    'python-dataframes',
+    'security',
+    'performance',
+    'migration',
+    'known-issues',
+    'playground',
+    'api-reference',
   ],
 };
 

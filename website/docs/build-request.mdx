@@ -1,0 +1,305 @@
+---
+sidebar_position: 6
+title: Build request reference
+description: Every field of the builder's request, which fields each ERN version requires, the error format, escaping and canonical output.
+---
+
+# Build request reference
+
+The build request is the same in the three languages:
+
+- **Rust**: `ddex_builder::BuildRequest` and the `*Request` structs in
+  `ddex_builder::builder`. Every struct implements `Default`, so you can write
+  `..Default::default()` for the fields you leave out.
+- **Node.js**: a plain object, typed as `BuildRequest` in `build-request.d.ts`.
+- **Python**: a dict, typed as `ddex_builder.BuildRequest` (a `TypedDict` in
+  `ddex_builder.build_request`). It is converted through JSON, so only JSON values are
+  allowed.
+
+Field names are the same snake_case names everywhere. In Node.js and Python an optional
+field can be omitted or set to `null` / `None`. Fields marked **Required** below must be
+present for the request to be read at all; which values each ERN version needs on top of
+that is listed under [required fields by ERN version](#required-fields-by-ern-version).
+
+Nothing is filled in from defaults: a value the target ERN version requires but the request
+does not carry fails the build ([errors](#errors)). The only values the builder generates
+are the message ID, the creation time and the release and resource references, when they are
+left out ([canonical output](#canonical-output)).
+
+## BuildRequest
+
+| Field | Type | Description |
+|---|---|---|
+| `header` | [MessageHeader](#messageheader) | **Required.** |
+| `version` | string | **Required**, no default: `"4.3"`, `"4.2"`, `"3.8.2"` or `"3.8.1"`. Anything else fails (`unsupported ERN version '4.1'; the builder can target 3.8.1, 3.8.2, 4.2 or 4.3`) |
+| `releases` | [Release](#release)[] | The releases. ERN 4.x: exactly one per message; 3.8.x: at least one |
+| `deals` | [Deal](#deal)[] | The deals |
+| `language_and_script_code` | string | `NewReleaseMessage/@LanguageAndScriptCode`, e.g. `en`. Required by ERN 4.x |
+| `avs_version_id` | string | `NewReleaseMessage/@AvsVersionId`, e.g. `12`. Required by ERN 4.3 |
+| `profile` | string | A profile name. It does not change the output in 0.5.0 |
+| `extensions` | map of string to string | Not written in 0.5.0 |
+
+## MessageHeader
+
+| Field | Type | Description |
+|---|---|---|
+| `message_sender` | [Party](#party) | **Required.** |
+| `message_recipient` | [Party](#party) | **Required.** |
+| `message_id` | string | `MessageId`. Generated (a UUID) when omitted |
+| `message_control_type` | string | `LiveMessage` or `TestMessage` |
+| `message_created_date_time` | string | `MessageCreatedDateTime`, an `xs:dateTime` such as `2024-01-01T00:00:00Z`. The current time when omitted |
+
+### Party
+
+| Field | Type | Description |
+|---|---|---|
+| `party_name` | [LocalizedString](#localizedstring)[] | **Required** (the list; may be empty). The name; the header allows one |
+| `party_id` | string | `PartyId`. Required for the sender and the recipient. ERN 4.x: a DDEX Party ID matching `PADPIDA[a-zA-Z0-9]+` |
+| `party_reference` | string | A party reference |
+
+### LocalizedString
+
+| Field | Type | Description |
+|---|---|---|
+| `text` | string | **Required.** The text |
+| `language_code` | string | Its `LanguageAndScriptCode` |
+
+### AvsValue
+
+Fields typed AvsValue take a DDEX allowed-value-set term as a string (`"Album"`), or an
+object for a user-defined value:
+
+| Field | Type | Description |
+|---|---|---|
+| `value` | string | **Required.** The term, e.g. `UserDefined` |
+| `user_defined_value` | string | `@UserDefinedValue` |
+| `namespace` | string | `@Namespace`, the party that defined the value |
+
+In Rust the type is `AvsValueRequest`, which converts from `&str` and `String` (`"Album".into()`).
+
+## Release
+
+| Field | Type | Description |
+|---|---|---|
+| `release_id` | string | **Required** (may be `""`). Written as `ReleaseId/GRid` unless `release_ids` is set |
+| `upc` | string | Written as `ReleaseId/ICPN` unless `release_ids` is set |
+| `release_ids` | [ReleaseIds](#releaseids) | All the release's identifiers; replaces `release_id` and `upc` |
+| `release_reference` | string | `ReleaseReference`, matching `R[\d\-_a-zA-Z]+`. Generated when omitted |
+| `title` | [LocalizedString](#localizedstring)[] | **Required** (the list). 4.x `DisplayTitleText`, 3.8.x `ReferenceTitle` |
+| `artist` | string | **Required.** The display artist (4.x: `DisplayArtistName` and a `MainArtist` `DisplayArtist`) |
+| `artist_role` | AvsValue | The display artist's role (default `MainArtist`) |
+| `label` | string | The label name. ERN 4.x writes it as a party referenced by `ReleaseLabelReference` |
+| `release_type` | AvsValue | `ReleaseType`, e.g. `Album`, `Single` |
+| `genre`, `sub_genre` | string | `Genre/GenreText`, `Genre/SubGenre` |
+| `parental_warning_type` | string | `ParentalWarningType`, e.g. `NotExplicit` |
+| `release_date` | string | An ISO date `YYYY`, `YYYY-MM` or `YYYY-MM-DD` |
+| `tracks` | [Track](#track)[] | **Required** (the list). The release's sound recordings and videos |
+| `resource_references` | string[] | The tracks the release lists, when it is not all of them |
+| `resource_group` | [ResourceGroup](#resourcegroup) | An explicit `ResourceGroup` tree (ERN 4.x). Use either this or the tracks' `disc_number` / `sequence_number` |
+
+### ReleaseIds
+
+| Field | Type | Description |
+|---|---|---|
+| `grid` | string | `GRid` |
+| `icpn` | string | `ICPN` (UPC/EAN) |
+| `proprietary_ids` | `{ namespace, value }[]` | `ProprietaryId`s; `namespace` is required |
+
+### ResourceGroup
+
+| Field | Type | Description |
+|---|---|---|
+| `resource_group_type` | string | `@ResourceGroupType`, e.g. `Component`; required on nested groups |
+| `sequence_number` | integer | `SequenceNumber` |
+| `resource_groups` | ResourceGroup[] | Nested groups |
+| `content_items` | `{ resource_reference, sequence_number }[]` | The tracks in this group, by resource reference |
+
+## Track
+
+| Field | Type | Description |
+|---|---|---|
+| `track_id` | string | **Required.** An ID for the track within the request |
+| `resource_reference` | string | `ResourceReference`, matching `A[\d\-_a-zA-Z]+`. Generated when omitted |
+| `isrc` | string | **Required** (may be `""` when `proprietary_ids` is given). The resource's ISRC |
+| `proprietary_ids` | `{ namespace, value }[]` | The resource's `ProprietaryId`s |
+| `title` | string | **Required.** 4.x `DisplayTitleText`, 3.8.x `ReferenceTitle` |
+| `duration` | string | **Required.** An `xs:duration` such as `PT3M42S` |
+| `artist` | string | **Required.** The display artist |
+| `artist_role` | AvsValue | The display artist's role (default `MainArtist`) |
+| `resource_kind` | `"SoundRecording"` or `"Video"` | Default `SoundRecording`. Videos are written for ERN 4.x only |
+| `resource_type` | AvsValue | The resource's DDEX `Type`, e.g. `MusicalWorkSoundRecording` |
+| `parental_warning_type` | string | `ParentalWarningType` |
+| `disc_number` | integer | Places the track on a disc (a `Component` group) |
+| `sequence_number` | integer | The track's `SequenceNumber` |
+| `track_release` | [TrackRelease](#trackrelease) | ERN 4.x: a `TrackRelease` for this track |
+
+### TrackRelease
+
+| Field | Type | Description |
+|---|---|---|
+| `release_reference` | string | **Required.** Its `ReleaseReference` (deals can reference it) |
+| `release_ids` | [ReleaseIds](#releaseids) | **Required** (with at least one identifier) |
+| `title` | string | Its title |
+| `label` | string | Its label (required by ERN 4.x) |
+| `genre`, `sub_genre` | string | Its genre (`genre` required by ERN 4.x) |
+
+## Deal
+
+| Field | Type | Description |
+|---|---|---|
+| `release_references` | string[] | **Required.** The release or track release references the deal applies to; each must be in the message |
+| `deal_terms` | [DealTerms](#dealterms) | **Required.** |
+| `deal_reference` | string | `DealReference` |
+
+### DealTerms
+
+| Field | Type | Description |
+|---|---|---|
+| `commercial_model_type` | string | **Required** (may be `""`; ERN 4.x omits it when empty), e.g. `SubscriptionModel` |
+| `territory_code` | string[] | **Required** (the list). `TerritoryCode`s, e.g. `Worldwide` |
+| `start_date`, `end_date` | string | `ValidityPeriod` dates, `YYYY-MM-DD` |
+| `use_types` | string[] | `UseType`s, e.g. `Stream` |
+
+## Required fields by ERN version
+
+The builder checks what the target version's schema requires before it writes anything:
+
+| Request field | ERN 4.3 | ERN 4.2 | ERN 3.8.2 / 3.8.1 |
+|---|:---:|:---:|:---:|
+| `language_and_script_code` | ✓ | ✓ | |
+| `avs_version_id` | ✓ | | |
+| `header.message_sender.party_id`, `header.message_recipient.party_id` | ✓ (DPID) | ✓ (DPID) | ✓ |
+| exactly one release | ✓ | ✓ | at least one |
+| a release identifier (`release_id`, `upc` or `release_ids`) | ✓ | ✓ | ✓ |
+| release `title` | ✓ | ✓ | ✓ (or the first track's title) |
+| release `artist` | ✓ | ✓ | |
+| release `label` | ✓ | ✓ | |
+| release `release_type` | ✓ | ✓ | |
+| release `genre` | ✓ | ✓ | |
+| release `parental_warning_type` | ✓ | ✓ | |
+| at least one track (or `resource_references`) | | | ✓ |
+| track `isrc` or `proprietary_ids` | ✓ | ✓ | ✓ |
+| track `title` | ✓ | ✓ | ✓ |
+| track `duration` | ✓ | ✓ | ✓ |
+| track `artist` | ✓ | ✓ | |
+| track `resource_type` | ✓ | ✓ | |
+| track `parental_warning_type` | ✓ | ✓ | |
+| `track_release.release_ids`, `.label`, `.genre` | ✓ | ✓ | `release_ids` |
+| deal `release_references` | ✓ | ✓ | ✓ |
+| deal `start_date` | ✓ | ✓ | `start_date` or `end_date` |
+| deal `territory_code`, `use_types` | | | ✓ |
+
+Values that are given are also checked against the schema's patterns: references (`R...`,
+`A...`), DPIDs, dates, `xs:dateTime`, `xs:duration`, that a deal references a release in the
+message, and that each track is placed exactly once when `resource_group` is used. ERN 3.8.x
+targets reject video tracks.
+
+## Errors
+
+Every problem is collected before the build fails, so one error lists all of them. Each
+entry has one of two forms:
+
+```text
+ERN 4.3 requires Release/ReleaseType (releases[0].release_type)
+ERN 4.2: releases[0].tracks[0].duration is "3 minutes"; the schema requires an xs:duration such as PT3M45S
+```
+
+The first names the schema element and the request field that is missing; the second names
+the request field whose value does not fit the schema, and why.
+
+| Language | What you get |
+|---|---|
+| Rust | `Err(BuildError::ValidationFailed { errors })`, one `String` per entry. Its `Display` is `Validation failed: ` followed by the entries joined with `, ` |
+| Node.js | The promise rejects with an `Error` whose message is `Build failed: Validation failed: ...`. An object that is not a build request at all (a missing `header` or `party_name`, a wrong type) rejects with `Invalid build request: ...` |
+| Python | `RuntimeError("Build failed: Validation failed: ...")`. A dict that is not a build request at all (a missing `header`, a wrong type) raises `ValueError("Invalid build request: ...")` |
+
+The [building quick start](./quick-start-building.mdx#when-a-required-field-is-missing)
+shows each case in code.
+
+## Escaping and illegal characters
+
+Text is written exactly as given and XML-escaped:
+
+- In text: `&`, `<` and `>` are escaped, and a carriage return is written as `&#13;` (a
+  parser would otherwise turn it into a line feed).
+- In attribute values: also `"` and `'`, and tab, line feed and carriage return as character
+  references (attribute-value normalization would otherwise turn them into spaces).
+
+So the output always parses back to the input text. Metadata that looks like SQL, HTML or
+script is not rejected; it is escaped like any other text.
+
+Characters that XML 1.0 does not allow anywhere (the C0 control characters other than tab,
+line feed and carriage return, and U+FFFE and U+FFFF) cannot be escaped, so the build fails
+up front, naming the field and the character:
+
+```text
+Build failed: Invalid format in releases[0].title[0].text: contains U+0001, which XML 1.0 does not allow (control characters other than tab, LF and CR, U+FFFE and U+FFFF); remove it from the input
+```
+
+```js
+const assert = require('node:assert/strict');
+const { DdexBuilder } = require('ddex-builder');
+const { DdexParser } = require('ddex-parser');
+
+const party = (name, id) => ({ party_name: [{ text: name }], party_id: id });
+const request = (title) => ({
+  header: {
+    message_sender: party('Example Label', 'PADPIDA0000000001'),
+    message_recipient: party('Example DSP', 'PADPIDA0000000002'),
+  },
+  version: '4.3',
+  avs_version_id: '12',
+  language_and_script_code: 'en',
+  releases: [{
+    release_id: 'A1-ABCDE-0000000001-M',
+    title: [{ text: title }],
+    artist: 'Example Artist',
+    label: 'Example Label',
+    release_type: 'Single',
+    genre: 'Pop',
+    parental_warning_type: 'NotExplicit',
+    tracks: [{
+      track_id: 'T1',
+      isrc: 'ZZ0000000001',
+      title: 'Example Track',
+      duration: 'PT3M42S',
+      artist: 'Example Artist',
+      resource_type: 'MusicalWorkSoundRecording',
+      parental_warning_type: 'NotExplicit',
+    }],
+  }],
+});
+
+async function main() {
+  // Escaped on output, read back unchanged
+  const xml = await new DdexBuilder().build(request('Rock & Roll <Live>'));
+  assert.ok(xml.includes('Rock &amp; Roll &lt;Live&gt;'));
+  assert.equal(new DdexParser().parseSync(xml).releases[0].title, 'Rock & Roll <Live>');
+
+  // A character XML 1.0 does not allow is rejected
+  await assert.rejects(
+    new DdexBuilder().build(request('Bad\u0001Title')),
+    /releases\[0\]\.title\[0\]\.text: contains U\+0001/,
+  );
+}
+
+main();
+```
+
+## Canonical output
+
+Output is canonicalized with DB-C14N/1.0 (the project's
+[specification](https://github.com/daddykev/ddex-suite/blob/main/docs/DB-C14N-SPEC.md)):
+fixed namespace prefixes, sorted attributes, consistent indentation, and elements in XSD
+order.
+
+It is **not byte-for-byte deterministic yet**: with the default options, a message ID,
+release and resource references and `MessageCreatedDateTime` that the request leaves out are
+generated (random UUIDs, the current time), and the Rust stable-hash ID option puts the
+current date into the `MessageId`. Give `message_id`, `message_created_date_time`,
+`release_reference` and each track's `resource_reference`, and nothing is generated. Full
+determinism (stable IDs by default) is planned for 0.6.0.
+
+The builder does not validate its output against the XSD or the AVS rules at runtime; the
+required-field checks above are what it enforces. CI validates the output of every
+supported version except 3.8.1 against the official XSDs ([ERN version support](./ern-versions.md)).

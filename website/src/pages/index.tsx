@@ -13,32 +13,28 @@ import {
   faWrench,
   faRocket,
   faBolt,
-  faBox,
   faSave,
   faTrophy,
-  faSearch,
-  faBullseye,
-  faTag,
+  faLayerGroup,
+  faEraser,
   faCheckCircle,
-  faChartBar,
-  faExclamationTriangle,
-  faWater,
-  faHeart,
-  faGlobe,
-  faIndustry,
-  faChartLine,
   faSync,
-  faTimesCircle
+  faShieldAlt,
+  faTable,
+  faDatabase,
 } from '@fortawesome/free-solid-svg-icons';
-import { faPython } from '@fortawesome/free-brands-svg-icons';
 import styles from './index.module.css';
+
+// The code tabs show these files verbatim; CI runs each of them (scripts/readme_examples.py,
+// job "Website docs examples") against an official ERN 4.3 sample.
+import nodeExample from '!!raw-loader!../examples/landing.js';
+import pythonExample from '!!raw-loader!../examples/landing.py';
+import rustExample from '!!raw-loader!../examples/landing.rs';
 
 function AnimatedWorkflowStep({ isActive, title, icon, description }) {
   return (
     <div className={clsx(styles.workflowStep, { [styles.workflowStepActive]: isActive })}>
-      <div className={styles.workflowStepIcon}>
-        {icon}
-      </div>
+      <div className={styles.workflowStepIcon}>{icon}</div>
       <div className={styles.workflowStepContent}>
         <h3>{title}</h3>
         <p>{description}</p>
@@ -48,12 +44,12 @@ function AnimatedWorkflowStep({ isActive, title, icon, description }) {
 }
 
 function HomepageHeader() {
-  const {siteConfig} = useDocusaurusContext();
+  const { siteConfig } = useDocusaurusContext();
   const [currentStep, setCurrentStep] = useState(0);
   const steps = [
-    { title: 'Parse', icon: <FontAwesomeIcon icon={faFileAlt} />, description: 'Transform DDEX XML into structured data' },
-    { title: 'Modify', icon: <FontAwesomeIcon icon={faPencilAlt} />, description: 'Update metadata with clean, typed objects' },
-    { title: 'Build', icon: <FontAwesomeIcon icon={faWrench} />, description: 'Generate deterministic, compliant XML' }
+    { title: 'Parse', icon: <FontAwesomeIcon icon={faFileAlt} />, description: 'Read ERN 3.8.x, 4.2 and 4.3 into typed data' },
+    { title: 'Modify', icon: <FontAwesomeIcon icon={faPencilAlt} />, description: 'Work with plain objects in your own code' },
+    { title: 'Build', icon: <FontAwesomeIcon icon={faWrench} />, description: 'Write schema-valid ERN 4.3, 4.2 or 3.8.2' },
   ];
 
   useEffect(() => {
@@ -69,41 +65,31 @@ function HomepageHeader() {
         <h1 className="hero__title">DDEX Suite</h1>
         <p className="hero__subtitle">{siteConfig.tagline}</p>
 
-        {/* Animated workflow */}
         <div className={styles.workflowAnimation}>
           {steps.map((step, index) => (
-            <React.Fragment key={index}>
+            <React.Fragment key={step.title}>
               <AnimatedWorkflowStep
                 isActive={currentStep === index}
                 title={step.title}
                 icon={step.icon}
                 description={step.description}
               />
-              {index < steps.length - 1 && (
-                <div className={styles.workflowArrow}>
-                  →
-                </div>
-              )}
+              {index < steps.length - 1 && <div className={styles.workflowArrow}>→</div>}
             </React.Fragment>
           ))}
         </div>
 
         <div className={styles.badges}>
-          <img src="https://img.shields.io/npm/v/ddex-parser?label=parser&style=flat-square" alt="Parser version" />
-          <img src="https://img.shields.io/npm/v/ddex-builder?label=builder&style=flat-square" alt="Builder version" />
+          <img src="https://img.shields.io/npm/v/ddex-parser?label=parser&style=flat-square" alt="ddex-parser version on npm" />
+          <img src="https://img.shields.io/npm/v/ddex-builder?label=builder&style=flat-square" alt="ddex-builder version on npm" />
           <img src="https://img.shields.io/github/license/daddykev/ddex-suite?style=flat-square" alt="License" />
-          <img src="https://img.shields.io/npm/dm/ddex-parser?style=flat-square" alt="Downloads" />
         </div>
         <div className={styles.buttons}>
-          <Link
-            className="button button--secondary button--lg"
-            to="/docs/intro">
-            Get Started - 5min ⏱️
+          <Link className="button button--secondary button--lg" to="/docs/intro">
+            Get started
           </Link>
-          <Link
-            className="button button--outline button--secondary button--lg margin-left--md"
-            to="/playground">
-            Try Playground <FontAwesomeIcon icon={faRocket} className={styles.buttonIcon} />
+          <Link className="button button--outline button--secondary button--lg margin-left--md" to="/playground">
+            Try the Playground <FontAwesomeIcon icon={faRocket} className={styles.buttonIcon} />
           </Link>
         </div>
       </div>
@@ -111,24 +97,36 @@ function HomepageHeader() {
   );
 }
 
+// Measured numbers from dev-docs/PERFORMANCE.md (criterion, Apple M1 Pro, release profile).
+// Do not add figures that are not in that file.
 function PerformanceBenchmarks() {
   const benchmarks = [
-    { label: 'Parse a typical album', value: '3.4 ms (ERN 4.3, 75 KB)', icon: <FontAwesomeIcon icon={faRocket} />, color: 'var(--ifm-color-primary)' },
-    { label: 'Parser throughput', value: '20-24 MiB/s (real ERN 4.3)', icon: <FontAwesomeIcon icon={faBolt} />, color: 'var(--ifm-color-primary)' },
-    { label: 'Build a 12-track album', value: '11.4 ms (ERN 4.3)', icon: <FontAwesomeIcon icon={faSave} />, color: 'var(--ifm-color-success)' },
-    { label: 'WASM Bundle', value: '114KB (77% under target)', icon: <FontAwesomeIcon icon={faBox} />, color: 'var(--ifm-color-primary)' }
+    { label: 'Parse a typical album (ERN 4.3, 75 KB)', value: '3.4 ms', icon: faRocket },
+    { label: 'Parser throughput on real ERN 4.3', value: '20–24 MiB/s', icon: faBolt },
+    { label: 'Parse a ~10 MB catalog', value: '441 ms', icon: faDatabase },
+    { label: 'Build a 12-track album (ERN 4.3)', value: '11.4 ms', icon: faSave },
   ];
+  // Bar heights on a log scale: 0.1 ms -> 0 %, 1000 ms -> 100 %.
+  const bars = [
+    { size: '10 KB', ms: 0.5, label: '0.5 ms' },
+    { size: '75 KB', ms: 3.4, label: '3.4 ms' },
+    { size: '330 KB', ms: 14.3, label: '14 ms' },
+    { size: '10 MB', ms: 441, label: '441 ms' },
+  ];
+  const height = (ms: number) => `${Math.round(((Math.log10(ms) + 1) / 4) * 100)}%`;
 
   return (
     <section className={styles.performanceBenchmarks}>
       <div className="container">
-        <h2><FontAwesomeIcon icon={faTrophy} /> Performance Benchmarks</h2>
+        <h2>
+          <FontAwesomeIcon icon={faTrophy} /> Measured performance
+        </h2>
         <div className="row">
-          {benchmarks.map((benchmark, index) => (
-            <div key={index} className="col col--3">
+          {benchmarks.map((benchmark) => (
+            <div key={benchmark.label} className="col col--3">
               <div className={styles.benchmarkCard}>
-                <div className={styles.benchmarkIcon} style={{ color: benchmark.color }}>
-                  {benchmark.icon}
+                <div className={styles.benchmarkIcon} style={{ color: 'var(--ifm-color-primary)' }}>
+                  <FontAwesomeIcon icon={benchmark.icon} />
                 </div>
                 <div className={styles.benchmarkValue}>{benchmark.value}</div>
                 <div className={styles.benchmarkLabel}>{benchmark.label}</div>
@@ -138,99 +136,37 @@ function PerformanceBenchmarks() {
         </div>
         <div className={styles.chartContainer}>
           <div className={styles.performanceChart}>
-            <h3>Measured parse times (M1 Pro, criterion)</h3>
+            <h3>Parse time by message size (log scale)</h3>
             <div className={styles.chartBars}>
-              <div className={styles.chartBar} style={{ height: '10%' }}>
-                <span>10KB<br/>0.5ms</span>
-              </div>
-              <div className={styles.chartBar} style={{ height: '20%' }}>
-                <span>75KB<br/>3.4ms</span>
-              </div>
-              <div className={styles.chartBar} style={{ height: '30%' }}>
-                <span>330KB<br/>14ms</span>
-              </div>
-              <div className={styles.chartBar} style={{ height: '100%' }}>
-                <span>10MB<br/>441ms</span>
-              </div>
+              {bars.map((bar) => (
+                <div key={bar.size} className={styles.chartBar} style={{ height: height(bar.ms) }}>
+                  <span>
+                    {bar.size}
+                    <br />
+                    {bar.label}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
+        <p className={styles.sectionSubtitle}>
+          Criterion benches on an Apple M1 Pro, release profile.{' '}
+          <Link to="/docs/performance">Method and full results</Link>
+        </p>
       </div>
     </section>
   );
 }
 
 function CodeExamples() {
-  const typeScriptExample = `// Parse DDEX
-const { DdexParser } = require('ddex-parser');
-const parser = new DdexParser();
-const data = await parser.parse(xmlString);
-
-// Build DDEX
-const { DdexBuilder } = require('ddex-builder');
-const builder = new DdexBuilder();
-builder.applyPreset('spotify_album'); // optional
-const xml = await builder.build(request);
-
-// Batch process
-const { batchBuild } = require('ddex-builder');
-const results = await batchBuild(jsonStringArray);`;
-
-  const pythonExample = `from ddex_parser import DDEXParser
-from ddex_builder import DDEXBuilder
-
-# Parse to DataFrame for analysis
-parser = DDEXParser()
-df = parser.to_dataframe('release.xml')
-
-# Analyze with pandas
-print(df.releases.groupby('artist').count())
-
-# Build from DataFrame
-builder = DDEXBuilder()
-xml = builder.from_dataframe(df, version='4.3')`;
-
-  const cliExample = `# Parse DDEX file to JSON
-ddex-parser parse release.xml > release.json
-
-# Validate and analyze
-ddex-parser validate release.xml
-ddex-parser analyze release.xml
-
-# Build from JSON
-ddex-builder build release.json release.xml
-
-# Use presets for different platforms
-ddex-builder build --preset youtube_album release.json`;
-
-  const rustExample = `use ddex_parser::DDEXParser;
-use ddex_builder::DDEXBuilder;
-use std::fs;
-
-// Parse DDEX XML to structured data
-let parser = DDEXParser::new();
-let xml_content = fs::read_to_string("release.xml")?;
-let result = parser.parse(&xml_content)?;
-
-// Access clean, typed data
-println!("Release title: {}", result.flat.releases[0].title);
-println!("Artist name: {}", result.flat.sound_recordings[0].artist);
-
-// Modify the data
-result.flat.releases[0].title = "Remastered Edition".to_string();
-result.flat.deals[0].territories.extend_from_slice(&["US", "CA", "GB"]);
-
-// Build back to deterministic XML
-let builder = DDEXBuilder::new();
-let new_xml = builder.build(&result.to_build_request())?;`;
-
   return (
     <section className={styles.codeExamples}>
       <div className="container">
-        <h2>Parse → Modify → Build in Four Languages</h2>
-        <Tabs>
-          <TabItem value="typescript" label="TypeScript" default>
-            <CodeBlock language="typescript">{typeScriptExample}</CodeBlock>
+        <h2>Parse and build in three languages</h2>
+        <Tabs groupId="language">
+          <TabItem value="node" label="Node.js" default>
+            <CodeBlock language="js">{nodeExample}</CodeBlock>
             <div className={styles.installCommand}>
               <CodeBlock language="bash">npm install ddex-parser ddex-builder</CodeBlock>
             </div>
@@ -238,13 +174,7 @@ let new_xml = builder.build(&result.to_build_request())?;`;
           <TabItem value="python" label="Python">
             <CodeBlock language="python">{pythonExample}</CodeBlock>
             <div className={styles.installCommand}>
-              <CodeBlock language="bash">pip install ddex-parser ddex-builder</CodeBlock>
-            </div>
-          </TabItem>
-          <TabItem value="cli" label="CLI">
-            <CodeBlock language="bash">{cliExample}</CodeBlock>
-            <div className={styles.installCommand}>
-              <CodeBlock language="bash">cargo install ddex-parser ddex-builder</CodeBlock>
+              <CodeBlock language="bash">pip install "ddex-parser[pandas]" ddex-builder</CodeBlock>
             </div>
           </TabItem>
           <TabItem value="rust" label="Rust">
@@ -259,139 +189,68 @@ let new_xml = builder.build(&result.to_build_request())?;`;
   );
 }
 
-function FeatureComparison() {
-  const parserFeatures = [
-    { icon: <FontAwesomeIcon icon={faFileAlt} />, title: 'Multi-Version Support', desc: 'ERN 3.8.2, 4.2, and 4.3' },
-    { icon: <FontAwesomeIcon icon={faSearch} />, title: 'Dual Representations', desc: 'Graph and flattened data models' },
-    { icon: <FontAwesomeIcon icon={faPython} />, title: 'DataFrame Integration', desc: 'Native pandas/polars support' },
-    { icon: <FontAwesomeIcon icon={faWater} />, title: 'Streaming Parser', desc: 'Handle GB+ files efficiently' },
-    { icon: <FontAwesomeIcon icon={faExclamationTriangle} />, title: 'Detailed Errors', desc: 'Precise validation feedback' },
-  ];
-
-  const builderFeatures = [
-    { icon: <FontAwesomeIcon icon={faBullseye} />, title: 'Deterministic Output', desc: 'Byte-perfect reproducibility' },
-    { icon: <FontAwesomeIcon icon={faTag} />, title: 'Platform Presets', desc: 'Spotify, Apple, YouTube ready' },
-    { icon: <FontAwesomeIcon icon={faCheckCircle} />, title: 'Preflight Validation', desc: 'Catch errors before building' },
-    { icon: <FontAwesomeIcon icon={faWrench} />, title: 'DB-C14N/1.0', desc: 'Industry-standard canonicalization' },
-    { icon: <FontAwesomeIcon icon={faChartBar} />, title: 'DataFrame Builder', desc: 'Build from structured data' },
+function Features() {
+  const features = [
+    {
+      icon: faLayerGroup,
+      title: 'One Rust core, three languages',
+      desc: 'The same parser and builder in Rust, Node.js (with TypeScript types) and Python.',
+      to: '/docs/installation',
+    },
+    {
+      icon: faEraser,
+      title: 'Never invents data',
+      desc: 'Absent values stay empty. A build that lacks a required value fails with an error naming the field.',
+      to: '/docs/build-request#errors',
+    },
+    {
+      icon: faCheckCircle,
+      title: 'XSD-valid output',
+      desc: 'ERN 4.3, 4.2 and 3.8.2 builder output is validated against the official DDEX XSDs in CI.',
+      to: '/docs/ern-versions',
+    },
+    {
+      icon: faSync,
+      title: 'Official samples round trip in CI',
+      desc: 'Every official ERN 4.2 and 4.3 sample is parsed, rebuilt, validated and parsed again.',
+      to: '/docs/ern-versions#how-ci-checks-this',
+    },
+    {
+      icon: faShieldAlt,
+      title: 'Hardened XML parsing',
+      desc: 'DTDs and external entities are rejected, entity expansion, depth and size are limited, nothing is fetched.',
+      to: '/docs/security',
+    },
+    {
+      icon: faTable,
+      title: 'DataFrames for Python',
+      desc: 'Releases and tracks as pandas DataFrames, and ERN built back from a DataFrame.',
+      to: '/docs/python-dataframes',
+    },
   ];
 
   return (
     <section className={styles.featureComparison}>
       <div className="container">
-        <h2>Parser vs Builder: Complementary Powerhouses</h2>
+        <h2>What you get in 0.5.0</h2>
         <div className="row">
-          <div className="col col--6">
-            <div className={styles.featureCard} style={{ borderLeft: '4px solid var(--ddex-parser-color)' }}>
-              <h3><FontAwesomeIcon icon={faSearch} /> DDEX Parser</h3>
-              <p className={styles.featureCardDesc}>Transform DDEX XML into clean, structured data</p>
-              <div className={styles.featureGrid}>
-                {parserFeatures.map((feature, index) => (
-                  <div key={index} className={styles.featureItem}>
-                    <span className={styles.featureItemIcon}>{feature.icon}</span>
-                    <div>
-                      <strong>{feature.title}</strong>
-                      <br />
-                      <small>{feature.desc}</small>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <Link className="button button--primary" to="/docs/parser/">
-                Parser Docs →
+          {features.map((feature) => (
+            <div key={feature.title} className={clsx('col col--4', styles.featureTileCol)}>
+              <Link to={feature.to} className={styles.featureTile}>
+                <span className={styles.featureItemIcon}>
+                  <FontAwesomeIcon icon={feature.icon} />
+                </span>
+                <strong>{feature.title}</strong>
+                <p>{feature.desc}</p>
               </Link>
-            </div>
-          </div>
-          <div className="col col--6">
-            <div className={styles.featureCard} style={{ borderLeft: '4px solid var(--ddex-builder-color)' }}>
-              <h3><FontAwesomeIcon icon={faWrench} /> DDEX Builder</h3>
-              <p className={styles.featureCardDesc}>Generate deterministic, compliant DDEX XML</p>
-              <div className={styles.featureGrid}>
-                {builderFeatures.map((feature, index) => (
-                  <div key={index} className={styles.featureItem}>
-                    <span className={styles.featureItemIcon}>{feature.icon}</span>
-                    <div>
-                      <strong>{feature.title}</strong>
-                      <br />
-                      <small>{feature.desc}</small>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <Link className="button button--primary" to="/docs/builder/">
-                Builder Docs →
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function WhyDDEXSuite() {
-  const comparisons = [
-    {
-      feature: 'Performance',
-      ddexSuite: 'Rust core: a typical album parses in about 3 ms',
-      alternatives: 'Slow, memory-intensive parsing',
-      icon: <FontAwesomeIcon icon={faRocket} />
-    },
-    {
-      feature: 'Data Fidelity',
-      ddexSuite: 'Perfect round-trip guarantee',
-      alternatives: 'Data loss during transformations',
-      icon: <FontAwesomeIcon icon={faSync} />
-    },
-    {
-      feature: 'Multi-Platform',
-      ddexSuite: 'Native Node.js, Python, WASM, CLI',
-      alternatives: 'Single language or poor bindings',
-      icon: <FontAwesomeIcon icon={faGlobe} />
-    },
-    {
-      feature: 'Developer Experience',
-      ddexSuite: 'TypeScript definitions, detailed errors',
-      alternatives: 'Poor documentation, cryptic errors',
-      icon: <FontAwesomeIcon icon={faHeart} />
-    },
-    {
-      feature: 'Industry Standards',
-      ddexSuite: 'DB-C14N/1.0, platform presets',
-      alternatives: 'Generic XML tools',
-      icon: <FontAwesomeIcon icon={faIndustry} />
-    },
-    {
-      feature: 'Scalability',
-      ddexSuite: 'Stream GB+ files with <100MB memory',
-      alternatives: 'Memory explosion with large files',
-      icon: <FontAwesomeIcon icon={faChartLine} />
-    }
-  ];
-
-  return (
-    <section className={styles.whyDDEXSuite}>
-      <div className="container">
-        <h2>Why Choose DDEX Suite?</h2>
-        <p className={styles.sectionSubtitle}>
-          Purpose-built for DDEX processing, not adapted from generic XML tools
-        </p>
-        <div className={styles.comparisonTable}>
-          {comparisons.map((comparison, index) => (
-            <div key={index} className={styles.comparisonRow}>
-              <div className={styles.comparisonFeature}>
-                <span className={styles.comparisonIcon}>{comparison.icon}</span>
-                <strong>{comparison.feature}</strong>
-              </div>
-              <div className={styles.comparisonDDEX}>
-                <FontAwesomeIcon icon={faCheckCircle} /> {comparison.ddexSuite}
-              </div>
-              <div className={styles.comparisonAlts}>
-                <FontAwesomeIcon icon={faTimesCircle} /> {comparison.alternatives}
-              </div>
             </div>
           ))}
         </div>
+        <p className={styles.sectionSubtitle}>
+          Pre-1.0: see the <Link to="/docs/known-issues">known issues and roadmap</Link>. Validate
+          messages against the XSDs and business rules with{' '}
+          <Link href="https://ddex-workbench.org">DDEX Workbench</Link>.
+        </p>
       </div>
     </section>
   );
@@ -400,14 +259,14 @@ function WhyDDEXSuite() {
 export default function Home() {
   return (
     <Layout
-      title="High-Performance DDEX Processing"
-      description="Parse and build DDEX XML with perfect fidelity. Native bindings for Node.js and Python with TypeScript support.">
+      title="DDEX ERN parser and builder"
+      description="Parse and build DDEX ERN XML (3.8.x, 4.2, 4.3) with one Rust core and native bindings for Node.js and Python."
+    >
       <HomepageHeader />
       <main>
         <PerformanceBenchmarks />
         <CodeExamples />
-        <FeatureComparison />
-        <WhyDDEXSuite />
+        <Features />
       </main>
     </Layout>
   );

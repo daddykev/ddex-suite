@@ -1,0 +1,278 @@
+---
+sidebar_position: 3
+title: "Quick start: parsing"
+description: Parse a DDEX ERN message in Rust, Node.js or Python.
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Quick start: parsing
+
+The examples read `release.xml`, any ERN 3.8.x, 4.2 or 4.3 message. To follow along, use
+one of the official DDEX samples in the repository, for example
+[`examples/Samples43/1 Audio.xml`](https://github.com/daddykev/ddex-suite/tree/main/examples/Samples43)
+(CI runs every example on this page against that file).
+
+## Parse a message
+
+<Tabs groupId="language">
+<TabItem value="rust" label="Rust">
+
+```rust
+use ddex_parser::DDEXParser;
+use std::io::Cursor;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let xml = std::fs::read("release.xml")?;
+    let message = DDEXParser::new().parse(Cursor::new(xml))?;
+    let flat = &message.flat;
+
+    println!("{} ({}), {} release(s)", flat.message_id, flat.version, flat.releases.len());
+    for release in &flat.releases {
+        println!(
+            "{} by {}",
+            release.default_title.as_deref().unwrap_or("(no title)"),
+            release.display_artist.as_deref().unwrap_or("(no artist)"),
+        );
+        for track in &release.tracks {
+            println!(
+                "  {}. {} [{}]",
+                track.position,
+                track.title.as_deref().unwrap_or("(no title)"),
+                track.isrc.as_deref().unwrap_or("no ISRC"),
+            );
+        }
+    }
+    Ok(())
+}
+```
+
+`parse` takes any `BufRead + Seek` and returns a `ParsedERNMessage` with the flat model
+(`message.flat`) and the graph (`message.graph`).
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```js
+const fs = require('node:fs');
+const { DdexParser } = require('ddex-parser');
+
+const parser = new DdexParser();
+const message = parser.parseSync(fs.readFileSync('release.xml', 'utf8'));
+
+console.log(`${message.messageId} (${message.version}), ${message.releaseCount} release(s)`);
+for (const release of message.releases) {
+  console.log(`${release.title ?? '(no title)'} by ${release.displayArtist ?? '(no artist)'}`);
+  for (const track of release.tracks) {
+    console.log(`  ${track.position}. ${track.title} [${track.isrc}]`);
+  }
+}
+```
+
+`parseSync(xml)` returns a `ParsedMessage`; `parse(xml)` is the same, returning a
+`Promise<ParsedMessage>`. Both take a string, up to 100 MB.
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+from ddex_parser import DDEXParser
+
+with open("release.xml", encoding="utf-8") as f:
+    message = DDEXParser().parse(f.read())
+
+print(f"{message.message_id()} ({message.version()}), {message.release_count()} release(s)")
+
+# Releases and tracks come as pandas DataFrames (pip install "ddex-parser[pandas]")
+releases = message.to_dataframe("releases")
+print(releases[["release_id", "title", "artist"]])
+
+tracks = message.to_dataframe("tracks")
+for track in tracks.itertuples():
+    print(f"  {track.position}. {track.track_title} [{track.isrc}]")
+```
+
+`parse(xml)` accepts `str` or `bytes` and returns a `ParsedERNMessage`. Its accessors are
+methods (`message_id()`, `version()`, `release_count()`, `message_control_type()`,
+`deals()`); releases and tracks are read through `to_dataframe(schema)`. `parse_async(xml)`
+is the awaitable version.
+
+</TabItem>
+</Tabs>
+
+For `1 Audio.xml` the output starts like this:
+
+```text
+Test1.1 (V4_3), 1 release(s)
+Yume no Hajmari by Saeko Shu
+  1. Yume no Lullaby [JPTO09404900]
+```
+
+`version` is the version enum's name (`V3_8_1`, `V3_8_2`, `V4_2`, `V4_3`), not `4.3`.
+
+## Release dates, labels, deals
+
+The flat model also carries release dates as written, genres, P and C lines, parental
+warnings, labels, the track layout and deals:
+
+<Tabs groupId="language">
+<TabItem value="rust" label="Rust">
+
+```rust
+use ddex_parser::DDEXParser;
+use std::io::Cursor;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let message = DDEXParser::new().parse(Cursor::new(std::fs::read("release.xml")?))?;
+    let flat = &message.flat;
+
+    println!("control type: {:?}", flat.message_control_type);
+    for release in &flat.releases {
+        let dates: Vec<&str> = release.release_dates.iter().map(|d| d.date.as_str()).collect();
+        let genres: Vec<&str> = release.genres.iter().map(|g| g.genre.as_str()).collect();
+        println!("release dates {dates:?}, genres {genres:?}");
+        println!("label {:?}, parental warning {:?}", release.label_name, release.parental_warning);
+        if let Some(p_line) = &release.p_line {
+            println!("(P) {:?} {}", p_line.year, p_line.text);
+        }
+        for track in &release.tracks {
+            println!(
+                "  disc {:?} track {:?}: {} enclosing group(s), track release {:?}",
+                track.disc_number,
+                track.track_number,
+                track.group_path.len(),
+                track.track_release_reference,
+            );
+        }
+    }
+    for deal in &flat.deals {
+        println!(
+            "deal for {:?} in {:?}, from {:?} to {:?}",
+            deal.releases, deal.territories.included, deal.validity.start, deal.validity.end
+        );
+    }
+    Ok(())
+}
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```js
+const fs = require('node:fs');
+const { DdexParser } = require('ddex-parser');
+
+const message = new DdexParser().parseSync(fs.readFileSync('release.xml', 'utf8'));
+
+console.log('control type:', message.messageControlType);
+for (const release of message.releases) {
+  console.log('release dates:', release.releaseDates.map((d) => d.date));
+  console.log('genres:', release.genres.map((g) => g.genre), 'label:', release.labelName);
+  console.log('(P)', release.pLine?.year, release.pLine?.text, 'warning:', release.parentalWarning);
+  for (const track of release.tracks) {
+    const groups = track.groupPath.map((g) => `${g.groupType} ${g.sequenceNumber}`).join(' / ');
+    console.log(`  disc ${track.discNumber} track ${track.trackNumber} (${groups}) ${track.trackReleaseReference}`);
+  }
+}
+for (const deal of message.deals) {
+  console.log('deal for', deal.releases, 'in', deal.territories, 'from', deal.startDate, 'to', deal.endDate);
+}
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+from ddex_parser import DDEXParser
+
+with open("release.xml", encoding="utf-8") as f:
+    message = DDEXParser().parse(f.read())
+
+print("control type:", message.message_control_type())
+
+releases = message.to_dataframe("releases")
+for release in releases.itertuples():
+    print("release dates:", [d["date"] for d in release.release_dates])
+    print("genres:", [g["genre"] for g in release.genres], "label:", release.label_name)
+    print("parental warning:", release.parental_warning)
+
+tracks = message.to_dataframe("tracks")
+print(tracks[["track_index", "disc_number", "track_number", "group_path", "track_release_reference"]])
+
+for deal in message.deals():
+    print("deal for", deal["releases"], "in", deal["territories"], "from", deal["start_date"], "to", deal["end_date"])
+```
+
+</TabItem>
+</Tabs>
+
+Every field is described in the [parse output reference](./parse-output.mdx).
+
+## When parsing fails
+
+Input that is not XML, not a DDEX ERN message, or that breaks a security limit is an error:
+`parse` returns `Err(ParseError)` in Rust, throws an `Error` in Node.js and raises
+`ValueError` in Python. The message says what was wrong:
+
+<Tabs groupId="language">
+<TabItem value="rust" label="Rust">
+
+```rust
+use ddex_parser::DDEXParser;
+use std::io::Cursor;
+
+fn main() {
+    let xml = "<catalog><item>not DDEX</item></catalog>";
+    match DDEXParser::new().parse(Cursor::new(xml)) {
+        Ok(_) => panic!("expected an error"),
+        Err(error) => println!("{error}"),
+    }
+}
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```js
+const assert = require('node:assert/strict');
+const { DdexParser } = require('ddex-parser');
+
+assert.throws(
+  () => new DdexParser().parseSync('<catalog><item>not DDEX</item></catalog>'),
+  /No DDEX ERN namespace found/,
+);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+from ddex_parser import DDEXParser
+
+try:
+    DDEXParser().parse("<catalog><item>not DDEX</item></catalog>")
+except ValueError as error:
+    print(error)  # Parse error: XML parsing error: No DDEX ERN namespace found - ...
+else:
+    raise AssertionError("expected an error")
+```
+
+</TabItem>
+</Tabs>
+
+A message with a DTD (and so any external entity) is rejected before anything is read; see
+the [security model](./security.md).
+
+## Other parser functions
+
+- **Node.js**: `detectVersion(xml)` returns the version (`"V4_3"`); `sanityCheck(xml)`
+  resolves to `{ isValid, version, errors, warnings }`; `getDetailedError(xml)` returns
+  the parse error with its type and context. `parse` and `parseSync` take no options:
+  every `ParseOptions` field throws since 0.5.0.
+- **Python**: `detect_version(xml)` returns `"V4_3"`; `sanity_check(xml)` returns a dict;
+  `stream(xml)` parses the whole document and then yields one small dict per release
+  (`release_id`, `title`, `artist`, `track_count`), so it does not reduce memory use.
+- **Rust**: `DDEXParser::with_config(config)` takes a `ddex_parser::parser::security::SecurityConfig` to change the limits. The streaming
+  APIs (`ParseMode::Stream`, the `stream*` iterators) are experimental and read a subset of
+  the fields; see [Known issues and roadmap](./known-issues.md).

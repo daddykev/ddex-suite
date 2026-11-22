@@ -1,41 +1,40 @@
-# Website
+# DDEX Suite website
 
-This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
-
-## Installation
-
-```bash
-yarn
-```
-
-## Local Development
+The documentation site, [ddex-suite.org](https://ddex-suite.org), built with
+[Docusaurus](https://docusaurus.io/), and the Playground API in `functions/` (Cloud
+Functions for Firebase).
 
 ```bash
-yarn start
+npm ci          # Node.js 20 or newer
+npm start       # development server
+npm run build   # production build in build/ (fails on any broken link or anchor)
 ```
 
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
+## Layout
 
-## Build
+- `docs/`: the documentation pages. The sidebar (`sidebars.ts`) lists every page; do not
+  add a page without adding it there.
+- `src/pages/index.tsx`: the landing page. Its code tabs show the files in
+  `src/examples/` verbatim.
+- `src/pages/playground.tsx`: the Playground, which calls the API in `functions/`.
+- `docusaurus.config.ts`: site config, including the redirects from the old docs URLs.
+
+## Code examples are tested
+
+Every `js`, `python` and `rust` code block in `docs/`, and each file in `src/examples/`, is
+run in CI (job "Website docs examples" in `.github/workflows/ci.yml`) against the packages
+built from the repository, with the official sample `examples/Samples43/1 Audio.xml` as
+`release.xml`. Blocks that are not meant to run use `bash`, `text`, `xml`, `json` or `toml`;
+any other tag fails the check. To run the JS and Python examples locally against installed
+packages:
 
 ```bash
-yarn build
+python3 scripts/readme_examples.py --lang js --workdir /tmp/app --sample "examples/Samples43/1 Audio.xml" --strict website/docs/*.md* website/src/examples/*
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+(`/tmp/app` needs a `node_modules` with `ddex-parser` and `ddex-builder`; for `--lang python`
+the running interpreter needs both packages and pandas.)
 
-## Deployment
+## Deploy
 
-Using SSH:
-
-```bash
-USE_SSH=true yarn deploy
-```
-
-Not using SSH:
-
-```bash
-GIT_USER=<Your GitHub username> yarn deploy
-```
-
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+Deployment is manual (`firebase deploy`) and not part of CI.
