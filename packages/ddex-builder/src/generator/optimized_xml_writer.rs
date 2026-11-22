@@ -1,7 +1,7 @@
-//! High-performance XML writer optimized for DDEX Builder
+//! Alternative XML writer with string interning and buffer pooling
 //!
-//! This writer uses string interning, buffer pooling, and vectorized operations
-//! to achieve target performance of <10ms for typical albums.
+//! `DDEXBuilder::build` does not use this writer. Measured build times are in
+//! `dev-docs/PERFORMANCE.md`.
 
 use crate::ast::{Element, Node, AST};
 use crate::determinism::{DeterminismConfig, IndentChar};
@@ -9,7 +9,7 @@ use crate::error::BuildError;
 use crate::optimized_strings::{buffer_sizes, BuildContext, OptimizedString};
 use indexmap::IndexMap;
 
-/// High-performance XML writer with optimizations
+/// XML writer with string interning and buffer pooling (not used by `DDEXBuilder::build`)
 pub struct OptimizedXmlWriter<'a> {
     config: DeterminismConfig,
     context: &'a mut BuildContext,

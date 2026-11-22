@@ -1,7 +1,9 @@
 //! Parallel processing optimizations for DDEX Builder
 //!
-//! This module provides parallel validation, resource processing, and XML generation
-//! using rayon for CPU-bound operations to achieve sub-10ms build times.
+//! This module provides parallel validation and resource processing using rayon.
+//! `DDEXBuilder::build` does not use it, and `ParallelProcessor::process_build_parallel`
+//! does not write XML, so its timings are not comparable with a build
+//! (`dev-docs/PERFORMANCE.md`).
 
 use crate::ast::{Element, Node};
 use crate::builder::{BuildRequest, ReleaseRequest, TrackRequest};

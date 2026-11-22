@@ -1,7 +1,9 @@
 //! DDEX Builder CLI - Comprehensive command-line interface for DDEX XML processing
 //!
-//! This CLI provides tools for building, converting, validating, and comparing DDEX XML files
-//! with deterministic output and support for various partner presets.
+//! This CLI provides tools for converting, validating and comparing DDEX XML files.
+//! Known issues (KNOWN_ISSUES.md): `build` is a stub that writes a placeholder document,
+//! `--validate` never fails, and presets do not change the output. Use the library or a
+//! binding to build.
 
 use clap::{Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::{generate, Shell};

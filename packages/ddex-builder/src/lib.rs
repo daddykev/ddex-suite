@@ -69,10 +69,10 @@ use std::time::Duration;
 /// Version of the DB-C14N specification
 pub const DB_C14N_VERSION: &str = "1.0";
 
-/// Perfect Fidelity Engine configuration options
+/// Fidelity preservation options (comments, processing instructions, extensions, ...)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FidelityOptions {
-    /// Enable perfect round-trip fidelity preservation
+    /// Enable fidelity preservation (the flag behind `Builder::enable_perfect_fidelity`)
     pub enable_perfect_fidelity: bool,
     /// Preserve all XML comments in their original positions
     pub preserve_comments: bool,
@@ -117,7 +117,7 @@ impl Default for FidelityOptions {
     }
 }
 
-/// Canonicalization algorithms supported by the Perfect Fidelity Engine
+/// Canonicalization algorithms supported by the fidelity options
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CanonicalizationAlgorithm {
     /// No canonicalization (preserves exact formatting)
@@ -285,19 +285,22 @@ impl Default for BuildStatistics {
     }
 }
 
-/// The main DDEX Builder for creating deterministic XML output.
+/// Builder configuration: determinism settings, partner presets, target version and
+/// fidelity options.
 ///
-/// `Builder` is the primary interface for generating DDEX-compliant XML with
-/// guaranteed deterministic output. It supports partner presets, version conversion,
-/// and comprehensive security features.
+/// To generate XML, use [`DDEXBuilder::build`]. In 0.5.0 the presets and the target
+/// version set here do not affect `DDEXBuilder::build` output (KNOWN_ISSUES.md).
 ///
 /// ## Features
 ///
-/// - **Deterministic Output**: Uses DB-C14N/1.0 for reproducible output
-/// - **Partner Presets**: Pre-configured settings for major music platforms
+/// - **Canonical Output**: DB-C14N/1.0 ordering and formatting; byte-for-byte
+///   determinism is not complete yet (see the [`determinism`] module; planned for 0.6.0)
+/// - **Partner Presets**: Pre-configured settings for music platforms (they do not
+///   change the output yet)
 /// - **Version Management**: Support for ERN 3.8.2, 4.2, and 4.3 with conversion
 /// - **Security**: Built-in validation, rate limiting, and XXE protection
-/// - **Performance**: Memory-optimized with streaming support for large files
+/// - **Streaming**: an experimental streaming writer (`streaming::StreamingBuilder`),
+///   which writes only the old ERN 3.8-style tree (KNOWN_ISSUES.md)
 ///
 /// ## Usage Patterns
 ///
@@ -373,10 +376,7 @@ impl Default for BuildStatistics {
 ///
 /// ## Memory Usage
 ///
-/// The builder uses memory-optimized data structures and streaming
-/// where possible. Typical memory usage:
-/// - Small releases (<100KB): ~5MB
-/// - Large releases (>1MB): ~20-50MB with streaming
+/// Memory use has not been measured. Build times are in `dev-docs/PERFORMANCE.md`.
 #[derive(Debug, Clone)]
 pub struct Builder {
     config: DeterminismConfig,
@@ -398,7 +398,7 @@ impl Builder {
     /// Creates a new DDEX Builder with default configuration.
     ///
     /// The builder is initialized with:
-    /// - Default determinism configuration for reproducible output
+    /// - Default determinism configuration (canonical ordering and formatting)
     /// - All available partner presets loaded
     /// - No preset locked (can be changed)
     /// - Latest supported DDEX version as target
@@ -442,7 +442,7 @@ impl Builder {
         }
     }
 
-    /// Create builder with Perfect Fidelity Engine enabled
+    /// Create a builder with every fidelity option enabled
     pub fn with_perfect_fidelity() -> Self {
         let mut fidelity_options = FidelityOptions::default();
         fidelity_options.enable_perfect_fidelity = true;
@@ -508,9 +508,9 @@ impl Builder {
 
     /// Applies a partner preset configuration to the builder.
     ///
-    /// Presets contain pre-configured settings optimized for specific music platforms
-    /// and distribution partners. Each preset includes determinism settings, validation
-    /// rules, and format preferences.
+    /// Presets contain pre-configured settings for specific music platforms and
+    /// distribution partners (determinism settings, validation rules, format preferences).
+    /// In 0.5.0 they do not change `DDEXBuilder::build` output (KNOWN_ISSUES.md).
     ///
     /// # Arguments
     ///
@@ -607,7 +607,7 @@ impl Builder {
         self
     }
 
-    /// Enable Perfect Fidelity Engine with default settings
+    /// Enable every fidelity option
     pub fn enable_perfect_fidelity(&mut self) -> &mut Self {
         self.fidelity_options.enable_perfect_fidelity = true;
         self.fidelity_options.preserve_comments = true;
@@ -619,7 +619,7 @@ impl Builder {
         self
     }
 
-    /// Disable Perfect Fidelity Engine
+    /// Disable every fidelity option
     pub fn disable_perfect_fidelity(&mut self) -> &mut Self {
         self.fidelity_options.enable_perfect_fidelity = false;
         self.fidelity_options.preserve_comments = false;
@@ -677,7 +677,7 @@ impl Builder {
         self
     }
 
-    /// Check if Perfect Fidelity Engine is enabled
+    /// Check whether fidelity preservation is enabled
     pub fn is_perfect_fidelity_enabled(&self) -> bool {
         self.fidelity_options.enable_perfect_fidelity
     }
@@ -735,7 +735,7 @@ impl Builder {
         presets::all_presets()
     }
 
-    /// Build DDEX XML with Perfect Fidelity Engine
+    /// Build DDEX XML with the fidelity options and optional verification
     pub fn build_with_fidelity(
         &self,
         request: &builder::BuildRequest,
@@ -945,7 +945,7 @@ impl Builder {
     }
 }
 
-/// Perfect Fidelity Engine build result
+/// Result of [`Builder::build_with_fidelity`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FidelityBuildResult {
     /// Generated XML output
@@ -1015,7 +1015,8 @@ pub fn version_info() -> String {
     )
 }
 
-/// Get Perfect Fidelity Engine information
+/// Get a one-line description of the fidelity features (the string keeps its historical
+/// "Perfect Fidelity Engine" name)
 pub fn fidelity_engine_info() -> String {
     format!(
         "Perfect Fidelity Engine v{} • Round-trip: ✓ • DB-C14N/{} • Extensions: ✓",

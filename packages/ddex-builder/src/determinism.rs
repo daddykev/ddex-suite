@@ -1,20 +1,21 @@
 //! # Determinism Configuration and Enforcement
 //!
-//! This module provides the core determinism guarantees that make DDEX Builder
-//! unique in the market. By ensuring consistent reproducible output, we enable
-//! supply chain integrity, reproducible builds, and cryptographic signing.
+//! This module configures the builder's canonical ordering and formatting, and
+//! provides [`DeterminismVerifier`], which builds a request several times and reports
+//! any differences. Reproducible output enables supply chain integrity, reproducible
+//! builds and cryptographic signing.
 //!
-//! ## Core Principle
+//! ## Status in 0.5.0
 //!
-//! **Same Input = Identical Output, Always**
+//! Output is canonicalized with DB-C14N/1.0 (fixed namespace prefixes, sorted
+//! attributes, consistent formatting, elements in XSD order), and output paths use
+//! `IndexMap`, never `HashMap`, so ordering does not depend on the platform.
 //!
-//! DDEX Builder guarantees that identical logical input will always produce
-//! byte-identical XML output, regardless of:
-//! - Build environment (dev, CI, production)
-//! - Operating system (Windows, macOS, Linux)  
-//! - Hardware architecture (x86, ARM, M1/M2)
-//! - Rust version or compiler flags
-//! - Time of day or system locale
+//! Byte-for-byte determinism is not complete yet: with the default options, a message
+//! ID, release and resource references and `MessageCreatedDateTime` that the request
+//! leaves out are generated (random UUIDs, the current time), and the stable-hash ID
+//! strategy puts today's date into the `MessageId`. Two builds of the same request can
+//! therefore differ. Full determinism is planned for 0.6.0.
 //!
 //! ## Why Determinism Matters
 //!
@@ -43,7 +44,7 @@
 //!
 //! 1. **DB-C14N/1.0 Canonicalization**: Our custom canonicalization spec
 //! 2. **Deterministic Data Structures**: IndexMap for stable iteration order
-//! 3. **Fixed Randomness Sources**: Locked namespace prefixes and IDs
+//! 3. **Locked Namespace Prefixes** (generated IDs are not fixed yet; see above)
 //! 4. **Normalized Formatting**: Consistent whitespace, encoding, line endings
 //! 5. **Time Zone Handling**: UTC normalization for timestamps
 //!
@@ -134,14 +135,9 @@
 //!
 //! ## Performance Impact
 //!
-//! Determinism adds minimal overhead:
-//! - **+0.1-0.5ms** for IndexMap vs HashMap
-//! - **+1-3ms** for verification when enabled  
-//! - **+5-10%** memory for deterministic data structures
-//! - **Zero impact** on functionality or correctness
-//!
-//! The performance cost is negligible compared to the benefits of supply chain
-//! integrity and reproducible builds.
+//! The overhead of the ordering has not been measured separately. Verification builds
+//! the request once per iteration, so it costs about one build per iteration; build
+//! times are in `dev-docs/PERFORMANCE.md`.
 
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};

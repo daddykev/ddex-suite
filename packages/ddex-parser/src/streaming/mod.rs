@@ -1,5 +1,7 @@
 // src/streaming/mod.rs
-//! High-performance streaming DDEX parser implementation
+//! Experimental, opt-in streaming DDEX parsers. They read a subset of the fields; the
+//! parallel iterator does not currently scale with the thread count (planned for 0.6.0).
+//! `DDEXParser::parse` does not use them. Measured figures are in `dev-docs/PERFORMANCE.md`.
 
 pub mod element;
 pub mod fast_streaming_parser;

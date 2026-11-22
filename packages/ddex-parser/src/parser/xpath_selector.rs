@@ -555,7 +555,7 @@ impl XPathSelector {
         Ok(result.values)
     }
 
-    /// High-performance batch selection for multiple XPath expressions
+    /// Batch selection for multiple XPath expressions
     pub fn select_multiple<R: BufRead>(
         reader: R,
         xpaths: &[&str],

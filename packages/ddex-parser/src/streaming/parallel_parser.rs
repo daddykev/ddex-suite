@@ -1,7 +1,8 @@
-//! Parallel streaming parser for achieving 6.25x speedup on 8 cores
+//! Experimental parallel streaming parser
 //!
-//! This implementation uses rayon for parallel processing of DDEX elements
-//! across multiple CPU cores to reach the target 280+ MB/s throughput.
+//! It uses rayon to process DDEX elements on several threads, but does not currently
+//! scale with the thread count: 1, 2, 4 and 8 threads take the same time (scaling is
+//! planned for 0.6.0; see `dev-docs/PERFORMANCE.md`).
 
 #[allow(dead_code)] // Experimental parallel streaming parser
 use crate::error::ParseError;

@@ -1,14 +1,15 @@
-//! Perfect Fidelity Engine for DDEX Builder
+//! Fidelity preservation configuration for DDEX Builder
 //!
-//! This module provides comprehensive fidelity preservation features for the DDEX Builder,
-//! ensuring perfect round-trip compatibility with the DDEX Parser and maintaining
-//! semantic XML reproduction while maintaining structure and content.
+//! This module configures which parts of a document (comments, processing
+//! instructions, extensions, ...) the builder tries to preserve for round trips with
+//! the DDEX Parser. Round trips are not lossless in 0.5.0: data the build request cannot
+//! carry yet (contributors, P and C lines, images, ...) is lost; see the root README.
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::Duration;
 
-/// Fidelity configuration for perfect XML preservation
+/// Fidelity configuration for XML preservation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FidelityConfig {
     /// Preservation level for different XML components
@@ -48,7 +49,7 @@ pub enum PreservationLevel {
     Basic,
     /// Standard preservation (DDEX + known extensions)
     Standard,
-    /// Perfect preservation (everything including comments, whitespace)
+    /// Preserve everything that can be preserved, including comments and whitespace
     Perfect,
     /// Custom preservation with fine-grained control
     Custom,

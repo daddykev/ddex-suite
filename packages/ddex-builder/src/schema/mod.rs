@@ -125,9 +125,7 @@
 //!
 //! ## Performance Characteristics
 //!
-//! - **Schema Generation**: 1-5ms for complete schema generation
-//! - **Type Export**: 5-15ms for TypeScript/Python generation
-//! - **Memory Usage**: ~2MB peak for complete schema with examples
+//! - **Timing and memory**: not benchmarked
 //! - **Cache Support**: Generated schemas are reusable across builds
 //!
 //! ## Command Line Interface

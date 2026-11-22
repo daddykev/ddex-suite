@@ -11,7 +11,7 @@ use std::borrow::Cow;
 use std::sync::Arc;
 use string_cache::DefaultAtom;
 
-/// High-performance string type for small strings
+/// String type that stores short strings inline (`SmartString`)
 pub type FastString = SmartString<LazyCompact>;
 
 /// Static string cache for common DDEX values

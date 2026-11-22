@@ -1,8 +1,8 @@
 //! Extension restoration system for preserving unknown XML elements during build
 //!
 //! This module provides functionality to restore XML fragments that were captured
-//! during parsing, ensuring perfect round-trip fidelity for documents containing
-//! proprietary extensions.
+//! during parsing, so that documents containing proprietary extensions keep them in
+//! round trips.
 
 use ddex_core::models::{Extensions, XmlFragment, ProcessingInstruction, Comment};
 use crate::error::BuildError;

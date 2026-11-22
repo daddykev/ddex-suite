@@ -6,7 +6,7 @@ use quick_xml::{events::Event, Reader};
 use std::collections::HashSet;
 use std::io::BufRead;
 
-/// High-performance selective parser for extracting specific fields
+/// Selective parser for extracting specific fields
 #[derive(Debug, Clone)]
 pub struct SelectiveParser {
     /// Target fields to extract (e.g., "ISRC", "ReleaseId", etc.)
@@ -72,7 +72,7 @@ impl SelectiveParser {
         self
     }
 
-    /// Extract ISRCs from XML with maximum performance
+    /// Extract ISRCs from XML
     pub fn extract_isrcs<R: BufRead>(&mut self, reader: R) -> Result<Vec<String>, ParseError> {
         let result = self.extract_fields(reader)?;
 
@@ -191,7 +191,7 @@ impl SelectiveParser {
         })
     }
 
-    /// Ultra-fast ISRC extraction using pattern matching (10x+ faster than XML parsing)
+    /// ISRC extraction by text pattern matching instead of XML parsing (not benchmarked)
     pub fn extract_isrcs_fast<R: BufRead>(
         &mut self,
         mut reader: R,
@@ -219,7 +219,7 @@ impl SelectiveParser {
         Ok(isrcs)
     }
 
-    /// Extract ISRCs from content using fastest possible pattern matching
+    /// Extract ISRCs from content by pattern matching
     fn extract_isrcs_from_content(&self, content: &str, isrcs: &mut Vec<String>) {
         // Look for ISRC patterns, handling both direct ISRC tags and SoundRecordingId with ISRC namespace
         let mut pos = 0;

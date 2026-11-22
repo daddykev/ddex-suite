@@ -25,7 +25,7 @@
 //!
 //! - **ASTGenerator**: Main orchestrator that converts requests to AST
 //! - **xml_writer**: High-level XML writer with formatting
-//! - **optimized_xml_writer**: Performance-optimized XML writer for large files
+//! - **optimized_xml_writer**: Alternative writer with string interning (not used by `DDEXBuilder::build`)
 //!
 //! ## Generation Process
 //!
@@ -84,10 +84,15 @@
 //!
 //! ## Performance Characteristics
 //!
-//! - **Small releases (< 10 tracks)**: ~1-2ms generation time
-//! - **Medium releases (10-50 tracks)**: ~5-8ms generation time  
-//! - **Large releases (50+ tracks)**: ~15-25ms generation time
-//! - **Memory usage**: ~2-5MB peak for typical releases
+//! Criterion benches of `DDEXBuilder::build` for ERN 4.3 on an Apple M1 Pro, release
+//! profile (`dev-docs/PERFORMANCE.md`):
+//!
+//! - **1 track**: 2.7 ms
+//! - **12 tracks**: 11.4 ms
+//! - **50 tracks**: 41.7 ms
+//! - **100 tracks**: 80 ms (about 0.8 ms per track plus 2 ms per message)
+//!
+//! Memory use has not been measured.
 //!
 //! ## Error Handling
 //!
