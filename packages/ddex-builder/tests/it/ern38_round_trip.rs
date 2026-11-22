@@ -502,7 +502,8 @@ fn ern38_round_trip() {
 /// 3.8.2: realistic data through the 3.8.2 generator, checked against the 3.8.2 XSD. The
 /// main release and the deals are compared with the original (3.8.x has no `TrackRelease`
 /// element, so the rebuilt message lists track releases as further `Release`s). Samples
-/// with video resources must fail with only the "no Video for 3.8.x" errors.
+/// with video resources must fail with only the "no Video for 3.8.x" errors; samples with an
+/// empty `<MessageId/>` may also fail on the 3.8.2 builder's MessageId requirement.
 #[test]
 fn official_4x_samples_rebuilt_as_ern382() {
     use crate::ern4_support::request_from_parsed;
@@ -526,6 +527,20 @@ fn official_4x_samples_rebuilt_as_ern382() {
                     table.push(format!(
                         "| {name} | fails as expected | - | - | builder: no Video resources for 3.8.x ({} video resources) |",
                         errors.len()
+                    ));
+                    continue;
+                }
+                // Expected: the sample's `<MessageId/>` is empty (schema-valid xs:string, read
+                // as ""), and the 3.8.2 builder treats an empty MessageId as missing.
+                Err(ddex_builder::BuildError::ValidationFailed { errors })
+                    if original.graph.message_header.message_id.is_empty()
+                        && errors.iter().all(|e| {
+                            e.contains("resource_kind is Video")
+                                || e.contains("requires MessageHeader/MessageId")
+                        }) =>
+                {
+                    table.push(format!(
+                        "| {name} | fails as expected | - | - | builder: empty MessageId (`<MessageId/>` in the sample) is treated as missing for 3.8.2 |"
                     ));
                     continue;
                 }

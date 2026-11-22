@@ -25,6 +25,7 @@ mod security;
 mod security_fixes;
 mod security_integration;
 mod target_version;
+mod whitespace_round_trip;
 mod xml_generation;
 
 #[cfg(feature = "perf-tests")]

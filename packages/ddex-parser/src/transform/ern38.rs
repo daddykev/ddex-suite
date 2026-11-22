@@ -143,7 +143,7 @@ pub(crate) fn release(node: &XNode, version: ERNVersion) -> Release {
 
     Release {
         release_reference: node
-            .child_value("ReleaseReference")
+            .child_reference("ReleaseReference")
             .unwrap_or_else(|| format!("R_{:?}", version)),
         // Every direct ReleaseId (3.8.x allows several); never RelatedRelease's.
         release_id: node
@@ -166,7 +166,7 @@ pub(crate) fn release(node: &XNode, version: ERNVersion) -> Release {
             .child("ReleaseResourceReferenceList")
             .map(|list| {
                 list.children_named("ReleaseResourceReference")
-                    .filter_map(XNode::value)
+                    .filter_map(XNode::reference)
                     .map(|r| ReleaseResourceReference {
                         resource_reference: r,
                         sequence_number: None,
@@ -307,7 +307,7 @@ pub(crate) fn resource(node: &XNode, resource_type: ResourceType, version: ERNVe
 
     Resource {
         resource_reference: node
-            .child_value("ResourceReference")
+            .child_reference("ResourceReference")
             .unwrap_or_else(|| format!("RES_{:?}", version)),
         resource_type,
         resource_id,

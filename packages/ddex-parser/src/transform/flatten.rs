@@ -155,8 +155,8 @@ impl Flattener {
                     resource_type: format!("{:?}", resource.resource_type),
                     // ReferenceTitle is not present on all resource types (e.g. Image), so it stays None
                     // when absent rather than being filled in.
-                    title: Self::get_primary_title_optional(&resource.reference_title)
-                        .filter(|t| !t.is_empty()),
+                    // A present but empty title is Some("").
+                    title: Self::get_primary_title_optional(&resource.reference_title),
                     duration: resource.duration,
                     technical_details: TechnicalInfo {
                         file_format: resource
@@ -393,9 +393,8 @@ impl Flattener {
             .enumerate()
             .map(|(idx, (rref, resource))| {
                 // Title and duration are optional in the source; absent values stay None.
-                let title = resource
-                    .and_then(|r| Self::get_primary_title_optional(&r.reference_title))
-                    .filter(|t| !t.is_empty());
+                let title =
+                    resource.and_then(|r| Self::get_primary_title_optional(&r.reference_title));
                 let duration = resource.and_then(|r| r.duration);
                 let duration_formatted = duration.map(ParsedTrack::format_duration);
                 let details = resource.map(ResourceDetails::of).unwrap_or_default();
@@ -687,7 +686,8 @@ impl<'a> Ern4Index<'a> {
 }
 
 /// `DisplayTitleText` (IsDefault, else first), falling back to `DisplayTitle/TitleText`
-/// (IsDefault, else first), then to the first legacy title. Empty strings count as absent.
+/// (IsDefault, else first), then to the first legacy title. A present but empty title is
+/// `Some("")`, exactly as written.
 fn display_title(
     display_title_text: &[DisplayText],
     display_title: &[DisplayText],
@@ -697,7 +697,6 @@ fn display_title(
         .or_else(|| DisplayText::pick_default(display_title))
         .map(|t| t.text.clone())
         .or_else(|| legacy.first().map(|t| t.text.clone()))
-        .filter(|t| !t.is_empty())
 }
 
 /// Disc anchor for position numbering: the group that defines the disc.

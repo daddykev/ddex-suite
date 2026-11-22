@@ -46,10 +46,8 @@ const FRAGMENTS: &[&str] = &[
 
 fn text() -> impl Strategy<Value = String> {
     prop::collection::vec(prop::sample::select(FRAGMENTS), 1..6)
+        // ddex-parser keeps text exactly as written, surrounding whitespace included.
         .prop_map(|parts| parts.concat())
-        // ddex-parser trims surrounding whitespace, so the comparable text has none
-        .prop_map(|s| s.trim().to_string())
-        .prop_filter("non-empty", |s| !s.is_empty())
 }
 
 fn has_illegal(s: &str) -> bool {

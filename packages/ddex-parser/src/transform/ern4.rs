@@ -79,10 +79,21 @@ impl XNode {
         }
     }
 
-    /// Trimmed text content, `None` when empty.
+    /// The text of a leaf element exactly as written (`xs:string`-derived values keep their
+    /// whitespace): `Some("")` for an empty element, `None` for an element with element
+    /// children (whitespace between child elements is formatting, not text).
     pub(crate) fn value(&self) -> Option<String> {
-        let t = self.text.trim();
-        (!t.is_empty()).then(|| t.to_string())
+        self.children.is_empty().then(|| self.text.clone())
+    }
+
+    /// The text of a reference (`xs:ID` / `xs:IDREF`, i.e. `xs:token`-derived) with the XSD
+    /// `whiteSpace="collapse"` rule applied.
+    pub(crate) fn reference(&self) -> Option<String> {
+        self.value().map(|v| collapse(&v))
+    }
+
+    pub(crate) fn child_reference(&self, name: &str) -> Option<String> {
+        self.child(name).and_then(XNode::reference)
     }
 
     pub(crate) fn child_value(&self, name: &str) -> Option<String> {
@@ -98,6 +109,24 @@ impl XNode {
     pub(crate) fn parsed<T: std::str::FromStr>(&self) -> Option<T> {
         self.text.trim().parse().ok()
     }
+}
+
+/// XML end-of-line handling (XML 1.0 §2.11): `\r\n` and a lone `\r` become `\n`.
+fn normalize_line_endings(text: &str) -> std::borrow::Cow<'_, str> {
+    if text.contains('\r') {
+        std::borrow::Cow::Owned(text.replace("\r\n", "\n").replace('\r', "\n"))
+    } else {
+        std::borrow::Cow::Borrowed(text)
+    }
+}
+
+/// XSD `whiteSpace="collapse"`: tabs, line feeds and carriage returns become spaces, runs of
+/// spaces become one, and leading/trailing spaces are removed.
+pub(crate) fn collapse(text: &str) -> String {
+    text.split([' ', '\t', '\n', '\r'])
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// Read the element whose start tag was just consumed into an [`XNode`], consuming events
@@ -131,12 +160,20 @@ pub(crate) fn read_subtree<R: BufRead>(
             }
             Event::Text(ref e) => {
                 if let Some(node) = stack.last_mut() {
-                    node.text.push_str(&e.unescape().unwrap_or_default());
+                    // Line endings are normalized before entity expansion (XML 1.0 §2.11), so
+                    // a `&#13;` reference still yields a carriage return.
+                    let lossy = String::from_utf8_lossy(e.as_ref());
+                    let raw = normalize_line_endings(&lossy);
+                    node.text
+                        .push_str(&quick_xml::escape::unescape(&raw).unwrap_or_default());
                 }
             }
             Event::CData(ref e) => {
                 if let Some(node) = stack.last_mut() {
-                    node.text.push_str(&String::from_utf8_lossy(e.as_ref()));
+                    node.text
+                        .push_str(&normalize_line_endings(&String::from_utf8_lossy(
+                            e.as_ref(),
+                        )));
                 }
             }
             Event::End(_) => {
@@ -215,7 +252,7 @@ fn display_artists(parent: &XNode) -> Vec<Artist> {
     parent
         .children_named("DisplayArtist")
         .map(|n| Artist {
-            party_reference: n.child_value("ArtistPartyReference"),
+            party_reference: n.child_reference("ArtistPartyReference"),
             artist_role: n.child_value("DisplayArtistRole").into_iter().collect(),
             display_artist_name: Vec::new(),
             sequence_number: n.attr("SequenceNumber").and_then(|v| v.trim().parse().ok()),
@@ -255,7 +292,7 @@ fn linked_references(parent: &XNode) -> Vec<LinkedReleaseResourceReference> {
     parent
         .children_named("LinkedReleaseResourceReference")
         .filter_map(|n| {
-            n.value().map(|r| LinkedReleaseResourceReference {
+            n.reference().map(|r| LinkedReleaseResourceReference {
                 resource_reference: r,
                 link_description: n.attr("LinkDescription").map(str::to_string),
             })
@@ -271,7 +308,7 @@ pub(crate) fn resource_group(node: &XNode) -> ResourceGroup {
             .child("ReleaseId")
             .map(release_identifiers)
             .unwrap_or_default(),
-        resource_group_release_reference: node.child_value("ResourceGroupReleaseReference"),
+        resource_group_release_reference: node.child_reference("ResourceGroupReleaseReference"),
         resource_groups: node
             .children_named("ResourceGroup")
             .map(resource_group)
@@ -282,7 +319,7 @@ pub(crate) fn resource_group(node: &XNode) -> ResourceGroup {
                 // ReleaseResourceReference is mandatory; an item without one is skipped.
                 Some(ResourceGroupContentItem {
                     sequence_number: item.child_i32("SequenceNumber"),
-                    release_resource_reference: item.child_value("ReleaseResourceReference")?,
+                    release_resource_reference: item.child_reference("ReleaseResourceReference")?,
                     linked_release_resource_references: linked_references(item),
                 })
             })
@@ -421,6 +458,14 @@ fn values(parent: &XNode, name: &str) -> Vec<String> {
         .collect()
 }
 
+/// Reference values (collapsed) of the direct children named `name`, in document order.
+fn references(parent: &XNode, name: &str) -> Vec<String> {
+    parent
+        .children_named(name)
+        .filter_map(XNode::reference)
+        .collect()
+}
+
 fn to_localized(texts: &[DisplayText]) -> Vec<LocalizedString> {
     texts
         .iter()
@@ -438,7 +483,7 @@ pub(crate) fn release(node: &XNode, version: ERNVersion) -> Release {
     Release {
         // Same fallback as the 3.8.x path for the (schema-mandatory) reference.
         release_reference: node
-            .child_value("ReleaseReference")
+            .child_reference("ReleaseReference")
             .unwrap_or_else(|| format!("R_{:?}", version)),
         // Only the Release's own ReleaseId: never RelatedRelease or ResourceGroup ReleaseIds.
         release_id: node
@@ -470,7 +515,7 @@ pub(crate) fn release(node: &XNode, version: ERNVersion) -> Release {
             .and_then(|t| t.attr("UserDefinedValue"))
             .map(str::to_string),
         parental_warning_type: values(node, "ParentalWarningType"),
-        release_label_reference: values(node, "ReleaseLabelReference"),
+        release_label_reference: references(node, "ReleaseLabelReference"),
         attributes: None,
         extensions: None,
         comments: None,
@@ -486,16 +531,16 @@ pub(crate) fn release(node: &XNode, version: ERNVersion) -> Release {
 /// `ReleaseResourceReference` is missing (no reference is invented).
 pub(crate) fn track_release(node: &XNode) -> Option<TrackRelease> {
     Some(TrackRelease {
-        release_reference: node.child_value("ReleaseReference")?,
+        release_reference: node.child_reference("ReleaseReference")?,
         release_id: node
             .child("ReleaseId")
             .map(release_identifiers)
             .unwrap_or_default(),
         display_title_text: display_texts(node, "DisplayTitleText"),
         display_title: display_titles(node),
-        release_resource_reference: node.child_value("ReleaseResourceReference")?,
+        release_resource_reference: node.child_reference("ReleaseResourceReference")?,
         linked_release_resource_references: linked_references(node),
-        release_label_reference: values(node, "ReleaseLabelReference"),
+        release_label_reference: references(node, "ReleaseLabelReference"),
         genre: genres(node, None),
         is_main_release: node.attr_bool("IsMainRelease"),
     })
@@ -540,7 +585,7 @@ pub(crate) fn party(node: &XNode) -> Party {
         }
     }
     Party {
-        party_reference: node.child_value("PartyReference"),
+        party_reference: node.child_reference("PartyReference"),
         party_id,
         isni,
         ipi,
@@ -598,14 +643,14 @@ pub(crate) fn resource(node: &XNode, resource_type: ResourceType, version: ERNVe
     Resource {
         // Same fallback as the 3.8.x path for the (schema-mandatory) reference.
         resource_reference: node
-            .child_value("ResourceReference")
+            .child_reference("ResourceReference")
             .unwrap_or_else(|| format!("RES_{:?}", version)),
         resource_type,
         resource_id,
         reference_title: to_localized(&display_title_text),
         duration: node
             .child_value("Duration")
-            .and_then(|d| super::graph::parse_duration(&d).ok()),
+            .and_then(|d| super::graph::parse_duration(d.trim()).ok()),
         technical_details: Vec::new(),
         rights_controller: Vec::new(),
         p_line,

@@ -56,7 +56,9 @@ impl GraphBuilder {
         let mut xml_reader = Reader::from_reader(&mut reader);
 
         // Enable strict XML validation
-        xml_reader.config_mut().trim_text(true);
+        // Text is kept exactly as written (whitespace-only text between elements is
+        // formatting and never read as a value).
+        xml_reader.config_mut().trim_text(false);
         xml_reader.config_mut().check_end_names = true;
         xml_reader.config_mut().expand_empty_elements = false;
 
@@ -66,7 +68,9 @@ impl GraphBuilder {
         // Reset reader to start for main parsing loop
         reader.seek(std::io::SeekFrom::Start(0))?;
         xml_reader = Reader::from_reader(&mut reader);
-        xml_reader.config_mut().trim_text(true);
+        // Text is kept exactly as written (whitespace-only text between elements is
+        // formatting and never read as a value).
+        xml_reader.config_mut().trim_text(false);
         xml_reader.config_mut().check_end_names = true;
         xml_reader.config_mut().expand_empty_elements = false;
 
@@ -164,9 +168,11 @@ impl GraphBuilder {
                                 b"ReleaseDeal" if in_deal_list => {
                                     // A ReleaseDeal holds one or more Deals, all linked to its
                                     // DealReleaseReferences
-                                    deals.extend(
-                                        self.parse_release_deal(&mut xml_reader, &mut validator)?,
-                                    );
+                                    deals.extend(self.parse_release_deal(
+                                        &mut xml_reader,
+                                        &mut validator,
+                                        e,
+                                    )?);
                                 }
                                 _ => {}
                             }
@@ -275,199 +281,113 @@ impl GraphBuilder {
         self.build_from_xml_with_security_config(reader, security_config)
     }
 
+    /// Read `MessageHeader` (first pass). Values follow the XSD whitespace rules: text
+    /// (`xs:string`) exactly as written, `MessageCreatedDateTime` (`xs:dateTime`) collapsed
+    /// before parsing. Missing values keep the historical fallbacks (message id
+    /// `MSG_<version>`, creation time "now").
     fn parse_header_from_xml<R: BufRead>(
         &self,
         reader: &mut Reader<R>,
     ) -> Result<MessageHeader, ParseError> {
         use chrono::Utc;
-        use ddex_core::models::common::LocalizedString;
-
-        let mut message_id = format!("MSG_{:?}", self.version); // fallback
-        let mut message_thread_id: Option<String> = None;
-        let mut message_control_type: Option<String> = None;
-        let mut message_created_date_time = Utc::now();
-        let mut sender_party_names = Vec::new();
-        let mut recipient_party_names = Vec::new();
-        let mut sender_party_ids = Vec::new();
-        let mut recipient_party_ids = Vec::new();
+        use ddex_core::models::common::{Identifier, IdentifierType, LocalizedString};
 
         let mut buf = Vec::new();
-        let mut in_message_header = false;
-        let mut in_message_sender = false;
-        let mut in_message_recipient = false;
-        let mut in_sender_party_name = false;
-        let mut in_recipient_party_name = false;
-        let mut current_text = String::new();
-
-        // Parse until we exit MessageHeader or reach EOF
-        loop {
+        let node = loop {
             match reader.read_event_into(&mut buf) {
-                Ok(Event::Start(ref e)) => match e.name().as_ref() {
-                    b"MessageHeader" => in_message_header = true,
-                    b"MessageId" if in_message_header => current_text.clear(),
-                    b"MessageThreadId" if in_message_header => current_text.clear(),
-                    b"MessageControlType" if in_message_header => current_text.clear(),
-                    b"MessageCreatedDateTime" if in_message_header => current_text.clear(),
-                    b"MessageSender" if in_message_header => in_message_sender = true,
-                    b"MessageRecipient" if in_message_header => in_message_recipient = true,
-                    b"PartyId" if in_message_sender => {
-                        current_text.clear();
-                    }
-                    b"PartyId" if in_message_recipient => {
-                        current_text.clear();
-                    }
-                    b"PartyName" if in_message_sender => {
-                        in_sender_party_name = true;
-                        current_text.clear();
-                    }
-                    b"PartyName" if in_message_recipient => {
-                        in_recipient_party_name = true;
-                        current_text.clear();
-                    }
-                    b"FullName" if in_sender_party_name || in_recipient_party_name => {
-                        current_text.clear();
-                    }
-                    _ => {}
-                },
-                Ok(Event::Text(ref e)) => {
-                    current_text.push_str(&e.unescape().unwrap_or_default());
+                Ok(Event::Start(ref e)) if e.local_name().as_ref() == b"MessageHeader" => {
+                    let start = e.to_owned();
+                    let mut validator = XmlValidator::strict();
+                    validator.validate_event(&Event::Start(start.clone()), reader)?;
+                    break Some(ern4::read_subtree(reader, &mut validator, &start)?);
                 }
-                Ok(Event::End(ref e)) => {
-                    match e.name().as_ref() {
-                        b"MessageHeader" => {
-                            break; // We're done parsing the header
-                        }
-                        b"MessageId" if in_message_header => {
-                            if !current_text.trim().is_empty() {
-                                message_id = current_text.trim().to_string();
-                            }
-                            current_text.clear();
-                        }
-                        b"MessageControlType" if in_message_header => {
-                            message_control_type = Some(current_text.clone());
-                            current_text.clear();
-                        }
-                        b"MessageThreadId" if in_message_header => {
-                            if !current_text.trim().is_empty() {
-                                message_thread_id = Some(current_text.trim().to_string());
-                            }
-                            current_text.clear();
-                        }
-                        b"MessageCreatedDateTime" if in_message_header => {
-                            // Try to parse the datetime, fall back to current time if invalid
-                            if let Ok(parsed_time) =
-                                chrono::DateTime::parse_from_rfc3339(current_text.trim())
-                            {
-                                message_created_date_time = parsed_time.with_timezone(&Utc);
-                            }
-                            current_text.clear();
-                        }
-                        b"MessageSender" => in_message_sender = false,
-                        b"MessageRecipient" => in_message_recipient = false,
-                        b"PartyId" if in_message_sender => {
-                            // Handle PartyId text content
-                            if !current_text.trim().is_empty() {
-                                use ddex_core::models::common::{Identifier, IdentifierType};
-                                sender_party_ids.push(Identifier {
-                                    id_type: IdentifierType::Proprietary,
-                                    namespace: None,
-                                    value: current_text.trim().to_string(),
-                                });
-                            }
-                            current_text.clear();
-                        }
-                        b"PartyId" if in_message_recipient => {
-                            // Handle PartyId text content
-                            if !current_text.trim().is_empty() {
-                                use ddex_core::models::common::{Identifier, IdentifierType};
-                                recipient_party_ids.push(Identifier {
-                                    id_type: IdentifierType::Proprietary,
-                                    namespace: None,
-                                    value: current_text.trim().to_string(),
-                                });
-                            }
-                            current_text.clear();
-                        }
-                        b"PartyName" if in_message_sender => {
-                            // Handle direct text content in PartyName (fallback for simplified format)
-                            if !current_text.trim().is_empty() {
-                                sender_party_names
-                                    .push(LocalizedString::new(current_text.trim().to_string()));
-                            }
-                            current_text.clear();
-                            in_sender_party_name = false;
-                        }
-                        b"PartyName" if in_message_recipient => {
-                            // Handle direct text content in PartyName (fallback for simplified format)
-                            if !current_text.trim().is_empty() {
-                                recipient_party_names
-                                    .push(LocalizedString::new(current_text.trim().to_string()));
-                            }
-                            current_text.clear();
-                            in_recipient_party_name = false;
-                        }
-                        b"FullName" if in_sender_party_name => {
-                            if !current_text.trim().is_empty() {
-                                sender_party_names
-                                    .push(LocalizedString::new(current_text.trim().to_string()));
-                            }
-                            current_text.clear();
-                        }
-                        b"FullName" if in_recipient_party_name => {
-                            if !current_text.trim().is_empty() {
-                                recipient_party_names
-                                    .push(LocalizedString::new(current_text.trim().to_string()));
-                            }
-                            current_text.clear();
-                        }
-                        _ => {}
-                    }
-                }
-                Ok(Event::Eof) => break,
+                Ok(Event::Eof) => break None,
                 Err(e) => {
                     return Err(ParseError::XmlError(format!(
                         "XML parsing error in header: {}",
                         e
-                    )));
+                    )))
                 }
                 _ => {}
             }
             buf.clear();
+        };
+        let node = node.unwrap_or_default();
+
+        // PartyId values and PartyName/FullName (or, simplified, PartyName's own text) of a
+        // MessageSender / MessageRecipient.
+        let party =
+            |p: &ern4::XNode, ids: &mut Vec<Identifier>, names: &mut Vec<LocalizedString>| {
+                ids.extend(p.children_named("PartyId").filter_map(|id| {
+                    Some(Identifier {
+                        id_type: IdentifierType::Proprietary,
+                        namespace: None,
+                        value: id.value()?,
+                    })
+                }));
+                for pn in p.children_named("PartyName") {
+                    let full: Vec<_> = pn.children_named("FullName").collect();
+                    if full.is_empty() {
+                        names.extend(pn.value().map(LocalizedString::new));
+                    } else {
+                        names.extend(
+                            full.into_iter()
+                                .filter_map(ern4::XNode::value)
+                                .map(LocalizedString::new),
+                        );
+                    }
+                }
+            };
+        let (mut sender_ids, mut sender_names) = (Vec::new(), Vec::new());
+        for p in node.children_named("MessageSender") {
+            party(p, &mut sender_ids, &mut sender_names);
+        }
+        let (mut recipient_ids, mut recipient_names) = (Vec::new(), Vec::new());
+        for p in node.children_named("MessageRecipient") {
+            party(p, &mut recipient_ids, &mut recipient_names);
         }
 
         Ok(MessageHeader {
-            message_id,
+            message_id: node
+                .child_value("MessageId")
+                .unwrap_or_else(|| format!("MSG_{:?}", self.version)),
             message_type: MessageType::NewReleaseMessage,
-            message_created_date_time,
+            message_created_date_time: node
+                .child_value("MessageCreatedDateTime")
+                .and_then(|t| chrono::DateTime::parse_from_rfc3339(t.trim()).ok())
+                .map(|t| t.with_timezone(&Utc))
+                .unwrap_or_else(Utc::now),
             message_sender: MessageSender {
-                party_id: sender_party_ids,
-                party_name: sender_party_names,
+                party_id: sender_ids,
+                party_name: sender_names,
                 trading_name: None,
                 extensions: None,
                 attributes: None,
                 comments: None,
             },
             message_recipient: MessageRecipient {
-                party_id: recipient_party_ids,
-                party_name: recipient_party_names,
+                party_id: recipient_ids,
+                party_name: recipient_names,
                 trading_name: None,
                 extensions: None,
                 attributes: None,
                 comments: None,
             },
-            message_control_type: message_control_type.map(|t| match t.as_str() {
-                "LiveMessage" => MessageControlType::LiveMessage,
-                "TestMessage" => MessageControlType::TestMessage,
-                _ => MessageControlType::Other(t),
+            message_control_type: node.child_value("MessageControlType").map(|t| {
+                match t.as_str() {
+                    "LiveMessage" => MessageControlType::LiveMessage,
+                    "TestMessage" => MessageControlType::TestMessage,
+                    _ => MessageControlType::Other(t),
+                }
             }),
-            message_thread_id,
+            message_thread_id: node.child_value("MessageThreadId"),
             extensions: None,
             attributes: None,
             comments: None,
         })
     }
 
-    /// Parse a `ReleaseDeal` into its `Deal`s.
+    /// Parse a `ReleaseDeal` (whose start tag `start` was just consumed) into its `Deal`s.
     ///
     /// ERN 3.8.x and 4.x share the structure
     /// `ReleaseDeal { DealReleaseReference+, Deal+ { DealReference?, DealTerms } }`.
@@ -478,255 +398,105 @@ impl GraphBuilder {
         &self,
         reader: &mut Reader<R>,
         validator: &mut crate::parser::xml_validator::XmlValidator,
+        start: &quick_xml::events::BytesStart,
     ) -> Result<Vec<ddex_core::models::graph::Deal>, ParseError> {
-        use chrono::{DateTime, Utc};
-        use ddex_core::models::common::ValidityPeriod;
-        use ddex_core::models::graph::{CommercialModelType, Deal, DealTerms, UseType};
-
-        /// Values collected for one deal.
-        #[derive(Default)]
-        struct DealAcc {
-            deal_reference: Option<String>,
-            territory_codes: Vec<String>,
-            use_types: Vec<UseType>,
-            commercial_model_types: Vec<CommercialModelType>,
-            validity_period: Option<ValidityPeriod>,
-            start_date: Option<DateTime<Utc>>,
-            end_date: Option<DateTime<Utc>>,
-            seen: bool,
-        }
-
-        impl DealAcc {
-            fn into_deal(self, release_refs: &[String]) -> Deal {
-                Deal {
-                    deal_reference: self.deal_reference,
-                    deal_release_reference: release_refs.to_vec(),
-                    deal_terms: DealTerms {
-                        validity_period: self.validity_period,
-                        start_date: self.start_date,
-                        end_date: self.end_date,
-                        territory_code: self.territory_codes,
-                        excluded_territory_code: Vec::new(),
-                        distribution_channel: Vec::new(),
-                        excluded_distribution_channel: Vec::new(),
-                        commercial_model_type: self.commercial_model_types,
-                        use_type: self.use_types,
-                        price_information: Vec::new(),
-                        wholesale_price: Vec::new(),
-                        suggested_retail_price: Vec::new(),
-                        pre_order_date: None,
-                        pre_order_preview_date: None,
-                        instant_gratification_date: None,
-                        takedown_date: None,
-                    },
-                }
-            }
-        }
-
-        let mut release_refs: Vec<String> = Vec::new();
-        let mut finished: Vec<DealAcc> = Vec::new();
-        // Deal-level values: either inside the current <Deal>, or directly under <ReleaseDeal>
-        // for the simplified layout.
-        let mut current = DealAcc::default();
-        let mut in_deal_element = false;
-        let mut current_text = String::new();
-
-        // State tracking for nested elements
-        let mut in_release_ref = false;
-        let mut in_deal_reference = false;
-        let mut in_deal_terms = false;
-        let mut in_territory_code = false;
-        let mut in_use_type = false;
-        let mut in_commercial_model_type = false;
-        let mut in_validity_period = false;
-        let mut in_start_date = false;
-        let mut in_end_date = false;
-
-        let mut buf = Vec::new();
-        let mut depth = 1;
-        while depth > 0 {
-            match reader.read_event_into(&mut buf) {
-                Ok(ref event) => {
-                    // Validate each event so the validator stack stays consistent
-                    validator.validate_event(event, reader)?;
-
-                    match event {
-                        Event::Start(ref e) => {
-                            depth += 1;
-                            match e.name().as_ref() {
-                                b"DealReleaseReference" if depth == 2 => {
-                                    in_release_ref = true;
-                                    current_text.clear();
-                                }
-                                b"Deal" if depth == 2 => {
-                                    // A new <Deal>; anything collected at ReleaseDeal level so far
-                                    // belongs to the simplified layout and is kept separately.
-                                    if current.seen {
-                                        finished.push(std::mem::take(&mut current));
-                                    }
-                                    in_deal_element = true;
-                                }
-                                b"DealReference" => {
-                                    in_deal_reference = true;
-                                    current_text.clear();
-                                }
-                                b"DealTerms" => in_deal_terms = true,
-                                b"TerritoryCode" if in_deal_terms => {
-                                    in_territory_code = true;
-                                    current_text.clear();
-                                }
-                                b"UseType" if in_deal_terms => {
-                                    in_use_type = true;
-                                    current_text.clear();
-                                }
-                                b"CommercialModelType" if in_deal_terms => {
-                                    in_commercial_model_type = true;
-                                    current_text.clear();
-                                }
-                                b"ValidityPeriod" if in_deal_terms => {
-                                    in_validity_period = true;
-                                }
-                                b"StartDate" if in_validity_period => {
-                                    in_start_date = true;
-                                    current_text.clear();
-                                }
-                                b"EndDate" if in_validity_period => {
-                                    in_end_date = true;
-                                    current_text.clear();
-                                }
-                                _ => {}
-                            }
-                        }
-                        Event::Text(ref e) => {
-                            if in_release_ref
-                                || in_deal_reference
-                                || in_territory_code
-                                || in_use_type
-                                || in_commercial_model_type
-                                || in_start_date
-                                || in_end_date
-                            {
-                                current_text.push_str(&e.unescape().unwrap_or_default());
-                            }
-                        }
-                        Event::End(ref e) => {
-                            depth -= 1;
-                            match e.name().as_ref() {
-                                b"DealReleaseReference" if in_release_ref => {
-                                    if !current_text.trim().is_empty() {
-                                        release_refs.push(current_text.trim().to_string());
-                                    }
-                                    in_release_ref = false;
-                                    current_text.clear();
-                                }
-                                b"Deal" if in_deal_element && depth == 1 => {
-                                    current.seen = true;
-                                    finished.push(std::mem::take(&mut current));
-                                    in_deal_element = false;
-                                }
-                                b"DealReference" => {
-                                    if !current_text.trim().is_empty() {
-                                        current.deal_reference =
-                                            Some(current_text.trim().to_string());
-                                        current.seen = true;
-                                    }
-                                    in_deal_reference = false;
-                                    current_text.clear();
-                                }
-                                b"DealTerms" => {
-                                    in_deal_terms = false;
-                                    current.seen = true;
-                                }
-                                b"TerritoryCode" if in_territory_code => {
-                                    if !current_text.trim().is_empty() {
-                                        current
-                                            .territory_codes
-                                            .push(current_text.trim().to_string());
-                                    }
-                                    in_territory_code = false;
-                                    current_text.clear();
-                                }
-                                b"UseType" if in_use_type => {
-                                    if !current_text.trim().is_empty() {
-                                        let use_type = match current_text.trim() {
-                                            "Stream" => UseType::Stream,
-                                            "Download" => UseType::Download,
-                                            "OnDemandStream" => UseType::OnDemandStream,
-                                            "NonInteractiveStream" => UseType::NonInteractiveStream,
-                                            other => UseType::Other(other.to_string()),
-                                        };
-                                        current.use_types.push(use_type);
-                                    }
-                                    in_use_type = false;
-                                    current_text.clear();
-                                }
-                                b"CommercialModelType" if in_commercial_model_type => {
-                                    if !current_text.trim().is_empty() {
-                                        let commercial_model = match current_text.trim() {
-                                            "PayAsYouGoModel" => {
-                                                CommercialModelType::PayAsYouGoModel
-                                            }
-                                            "SubscriptionModel" => {
-                                                CommercialModelType::SubscriptionModel
-                                            }
-                                            "AdSupportedModel" => {
-                                                CommercialModelType::AdSupportedModel
-                                            }
-                                            other => CommercialModelType::Other(other.to_string()),
-                                        };
-                                        current.commercial_model_types.push(commercial_model);
-                                    }
-                                    in_commercial_model_type = false;
-                                    current_text.clear();
-                                }
-                                b"ValidityPeriod" if in_validity_period => {
-                                    current.validity_period = Some(ValidityPeriod {
-                                        start_date: current.start_date,
-                                        end_date: current.end_date,
-                                    });
-                                    in_validity_period = false;
-                                }
-                                b"StartDate" if in_start_date => {
-                                    if let Some(date) = deal_date(&current_text) {
-                                        current.start_date = Some(date);
-                                    }
-                                    in_start_date = false;
-                                    current_text.clear();
-                                }
-                                b"EndDate" if in_end_date => {
-                                    if let Some(date) = deal_date(&current_text) {
-                                        current.end_date = Some(date);
-                                    }
-                                    in_end_date = false;
-                                    current_text.clear();
-                                }
-                                _ => {}
-                            }
-                        }
-                        Event::Eof => break,
-                        _ => {}
-                    }
-                }
-                Err(e) => {
-                    return Err(ParseError::XmlError(format!(
-                        "XML parsing error in release deal: {}",
-                        e
-                    )));
-                }
-            }
-            buf.clear();
-        }
-
-        // Simplified layout: deal values directly under <ReleaseDeal>
-        if current.seen {
-            finished.push(current);
-        }
-
-        Ok(finished
-            .into_iter()
-            .map(|acc| acc.into_deal(&release_refs))
-            .collect())
+        let node = ern4::read_subtree(reader, validator, start)?;
+        Ok(release_deal(&node))
     }
+}
+
+/// Map a `ReleaseDeal` element (see [`GraphBuilder::parse_release_deal`]).
+fn release_deal(node: &ern4::XNode) -> Vec<ddex_core::models::graph::Deal> {
+    use ddex_core::models::common::ValidityPeriod;
+    use ddex_core::models::graph::{CommercialModelType, Deal, DealTerms, UseType};
+
+    // DealReleaseReference is an xs:IDREF: collapsed.
+    let release_refs: Vec<String> = node
+        .children_named("DealReleaseReference")
+        .filter_map(ern4::XNode::reference)
+        .collect();
+
+    let deal = |d: &ern4::XNode| -> Deal {
+        let terms = d.child("DealTerms");
+        let in_terms = |name: &'static str| {
+            terms
+                .into_iter()
+                .flat_map(move |t| t.children_named(name))
+                .filter_map(ern4::XNode::value)
+        };
+        // UseType: 4.x DealTerms/UseType, 3.8.x DealTerms/Usage/UseType.
+        let use_types = terms
+            .into_iter()
+            .flat_map(|t| {
+                t.children_named("UseType").chain(
+                    t.children_named("Usage")
+                        .flat_map(|u| u.children_named("UseType")),
+                )
+            })
+            .filter_map(ern4::XNode::value)
+            .map(|v| match v.as_str() {
+                "Stream" => UseType::Stream,
+                "Download" => UseType::Download,
+                "OnDemandStream" => UseType::OnDemandStream,
+                "NonInteractiveStream" => UseType::NonInteractiveStream,
+                _ => UseType::Other(v),
+            })
+            .collect();
+        // ValidityPeriod: StartDate / EndDate; with several periods the last date given wins
+        // (as before).
+        let periods: Vec<_> = terms
+            .into_iter()
+            .flat_map(|t| t.children_named("ValidityPeriod"))
+            .collect();
+        let date_of = |name: &str| {
+            periods
+                .iter()
+                .filter_map(|p| p.child_value(name))
+                .filter_map(|v| deal_date(&v))
+                .last()
+        };
+        let (start_date, end_date) = (date_of("StartDate"), date_of("EndDate"));
+        Deal {
+            deal_reference: d.child_value("DealReference"),
+            deal_release_reference: release_refs.clone(),
+            deal_terms: DealTerms {
+                validity_period: (!periods.is_empty()).then_some(ValidityPeriod {
+                    start_date,
+                    end_date,
+                }),
+                start_date,
+                end_date,
+                territory_code: in_terms("TerritoryCode").collect(),
+                excluded_territory_code: Vec::new(),
+                distribution_channel: Vec::new(),
+                excluded_distribution_channel: Vec::new(),
+                commercial_model_type: in_terms("CommercialModelType")
+                    .map(|v| match v.as_str() {
+                        "PayAsYouGoModel" => CommercialModelType::PayAsYouGoModel,
+                        "SubscriptionModel" => CommercialModelType::SubscriptionModel,
+                        "AdSupportedModel" => CommercialModelType::AdSupportedModel,
+                        _ => CommercialModelType::Other(v),
+                    })
+                    .collect(),
+                use_type: use_types,
+                price_information: Vec::new(),
+                wholesale_price: Vec::new(),
+                suggested_retail_price: Vec::new(),
+                pre_order_date: None,
+                pre_order_preview_date: None,
+                instant_gratification_date: None,
+                takedown_date: None,
+            },
+        }
+    };
+
+    let mut deals = Vec::new();
+    // Simplified layout: deal values directly under <ReleaseDeal>.
+    if node.child("DealReference").is_some() || node.child("DealTerms").is_some() {
+        deals.push(deal(node));
+    }
+    deals.extend(node.children_named("Deal").map(deal));
+    deals
 }
 
 /// A deal `StartDate` / `EndDate`: an RFC 3339 date-time, or a full `YYYY-MM-DD` date at

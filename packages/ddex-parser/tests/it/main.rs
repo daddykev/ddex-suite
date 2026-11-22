@@ -18,6 +18,7 @@ mod utf8_handling;
 mod vendor_quirks;
 mod version_detection;
 mod version_parsing;
+mod whitespace;
 
 #[cfg(feature = "perf-tests")]
 mod perf;

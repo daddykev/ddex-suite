@@ -672,10 +672,13 @@ impl<'a, R: BufRead> DealIterator<'a, R> {
 
             // The validator must see the ReleaseDeal start tag so the matching end tag balances.
             let mut validator = crate::parser::xml_validator::XmlValidator::strict();
-            validator.validate_event(&Event::Start(release_deal_start), &self.parser.reader)?;
+            validator.validate_event(
+                &Event::Start(release_deal_start.clone()),
+                &self.parser.reader,
+            )?;
             let builder = crate::transform::graph::GraphBuilder::new(self.parser._version);
             return builder
-                .parse_release_deal(&mut self.parser.reader, &mut validator)
+                .parse_release_deal(&mut self.parser.reader, &mut validator, &release_deal_start)
                 .map(Some);
         }
     }
