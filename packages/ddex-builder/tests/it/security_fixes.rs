@@ -5,17 +5,12 @@
 //! - Entity classification blocks XXE attacks
 //! - Error sanitization prevents information disclosure
 //! - Cross-platform compatibility
-//! - Performance impact is minimal
 
 use ddex_builder::security::{
     create_entity, create_external_entity, create_parameter_entity, EntityClassifier, ErrorContext,
     ErrorMode, ErrorSanitizer, PathValidator, SanitizerConfig,
 };
 use std::io::{Error, ErrorKind};
-#[cfg(feature = "perf-tests")]
-use std::path::Path;
-#[cfg(feature = "perf-tests")]
-use std::time::Instant;
 
 /// Test suite for comprehensive security integration
 #[cfg(test)]
@@ -303,52 +298,6 @@ mod security_integration_tests {
         println!("✅ Cross-platform path validation test passed");
     }
 
-    #[cfg(feature = "perf-tests")]
-    #[test]
-    fn test_performance_impact_benchmark() {
-        println!("⚡ Testing performance impact of security improvements...");
-
-        const ITERATIONS: usize = 10000;
-
-        // Benchmark path validation
-        let path_validation_overhead = benchmark_path_validation(ITERATIONS);
-        assert!(
-            path_validation_overhead < 0.05, // <5% overhead
-            "Path validation overhead too high: {:.2}%",
-            path_validation_overhead * 100.0
-        );
-
-        // Benchmark entity classification
-        let entity_classification_overhead = benchmark_entity_classification(ITERATIONS);
-        assert!(
-            entity_classification_overhead < 0.05, // <5% overhead
-            "Entity classification overhead too high: {:.2}%",
-            entity_classification_overhead * 100.0
-        );
-
-        // Benchmark error sanitization
-        let error_sanitization_overhead = benchmark_error_sanitization(ITERATIONS);
-        assert!(
-            error_sanitization_overhead < 0.05, // <5% overhead
-            "Error sanitization overhead too high: {:.2}%",
-            error_sanitization_overhead * 100.0
-        );
-
-        println!("✅ Performance impact test passed:");
-        println!(
-            "  Path validation overhead: {:.2}%",
-            path_validation_overhead * 100.0
-        );
-        println!(
-            "  Entity classification overhead: {:.2}%",
-            entity_classification_overhead * 100.0
-        );
-        println!(
-            "  Error sanitization overhead: {:.2}%",
-            error_sanitization_overhead * 100.0
-        );
-    }
-
     #[test]
     fn test_integrated_security_workflow() {
         println!("🔒 Testing integrated security workflow...");
@@ -479,107 +428,6 @@ mod security_integration_tests {
         println!("✅ Security edge cases test passed");
     }
 
-    // Helper functions for benchmarking
-
-    #[cfg(feature = "perf-tests")]
-    fn benchmark_path_validation(iterations: usize) -> f64 {
-        let paths = vec![
-            "valid/path.xml",
-            "another/valid/path.json",
-            "../invalid/path.txt",
-            "normal/file.mp3",
-        ];
-
-        // Baseline: just validate paths without security
-        let baseline_start = Instant::now();
-        for _ in 0..iterations {
-            for path in &paths {
-                let _ = Path::new(path).exists(); // Simulate basic path operation
-            }
-        }
-        let baseline_time = baseline_start.elapsed();
-
-        // With security: validate paths with security checks
-        let validator = PathValidator::new();
-        let security_start = Instant::now();
-        for _ in 0..iterations {
-            for path in &paths {
-                let _ = validator.validate(path);
-            }
-        }
-        let security_time = security_start.elapsed();
-
-        // Calculate overhead percentage
-        let overhead = (security_time.as_nanos() as f64 - baseline_time.as_nanos() as f64)
-            / baseline_time.as_nanos() as f64;
-        overhead.max(0.0) // Don't allow negative overhead
-    }
-
-    #[cfg(feature = "perf-tests")]
-    fn benchmark_entity_classification(iterations: usize) -> f64 {
-        let entities = vec![
-            create_entity("title", "Song Title"),
-            create_entity("artist", "Artist Name"),
-            create_entity("isrc", "USRC17607839"),
-        ];
-
-        // Baseline: just process entities without classification
-        let baseline_start = Instant::now();
-        for _ in 0..iterations {
-            for entity in &entities {
-                let _ = entity.name.len() + entity.value.len(); // Simulate basic processing
-            }
-        }
-        let baseline_time = baseline_start.elapsed();
-
-        // With security: classify entities
-        let mut classifier = EntityClassifier::new();
-        let security_start = Instant::now();
-        for _ in 0..iterations {
-            let _ = classifier.validate_entity_chain(&entities);
-        }
-        let security_time = security_start.elapsed();
-
-        // Calculate overhead percentage
-        let overhead = (security_time.as_nanos() as f64 - baseline_time.as_nanos() as f64)
-            / baseline_time.as_nanos() as f64;
-        overhead.max(0.0)
-    }
-
-    #[cfg(feature = "perf-tests")]
-    fn benchmark_error_sanitization(iterations: usize) -> f64 {
-        let test_errors = vec![
-            Error::new(ErrorKind::NotFound, "File not found"),
-            Error::new(ErrorKind::PermissionDenied, "Permission denied"),
-            Error::new(ErrorKind::InvalidData, "Invalid data"),
-        ];
-
-        // Baseline: just format errors without sanitization
-        let baseline_start = Instant::now();
-        for _ in 0..iterations {
-            for error in &test_errors {
-                let _ = format!("Error: {}", error); // Simulate basic error formatting
-            }
-        }
-        let baseline_time = baseline_start.elapsed();
-
-        // With security: sanitize errors
-        let mut sanitizer = ErrorSanitizer::new();
-        let security_start = Instant::now();
-        for _ in 0..iterations {
-            for error in &test_errors {
-                // Clone the error since sanitize consumes it
-                let cloned_error = Error::new(error.kind(), error.to_string());
-                let _ = sanitizer.sanitize_io_error(cloned_error, ErrorContext::FileRead);
-            }
-        }
-        let security_time = security_start.elapsed();
-
-        // Calculate overhead percentage
-        let overhead = (security_time.as_nanos() as f64 - baseline_time.as_nanos() as f64)
-            / baseline_time.as_nanos() as f64;
-        overhead.max(0.0)
-    }
 }
 
 /// Integration test for memory safety and resource cleanup

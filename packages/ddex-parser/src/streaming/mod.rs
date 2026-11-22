@@ -13,15 +13,6 @@ mod comprehensive_tests;
 #[cfg(test)]
 mod debug_test;
 
-#[cfg(all(test, feature = "perf-tests"))]
-pub mod perf_analysis;
-
-#[cfg(all(test, feature = "perf-tests"))]
-pub mod zero_copy_benchmark;
-
-#[cfg(all(test, feature = "perf-tests"))]
-pub mod parallel_benchmark;
-
 #[cfg(test)]
 mod consistency_test;
 

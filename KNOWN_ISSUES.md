@@ -12,7 +12,7 @@ Classification and history: `dev-docs/TEST_TRIAGE.md`.
 
 | Bug | Test(s) |
 |---|---|
-| `parse_fast_streaming` (used when `SecurityConfig::relaxed()` / `enable_fast_streaming` is set) returns no releases or resources; the conversion is a TODO in `lib.rs` | `it::fast_streaming::test_fast_streaming_connection_basic`, `…_explicitly`, `…_vs_normal_performance` (perf) |
+| `parse_fast_streaming` (used when `SecurityConfig::relaxed()` / `enable_fast_streaming` is set) returns no releases or resources; the conversion is a TODO in `lib.rs` | `it::fast_streaming::test_fast_streaming_connection_basic`, `…_explicitly` |
 | `StreamingParser::stream_releases` skips the message root element (only `stream_deals` descends into it), so it yields nothing for a full document | `it::utf8_handling::streaming_parser_handles_utf8` |
 | quick-xml's own end-tag/attribute checks fire first and come back as a generic `XmlError`, pre-empting the typed `MismatchedTags` / `UnexpectedClosingTag` / `InvalidAttribute` variants from `parser::xml_validator` | `it::malformed_xml::test_mismatched_opening_closing_tags`, `test_unexpected_closing_tag`, `test_duplicate_attributes`, `test_complex_malformed_structure` |
 | `]]>` in character data is accepted (not well-formed XML) and the surrounding text is mangled | `it::malformed_xml::test_cdata_terminator_in_text_is_rejected` |
@@ -75,11 +75,6 @@ decision needed)". The security policy above does not settle them:
   for the parse time, memory, element/attribute/comment counts and file size. (The
   removed streaming options `mode` / `autoThreshold` / `enableStreaming` /
   `streamingThreshold` throw since 0.5.0.)
-- ddex-builder timing tests (`--features perf-tests`, release build) miss their targets on
-  the development machine, also on `main` (4–6 of `perf::test_*_performance`,
-  `test_performance_regression_benchmark`, `security_fixes::…::test_performance_impact_benchmark`;
-  e.g. 12-track album 12–15 ms vs a 10 ms target). The set varies between runs.
-
 - ERN 3.8.1 builder output is not XSD-checked: no official 3.8.1 schema can be obtained
   (DDEX no longer serves ERN 3.x XSDs, and no archived copy of the 3.8.1 one exists). It
   is the 3.8.2 document in the 381 namespace (`it::ern38_xsd`), and the content models

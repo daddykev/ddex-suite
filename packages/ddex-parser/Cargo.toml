@@ -76,7 +76,7 @@ simd = []
 bench = []
 zero-copy = []  # High-performance zero-copy streaming parser
 performance-debug = []  # Enable performance logging and metrics output
-# Test-only: throughput/latency/speedup assertions (meaningful in release mode only):
+# Test-only: timing sanity limits (about 10x the recorded timings; release mode only):
 #   cargo test -p ddex-parser --release --features perf-tests
 perf-tests = []
 # Test-only: tests for streaming implementations slated for removal
@@ -95,6 +95,10 @@ test = false
 required-features = ["async"]
 
 # Benchmarks
+[[bench]]
+name = "throughput"
+harness = false
+
 [[bench]]
 name = "parsing"
 harness = false

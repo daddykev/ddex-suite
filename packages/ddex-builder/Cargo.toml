@@ -112,7 +112,7 @@ ffi = []  # Foreign Function Interface support
 wasm = []  # WebAssembly support
 dhat-heap = ["dhat"]  # Memory profiling
 performance-debug = []  # Enable performance logging and metrics output
-# Test-only: latency/overhead assertions (meaningful in release mode only):
+# Test-only: timing sanity limits (about 10x the recorded timings; release mode only):
 #   cargo test -p ddex-builder --release --features perf-tests
 perf-tests = []
 
@@ -131,6 +131,10 @@ harness = false
 
 [[bench]]
 name = "determinism"
+harness = false
+
+[[bench]]
+name = "security"
 harness = false
 
 # Binary target for CLI

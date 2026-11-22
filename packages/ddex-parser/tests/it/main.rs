@@ -1,7 +1,7 @@
 //! ddex-parser integration tests, compiled as a single test binary.
 //!
 //! Feature-gated modules:
-//! - `perf`: throughput/latency targets; run with `cargo test --release --features perf-tests`.
+//! - `perf`: timing sanity limits (release only); run with `cargo test --release --features perf-tests`.
 
 mod common;
 

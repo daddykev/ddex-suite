@@ -392,6 +392,14 @@ WASM builder (0.5.0):
   them were removed.
 - The module now holds the whole core builder (about 2.4 MB, 800 KB gzipped).
 
+Tests (0.5.0):
+- The wall-clock pass/fail performance tests (`perf-tests` feature) are now criterion
+  benches that report numbers (`ddex-parser` `throughput`; `ddex-builder` `performance`,
+  `security`); the numbers are recorded in `dev-docs/PERFORMANCE.md`. `perf-tests` keeps
+  five sanity limits at about 10× the recorded timings (release mode only). The
+  ddex-builder benches used an incomplete ERN 4.3 request and timed the validation error;
+  they now build complete requests and unwrap the result.
+
 ### Documentation
 - Corrected class names in code examples for each language binding: Node.js uses
   `DdexParser` / `DdexBuilder` / `StreamingDdexBuilder`; Python uses `DDEXParser`

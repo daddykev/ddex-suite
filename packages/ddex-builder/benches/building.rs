@@ -13,7 +13,7 @@ fn benchmark_building(c: &mut Criterion) {
                 black_box(request.clone()),
                 black_box(BuildOptions::default()),
             );
-            black_box(result)
+            black_box(result.unwrap())
         });
     });
 }
