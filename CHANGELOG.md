@@ -23,6 +23,10 @@ with the quick-xml security update; see "Changed (Rust API)".
   parking_lot, tokio, toml, uuid. ddex-builder: futures, is-terminal, mime, smallstr,
   tokio (the dev-dependency stays), xmltree. The `async`, `tokio` and `futures` features
   remain as empty features, so existing feature lists keep working.
+- Unused dependencies of the (unpublished) binding crates: builder Node binding tokio,
+  uuid, chrono, indexmap; builder Python binding serde, pythonize, uuid, indexmap; parser
+  Node binding chrono; parser Python binding serde, serde_json, chrono; parser WASM
+  binding js-sys.
 
 ### Changed
 - CI runs `cargo-deny` (advisories, bans, licenses, sources). `deny.toml` uses the current

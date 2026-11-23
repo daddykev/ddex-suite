@@ -25,9 +25,6 @@ ddex-parser = { path = "../.." }
 
 pyo3 = { version = "0.29", features = ["extension-module", "abi3-py310"] }
 pyo3-async-runtimes = { version = "0.29", features = ["tokio-runtime"] }
-serde = { workspace = true }
-serde_json = { workspace = true }
-chrono = { workspace = true }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread"] }
 pythonize = "0.29"
 numpy = { version = "0.29", optional = true }

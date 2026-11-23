@@ -544,18 +544,14 @@ dependencies = [
 name = "ddex-builder-node"
 version = "0.5.0"
 dependencies = [
- "chrono",
  "ddex-builder",
  "ddex-core",
- "indexmap",
  "napi",
  "napi-build",
  "napi-derive",
  "quick-xml",
  "serde",
  "serde_json",
- "tokio",
- "uuid",
 ]
 
 [[package]]
@@ -566,14 +562,10 @@ dependencies = [
  "ddex-builder",
  "ddex-core",
  "ddex-parser",
- "indexmap",
  "pyo3",
  "pyo3-build-config",
- "pythonize",
  "quick-xml",
- "serde",
  "serde_json",
- "uuid",
 ]
 
 [[package]]
@@ -648,7 +640,6 @@ dependencies = [
 name = "ddex-parser-node"
 version = "0.5.0"
 dependencies = [
- "chrono",
  "ddex-core",
  "ddex-parser",
  "indexmap",
@@ -664,7 +655,6 @@ dependencies = [
 name = "ddex-parser-python"
 version = "0.5.0"
 dependencies = [
- "chrono",
  "ddex-core",
  "ddex-parser",
  "numpy",
@@ -672,8 +662,6 @@ dependencies = [
  "pyo3-async-runtimes",
  "pyo3-build-config",
  "pythonize",
- "serde",
- "serde_json",
  "tokio",
 ]
 
@@ -685,7 +673,6 @@ dependencies = [
  "ddex-core",
  "ddex-parser",
  "getrandom 0.3.3",
- "js-sys",
  "serde-wasm-bindgen",
  "wasm-bindgen",
  "wasm-bindgen-futures",
