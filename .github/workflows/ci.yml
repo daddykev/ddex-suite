@@ -59,6 +59,23 @@ jobs:
       - run: cargo clippy -p ddex-builder --all-targets
         continue-on-error: true
 
+  cargo-deny:
+    name: cargo deny (${{ matrix.checks }})
+    runs-on: ubuntu-latest
+    # The workspace (root Cargo.toml) includes the Node, Python and WASM binding crates,
+    # so one manifest covers every crate that ships. Policy: deny.toml.
+    strategy:
+      fail-fast: false
+      matrix:
+        # Advisories in their own job, so a newly published advisory is reported apart
+        # from the license, ban and source checks.
+        checks: [advisories, bans licenses sources]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check ${{ matrix.checks }}
+
   test:
     name: cargo test (-D warnings)
     runs-on: ubuntu-latest

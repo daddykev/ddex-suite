@@ -75,4 +75,4 @@ summarizes the ones you are most likely to meet. Report new ones on
 
 Later, on the way to **1.0.0**: a built-in bridge from parsed messages to build requests (true
 Parse → Modify → Build), a semantic diff, TypeScript API reference pages, and supply-chain
-hardening (`cargo-deny` in CI, SBOMs and signed artifacts).
+hardening (SBOMs and signed artifacts; `cargo-deny` already runs in CI).
