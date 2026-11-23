@@ -18,7 +18,7 @@ __version__ = _version("ddex-parser")
 # The native extension (the Rust parser) is required: there is no pure-Python fallback,
 # so a failed load is an ImportError that names the real cause.
 try:
-    from ._internal import DDEXParser as _DDEXParser, StreamIterator
+    from ._internal import DDEXParser as _DDEXParser, ParsedERNMessage, StreamIterator
 except ImportError as e:
     raise ImportError(
         f"ddex_parser: the native extension (ddex_parser._internal) failed to load: {e}. "
@@ -27,7 +27,14 @@ except ImportError as e:
         "`maturin develop` in packages/ddex-parser/bindings/python."
     ) from e
 
-__all__ = ["DDEXParser", "ParseOptions", "ParseResult", "parse", "__version__"]
+__all__ = [
+    "DDEXParser",
+    "ParseOptions",
+    "ParsedERNMessage",
+    "ParseResult",
+    "parse",
+    "__version__",
+]
 
 
 class ParseOptions:
@@ -70,9 +77,10 @@ class ParseOptions:
 
 
 class ParseResult:
-    """Unused: ``DDEXParser.parse`` returns the native ``ParsedERNMessage``, whose
-    ``message_id()``, ``version()`` and ``release_count()`` are methods. Kept so existing
-    imports keep working."""
+    """Unused, kept for compatibility (so existing imports keep working).
+
+    ``DDEXParser.parse`` returns the native ``ParsedERNMessage``, not this class; its
+    ``message_id()``, ``version()`` and ``release_count()`` are methods."""
     
     def __init__(self, data: Dict[str, Any]):
         self._data = data
@@ -95,13 +103,13 @@ class DDEXParser:
     def __repr__(self) -> str:
         return f"DDEXParser(version='{__version__}')"
     
-    def parse(self, xml: Union[str, bytes], options: Optional[ParseOptions] = None) -> ParseResult:
+    def parse(self, xml: Union[str, bytes], options: Optional[ParseOptions] = None) -> ParsedERNMessage:
         """Parse DDEX XML synchronously."""
         opts = options.to_dict() if options else None
         result = self._parser.parse(xml, opts)
         return result  # Return PyParsedERNMessage directly
     
-    async def parse_async(self, xml: Union[str, bytes], options: Optional[ParseOptions] = None) -> ParseResult:
+    async def parse_async(self, xml: Union[str, bytes], options: Optional[ParseOptions] = None) -> ParsedERNMessage:
         """Parse DDEX XML asynchronously."""
         opts = options.to_dict() if options else None
         result = await self._parser.parse_async(xml, opts)
@@ -144,7 +152,7 @@ class DDEXParser:
 
 
 # Convenience function
-def parse(xml: Union[str, bytes], **kwargs) -> ParseResult:
+def parse(xml: Union[str, bytes], **kwargs) -> ParsedERNMessage:
     """Convenience function to parse DDEX XML."""
     parser = DDEXParser()
     options = ParseOptions(**kwargs) if kwargs else None

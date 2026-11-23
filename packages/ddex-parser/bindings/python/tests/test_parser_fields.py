@@ -107,3 +107,11 @@ def test_parser_to_dataframe_matches_message_to_dataframe():
     direct = ddex_parser.DDEXParser().to_dataframe(xml, "releases").to_dict("records")
     via_message = ddex_parser.DDEXParser().parse(xml).to_dataframe("releases").to_dict("records")
     assert direct == via_message
+
+
+def test_parse_return_annotations_name_the_returned_type():
+    import typing
+
+    for fn in (ddex_parser.DDEXParser.parse, ddex_parser.DDEXParser.parse_async, ddex_parser.parse):
+        assert typing.get_type_hints(fn)["return"] is ddex_parser.ParsedERNMessage, fn
+    assert type(parse("ern43_details.xml")) is ddex_parser.ParsedERNMessage
