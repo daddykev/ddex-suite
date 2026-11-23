@@ -60,8 +60,6 @@ reason, until the upgrade lands.
 
 | Advisory | Crate | Status |
 |---|---|---|
-| RUSTSEC-2026-0194 (vulnerability) | quick-xml 0.31, 0.36 | Quadratic run time for the duplicate-attribute check on a start tag with many attributes (`BytesStart::attributes()`, used by the parser on untrusted input). Needs quick-xml >= 0.41; `ParseError` / `BuildError` implement `From<quick_xml::Error>`, so the upgrade is its own PR. |
-| RUSTSEC-2026-0195 (vulnerability) | quick-xml 0.31, 0.36 | Unbounded namespace-declaration allocation in `NsReader`, which the workspace does not use. Same upgrade. |
 | RUSTSEC-2026-0176, RUSTSEC-2026-0177 (vulnerabilities) | pyo3 0.24 | Out-of-bounds read in `PyList`/`PyTuple` iterator `nth`/`nth_back`; missing `Sync` bound on `PyCFunction::new_closure`. The bindings call neither directly. Needs pyo3 >= 0.29 with numpy, pythonize and pyo3-async-runtimes; its own PR. |
 | RUSTSEC-2026-0543 (unmaintained) | chrono | Direct dependency of every crate; no replacement chosen. |
 | RUSTSEC-2026-0249 (unmaintained) | smartstring | ddex-builder; to be replaced. |

@@ -5,6 +5,7 @@ pub mod parser;
 pub mod streaming;
 pub mod transform;
 pub mod utf8_utils;
+mod xml_text;
 
 // Re-export commonly used types
 pub use ddex_core::models::versions::ERNVersion;

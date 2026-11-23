@@ -149,6 +149,19 @@ impl NamespaceDetector {
                         }
                     }
                 }
+                // Each reference is its own event since quick-xml 0.38 (it used to be counted
+                // as a `&` in the text above).
+                Ok(Event::GeneralRef(_)) => {
+                    entity_expansions += 1;
+                    if entity_expansions > security_config.max_entity_expansions {
+                        return Err(ParseError::SecurityViolation {
+                            message: format!(
+                                "Entity expansions {} exceed maximum allowed {}",
+                                entity_expansions, security_config.max_entity_expansions
+                            ),
+                        });
+                    }
+                }
                 Ok(Event::DocType(_)) if security_config.disable_dtd => {
                     return Err(ParseError::SecurityViolation {
                         message: "DTD declarations are disabled for security".to_string(),

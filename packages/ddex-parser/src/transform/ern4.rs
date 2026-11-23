@@ -39,10 +39,8 @@ impl XNode {
             let attr =
                 attr.map_err(|err| ParseError::XmlError(format!("Invalid attribute: {}", err)))?;
             let key = String::from_utf8_lossy(attr.key.local_name().as_ref()).into_owned();
-            let value = attr
-                .unescape_value()
-                .map_err(|err| ParseError::XmlError(format!("Invalid attribute value: {}", err)))?
-                .into_owned();
+            let value = crate::xml_text::attr_value(&attr)
+                .map_err(|err| ParseError::XmlError(format!("Invalid attribute value: {}", err)))?;
             attrs.push((key, value));
         }
         Ok(XNode {
@@ -168,6 +166,12 @@ pub(crate) fn read_subtree<R: BufRead>(
                         .push_str(&quick_xml::escape::unescape(&raw).unwrap_or_default());
                 }
             }
+            // quick-xml >= 0.38 reports each reference (`&amp;`, `&#13;`) as its own event.
+            Event::GeneralRef(ref e) => {
+                if let Some(node) = stack.last_mut() {
+                    node.text.push_str(&crate::xml_text::ref_text(e));
+                }
+            }
             Event::CData(ref e) => {
                 if let Some(node) = stack.last_mut() {
                     node.text
@@ -209,10 +213,8 @@ pub(crate) fn root_attributes(
         if key == "xmlns" || key.starts_with("xmlns:") {
             continue;
         }
-        let value = attr
-            .unescape_value()
-            .map_err(|err| ParseError::XmlError(format!("Invalid attribute value: {}", err)))?
-            .into_owned();
+        let value = crate::xml_text::attr_value(&attr)
+            .map_err(|err| ParseError::XmlError(format!("Invalid attribute value: {}", err)))?;
         map.insert_str(&key, value);
     }
     Ok(map)

@@ -24,9 +24,7 @@ yanked = "warn"
 # Each ignore needs a reason, and an unresolved advisory also needs a KNOWN_ISSUES.md entry
 # ("Unresolved dependency advisories"). Remove an entry when its upgrade lands.
 ignore = [
-    # Vulnerabilities whose fix needs a dependency upgrade (each in its own follow-up PR).
-    { id = "RUSTSEC-2026-0194", reason = "quick-xml 0.31 (Node/Python builder bindings) and 0.36 (core): quadratic duplicate-attribute check on untrusted XML. Fixed in quick-xml >= 0.41; the upgrade changes the public From<quick_xml::Error> impls of ParseError/BuildError and is a separate PR" },
-    { id = "RUSTSEC-2026-0195", reason = "quick-xml NsReader namespace-declaration memory exhaustion. The workspace does not use NsReader; fixed in quick-xml >= 0.41, upgrade pending as for RUSTSEC-2026-0194" },
+    # Vulnerabilities whose fix needs a dependency upgrade.
     { id = "RUSTSEC-2026-0176", reason = "pyo3 0.24 PyList/PyTuple iterator nth/nth_back out-of-bounds read; the Python bindings do not call nth/nth_back directly. Fixed in pyo3 >= 0.29 (with numpy, pythonize, pyo3-async-runtimes); upgrade is a separate PR" },
     { id = "RUSTSEC-2026-0177", reason = "pyo3 0.24 PyCFunction::new_closure missing Sync bound; the Python bindings do not call new_closure. Fixed in pyo3 >= 0.29; upgrade pending as for RUSTSEC-2026-0176" },
     # Unmaintained crates with no maintained release to move to yet.

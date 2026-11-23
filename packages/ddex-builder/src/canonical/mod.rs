@@ -78,6 +78,21 @@
 use indexmap::IndexMap;
 use quick_xml::{events::Event, Reader};
 use sha2::{Digest, Sha256};
+
+/// Escaped UTF-8 character data with its references resolved (what `BytesText::unescape`
+/// did before quick-xml 0.38).
+fn unescape_raw(raw: &[u8]) -> Result<String, String> {
+    let text = std::str::from_utf8(raw).map_err(|e| e.to_string())?;
+    quick_xml::escape::unescape(text)
+        .map(|s| s.into_owned())
+        .map_err(|e| e.to_string())
+}
+
+/// An attribute value with its references resolved and nothing else changed (what
+/// `Attribute::unescape_value` did before quick-xml 0.40 added value normalization).
+fn attr_value(attr: &quick_xml::events::attributes::Attribute) -> Result<String, String> {
+    unescape_raw(&attr.value)
+}
 use std::collections::BTreeMap;
 
 pub mod rules;
@@ -169,15 +184,12 @@ impl DB_C14N {
                             ))
                         })?;
                         let key = String::from_utf8_lossy(attr.key.as_ref()).to_string();
-                        let value = attr
-                            .unescape_value()
-                            .map_err(|e| {
-                                super::error::BuildError::XmlGeneration(format!(
-                                    "Attribute value error: {}",
-                                    e
-                                ))
-                            })?
-                            .into_owned();
+                        let value = attr_value(&attr).map_err(|e| {
+                            super::error::BuildError::XmlGeneration(format!(
+                                "Attribute value error: {}",
+                                e
+                            ))
+                        })?;
                         attributes.insert(key, value);
                     }
 
@@ -205,15 +217,12 @@ impl DB_C14N {
                             ))
                         })?;
                         let key = String::from_utf8_lossy(attr.key.as_ref()).to_string();
-                        let value = attr
-                            .unescape_value()
-                            .map_err(|e| {
-                                super::error::BuildError::XmlGeneration(format!(
-                                    "Attribute value error: {}",
-                                    e
-                                ))
-                            })?
-                            .into_owned();
+                        let value = attr_value(&attr).map_err(|e| {
+                            super::error::BuildError::XmlGeneration(format!(
+                                "Attribute value error: {}",
+                                e
+                            ))
+                        })?;
                         attributes.insert(key, value);
                     }
 
@@ -248,7 +257,17 @@ impl DB_C14N {
                     }
                 }
                 Ok(Event::Text(e)) => {
-                    text_content.push_str(&e.unescape().map_err(|e| {
+                    text_content.push_str(&unescape_raw(&e).map_err(|e| {
+                        super::error::BuildError::XmlGeneration(format!(
+                            "Text unescape error: {}",
+                            e
+                        ))
+                    })?);
+                }
+                // A reference in character data (its own event since quick-xml 0.38).
+                Ok(Event::GeneralRef(e)) => {
+                    let raw = format!("&{};", String::from_utf8_lossy(&e));
+                    text_content.push_str(&unescape_raw(raw.as_bytes()).map_err(|e| {
                         super::error::BuildError::XmlGeneration(format!(
                             "Text unescape error: {}",
                             e

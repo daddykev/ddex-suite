@@ -143,9 +143,22 @@ impl<R: BufRead> WorkingStreamingParser<R> {
 
     /// Parse next element from the stream
     pub fn parse_next(&mut self) -> Result<Option<WorkingStreamingElement>, ParseError> {
+        let mut text_run = crate::xml_text::TextRun::default();
         loop {
             self.buffer.clear();
             let event = self.reader.read_event_into(&mut self.buffer)?;
+
+            // One text value per run of Text / GeneralRef events (one Text event before
+            // quick-xml 0.38), kept escaped and trimmed as before.
+            if text_run.push(&event) {
+                continue;
+            }
+            if let Some(raw) = text_run.take() {
+                let text = std::str::from_utf8(&raw)?;
+                if !text.trim().is_empty() {
+                    self.text_buffer.push_str(text.trim());
+                }
+            }
 
             match event {
                 Event::Start(e) => {
@@ -167,12 +180,6 @@ impl<R: BufRead> WorkingStreamingParser<R> {
                     if let Some(element) = self.handle_end_element(&name)? {
                         self.elements_yielded += 1;
                         return Ok(Some(element));
-                    }
-                }
-                Event::Text(e) => {
-                    let text = std::str::from_utf8(&e)?;
-                    if !text.trim().is_empty() {
-                        self.text_buffer.push_str(text.trim());
                     }
                 }
                 Event::CData(e) => {

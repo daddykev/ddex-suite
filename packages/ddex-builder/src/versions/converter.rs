@@ -619,6 +619,13 @@ impl VersionConverter {
                         writer.write_event(Event::Text(e.clone()))?;
                     }
                 }
+                // A reference in character data (its own event since quick-xml 0.38), written
+                // back unchanged like the text around it.
+                Ok(Event::GeneralRef(ref e)) => {
+                    if !skip_element {
+                        writer.write_event(Event::GeneralRef(e.clone()))?;
+                    }
+                }
                 Ok(Event::Comment(ref e)) => {
                     if !skip_element && options.preserve_comments {
                         writer.write_event(Event::Comment(e.clone()))?;

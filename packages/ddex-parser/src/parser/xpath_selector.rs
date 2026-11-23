@@ -136,11 +136,41 @@ impl XPathSelector {
         let mut attributes = Vec::new();
         let mut buf = Vec::new();
         let mut current_path = Vec::new();
-        let mut capture_context = Vec::new();
+        let mut capture_context: Vec<CaptureContext> = Vec::new();
         let mut elements_processed = 0;
 
+        let mut text_run = crate::xml_text::TextRun::default();
         loop {
-            match xml_reader.read_event_into(&mut buf) {
+            let event = xml_reader.read_event_into(&mut buf);
+            // One text value per run of Text / GeneralRef events (one Text event before
+            // quick-xml 0.38), handled before the event that ends the run, as before.
+            if let Ok(ref ev) = event {
+                if text_run.push(ev) {
+                    buf.clear();
+                    continue;
+                }
+            }
+            if let Some(raw) = text_run.take() {
+                if !capture_context.is_empty() {
+                    // Use utf8_utils for proper UTF-8 handling
+                    let current_pos = xml_reader.buffer_position() as usize;
+                    let text = crate::utf8_utils::handle_escaped_text(&raw, current_pos)?
+                        .trim()
+                        .to_string();
+
+                    if !text.is_empty() {
+                        let context = capture_context.last().unwrap();
+                        results.push(text);
+                        paths.push(context.path.clone());
+                        attributes.push(context.attributes.clone());
+
+                        if self.max_results > 0 && results.len() >= self.max_results {
+                            break;
+                        }
+                    }
+                }
+            }
+            match event {
                 Ok(Event::Start(ref e)) => {
                     elements_processed += 1;
                     let element_name = self.extract_element_name(e.name().as_ref())?;
@@ -198,26 +228,6 @@ impl XPathSelector {
                     }
 
                     current_path.pop();
-                }
-                Ok(Event::Text(ref e)) => {
-                    if !capture_context.is_empty() {
-                        // Use utf8_utils for proper UTF-8 handling
-                        let current_pos = xml_reader.buffer_position() as usize;
-                        let text = crate::utf8_utils::handle_text_node(e, current_pos)?
-                            .trim()
-                            .to_string();
-
-                        if !text.is_empty() {
-                            let context = capture_context.last().unwrap();
-                            results.push(text);
-                            paths.push(context.path.clone());
-                            attributes.push(context.attributes.clone());
-
-                            if self.max_results > 0 && results.len() >= self.max_results {
-                                break;
-                            }
-                        }
-                    }
                 }
                 Ok(Event::CData(ref e)) => {
                     if !capture_context.is_empty() {
@@ -575,8 +585,33 @@ impl XPathSelector {
         let mut current_path = Vec::new();
         let mut capture_contexts: Vec<Vec<CaptureContext>> = vec![Vec::new(); selectors.len()];
 
+        let mut text_run = crate::xml_text::TextRun::default();
         loop {
-            match xml_reader.read_event_into(&mut buf) {
+            let event = xml_reader.read_event_into(&mut buf);
+            // One text value per run of Text / GeneralRef events (one Text event before
+            // quick-xml 0.38), handled before the event that ends the run, as before.
+            if let Ok(ref ev) = event {
+                if text_run.push(ev) {
+                    buf.clear();
+                    continue;
+                }
+            }
+            if let Some(raw) = text_run.take() {
+                // Use utf8_utils for proper UTF-8 handling
+                let current_pos = xml_reader.buffer_position() as usize;
+                let text = crate::utf8_utils::handle_escaped_text(&raw, current_pos)?
+                    .trim()
+                    .to_string();
+
+                if !text.is_empty() {
+                    for (i, contexts) in capture_contexts.iter().enumerate() {
+                        if !contexts.is_empty() {
+                            all_results[i].push(text.clone());
+                        }
+                    }
+                }
+            }
+            match event {
                 Ok(Event::Start(ref e)) => {
                     let element_name = String::from_utf8_lossy(e.name().as_ref()).to_string();
                     current_path.push(element_name.clone());
@@ -605,21 +640,6 @@ impl XPathSelector {
                     for contexts in &mut capture_contexts {
                         if !contexts.is_empty() {
                             contexts.pop();
-                        }
-                    }
-                }
-                Ok(Event::Text(ref e)) => {
-                    // Use utf8_utils for proper UTF-8 handling
-                    let current_pos = xml_reader.buffer_position() as usize;
-                    let text = crate::utf8_utils::handle_text_node(e, current_pos)?
-                        .trim()
-                        .to_string();
-
-                    if !text.is_empty() {
-                        for (i, contexts) in capture_contexts.iter().enumerate() {
-                            if !contexts.is_empty() {
-                                all_results[i].push(text.clone());
-                            }
                         }
                     }
                 }

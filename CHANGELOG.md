@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing here changes a public Rust, Node or Python API, feature flag or CLI.
+Nothing here changes a Node or Python API, feature flag or CLI. One Rust API change comes
+with the quick-xml security update; see "Changed (Rust API)".
 
 ### Fixed
 - Python `ddex-parser` command: `parse` failed on every file (it read `message_id`,
@@ -27,13 +28,34 @@ Nothing here changes a public Rust, Node or Python API, feature flag or CLI.
 - CI runs `cargo-deny` (advisories, bans, licenses, sources). `deny.toml` uses the current
   cargo-deny format, and its license allow-list matches the dependency graph.
 
+### Changed (Rust API)
+- quick-xml 0.36 -> 0.41 (security fix below). Public items that name quick-xml types now
+  use the 0.41 types: `impl From<quick_xml::Error>` and `impl From<AttrError>` for
+  `ddex_parser::error::ParseError`; `impl From<quick_xml::Error>` for
+  `ddex_builder::BuildError`; `ddex_builder::streaming::StreamingError::XmlError`;
+  `ddex_builder::security::SecureXmlReader::{read_event, into_inner}`;
+  `ddex_parser::utf8_utils::handle_text_node`,
+  `parser::attribute_extractor::AttributeExtractor::extract_attributes`,
+  `parser::extension_capture::ExtensionCaptureContext::process_extension_*` and
+  `parser::xml_validator::XmlValidator::validate_event`. Only code that passes its own
+  quick-xml values to these, or converts quick-xml 0.36 errors with `?` into
+  `ParseError` / `BuildError`, is affected: it must use quick-xml 0.41. Parse and build
+  results are unchanged (references in text, now separate events in quick-xml, are joined
+  as before; attribute values are not normalized).
+
 ### Security
+- quick-xml 0.41.0 (from 0.36.2 in the crates and 0.31.0 in the Node and Python builder
+  bindings): fixes RUSTSEC-2026-0194, quadratic run time checking a start tag with many
+  attributes for duplicates, which the parser does on untrusted input, and
+  RUSTSEC-2026-0195 (unbounded namespace declarations in `NsReader`, which the workspace
+  does not use). A regression test parses an official sample with 50,000 extra root
+  attributes (distinct and duplicate).
 - Cargo.lock: semver-compatible updates for advisories bytes 1.11.1 (RUSTSEC-2026-0007),
   rand 0.8.6 / 0.9.3 (RUSTSEC-2026-0097), anyhow 1.0.103 (RUSTSEC-2026-0190),
   crossbeam-epoch 0.9.20 (RUSTSEC-2026-0204), tokio 1.51.6 (RUSTSEC-2026-0386),
   rustix 1.1.6 (RUSTSEC-2026-0486) and url 2.5.9 (RUSTSEC-2026-0592).
-- Still open (KNOWN_ISSUES.md): quick-xml RUSTSEC-2026-0194 / -0195 and pyo3
-  RUSTSEC-2026-0176 / -0177, which need dependency upgrades, and seven unmaintained crates.
+- Still open (KNOWN_ISSUES.md): pyo3 RUSTSEC-2026-0176 / -0177, which need a dependency
+  upgrade, and six unmaintained crates.
 
 ### Documentation
 - Python `ParseOptions`: documented that none of its fields currently changes the result.
