@@ -10,7 +10,7 @@ use pythonize::pythonize;
 use std::io::Cursor;
 
 /// Main DDEX Parser class for Python
-#[pyclass(name = "DDEXParser")]
+#[pyclass(name = "DDEXParser", from_py_object)]
 #[derive(Clone)]
 pub struct PyDDEXParser {
     parser: CoreParser,
@@ -86,7 +86,7 @@ impl PyDDEXParser {
             .map_err(|e| PyValueError::new_err(format!("Task join error: {}", e)))?
             .map_err(|e| PyValueError::new_err(format!("Parse error: {}", e)))?;
 
-            Python::with_gil(|py| -> PyResult<Py<PyAny>> {
+            Python::attach(|py| -> PyResult<Py<PyAny>> {
                 let wrapped_result = PyParsedERNMessage::new(result);
                 let py_obj = Py::new(py, wrapped_result)?;
                 Ok(py_obj.into_any())
@@ -414,7 +414,7 @@ impl PyDDEXParser {
 }
 
 /// ParsedERNMessage wrapper for Python
-#[pyclass(name = "ParsedERNMessage")]
+#[pyclass(name = "ParsedERNMessage", from_py_object)]
 #[derive(Clone)]
 pub struct PyParsedERNMessage {
     inner: CoreParsedERNMessage,
@@ -854,7 +854,9 @@ fn extract_xml_string(xml: &Bound<'_, PyAny>) -> PyResult<String> {
 }
 
 /// Python module initialization
-#[pymodule]
+// gil_used = true keeps the pyo3 0.24 behaviour (0.28 changed the default to declaring
+// free-threaded support, which these bindings have not been tested for).
+#[pymodule(gil_used = true)]
 fn _internal(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Changed from ddex_parser to _internal
     m.add_class::<PyDDEXParser>()?;

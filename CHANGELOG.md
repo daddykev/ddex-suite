@@ -50,12 +50,19 @@ with the quick-xml security update; see "Changed (Rust API)".
   RUSTSEC-2026-0195 (unbounded namespace declarations in `NsReader`, which the workspace
   does not use). A regression test parses an official sample with 50,000 extra root
   attributes (distinct and duplicate).
+- pyo3 0.29.3 (from 0.24.2) in the Python bindings, with pythonize, numpy and
+  pyo3-async-runtimes 0.29: fixes RUSTSEC-2026-0176 (out-of-bounds read in `PyList` /
+  `PyTuple` iterator `nth`) and RUSTSEC-2026-0177 (missing `Sync` bound on
+  `PyCFunction::new_closure`). The Python API is unchanged: the modules keep requiring the
+  GIL (`gil_used = true`, the 0.24 behaviour) and the classes keep accepting instances as
+  arguments (`from_py_object`). Building the Python bindings from source now needs Rust
+  1.83; the published crates stay at 1.82.
 - Cargo.lock: semver-compatible updates for advisories bytes 1.11.1 (RUSTSEC-2026-0007),
   rand 0.8.6 / 0.9.3 (RUSTSEC-2026-0097), anyhow 1.0.103 (RUSTSEC-2026-0190),
   crossbeam-epoch 0.9.20 (RUSTSEC-2026-0204), tokio 1.51.6 (RUSTSEC-2026-0386),
   rustix 1.1.6 (RUSTSEC-2026-0486) and url 2.5.9 (RUSTSEC-2026-0592).
-- Still open (KNOWN_ISSUES.md): pyo3 RUSTSEC-2026-0176 / -0177, which need a dependency
-  upgrade, and six unmaintained crates.
+- Still open (KNOWN_ISSUES.md): six unmaintained crates with no maintained release to move
+  to.
 
 ### Documentation
 - Python `ParseOptions`: documented that none of its fields currently changes the result.
