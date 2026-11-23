@@ -604,13 +604,14 @@ impl Default for BuildOptions {
 /// ID generation strategy
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum IdStrategy {
-    /// UUID v4
+    /// Random UUID v4 message ID and release/resource references (the default).
     UUID,
-    /// UUID v7 (time-ordered)
+    /// Currently the same as `UUID` (random v4): UUID v7 is not implemented.
     UUIDv7,
-    /// Sequential
+    /// Numbered references (`R1`, `A1`, ...); the message ID is `MSG_` plus the current Unix
+    /// time in seconds.
     Sequential,
-    /// Stable hash-based
+    /// Hash-based IDs. The message ID hash includes the current UTC date.
     StableHash,
 }
 

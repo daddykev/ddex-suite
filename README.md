@@ -219,8 +219,11 @@ conversion from a parsed message to a build request yet.
 - **Not yet deterministic**: with the default options, a message ID, release and resource
   references and `MessageCreatedDateTime` that the request leaves out are generated
   (random UUIDs, the current time), and the stable-hash ID strategy puts today's date
-  into the `MessageId`. Two builds of the same request can therefore differ. Full
-  determinism is planned for 0.6.0.
+  into the `MessageId` (the Rust-only sequential strategy uses the current Unix time).
+  Update messages always carry the current time, and the streaming writer generates a
+  random `MessageId` and the current time when they are missing. Two builds of the same
+  request can therefore differ. Full determinism is planned for 0.6.0; the complete list is
+  in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 - **Round trips on the official samples**: each of the 19 official DDEX ERN 4.2 and 4.3
   samples in `examples/` is parsed, rebuilt in its own version, validated against the
   official XSD and re-parsed in the test suite. Release title, ICPN, type and display

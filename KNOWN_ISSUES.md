@@ -74,6 +74,26 @@ decision needed)". The security policy above does not settle them:
   `chunkSize`, the fidelity options, `collectStatistics`, `validationLevel`, ...).
   `ParsedMessage.statistics` (all zeros) and `fidelityInfo` (an echo of the options) were
   removed.
+- ddex-builder output is not deterministic (planned for 0.6.0). Values the request leaves
+  out are generated from randomness or the clock:
+  - `DDEXBuilder::build`, default `IdStrategy::UUID` (and `UUIDv7`, which falls back to
+    it): `MessageId` `MSG_<uuid v4>`, release references `R<uuid>`, resource references
+    `A<uuid>` (`builder.rs`, `generate_uuid_ids`).
+  - `IdStrategy::Sequential`: `MessageId` is `MSG_` plus the current Unix time
+    (`generate_sequential_ids`). `IdStrategy::StableHash`: the `MessageId` hash includes
+    today's date (`generate_stable_hash_ids`; the pinned golden-file entry above).
+  - `MessageCreatedDateTime` falls back to the current time (`generator/ern4.rs` and
+    `generator/ern38.rs`, `message_header`).
+  - Update messages (`create_update*`, `serialize_update`): `MessageCreatedDateTime` and
+    `UpdateCreatedDateTime` are always the current time (`messages/update_release.rs`,
+    `create_update_metadata`), and an entity ID that cannot be read from the diff path
+    becomes `unknown_` plus random hex (`extract_entity_id`).
+  - Streaming writer (`streaming::StreamingBuilder`): a missing `MessageId` becomes a random
+    UUID and a missing `MessageCreatedDateTime` the current time (`write_message_header`).
+
+  Giving `message_id`, `message_created_date_time`, `release_reference` and each track's
+  `resource_reference` makes `DDEXBuilder::build` output repeatable; update messages always
+  carry the current time.
 - ddex-parser `DDEXParser::sanity_check` is a placeholder (`lib.rs`): it returns
   `is_valid: true`, version 4.3 and no errors without reading its input. The Python
   `sanity_check` and Node `sanityCheck` call it (Node first rejects empty input and input

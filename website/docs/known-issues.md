@@ -38,8 +38,10 @@ summarizes the ones you are most likely to meet. Report new ones on
 ## Builder
 
 - **Not byte-for-byte deterministic yet.** Values the request leaves out (message ID,
-  references, creation time) are generated, and the stable-hash ID option puts the current
-  date into the message ID.
+  references, creation time) are generated from random UUIDs or the clock, the stable-hash
+  ID option puts the current date into the message ID, and the sequential option the
+  current Unix time. Update messages always carry the current time, and the streaming
+  writer generates a random message ID and the current time when they are missing.
 - **Presets do not change the output.** The preset APIs (`applyPreset`, `apply_preset`,
   partner presets) have no effect on `build` in 0.5.0.
 - **ERN 3.8.x targets**: video resources are rejected, and a release identified only by an

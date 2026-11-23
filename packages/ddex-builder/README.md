@@ -10,8 +10,11 @@ Node.js and Python bindings use the same builder: `npm install ddex-builder`,
 Byte-for-byte determinism is not complete yet: with the default options, a message ID,
 release and resource references and `MessageCreatedDateTime` that the request leaves out
 are generated (random UUIDs, the current time), and the stable-hash ID strategy puts
-today's date into the `MessageId`, so two builds of the same request can differ. Full
-determinism is planned for 0.6.0.
+today's date into the `MessageId` (the sequential strategy uses the current Unix time), so
+two builds of the same request can differ. Update messages always carry the current time,
+and the streaming writer generates a random `MessageId` and the current time when they are
+missing. Full determinism is planned for 0.6.0; see
+[KNOWN_ISSUES.md](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md).
 
 > **0.5.0 has breaking changes.** ERN 3.8.2 output is now schema-valid, the WASM binding
 > runs this builder, and the request types gained fields (use `..Default::default()`).
