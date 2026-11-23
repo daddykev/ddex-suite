@@ -27,6 +27,10 @@ results; see "Fixed"). One Rust API change comes with the quick-xml security upd
   of raising, and Node returns `version: "Unknown"` as it already did for empty input.
   Tests in both languages run it on the official ERN 3.8.2, 4.2 and 4.3 samples and on
   malformed and non-DDEX input.
+- Python: `DDEXParser.parse`, `parse_async` and `ddex_parser.parse` were annotated as
+  returning `ParseResult`; they return the native `ParsedERNMessage`, which the
+  annotations now name and the package now exports. `ParseResult` stays exported (unused,
+  kept for compatibility).
 
 ### Removed
 - Unused dependencies. ddex-parser: ahash, bytes, crossbeam-channel, csv, futures,
@@ -81,6 +85,13 @@ results; see "Fixed"). One Rust API change comes with the quick-xml security upd
   to.
 
 ### Documentation
+- SECURITY.md rewritten to describe what is in place (parser defenses, cargo-deny in CI,
+  release smoke tests) and what is not (SBOMs, provenance, signing, fuzzing in CI). It no
+  longer claims `cargo audit`, SBOM generation, compliance certifications or a 1.x line.
+- Deleted `docs/MIGRATION-GUIDE.md`, `docs/API_DOCUMENTATION.md` and
+  `docs/PERFORMANCE-TUNING-GUIDE.md`: they described APIs that do not exist (`FidelityLevel`,
+  parse options that now throw, `toBuildRequest`) and unmeasured performance figures. The
+  current material is on the documentation site and in `dev-docs/PERFORMANCE.md`.
 - Python `ParseOptions`: documented that none of its fields currently changes the result.
 - KNOWN_ISSUES.md, the READMEs and the docs list every source of builder non-determinism
   (added: the sequential ID strategy's timestamp, update messages and the streaming
