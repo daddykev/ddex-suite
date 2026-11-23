@@ -27,6 +27,14 @@ Nothing here changes a public Rust, Node or Python API, feature flag or CLI.
 - CI runs `cargo-deny` (advisories, bans, licenses, sources). `deny.toml` uses the current
   cargo-deny format, and its license allow-list matches the dependency graph.
 
+### Security
+- Cargo.lock: semver-compatible updates for advisories bytes 1.11.1 (RUSTSEC-2026-0007),
+  rand 0.8.6 / 0.9.3 (RUSTSEC-2026-0097), anyhow 1.0.103 (RUSTSEC-2026-0190),
+  crossbeam-epoch 0.9.20 (RUSTSEC-2026-0204), tokio 1.51.6 (RUSTSEC-2026-0386),
+  rustix 1.1.6 (RUSTSEC-2026-0486) and url 2.5.9 (RUSTSEC-2026-0592).
+- Still open (KNOWN_ISSUES.md): quick-xml RUSTSEC-2026-0194 / -0195 and pyo3
+  RUSTSEC-2026-0176 / -0177, which need dependency upgrades, and seven unmaintained crates.
+
 ### Documentation
 - Python `ParseOptions`: documented that none of its fields currently changes the result.
   `sanity_check` / `sanityCheck` (Rust, Node, Python): documented as a placeholder that

@@ -21,8 +21,22 @@ db-urls = ["https://github.com/rustsec/advisory-db"]
 unmaintained = "all"
 unsound = "all"
 yanked = "warn"
-# Each ignore needs a reason, and an unresolved advisory also needs a KNOWN_ISSUES.md entry.
-ignore = []
+# Each ignore needs a reason, and an unresolved advisory also needs a KNOWN_ISSUES.md entry
+# ("Unresolved dependency advisories"). Remove an entry when its upgrade lands.
+ignore = [
+    # Vulnerabilities whose fix needs a dependency upgrade (each in its own follow-up PR).
+    { id = "RUSTSEC-2026-0194", reason = "quick-xml 0.31 (Node/Python builder bindings) and 0.36 (core): quadratic duplicate-attribute check on untrusted XML. Fixed in quick-xml >= 0.41; the upgrade changes the public From<quick_xml::Error> impls of ParseError/BuildError and is a separate PR" },
+    { id = "RUSTSEC-2026-0195", reason = "quick-xml NsReader namespace-declaration memory exhaustion. The workspace does not use NsReader; fixed in quick-xml >= 0.41, upgrade pending as for RUSTSEC-2026-0194" },
+    { id = "RUSTSEC-2026-0176", reason = "pyo3 0.24 PyList/PyTuple iterator nth/nth_back out-of-bounds read; the Python bindings do not call nth/nth_back directly. Fixed in pyo3 >= 0.29 (with numpy, pythonize, pyo3-async-runtimes); upgrade is a separate PR" },
+    { id = "RUSTSEC-2026-0177", reason = "pyo3 0.24 PyCFunction::new_closure missing Sync bound; the Python bindings do not call new_closure. Fixed in pyo3 >= 0.29; upgrade pending as for RUSTSEC-2026-0176" },
+    # Unmaintained crates with no maintained release to move to yet.
+    { id = "RUSTSEC-2026-0543", reason = "chrono is unmaintained: direct dependency of every crate (dates in the models); no drop-in replacement chosen yet" },
+    { id = "RUSTSEC-2026-0249", reason = "smartstring is unmaintained: ddex-builder dependency; to be replaced" },
+    { id = "RUSTSEC-2025-0119", reason = "number_prefix is unmaintained: pulled in by indicatif 0.17 (ddex-parser CLI progress bars); indicatif 0.18 drops it" },
+    { id = "RUSTSEC-2024-0436", reason = "paste is unmaintained: pulled in by rmp (rmp-serde, ddex-parser CLI MessagePack output); no rmp release without it" },
+    { id = "RUSTSEC-2024-0449", reason = "unsafe-libyaml is unmaintained: pulled in by serde_yaml (deprecated; YAML input/output in the CLIs); to be replaced" },
+    { id = "RUSTSEC-2026-0441", reason = "pin-utils is unmaintained: pulled in by futures-util (pyo3-async-runtimes in the Python parser binding, tokio-test in builder tests)" },
+]
 
 [licenses]
 confidence-threshold = 0.8
