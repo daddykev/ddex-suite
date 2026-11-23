@@ -39,6 +39,8 @@ results; see "Fixed"). One Rust API change comes with the quick-xml security upd
   binding js-sys.
 
 ### Changed
+- `scripts/check_versions.py` no longer reads the deleted `website/static/wasm/package.json`
+  (it failed on 0.5.0), reports a missing file instead of crashing, and runs in CI.
 - CI runs `cargo-deny` (advisories, bans, licenses, sources). `deny.toml` uses the current
   cargo-deny format, and its license allow-list matches the dependency graph.
 
