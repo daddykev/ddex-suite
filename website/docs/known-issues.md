@@ -30,8 +30,6 @@ summarizes the ones you are most likely to meet. Report new ones on
   `detect_version` return `"V4_3"`, not `"4.3"`.
 - **Malformed XML**: `]]>` in text is accepted, and mismatched tags come back as a generic
   XML error.
-- **`sanity_check` is a placeholder** (Rust, Node.js `sanityCheck`, Python): it reports any
-  input as valid ERN 4.3. Use `parse` to check that a message can be read.
 - **Python `ParseOptions` has no effect**: its fields are accepted for forward compatibility
   but do not change the result.
 

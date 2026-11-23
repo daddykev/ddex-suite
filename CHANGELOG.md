@@ -7,8 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing here changes a Node or Python API, feature flag or CLI. One Rust API change comes
-with the quick-xml security update; see "Changed (Rust API)".
+No Node or Python signature, feature flag or CLI changes (`sanity_check` now returns real
+results; see "Fixed"). One Rust API change comes with the quick-xml security update; see
+"Changed (Rust API)".
 
 ### Fixed
 - Python `ddex-parser` command: `parse` failed on every file (it read `message_id`,
@@ -17,6 +18,15 @@ with the quick-xml security update; see "Changed (Rust API)".
   control type, release count and the first three releases. `check` did no checking (it
   used the placeholder `sanity_check`); it now does a full parse. Errors go to stderr with
   exit code 1. An end-to-end test runs the installed command on official samples in CI.
+- `sanity_check` (Rust), Python `sanity_check` and Node `sanityCheck` reported every input
+  as valid ERN 4.3. They now detect the version (the parser's version detection) and check
+  XML well-formedness (syntax and matching end tags, attributes, entity references, one
+  root element, no DTD), with a real error for each problem; not XSD validation. The
+  result shape is unchanged. With no ERN namespace, the Rust function returns an `Err`
+  (`version` cannot express an unknown version), Python returns `version: None` instead
+  of raising, and Node returns `version: "Unknown"` as it already did for empty input.
+  Tests in both languages run it on the official ERN 3.8.2, 4.2 and 4.3 samples and on
+  malformed and non-DDEX input.
 
 ### Removed
 - Unused dependencies. ddex-parser: ahash, bytes, crossbeam-channel, csv, futures,
@@ -70,8 +80,6 @@ with the quick-xml security update; see "Changed (Rust API)".
 
 ### Documentation
 - Python `ParseOptions`: documented that none of its fields currently changes the result.
-  `sanity_check` / `sanityCheck` (Rust, Node, Python): documented as a placeholder that
-  reports any input as valid ERN 4.3.
 - KNOWN_ISSUES.md, the READMEs and the docs list every source of builder non-determinism
   (added: the sequential ID strategy's timestamp, update messages and the streaming
   writer). `IdStrategy::UUIDv7` is documented as falling back to v4.

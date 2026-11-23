@@ -131,9 +131,15 @@ class DDEXParser:
         return self._parser.detect_version(xml)
     
     def sanity_check(self, xml: Union[str, bytes]) -> Dict[str, Any]:
-        """Placeholder: returns ``{"is_valid": True, "version": "V4_3", "errors": [],
-        "warnings": []}`` for any input (see KNOWN_ISSUES.md). Use ``parse`` to check that a
-        message can be read."""
+        """Quick check of a document: detects the ERN version and checks that the XML is
+        well-formed (syntax, matching end tags, attributes, entity references, one root
+        element, no DTD). Not XSD or AVS validation, and ``parse`` can still fail on a
+        document that passes.
+
+        Returns ``{"is_valid": bool, "version": str | None, "errors": [str], "warnings":
+        [str]}``. ``version`` is the detected version (``"V4_3"``, the spelling
+        ``detect_version`` uses) or ``None`` when no ERN namespace was found; ``is_valid``
+        is True only when a version was detected and no problem was found."""
         return self._parser.sanity_check(xml)
 
 

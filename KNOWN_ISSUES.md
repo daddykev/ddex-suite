@@ -108,10 +108,6 @@ reason, until the upgrade lands.
   Giving `message_id`, `message_created_date_time`, `release_reference` and each track's
   `resource_reference` makes `DDEXBuilder::build` output repeatable; update messages always
   carry the current time.
-- ddex-parser `DDEXParser::sanity_check` is a placeholder (`lib.rs`): it returns
-  `is_valid: true`, version 4.3 and no errors without reading its input. The Python
-  `sanity_check` and Node `sanityCheck` call it (Node first rejects empty input and input
-  that does not start with `<`). The Python CLI's `check` command does a full parse instead.
 - Python parser binding: no `ParseOptions` field changes the result. `include_raw_extensions`
   and `include_comments` reach the Rust `ParseOptions`, which nothing reads;
   `validate_references` (Rust `resolve_references`) only controls `tracing` warnings for

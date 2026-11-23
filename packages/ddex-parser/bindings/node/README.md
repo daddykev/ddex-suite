@@ -72,8 +72,9 @@ assert.throws(() => parser.parseSync(xml, { includeRaw: true }), /removed in 0\.
   the complete parser, whatever the input size (up to 100 MB of XML; there is no
   streaming in Node). Absent values are omitted, never invented, and text is kept as
   written.
-- `detectVersion(xml)`, `sanityCheck(xml)` (a placeholder: it reports any non-empty input
-  that starts with `<` as valid ERN 4.3), `getDetailedError(xml)`.
+- `detectVersion(xml)`, `sanityCheck(xml)` (ERN version detection and an XML
+  well-formedness check, not XSD validation; `version` is `"Unknown"` when there is no ERN
+  namespace), `getDetailedError(xml)`.
 
 `ParsedMessage` has the message header (`messageId`, `messageType`, `messageDate`,
 `senderName`, `senderId`, `recipientName`, `recipientId`, `version`, `profile`,

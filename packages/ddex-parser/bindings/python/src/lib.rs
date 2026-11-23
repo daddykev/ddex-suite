@@ -205,20 +205,28 @@ impl PyDDEXParser {
         }
     }
 
-    /// Perform sanity check
+    /// Quick check: ERN version detection and XML well-formedness (not XSD or AVS
+    /// validation). Returns {"is_valid", "version", "errors", "warnings"}; "version" is the
+    /// detected version ("V4_3") or None when no ERN namespace was found.
     pub fn sanity_check(&self, py: Python, xml: &Bound<'_, PyAny>) -> PyResult<Py<PyAny>> {
         let xml_str = extract_xml_string(xml)?;
         let cursor = Cursor::new(xml_str.as_bytes());
 
-        let result = self
-            .parser
-            .sanity_check(cursor)
-            .map_err(|e| PyValueError::new_err(format!("Sanity check error: {}", e)))?;
-
-        let py_obj = pythonize(py, &result)
-            .map_err(|e| PyValueError::new_err(format!("Serialization error: {}", e)))?;
-
-        Ok(py_obj.into())
+        let result = match self.parser.sanity_check(cursor) {
+            Ok(result) => pythonize(py, &result)
+                .map_err(|e| PyValueError::new_err(format!("Serialization error: {}", e)))?
+                .unbind(),
+            // No ERN version detected: an invalid result, not an exception.
+            Err(e) => {
+                let d = PyDict::new(py);
+                d.set_item("is_valid", false)?;
+                d.set_item("version", py.None())?;
+                d.set_item("errors", vec![e.to_string()])?;
+                d.set_item("warnings", Vec::<String>::new())?;
+                d.into_any().unbind()
+            }
+        };
+        Ok(result)
     }
 
     // Helper methods for building DDEX from DataFrames
