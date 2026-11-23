@@ -33,7 +33,7 @@ ignore = [
     { id = "RUSTSEC-2026-0543", reason = "chrono is unmaintained: direct dependency of every crate (dates in the models); no drop-in replacement chosen yet" },
     { id = "RUSTSEC-2026-0249", reason = "smartstring is unmaintained: ddex-builder dependency; to be replaced" },
     { id = "RUSTSEC-2025-0119", reason = "number_prefix is unmaintained: pulled in by indicatif 0.17 (ddex-parser CLI progress bars); indicatif 0.18 drops it" },
-    { id = "RUSTSEC-2024-0436", reason = "paste is unmaintained: pulled in by rmp (rmp-serde, ddex-parser CLI MessagePack output); no rmp release without it" },
+    { id = "RUSTSEC-2024-0436", reason = "paste is unmaintained: pulled in by rmp (rmp-serde, ddex-parser CLI MessagePack output); the advisory lists no safe upgrade" },
     { id = "RUSTSEC-2024-0449", reason = "unsafe-libyaml is unmaintained: pulled in by serde_yaml (deprecated; YAML input/output in the CLIs); to be replaced" },
     { id = "RUSTSEC-2026-0441", reason = "pin-utils is unmaintained: pulled in by futures-util (pyo3-async-runtimes in the Python parser binding, tokio-test in builder tests)" },
 ]
