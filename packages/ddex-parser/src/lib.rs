@@ -305,7 +305,9 @@ impl DDEXParser {
         parser::detector::VersionDetector::detect(reader)
     }
 
-    /// Perform sanity check on DDEX XML
+    /// Placeholder: returns `is_valid: true`, version 4.3 and no errors for any input (the
+    /// reader is not read; see KNOWN_ISSUES.md). Use [`DDEXParser::parse`] to check that a
+    /// message can be read.
     pub fn sanity_check<R: std::io::BufRead>(
         &self,
         _reader: R,

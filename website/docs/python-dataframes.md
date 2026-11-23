@@ -235,7 +235,11 @@ A failed build raises `RuntimeError` with the same message as `build`; a missing
 - `DDEXParser().stream(xml)` parses the whole document, then yields one dict per release
   (`release_id`, `title`, `artist`, `track_count`). It does not reduce memory use.
 - `detect_version(xml)` returns `"V4_3"` (the enum spelling); `sanity_check(xml)` returns
-  `{"is_valid", "version", "errors", "warnings"}`.
+  `{"is_valid", "version", "errors", "warnings"}`, but it is a placeholder that reports any
+  input as valid ERN 4.3. Use `parse` to check that a message can be read.
+- `ParseOptions` (`include_raw_extensions`, `include_comments`, `validate_references`,
+  `streaming`, `timeout`) is accepted for forward compatibility; none of its fields
+  currently changes the result.
 - The builder's preset methods (`apply_preset`, ...) do not change the output in 0.5.0.
 - `ddex_parser.__version__` and `ddex_builder.__version__` report the installed package
   version.

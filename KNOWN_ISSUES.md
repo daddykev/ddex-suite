@@ -74,6 +74,16 @@ decision needed)". The security policy above does not settle them:
   `chunkSize`, the fidelity options, `collectStatistics`, `validationLevel`, ...).
   `ParsedMessage.statistics` (all zeros) and `fidelityInfo` (an echo of the options) were
   removed.
+- ddex-parser `DDEXParser::sanity_check` is a placeholder (`lib.rs`): it returns
+  `is_valid: true`, version 4.3 and no errors without reading its input. The Python
+  `sanity_check` and Node `sanityCheck` call it (Node first rejects empty input and input
+  that does not start with `<`). The Python CLI's `check` command does a full parse instead.
+- Python parser binding: no `ParseOptions` field changes the result. `include_raw_extensions`
+  and `include_comments` reach the Rust `ParseOptions`, which nothing reads;
+  `validate_references` (Rust `resolve_references`) only controls `tracing` warnings for
+  unresolved references, which the binding does not surface; `streaming` is not read by
+  `rust_parse_options_from_dict`; `timeout` is left out by `ParseOptions.to_dict`. The fields
+  are kept (accepted for forward compatibility) so existing code keeps working.
 - ERN 3.8.1 builder output is not XSD-checked: no official 3.8.1 schema can be obtained
   (DDEX no longer serves ERN 3.x XSDs, and no archived copy of the 3.8.1 one exists). It
   is the 3.8.2 document in the 381 namespace (`it::ern38_xsd`), and the content models
