@@ -7,6 +7,7 @@ mod basic;
 mod canonical_debug;
 mod cross_platform_determinism;
 mod determinism;
+mod determinism_0_6;
 mod entity_classification;
 mod ern382_output;
 mod ern38_round_trip;
