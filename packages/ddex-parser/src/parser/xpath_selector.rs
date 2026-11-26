@@ -122,7 +122,7 @@ impl XPathSelector {
     /// Select elements matching the XPath expression
     pub fn select<R: BufRead>(&self, reader: R) -> Result<XPathResult, ParseError> {
         let start_time = std::time::Instant::now();
-        let mut xml_reader = Reader::from_reader(reader);
+        let mut xml_reader = Reader::from_reader(crate::xml_text::Checked::new(reader));
         xml_reader.config_mut().trim_text(true);
 
         // Performance optimizations
@@ -142,6 +142,7 @@ impl XPathSelector {
         let mut text_run = crate::xml_text::TextRun::default();
         loop {
             let event = xml_reader.read_event_into(&mut buf);
+            crate::xml_text::check(xml_reader.get_ref())?;
             // One text value per run of Text / GeneralRef events (one Text event before
             // quick-xml 0.38), handled before the event that ends the run, as before.
             if let Ok(ref ev) = event {
@@ -575,7 +576,7 @@ impl XPathSelector {
             selectors.push(Self::new(xpath)?.fast_mode(true));
         }
 
-        let mut xml_reader = Reader::from_reader(reader);
+        let mut xml_reader = Reader::from_reader(crate::xml_text::Checked::new(reader));
         xml_reader.config_mut().trim_text(true);
         xml_reader.config_mut().check_end_names = false;
         xml_reader.config_mut().check_comments = false;
@@ -588,6 +589,7 @@ impl XPathSelector {
         let mut text_run = crate::xml_text::TextRun::default();
         loop {
             let event = xml_reader.read_event_into(&mut buf);
+            crate::xml_text::check(xml_reader.get_ref())?;
             // One text value per run of Text / GeneralRef events (one Text event before
             // quick-xml 0.38), handled before the event that ends the run, as before.
             if let Ok(ref ev) = event {

@@ -82,7 +82,7 @@ impl NamespaceDetector {
         reader: R,
         security_config: &crate::parser::security::SecurityConfig,
     ) -> Result<NamespaceDetectionResult, ParseError> {
-        let mut xml_reader = Reader::from_reader(reader);
+        let mut xml_reader = Reader::from_reader(crate::xml_text::Checked::new(reader));
         xml_reader.config_mut().trim_text(true);
 
         // Configure security settings
@@ -96,7 +96,9 @@ impl NamespaceDetector {
         let mut entity_expansions = 0;
 
         loop {
-            match xml_reader.read_event_into(&mut buf) {
+            let read = xml_reader.read_event_into(&mut buf);
+            crate::xml_text::check(xml_reader.get_ref())?;
+            match read {
                 Ok(Event::Start(ref e)) => {
                     depth += 1;
 

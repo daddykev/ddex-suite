@@ -66,12 +66,14 @@ fn well_formedness_errors(bytes: &[u8]) -> Vec<String> {
         match reader.read_event_into(&mut buf) {
             Ok(Event::Start(ref e)) => {
                 check_root(depth, &mut roots, position, &mut errors);
-                check_attributes(e, position, &mut errors);
+                let end = reader.buffer_position();
+                check_attributes(e, bytes, position, end, &mut errors);
                 depth += 1;
             }
             Ok(Event::Empty(ref e)) => {
                 check_root(depth, &mut roots, position, &mut errors);
-                check_attributes(e, position, &mut errors);
+                let end = reader.buffer_position();
+                check_attributes(e, bytes, position, end, &mut errors);
             }
             Ok(Event::End(_)) => depth = depth.saturating_sub(1),
             Ok(Event::Text(ref t)) => {
@@ -81,7 +83,12 @@ fn well_formedness_errors(bytes: &[u8]) -> Vec<String> {
             }
             Ok(Event::GeneralRef(ref r)) => {
                 let raw = format!("&{};", String::from_utf8_lossy(r));
-                if quick_xml::escape::unescape(&raw).is_err() {
+                if !ddex_core::xml_refs::is_defined(r) {
+                    let (line, column) = ddex_core::xml_refs::line_column(bytes, position as usize);
+                    errors.push(format!(
+                        "Undefined entity '{raw}' at line {line}, column {column}"
+                    ));
+                } else if quick_xml::escape::unescape(&raw).is_err() {
                     errors.push(format!("Undefined entity {raw} at byte {position}"));
                 } else if depth == 0 {
                     errors.push(format!("Text outside the root element at byte {position}"));
@@ -129,14 +136,32 @@ fn check_root(depth: usize, roots: &mut usize, position: u64, errors: &mut Vec<S
     }
 }
 
-fn check_attributes(e: &BytesStart, position: u64, errors: &mut Vec<String>) {
+/// The tag `e` spans bytes `position..end` of the document `bytes`; a reference to an
+/// undefined entity in one of its attribute values is reported with its line and column.
+fn check_attributes(
+    e: &BytesStart,
+    bytes: &[u8],
+    position: u64,
+    end: u64,
+    errors: &mut Vec<String>,
+) {
+    let tag = &bytes[position as usize..end as usize];
+    for entity in ddex_core::xml_refs::undefined_entities(tag) {
+        let (line, column) =
+            ddex_core::xml_refs::line_column(bytes, (position + entity.offset) as usize);
+        errors.push(format!(
+            "Undefined entity '&{};' in an attribute value at line {line}, column {column}",
+            entity.name
+        ));
+    }
     for attr in e.attributes() {
         match attr {
             Ok(attr) => {
                 let valid = std::str::from_utf8(&attr.value)
                     .ok()
                     .is_some_and(|value| quick_xml::escape::unescape(value).is_ok());
-                if !valid {
+                // An undefined entity is reported above.
+                if !valid && !ddex_core::xml_refs::has_undefined(&attr.value) {
                     errors.push(format!(
                         "Invalid value of attribute {} at byte {position}",
                         String::from_utf8_lossy(attr.key.as_ref())

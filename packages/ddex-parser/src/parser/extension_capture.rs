@@ -310,6 +310,7 @@ impl ExtensionAwareParser {
         if !self.capture_extensions {
             return Ok(Extensions::new());
         }
+        crate::xml_text::check_document(xml_content.as_bytes())?;
 
         let mut reader = Reader::from_str(xml_content);
         reader.config_mut().trim_text(true);

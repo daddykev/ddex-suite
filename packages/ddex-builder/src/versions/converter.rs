@@ -508,6 +508,8 @@ impl VersionConverter {
         rules: &ConversionRules,
         options: &ConversionOptions,
     ) -> Result<(String, Vec<ConversionWarning>), Box<dyn std::error::Error>> {
+        // A reference to an undefined entity (`&foo;`, no DTD) is an error, not copied.
+        ddex_core::xml_refs::check_document(xml_content.as_bytes())?;
         let mut reader = Reader::from_str(xml_content);
         let mut writer = Writer::new(Cursor::new(Vec::new()));
         let mut warnings = Vec::new();

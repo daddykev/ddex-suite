@@ -48,7 +48,7 @@
     "build:ts": "tsc",
     "artifacts": "napi artifacts",
     "version": "napi version",
-    "test": "node smoke-ern43.js && node smoke-ern382.js"
+    "test": "node smoke-ern43.js && node smoke-ern382.js && node test-validate-structure.js"
   },
   "engines": {
     "node": ">=18.0.0"

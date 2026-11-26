@@ -72,7 +72,10 @@ summarizes the ones you are most likely to meet. Report new ones on
 - A conformance suite.
 - A parallel streaming iterator that scales with the thread count.
 - The builder's determinism lint (no `HashMap` / `HashSet` in output paths) enforced in CI.
+- Investigate attribute-value normalization: the parser keeps a literal tab, line feed or
+  carriage return in an attribute value as written, where XML 1.0 (§3.3.3) normalizes each
+  to a space, so its values may differ from the lxml oracle's.
 
 Later, on the way to **1.0.0**: a built-in bridge from parsed messages to build requests (true
-Parse → Modify → Build), a semantic diff, TypeScript API reference pages, and supply-chain
-hardening (SBOMs and signed artifacts; `cargo-deny` already runs in CI).
+Parse → Modify → Build), a semantic diff, and TypeScript API reference pages. (From 0.5.1,
+release artifacts are built in GitHub Actions with signed build-provenance attestations and SBOMs, verifiable with `gh attestation verify <file> --repo daddykev/ddex-suite`, provided the published files are the ones release-build produced.)

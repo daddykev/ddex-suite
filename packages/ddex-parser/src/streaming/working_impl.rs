@@ -59,7 +59,7 @@ pub enum WorkingStreamingElement {
 
 /// Working streaming parser with real functionality
 pub struct WorkingStreamingParser<R: BufRead> {
-    reader: Reader<R>,
+    reader: Reader<crate::xml_text::Checked<R>>,
     buffer: Vec<u8>,
     version: ERNVersion,
 
@@ -93,7 +93,7 @@ pub struct WorkingStreamingParser<R: BufRead> {
 impl<R: BufRead> WorkingStreamingParser<R> {
     /// Create new working streaming parser
     pub fn new(reader: R, version: ERNVersion) -> Self {
-        let mut xml_reader = Reader::from_reader(reader);
+        let mut xml_reader = Reader::from_reader(crate::xml_text::Checked::new(reader));
         xml_reader.config_mut().trim_text(true);
         xml_reader.config_mut().check_end_names = true;
         xml_reader.config_mut().check_comments = false;
@@ -147,6 +147,7 @@ impl<R: BufRead> WorkingStreamingParser<R> {
         loop {
             self.buffer.clear();
             let event = self.reader.read_event_into(&mut self.buffer)?;
+            crate::xml_text::check(self.reader.get_ref())?;
 
             // One text value per run of Text / GeneralRef events (one Text event before
             // quick-xml 0.38), kept escaped and trimmed as before.

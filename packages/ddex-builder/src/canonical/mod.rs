@@ -161,6 +161,9 @@ impl DB_C14N {
         // Text is kept exactly as written. Only whitespace-only text between elements
         // (indentation) is dropped; a leaf element keeps all of its text, even if that text
         // is only whitespace.
+        // A reference to an undefined entity (`&foo;`, no DTD) is an error, not dropped.
+        ddex_core::xml_refs::check_document(xml.as_bytes())
+            .map_err(|entity| super::error::BuildError::XmlGeneration(entity.to_string()))?;
         let mut reader = Reader::from_str(xml);
 
         let mut buf = Vec::new();

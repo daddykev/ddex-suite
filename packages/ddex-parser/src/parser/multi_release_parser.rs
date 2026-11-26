@@ -105,7 +105,7 @@ impl MultiReleaseParser {
     /// Fast count of releases in the document without full parsing
     pub fn count_releases<R: BufRead>(&mut self, reader: R) -> Result<usize, ParseError> {
         let start_time = std::time::Instant::now();
-        let mut xml_reader = Reader::from_reader(reader);
+        let mut xml_reader = Reader::from_reader(crate::xml_text::Checked::new(reader));
         xml_reader.config_mut().trim_text(false); // Faster for counting
 
         let mut buf = Vec::new();
@@ -114,7 +114,9 @@ impl MultiReleaseParser {
         let mut elements_processed = 0;
 
         loop {
-            match xml_reader.read_event_into(&mut buf) {
+            let read = xml_reader.read_event_into(&mut buf);
+            crate::xml_text::check(xml_reader.get_ref())?;
+            match read {
                 Ok(Event::Start(ref e)) => {
                     elements_processed += 1;
                     depth += 1;
@@ -175,7 +177,7 @@ impl MultiReleaseParser {
         reader: R,
     ) -> Result<MultiReleaseResult, ParseError> {
         let start_time = std::time::Instant::now();
-        let mut xml_reader = Reader::from_reader(reader);
+        let mut xml_reader = Reader::from_reader(crate::xml_text::Checked::new(reader));
         xml_reader.config_mut().trim_text(true);
         xml_reader.config_mut().check_end_names = true;
 
@@ -192,6 +194,7 @@ impl MultiReleaseParser {
         let mut text_run = crate::xml_text::TextRun::default();
         loop {
             let event = xml_reader.read_event_into(&mut buf);
+            crate::xml_text::check(xml_reader.get_ref())?;
             // One text value per run of Text / GeneralRef events (one Text event before
             // quick-xml 0.38), handled before the event that ends the run, as before.
             if let Ok(ref ev) = event {

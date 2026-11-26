@@ -592,6 +592,7 @@ dependencies = [
  "chrono",
  "html-escape",
  "indexmap",
+ "memchr",
  "regex",
  "serde",
  "serde_json",

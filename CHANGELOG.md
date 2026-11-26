@@ -8,10 +8,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 No Node or Python signature, feature flag or CLI changes (`sanity_check` now returns real
-results; see "Fixed"). One Rust API change comes with the quick-xml security update; see
+results, undefined entities are errors everywhere, and the builder's `validate_structure`
+reads the whole document; see "Fixed"). One Rust API change comes with the quick-xml security update; see
 "Changed (Rust API)".
 
 ### Fixed
+- Undefined entities: a reference to an entity that is neither predefined nor a character
+  reference (`&foo;`; DTDs are not read, so nothing defines it) was dropped silently by
+  the experimental `ParseMode::Stream` path, the streaming iterators (`stream`,
+  `stream_parallel`, `stream_zero_copy`), `SelectiveParser`, `XPathSelector`,
+  `MultiReleaseParser`, `ExtensionAwareParser`, the fast path behind
+  `SecurityConfig::relaxed()`, and the builder's version converter (which copied it to
+  its output). It now raises an error naming the entity with its line and column, in text
+  and in attribute values alike: `undefined entity '&foo;' at line 73, column 29` (`... in
+  an attribute value at ...`), as `ParseError::MalformedXml` whose `position` is the byte
+  offset of the `&`. `parse()` (and so Node `parse` / `parseSync` and Python `parse`)
+  already failed, with an unescape error that gave no line or column; it now reports the
+  same message. The builder's `DB_C14N::canonicalize` and FFI XML input check fail the
+  same way, and `sanity_check` reports `Undefined entity '&foo;' at line L, column C`.
+  The five predefined entities and character references (`&amp;`, `&#233;`, `&#xE9;`)
+  decode as before. The scanner is public as `ddex_core::xml_refs`. Tests inject `&foo;`
+  into the official ERN 4.3 sample in Rust, Node and Python.
+- Builder Node `validateStructure` / Python `validate_structure` and the parser CLI's
+  `validate --xml-only` read only the first XML event, so a document was valid if its
+  first line was. They now read the whole document and report the first syntax error or
+  undefined entity.
 - Python `ddex-parser` command: `parse` failed on every file (it read `message_id`,
   `version` and `release_count` as attributes, but they are methods, and asked for a
   `releases` attribute that does not exist). It now prints the message ID, version,
@@ -42,7 +63,28 @@ results; see "Fixed"). One Rust API change comes with the quick-xml security upd
   Node binding chrono; parser Python binding serde, serde_json, chrono; parser WASM
   binding js-sys.
 
+### Added
+- Release artifacts are built in GitHub Actions with signed build-provenance attestations
+  and SBOMs, verifiable with `gh attestation verify <file> --repo daddykev/ddex-suite`,
+  provided the published files are the ones release-build produced. `release-build.yml`
+  now also builds the three `.crate` files and uploads the ten npm tarballs (the Node
+  install test installs those tarballs); it writes CycloneDX 1.5 SBOMs (cargo-cyclonedx)
+  for the crates and for the Rust crate compiled into each npm and Python package, and
+  its `attest` job (the only job with `id-token` / `attestations` write access) attests
+  SLSA build provenance for every file and an SBOM for each package.
+  `scripts/verify_release_artifacts.sh` verifies a downloaded run. PUBLISH.md publishes
+  those downloaded, verified files (`npm publish <tarball>`, `twine upload`); for
+  crates.io, where `cargo publish` always packages from source, it re-packages the same
+  commit with the recorded cargo version and publishes only if the bytes match. Publishing
+  stays manual: no npm `--provenance`, no PyPI trusted-publishing attestations.
+
 ### Changed
+- Security contact: vulnerabilities are reported privately by email to
+  `security@ddex-suite.org` (SECURITY.md, the website's security page, the WASM builder's
+  SECURITY.md and `docs/security-audit.md`), replacing an unconfirmed address;
+  the WASM guide's response-time promises are removed.
+- 0.6.0 roadmap: investigate attribute-value whitespace normalization (literal tab, LF and
+  CR are kept; XML 1.0 §3.3.3 maps each to a space, so values may differ from lxml's).
 - `scripts/check_versions.py` no longer reads the deleted `website/static/wasm/package.json`
   (it failed on 0.5.0), reports a missing file instead of crashing, and runs in CI.
 - CI runs `cargo-deny` (advisories, bans, licenses, sources). `deny.toml` uses the current

@@ -3,8 +3,15 @@
 Every package is released at the same version: `[workspace.package] version` in the root
 `Cargo.toml` (0.5.0 at the time of writing). Nothing is published automatically. The
 **Release build** workflow (`.github/workflows/release-build.yml`, run by hand with
-"Run workflow") builds and install-tests the npm and PyPI artifacts. You download them
-and publish by hand in the order below.
+"Run workflow") builds and install-tests every release file, writes CycloneDX SBOMs, and
+signs a build-provenance attestation for each file. You download those files, verify them,
+and publish **those exact files** by hand in the order below.
+
+**Never build or pack a release file on your own machine.** The attestations prove where a
+file was built only for the files the workflow produced; a file built locally has none.
+crates.io is the one exception that cannot be avoided (`cargo publish` always packages from
+source): there you re-package the same commit and publish only if the checksums match the
+attested `.crate` files (step 3).
 
 ## 1. Before the release
 
@@ -19,20 +26,36 @@ and publish by hand in the order below.
 - [ ] CI is green on the release branch (`.github/workflows/ci.yml`: fmt, clippy, tests,
       XSD, Node, Python 3.10–3.14, ERN 4 oracle).
 
-## 2. Build the artifacts
+## 2. Build, download and verify the artifacts
 
 Run **Release build** on the release branch. It produces:
 
 | Artifact | Contents |
 |---|---|
+| `crates` | `ddex-core`, `ddex-parser`, `ddex-builder` `.crate` files and `cargo-version.txt` |
+| `npm-packages` | the npm tarballs: `ddex-parser` and `ddex-builder`, and their four platform packages each (darwin-arm64, darwin-x64, linux-x64-gnu, win32-x64-msvc) |
 | `wheel-<package>-<platform>` | abi3 wheels: manylinux x86_64 / aarch64, musllinux x86_64, macOS x86_64 / arm64, Windows x64 |
 | `sdist-<package>` | source distributions |
-| `node-<package>-<platform>` | `<package>-node.<platform>.node` for darwin-arm64, darwin-x64, linux-x64-gnu, win32-x64-msvc |
+| `node-<package>-<platform>` | the native binaries inside the platform tarballs |
+| `sbom` | CycloneDX 1.5 SBOMs: each crate, and the Rust crate compiled into each npm package and each Python package |
 
 Each wheel, the sdists and each Node platform are install-tested on a matching runner
 (`scripts/release_smoke.py`, `scripts/release_smoke.js`: import, parse an official
-sample, build an ERN 4.3 message and parse it back). Do not publish unless every job is
-green.
+sample, build an ERN 4.3 message and parse it back); the Node test installs the
+`npm-packages` tarballs. Do not publish unless every job is green.
+
+The `attest` job signs a build-provenance attestation for every file above and an SBOM
+attestation for each package. Download the whole run and verify every file:
+
+```bash
+gh run download <run-id> --repo daddykev/ddex-suite --dir release-artifacts
+scripts/verify_release_artifacts.sh release-artifacts
+```
+
+It runs `gh attestation verify <file> --repo daddykev/ddex-suite --signer-workflow
+daddykev/ddex-suite/.github/workflows/release-build.yml` on each file (and again with
+`--predicate-type https://cyclonedx.org/bom` on each package) and stops at the first
+failure. Publish nothing if it fails.
 
 macOS: every macOS job runs on `macos-latest` (Apple Silicon). The x86_64 wheels and the
 darwin-x64 Node binaries are cross-compiled there (`--target x86_64-apple-darwin`), as
@@ -47,33 +70,59 @@ on Intel hardware.
 
 ### crates.io
 
+`cargo publish` packages from the source tree; it cannot upload a downloaded `.crate`.
+cargo packages reproducibly (fixed file times), so check that it produces the attested
+files, then publish:
+
 ```bash
+git switch --detach <the run's commit>          # gh run view <run-id> --json headSha
+cat release-artifacts/crates/cargo-version.txt  # use this cargo version
+cargo package --no-verify -p ddex-core -p ddex-parser -p ddex-builder
+for c in release-artifacts/crates/*.crate; do
+  cmp "$c" "target/package/$(basename "$c")" || { echo "MISMATCH: $c"; exit 1; }
+done
 cargo publish -p ddex-core
 cargo publish -p ddex-parser
 cargo publish -p ddex-builder
 ```
 
-### npm
-
-For each package (`ddex-parser`, `ddex-builder`), publish the four platform packages
-first, then the main package (its `optionalDependencies` name the platform packages at
-the same version):
+Publish nothing if any file differs. After publishing, check what crates.io serves:
 
 ```bash
-cd packages/ddex-parser/bindings/node
-for p in darwin-arm64 darwin-x64 linux-x64-gnu win32-x64-msvc; do
-  cp /path/to/artifacts/node-ddex-parser-$p/ddex-parser-node.$p.node npm/$p/
-  (cd npm/$p && npm publish --access public)
+for c in ddex-core ddex-parser ddex-builder; do
+  curl -fsSLo "$c.crate" "https://static.crates.io/crates/$c/$c-<version>.crate"
+  gh attestation verify "$c.crate" --repo daddykev/ddex-suite
 done
-npm publish --access public
 ```
 
-Repeat in `packages/ddex-builder/bindings/node` with `ddex-builder-node.<platform>.node`.
+### npm
+
+Publish the downloaded tarballs, never a package directory (that would pack it again on
+your machine). For each package, the four platform packages first, then the main package
+(its `optionalDependencies` name the platform packages at the same version):
+
+```bash
+cd release-artifacts/npm-packages
+for pkg in ddex-parser ddex-builder; do
+  for p in darwin-arm64 darwin-x64 linux-x64-gnu win32-x64-msvc; do
+    npm publish "$pkg-$p-<version>.tgz" --access public
+  done
+  npm publish "$pkg-<version>.tgz" --access public
+done
+```
+
+`npm publish` is run without `--provenance` (npm provenance needs publishing from CI); the
+GitHub attestations are the provenance. After publishing, `npm pack <name>@<version>`
+downloads a registry tarball for `gh attestation verify`.
 
 ### PyPI
 
+Upload the downloaded wheels and sdists (no PyPI trusted-publishing attestations, which
+need publishing from CI; the GitHub attestations are the provenance):
+
 ```bash
 python -m pip install twine
+cd release-artifacts
 twine upload wheel-ddex-parser-*/*.whl sdist-ddex-parser/*.tar.gz
 twine upload wheel-ddex-builder-*/*.whl sdist-ddex-builder/*.tar.gz
 ```

@@ -911,17 +911,28 @@ impl StreamingDdexBuilder {
 
 #[napi]
 pub async fn validate_structure(xml: String) -> Result<ValidationResult> {
-    // Parse and validate XML structure
-    match quick_xml::Reader::from_str(&xml).read_event() {
-        Ok(_) => Ok(ValidationResult {
-            is_valid: true,
-            errors: vec![],
-            warnings: vec![],
-        }),
-        Err(e) => Ok(ValidationResult {
-            is_valid: false,
-            errors: vec![format!("XML parsing error: {}", e)],
-            warnings: vec![],
-        }),
+    // Reads the whole document (before 0.5.1, only its first event).
+    let errors: Vec<String> = structure_error(&xml).into_iter().collect();
+    Ok(ValidationResult {
+        is_valid: errors.is_empty(),
+        errors,
+        warnings: vec![],
+    })
+}
+
+/// The first problem that makes `xml` not well-formed: a reference to an undefined entity
+/// (`&foo;`, there is no DTD), with its line and column, or a syntax error anywhere in the
+/// document.
+fn structure_error(xml: &str) -> Option<String> {
+    if let Err(entity) = ddex_core::xml_refs::check_document(xml.as_bytes()) {
+        return Some(format!("XML parsing error: {entity}"));
+    }
+    let mut reader = quick_xml::Reader::from_str(xml);
+    loop {
+        match reader.read_event() {
+            Ok(quick_xml::events::Event::Eof) => return None,
+            Ok(_) => {}
+            Err(e) => return Some(format!("XML parsing error: {e}")),
+        }
     }
 }
