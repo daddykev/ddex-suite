@@ -383,4 +383,4 @@ The DDEX Builder is **ready for production use** with the implemented security m
 
 **Audit Completed**: January 2025  
 **Next Review Due**: April 2025  
-**Security Contact**: [Report a vulnerability](https://github.com/daddykev/ddex-suite/security/advisories/new) (GitHub private vulnerability reporting; see [SECURITY.md](../SECURITY.md))
+**Security Contact**: report privately by email to [security@ddex-suite.org](mailto:security@ddex-suite.org) (see [SECURITY.md](../SECURITY.md))

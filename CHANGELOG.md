@@ -79,9 +79,10 @@ reads the whole document; see "Fixed"). One Rust API change comes with the quick
   stays manual: no npm `--provenance`, no PyPI trusted-publishing attestations.
 
 ### Changed
-- SECURITY.md: vulnerabilities are reported through GitHub's private vulnerability
-  reporting ("Report a vulnerability" on the Security tab); the email addresses, which
-  were not confirmed as monitored, are removed.
+- Security contact: vulnerabilities are reported privately by email to
+  `security@ddex-suite.org` (SECURITY.md, the website's security page, the WASM builder's
+  SECURITY.md and `docs/security-audit.md`), replacing an unconfirmed address;
+  the WASM guide's response-time promises are removed.
 - 0.6.0 roadmap: investigate attribute-value whitespace normalization (literal tab, LF and
   CR are kept; XML 1.0 §3.3.3 maps each to a space, so values may differ from lxml's).
 - `scripts/check_versions.py` no longer reads the deleted `website/static/wasm/package.json`

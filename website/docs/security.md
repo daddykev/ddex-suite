@@ -92,5 +92,5 @@ The full list, with the tests that pin each one, is in
   provided the published files are the ones release-build produced. Publishing is manual,
   so there is no npm `--provenance` or PyPI trusted-publishing attestation.
 
-Report a vulnerability as described in
+Report security problems privately by email to [security@ddex-suite.org](mailto:security@ddex-suite.org), not in a public issue; see
 [SECURITY.md](https://github.com/daddykev/ddex-suite/blob/main/SECURITY.md).
