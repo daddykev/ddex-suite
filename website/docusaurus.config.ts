@@ -1,5 +1,6 @@
 import {themes as prismThemes} from 'prism-react-renderer';
-import type {Config} from '@docusaurus/types';
+import path from 'path';
+import type {Config, Plugin} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 const GITHUB = 'https://github.com/daddykev/ddex-suite';
@@ -55,6 +56,37 @@ const REDIRECTS: Record<string, string[]> = {
     '/blog/long-blog-post', '/blog/mdx-blog-post', '/blog/welcome', '/markdown-page'],
 };
 
+// The Playground's Monaco editor comes from the npm package, bundled by webpack (no CDN):
+// - server build: Monaco needs a browser, so it and its setup module are empty modules
+//   there (the Playground renders the editor only in the browser);
+// - client build: the TypeScript, CSS and HTML language modes, and with them their web
+//   workers (ts.worker alone is about 7 MB), are left out. The Playground uses XML and JSON.
+function monacoEditorPlugin(): Plugin {
+  return {
+    name: 'monaco-editor-bundle',
+    configureWebpack(_config, isServer, {currentBundler}) {
+      if (isServer) {
+        return {
+          resolve: {
+            alias: {
+              'monaco-editor': false,
+              [path.resolve(__dirname, 'src/components/monaco/setup.ts')]: false,
+            },
+          },
+        };
+      }
+      return {
+        plugins: [
+          new currentBundler.instance.IgnorePlugin({
+            resourceRegExp: /^\.\/(tsMode|cssMode|htmlMode)\.js$/,
+            contextRegExp: /monaco-editor[\\/]esm[\\/]vs[\\/]languages[\\/]features[\\/](typescript|css|html)$/,
+          }),
+        ],
+      };
+    },
+  };
+}
+
 const config: Config = {
   title: 'DDEX Suite',
   tagline: 'Parse and build DDEX ERN XML in Rust, Node.js and Python',
@@ -102,6 +134,7 @@ const config: Config = {
   ],
 
   plugins: [
+    monacoEditorPlugin,
     [
       '@docusaurus/plugin-client-redirects',
       {
