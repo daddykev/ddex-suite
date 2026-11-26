@@ -1,5 +1,8 @@
 {
   "hosting": {
+    "predeploy": [
+      "npm --prefix \"$PROJECT_DIR\" run build"
+    ],
     "public": "build",
     "ignore": [
       "firebase.json",
