@@ -77,5 +77,5 @@ summarizes the ones you are most likely to meet. Report new ones on
   to a space, so its values may differ from the lxml oracle's.
 
 Later, on the way to **1.0.0**: a built-in bridge from parsed messages to build requests (true
-Parse → Modify → Build), a semantic diff, TypeScript API reference pages, and supply-chain
-hardening (SBOMs and signed artifacts; `cargo-deny` already runs in CI).
+Parse → Modify → Build), a semantic diff, and TypeScript API reference pages. (From 0.5.1,
+release artifacts are built in GitHub Actions with signed build-provenance attestations and SBOMs, verifiable with `gh attestation verify <file> --repo daddykev/ddex-suite`, provided the published files are the ones release-build produced.)

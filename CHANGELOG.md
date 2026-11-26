@@ -63,7 +63,27 @@ reads the whole document; see "Fixed"). One Rust API change comes with the quick
   Node binding chrono; parser Python binding serde, serde_json, chrono; parser WASM
   binding js-sys.
 
+### Added
+- Release artifacts are built in GitHub Actions with signed build-provenance attestations
+  and SBOMs, verifiable with `gh attestation verify <file> --repo daddykev/ddex-suite`,
+  provided the published files are the ones release-build produced. `release-build.yml`
+  now also builds the three `.crate` files and uploads the ten npm tarballs (the Node
+  install test installs those tarballs); it writes CycloneDX 1.5 SBOMs (cargo-cyclonedx)
+  for the crates and for the Rust crate compiled into each npm and Python package, and
+  its `attest` job (the only job with `id-token` / `attestations` write access) attests
+  SLSA build provenance for every file and an SBOM for each package.
+  `scripts/verify_release_artifacts.sh` verifies a downloaded run. PUBLISH.md publishes
+  those downloaded, verified files (`npm publish <tarball>`, `twine upload`); for
+  crates.io, where `cargo publish` always packages from source, it re-packages the same
+  commit with the recorded cargo version and publishes only if the bytes match. Publishing
+  stays manual: no npm `--provenance`, no PyPI trusted-publishing attestations.
+
 ### Changed
+- SECURITY.md: vulnerabilities are reported through GitHub's private vulnerability
+  reporting ("Report a vulnerability" on the Security tab); the email addresses, which
+  were not confirmed as monitored, are removed.
+- 0.6.0 roadmap: investigate attribute-value whitespace normalization (literal tab, LF and
+  CR are kept; XML 1.0 §3.3.3 maps each to a space, so values may differ from lxml's).
 - `scripts/check_versions.py` no longer reads the deleted `website/static/wasm/package.json`
   (it failed on 0.5.0), reports a missing file instead of crashing, and runs in CI.
 - CI runs `cargo-deny` (advisories, bans, licenses, sources). `deny.toml` uses the current

@@ -87,6 +87,10 @@ The full list, with the tests that pin each one, is in
   sources) with the policy in [`deny.toml`](https://github.com/daddykev/ddex-suite/blob/main/deny.toml).
 - Every wheel and npm package is installed and smoke-tested before a release is published;
   publishing is a manual step.
+- From 0.5.1, release artifacts are built in GitHub Actions with signed build-provenance
+  attestations and SBOMs, verifiable with `gh attestation verify <file> --repo daddykev/ddex-suite`,
+  provided the published files are the ones release-build produced. Publishing is manual,
+  so there is no npm `--provenance` or PyPI trusted-publishing attestation.
 
 Report a vulnerability as described in
 [SECURITY.md](https://github.com/daddykev/ddex-suite/blob/main/SECURITY.md).

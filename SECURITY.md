@@ -59,7 +59,13 @@ What runs today (`.github/workflows/ci.yml` and `release-build.yml`):
 - `ddex-builder` is `#![forbid(unsafe_code)]`.
 - Every wheel and npm package built for a release is installed on its platform and
   smoke-tested with an official sample before the (manual) publish.
+- From 0.5.1, release artifacts are built in GitHub Actions with signed build-provenance
+  attestations and SBOMs, verifiable with
+  `gh attestation verify <file> --repo daddykev/ddex-suite`, provided the published files
+  are the ones release-build produced. The `.crate`, npm `.tgz`, wheel and sdist files each
+  have a SLSA build-provenance attestation and a CycloneDX SBOM attestation; PUBLISH.md
+  publishes the downloaded, verified files. Publishing is done by hand, not from CI, so
+  there is no npm `--provenance` and no PyPI trusted-publishing attestation.
 
-Not in place yet: SBOMs, build provenance or signed artifacts, and fuzzing in CI (fuzz
-targets exist in `packages/ddex-builder/fuzz` and run only by hand with `cargo fuzz`).
-SBOMs and signed artifacts are on the roadmap before 1.0.
+Not in place yet: fuzzing in CI (fuzz targets exist in `packages/ddex-builder/fuzz` and run
+only by hand with `cargo fuzz`).
