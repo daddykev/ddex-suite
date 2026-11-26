@@ -1,11 +1,14 @@
 # Runs the criterion benches that dev-docs/PERFORMANCE.md records, on a GitHub-hosted
 # runner, and prints the medians (scripts/criterion_summary.py) to the job summary. Run by
-# hand ("Run workflow"); a shared runner is noisier than a dedicated machine, so record
-# its numbers with the machine the job prints.
+# hand ("Run workflow"), or push a commit to a `bench/...` branch (a workflow that is not
+# yet on the default branch cannot be dispatched). A shared runner is noisier than a
+# dedicated machine, so record its numbers with the machine the job prints.
 name: Bench
 
 on:
   workflow_dispatch:
+  push:
+    branches: ["bench/**"]
 
 permissions:
   contents: read
