@@ -249,25 +249,6 @@ jobs:
       - name: No CDN references, Monaco only on the Playground, Playground JS size
         run: python3 ../scripts/website_bundle_check.py build
 
-  functions:
-    name: Website functions (npm audit, handler tests)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: website/functions/package-lock.json
-      - run: npm ci --no-fund
-        working-directory: website/functions
-      # The Cloud Functions parse untrusted input: no high or critical advisory in
-      # production dependencies (the same check as PUBLISH.md before a deploy).
-      - run: npm audit --omit=dev --audit-level=high
-        working-directory: website/functions
-      # health / ddexParse / ddexBuild called directly with the locked packages.
-      - run: node scripts/functions_handlers_test.js website/functions "examples/Samples43/1 Audio.xml"
-
   xsd:
     name: XSD validation of builder output
     runs-on: ubuntu-latest

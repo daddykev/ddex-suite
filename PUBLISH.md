@@ -139,7 +139,6 @@ twine upload wheel-ddex-builder-*/*.whl sdist-ddex-builder/*.tar.gz
 - [ ] Check the Cloud Functions' production dependencies before deploying them (they
       parse untrusted input): `cd website/functions && npm ci && npm audit --omit=dev
       --audit-level=high`. Fix any high or critical finding before deploying (update the
-      lockfile, or an `overrides` entry in `website/functions/package.json`). CI runs the
-      same check, and the handler tests, in the `functions` job.
+      lockfile, or an `overrides` entry in `website/functions/package.json`).
 - [ ] Update the website (`cd website && npm ci && (cd functions && npm ci) && firebase deploy`;
       the hosting `predeploy` in `website/firebase.json` runs `npm run build` first).
