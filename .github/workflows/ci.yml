@@ -40,13 +40,15 @@ jobs:
         with:
           components: clippy
       - uses: Swatinem/rust-cache@v2
-      # Errors fail the job; warnings are reported. ddex-builder's determinism lint
-      # (disallowed HashMap/HashSet, `[lints.clippy] disallowed_types = "deny"`) still fails
-      # in existing code, so it is allowed here and enforced in `clippy-builder-determinism`.
+      # Errors fail the job; warnings are reported. ddex-builder's determinism lints
+      # (disallowed types and methods, packages/ddex-builder/clippy.toml) are enforced in
+      # `clippy-builder-determinism`. disallowed_types stays allowed here only because the
+      # builder's clippy.toml also applies to its binding crates (bindings/*), whose HashMap
+      # fields are not in scope yet (warnings, not errors).
       - run: cargo clippy --workspace --all-targets -- -A clippy::disallowed_types
 
   clippy-builder-determinism:
-    name: cargo clippy ddex-builder (disallowed HashMap/HashSet; allowed to fail until 0.6.0)
+    name: cargo clippy ddex-builder (disallowed types and methods)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -54,13 +56,11 @@ jobs:
         with:
           components: clippy
       - uses: Swatinem/rust-cache@v2
-      # TODO(0.6.0): replace the remaining HashMap/HashSet uses in ddex-builder (about 50
-      # errors) and fold this into the clippy job.
-      # continue-on-error on the step, not the job: on the job it keeps the workflow green
-      # but the PR still lists the check as failed. On the step, the errors stay in this
-      # step's log (marked failed) and the job's check passes.
+      # packages/ddex-builder/clippy.toml disallows HashMap/HashSet/RandomState/DefaultHasher
+      # and the clock/RNG entry points; ddex-builder's Cargo.toml denies both lints, so any
+      # new use without a justified `#[allow(..., reason = "...")]` fails this job
+      # (dev-docs/DETERMINISM_AUDIT_0.6.0.md lists every allow).
       - run: cargo clippy -p ddex-builder --all-targets
-        continue-on-error: true
 
   cargo-deny:
     name: cargo deny (${{ matrix.checks }})

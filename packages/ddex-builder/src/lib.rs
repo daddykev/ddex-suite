@@ -63,6 +63,10 @@ pub use verification::{BuildVerifier, VerificationStatistics};
 
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
+#[allow(
+    clippy::disallowed_types,
+    reason = "H4: custom canonicalization is not implemented (returns an error), so this map is never read"
+)]
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -146,10 +150,18 @@ pub struct CustomCanonicalizationRules {
     /// Custom attribute ordering rules
     pub attribute_ordering: Vec<String>,
     /// Custom element ordering rules
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H4: custom canonicalization is not implemented (returns an error), so this map is never read"
+    )]
     pub element_ordering: HashMap<String, Vec<String>>,
 }
 
 impl Default for CustomCanonicalizationRules {
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H4: custom canonicalization is not implemented (returns an error), so this map is never read"
+    )]
     fn default() -> Self {
         Self {
             preserve_whitespace: false,

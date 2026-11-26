@@ -756,6 +756,10 @@ impl CacheManager {
     }
 
     /// Fast hash computation with caching
+    #[allow(
+        clippy::disallowed_types,
+        reason = "D23: in-process cache key; never written to output"
+    )]
     pub fn fast_hash<T: Hash + std::fmt::Debug>(
         algorithm: &str,
         content_type: &str,

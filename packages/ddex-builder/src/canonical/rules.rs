@@ -6,6 +6,10 @@
 
 use ddex_core::namespace::NamespaceRegistry;
 use indexmap::IndexMap;
+#[allow(
+    clippy::disallowed_types,
+    reason = "H1: membership checks only, never iterated; the declarations are an IndexMap"
+)]
 use std::collections::HashSet;
 
 /// Fixed XML declaration for all canonical XML
@@ -19,11 +23,19 @@ pub struct NamespacePrefixLock {
     /// Locked prefixes for specific versions
     version_locks: IndexMap<String, IndexMap<String, String>>, // version -> (uri -> prefix)
     /// Reserved prefixes that cannot be used
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H1: membership checks only, never iterated; the declarations are an IndexMap"
+    )]
     reserved_prefixes: HashSet<String>,
 }
 
 impl NamespacePrefixLock {
     /// Create new prefix lock manager
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H1: membership checks only, never iterated; the declarations are an IndexMap"
+    )]
     pub fn new() -> Self {
         let mut lock = Self {
             registry: NamespaceRegistry::new(),
@@ -143,6 +155,10 @@ impl NamespacePrefixLock {
     }
 
     /// Apply prefix deduplication algorithm
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H1: membership checks only, never iterated; the declarations are an IndexMap"
+    )]
     pub fn deduplicate_prefixes(
         &self,
         declarations: &IndexMap<String, String>,
@@ -184,6 +200,10 @@ impl NamespacePrefixLock {
     }
 
     /// Generate a unique prefix to avoid conflicts
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H1: membership checks only, never iterated; the declarations are an IndexMap"
+    )]
     fn generate_unique_prefix(&self, base_prefix: &str, used_prefixes: &HashSet<String>) -> String {
         let mut counter = 1;
         loop {

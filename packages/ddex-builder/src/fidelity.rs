@@ -6,6 +6,10 @@
 //! carry yet (contributors, P and C lines, images, ...) is lost; see the root README.
 
 use serde::{Deserialize, Serialize};
+#[allow(
+    clippy::disallowed_types,
+    reason = "H5: fidelity config/statistics; not build output"
+)]
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -213,10 +217,18 @@ pub struct AttributeValidationConfig {
     /// Validate attribute value constraints
     pub validate_constraints: bool,
     /// Custom validation rules per attribute
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H5: fidelity config/statistics; not build output"
+    )]
     pub custom_rules: HashMap<String, AttributeValidationRule>,
 }
 
 impl Default for AttributeValidationConfig {
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H5: fidelity config/statistics; not build output"
+    )]
     fn default() -> Self {
         Self {
             validate_formats: true,
@@ -286,6 +298,10 @@ pub struct NamespaceMinimizationRules {
     /// Namespaces that can be safely removed if unused
     pub can_remove: Vec<String>,
     /// Preferred prefix mappings
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H5: fidelity config/statistics; not build output"
+    )]
     pub preferred_prefixes: HashMap<String, String>,
 }
 
@@ -355,14 +371,26 @@ pub enum IndentationStyle {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FidelityStatistics {
     /// Elements preserved by category
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H5: fidelity config/statistics; not build output"
+    )]
     pub elements_preserved: HashMap<String, usize>,
     /// Attributes preserved by category
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H5: fidelity config/statistics; not build output"
+    )]
     pub attributes_preserved: HashMap<String, usize>,
     /// Comments preserved
     pub comments_preserved: usize,
     /// Processing instructions preserved
     pub processing_instructions_preserved: usize,
     /// Extensions preserved by namespace
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H5: fidelity config/statistics; not build output"
+    )]
     pub extensions_preserved: HashMap<String, usize>,
     /// Namespaces processed
     pub namespaces_processed: usize,
@@ -373,6 +401,10 @@ pub struct FidelityStatistics {
 }
 
 impl Default for FidelityStatistics {
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H5: fidelity config/statistics; not build output"
+    )]
     fn default() -> Self {
         Self {
             elements_preserved: HashMap::new(),

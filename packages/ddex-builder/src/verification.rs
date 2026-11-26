@@ -5,6 +5,10 @@
 
 use crate::{error::BuildError, CanonicalizationAlgorithm, FidelityOptions};
 use serde::{Deserialize, Serialize};
+#[allow(
+    clippy::disallowed_types,
+    reason = "H6: verification statistics; not build output"
+)]
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
@@ -521,12 +525,20 @@ pub struct VerificationStatistics {
     /// Processing instructions verified
     pub processing_instructions_verified: usize,
     /// Extensions verified
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H6: verification statistics; not build output"
+    )]
     pub extensions_verified: HashMap<String, usize>,
     /// Memory usage during verification
     pub memory_usage: usize,
 }
 
 impl Default for VerificationStatistics {
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H6: verification statistics; not build output"
+    )]
     fn default() -> Self {
         Self {
             elements_verified: 0,

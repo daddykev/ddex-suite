@@ -101,29 +101,46 @@ on their `Release` / `Resource` / preset-rule classes. They are not used in buil
 
 ## Hash containers and the `disallowed_types` lint
 
-Configuration:
+Configuration as found at 0.5.1 (PR 1):
 
 - `packages/ddex-builder/clippy.toml`: `disallowed-types = ["std::collections::HashMap",
   "std::collections::HashSet"]`.
-- `packages/ddex-builder/.clippy.toml` (a second, older file from the 0.1.0 release) lists
-  the same two paths plus bare `"HashMap"` and `"HashSet"`. Clippy reads only one config file
-  per directory and warns when both exist. The bare names are not resolvable paths. This
-  file should be deleted when the lint is enforced.
+- `packages/ddex-builder/.clippy.toml` (a second, older file from the 0.1.0 release) listed
+  the same two paths plus bare `"HashMap"` and `"HashSet"`. When both files are in one
+  directory, clippy reads `.clippy.toml` and ignores `clippy.toml`. CI said so ("using config
+  file `.clippy.toml`, `clippy.toml` will be ignored") and also warned that the bare names
+  "do not refer to a reachable type".
 - `packages/ddex-builder/Cargo.toml` `[lints.clippy] disallowed_types = "deny"`.
 - CI: the `clippy` job passes `-A clippy::disallowed_types` for the whole workspace. The
-  `clippy-builder-determinism` job runs `cargo clippy -p ddex-builder --all-targets` with
-  `continue-on-error: true` (TODO(0.6.0) in `ci.yml`). So the lint is reported, never
-  enforced.
-- ddex-core and the binding crates have no `disallowed_types` configuration.
-- **There are no `#[allow(clippy::disallowed_types)]` attributes or other exemptions** in
-  the in-scope crates. Every use below is simply an unenforced lint error.
+  `clippy-builder-determinism` job ran `cargo clippy -p ddex-builder --all-targets` with
+  `continue-on-error: true`, so the lint was reported (44 errors) but never enforced.
+- ddex-core and ddex-parser have no clippy config. The binding crates under
+  `packages/ddex-builder/bindings/` pick up the builder's config, because clippy looks for it
+  from the crate's directory upwards. They do not deny the lint.
+- There were no `#[allow(clippy::disallowed_types)]` attributes or other exemptions.
+
+**Since 0.6.0 PR 2** the guard is enforced:
+
+- `packages/ddex-builder/clippy.toml` is the only config file; `.clippy.toml` is deleted.
+- It disallows these types: `std::collections::HashMap`, `std::collections::HashSet`,
+  `std::hash::RandomState` and `std::hash::DefaultHasher`.
+- It disallows these clock and RNG methods: `chrono::Utc::now` / `today`,
+  `chrono::Local::now` / `today`, `std::time::SystemTime::now` and `uuid::Uuid::new_v4`.
+  `uuid::Uuid::now_v7` / `new_v7`, `rand::thread_rng` / `rng` / `random` and
+  `getrandom::getrandom` / `fill` are also listed, with `allow-invalid`, because not every
+  crate that reads the file has them.
+- `Cargo.toml` denies `disallowed_types` and `disallowed_methods`.
+- The `clippy-builder-determinism` job has no `continue-on-error`, so any new use without a
+  justified allow fails it.
+- Every existing use has an `#[allow(..., reason = "...")]` naming its row. They are listed
+  in [Allow attributes](#allow-attributes-060-pr-2).
 
 Uses in ddex-builder (library code) and whether each one is safe for output:
 
 | # | where | use | safe? |
 |---|---|---|---|
 | H1 | `canonical/rules.rs:22`, `:169`, `:187` | `HashSet` of reserved / used namespace prefixes | safe: membership only, never iterated (the declarations are an `IndexMap`) |
-| H2 | `attribute_normalizer.rs:52` | `HashMap` of special handlers | safe: lookup only, and `AttributeNormalizer` is not used by `build` |
+| H2 | `attribute_normalizer.rs:52` | `HashMap` of special handlers | safe: the file is not compiled (`lib.rs` has no `mod attribute_normalizer`), so clippy never sees it and it needs no allow |
 | H3 | `security/entity_classifier.rs:220`, `security/error_sanitizer.rs:181-182`, `security/path_validator.rs:56`, `:99`, `:547` | caches, code maps, extension allow-lists, visited set | safe: lookup / membership only. But `PathValidatorConfig.allowed_extensions` is a pub `HashSet` (its `Debug` / serde order varies) |
 | H4 | `lib.rs:149` | `CustomCanonicalizationRules.element_ordering: HashMap` (pub field) | not reached: custom canonicalization returns "not implemented". If it is ever implemented, iteration order matters, so make it an `IndexMap` (breaking: pub field type) |
 | H5 | `fidelity.rs:216`, `:289`, `:358-366` | pub `HashMap` fields in `FidelityConfig` / `FidelityStatistics` | not XML. Their serde/`Debug` order varies. IndexMap is breaking (pub field types) |
@@ -137,6 +154,93 @@ ddex-core, outside the lint: `models/extensions.rs:119` `Extensions.legacy_data:
 lookups). The builder's generators never write `BuildRequest.extensions` or these core
 fields, so none of them reaches builder XML. They do reach the parser's JSON output and the
 bindings' serialized messages.
+
+## Allow attributes (0.6.0 PR 2)
+
+Every remaining use of a disallowed type or method has an allow on the narrowest item that
+contains it (a `use`, a field, a `static` or a fn; never a module or the crate). The reasons
+come in two kinds:
+
+- `known bug D<n>: removed in 0.6.0 determinism PR` for uses that reach output.
+- `D<n>/H<n>: <why it cannot affect build output>` for the rest.
+
+Test and example code gets `test only:` / `example only:` reasons. The line numbers in the
+Findings and Hash containers tables above are as of 0.5.1; this table has the current ones.
+
+| allow (file:line) | lint | row | reason | on |
+|---|---|---|---|---|
+| `packages/ddex-builder/examples/spotify_album_example.rs:191` | `disallowed_methods` | test/example | example only: stamps the sample request with the current time | `fn create_spotify_album_request() -> BuildRequest {` |
+| `packages/ddex-builder/src/api_security.rs:106` | `disallowed_methods` | D20 | D20: error-response timestamp; not build output | `pub fn create_secure_error_response(&self, error: &BuildErro` |
+| `packages/ddex-builder/src/builder.rs:851` | `disallowed_methods` | D1, D2 | known bug D1, D2: removed in 0.6.0 determinism PR | `fn generate_uuid_ids(` |
+| `packages/ddex-builder/src/builder.rs:903` | `disallowed_methods` | D4 | known bug D4: removed in 0.6.0 determinism PR | `fn generate_sequential_ids(` |
+| `packages/ddex-builder/src/builder.rs:943` | `disallowed_methods` | D5 | known bug D5: removed in 0.6.0 determinism PR | `fn generate_stable_hash_ids(` |
+| `packages/ddex-builder/src/builder.rs:1282` | `disallowed_methods` | D9 | known bug D9: removed in 0.6.0 determinism PR | `fn serialize_update_header(` |
+| `packages/ddex-builder/src/caching.rs:759` | `disallowed_types` | D23 | D23: in-process cache key; never written to output | `pub fn fast_hash<T: Hash + std::fmt::Debug>(` |
+| `packages/ddex-builder/src/canonical/rules.rs:9` | `disallowed_types` | H1 | H1: membership checks only, never iterated; the declarations are an IndexMap | `use std::collections::HashSet;` |
+| `packages/ddex-builder/src/canonical/rules.rs:26` | `disallowed_types` | H1 | H1: membership checks only, never iterated; the declarations are an IndexMap | `reserved_prefixes: HashSet<String>,` |
+| `packages/ddex-builder/src/canonical/rules.rs:35` | `disallowed_types` | H1 | H1: membership checks only, never iterated; the declarations are an IndexMap | `pub fn new() -> Self {` |
+| `packages/ddex-builder/src/canonical/rules.rs:158` | `disallowed_types` | H1 | H1: membership checks only, never iterated; the declarations are an IndexMap | `pub fn deduplicate_prefixes(` |
+| `packages/ddex-builder/src/canonical/rules.rs:203` | `disallowed_types` | H1 | H1: membership checks only, never iterated; the declarations are an IndexMap | `fn generate_unique_prefix(&self, base_prefix: &str, used_pre` |
+| `packages/ddex-builder/src/diff/formatter.rs:389` | `disallowed_methods` | D15 | known bug D15: removed in 0.6.0 determinism PR | `pub fn generate_update_message(` |
+| `packages/ddex-builder/src/diff/types.rs:45` | `disallowed_methods` | D16 | known bug D16: removed in 0.6.0 determinism PR | `pub fn new() -> Self {` |
+| `packages/ddex-builder/src/fidelity.rs:9` | `disallowed_types` | H5 | H5: fidelity config/statistics; not build output | `use std::collections::HashMap;` |
+| `packages/ddex-builder/src/fidelity.rs:220` | `disallowed_types` | H5 | H5: fidelity config/statistics; not build output | `pub custom_rules: HashMap<String, AttributeValidationRule>,` |
+| `packages/ddex-builder/src/fidelity.rs:228` | `disallowed_types` | H5 | H5: fidelity config/statistics; not build output | `fn default() -> Self {` |
+| `packages/ddex-builder/src/fidelity.rs:301` | `disallowed_types` | H5 | H5: fidelity config/statistics; not build output | `pub preferred_prefixes: HashMap<String, String>,` |
+| `packages/ddex-builder/src/fidelity.rs:374` | `disallowed_types` | H5 | H5: fidelity config/statistics; not build output | `pub elements_preserved: HashMap<String, usize>,` |
+| `packages/ddex-builder/src/fidelity.rs:380` | `disallowed_types` | H5 | H5: fidelity config/statistics; not build output | `pub attributes_preserved: HashMap<String, usize>,` |
+| `packages/ddex-builder/src/fidelity.rs:390` | `disallowed_types` | H5 | H5: fidelity config/statistics; not build output | `pub extensions_preserved: HashMap<String, usize>,` |
+| `packages/ddex-builder/src/fidelity.rs:404` | `disallowed_types` | H5 | H5: fidelity config/statistics; not build output | `fn default() -> Self {` |
+| `packages/ddex-builder/src/generator/ern38.rs:494` | `disallowed_methods` | D8 | known bug D8: removed in 0.6.0 determinism PR | `fn message_header(request: &BuildRequest) -> Element {` |
+| `packages/ddex-builder/src/generator/ern4.rs:464` | `disallowed_methods` | D8 | known bug D8: removed in 0.6.0 determinism PR | `fn message_header(request: &BuildRequest) -> Element {` |
+| `packages/ddex-builder/src/guarantees.rs:197` | `disallowed_methods` | D18 | D18: report timestamp; not build output | `pub fn validate_guarantee(` |
+| `packages/ddex-builder/src/guarantees.rs:529` | `disallowed_methods` | D18 | D18: report timestamp; not build output | `pub fn generate_guarantee_report(` |
+| `packages/ddex-builder/src/lib.rs:66` | `disallowed_types` | H4 | H4: custom canonicalization is not implemented (returns an error), so this map is never read | `use std::collections::HashMap;` |
+| `packages/ddex-builder/src/lib.rs:153` | `disallowed_types` | H4 | H4: custom canonicalization is not implemented (returns an error), so this map is never read | `pub element_ordering: HashMap<String, Vec<String>>,` |
+| `packages/ddex-builder/src/lib.rs:161` | `disallowed_types` | H4 | H4: custom canonicalization is not implemented (returns an error), so this map is never read | `fn default() -> Self {` |
+| `packages/ddex-builder/src/messages/update_release.rs:754` | `disallowed_methods` | D11 | known bug D11: removed in 0.6.0 determinism PR | `fn extract_entity_id(&self, path: &crate::diff::types::DiffP` |
+| `packages/ddex-builder/src/messages/update_release.rs:861` | `disallowed_methods` | D10 | known bug D10: removed in 0.6.0 determinism PR | `fn create_update_metadata(` |
+| `packages/ddex-builder/src/messages/update_release.rs:1096` | `disallowed_methods` | D10 | D10: unit-test fixture timestamp; not build output | `fn test_operation_validation() {` |
+| `packages/ddex-builder/src/namespace_minimizer.rs:11` | `disallowed_types` | H8 | H8: NamespaceMinimizer is not on the build path | `use std::collections::HashMap;` |
+| `packages/ddex-builder/src/namespace_minimizer.rs:37` | `disallowed_types` | H8 | H8: NamespaceMinimizer is not on the build path | `pub namespace_elements: HashMap<String, IndexSet<String>>,` |
+| `packages/ddex-builder/src/namespace_minimizer.rs:105` | `disallowed_types` | H8 | H8: NamespaceMinimizer is not on the build path | `fn analyze_namespace_usage(&self, ast: &AST) -> Result<Names` |
+| `packages/ddex-builder/src/namespace_minimizer.rs:144` | `disallowed_types` | H8 | H8: NamespaceMinimizer is not on the build path | `fn analyze_element_usage(` |
+| `packages/ddex-builder/src/namespace_minimizer.rs:265` | `disallowed_types` | D22 | D22: NamespaceMinimizer is not on the build path | `fn generate_prefix_for_uri(&self, uri: &str) -> String {` |
+| `packages/ddex-builder/src/namespace_minimizer.rs:478` | `disallowed_types` | H8 | H8: NamespaceMinimizer is not on the build path | `fn test_minimal_declarations() {` |
+| `packages/ddex-builder/src/round_trip.rs:213` | `disallowed_types` | H7 | H7: round-trip statistics; not build output | `pub elements_by_type: std::collections::HashMap<String, usiz` |
+| `packages/ddex-builder/src/round_trip.rs:230` | `disallowed_types` | H7 | H7: round-trip statistics; not build output | `pub attributes_by_element: std::collections::HashMap<String,` |
+| `packages/ddex-builder/src/round_trip.rs:262` | `disallowed_types` | H7 | H7: round-trip statistics; not build output | `pub extension_namespaces: std::collections::HashMap<String, ` |
+| `packages/ddex-builder/src/round_trip.rs:281` | `disallowed_types` | H7 | H7: round-trip statistics; not build output | `pub prefixed_namespaces: std::collections::HashMap<String, S` |
+| `packages/ddex-builder/src/schema/mod.rs:369` | `disallowed_methods` | D17 | D17: schema metadata timestamp; not DDEX build output | `pub fn generate_build_request_schema(&self) -> Result<Schema` |
+| `packages/ddex-builder/src/schema/mod.rs:396` | `disallowed_methods` | D17 | D17: schema metadata timestamp; not DDEX build output | `pub fn generate_flat_release_schema(&self) -> Result<SchemaG` |
+| `packages/ddex-builder/src/schema/mod.rs:423` | `disallowed_methods` | D17 | D17: schema metadata timestamp; not DDEX build output | `pub fn generate_complete_schema(&self) -> Result<SchemaGener` |
+| `packages/ddex-builder/src/schema/mod.rs:493` | `disallowed_methods` | D17 | D17: timestamp in generated TypeScript; not DDEX build output | `pub fn generate_typescript_types(&self, schema: &JsonSchema)` |
+| `packages/ddex-builder/src/schema/mod.rs:520` | `disallowed_methods` | D17 | D17: timestamp in generated Python; not DDEX build output | `pub fn generate_python_types(&self, schema: &JsonSchema) -> ` |
+| `packages/ddex-builder/src/security.rs:720` | `disallowed_methods` | D20 | D20: log line timestamp; not build output | `pub fn create_secure_log_message(` |
+| `packages/ddex-builder/src/security.rs:783` | `disallowed_methods` | D20 | D20: random temp-file name; not build output | `pub fn new() -> Result<Self, BuildError> {` |
+| `packages/ddex-builder/src/security.rs:849` | `disallowed_methods` | D20 | D20: random secure ID for callers; not build output | `pub fn generate_secure_id() -> String {` |
+| `packages/ddex-builder/src/security/entity_classifier.rs:220` | `disallowed_types` | H3 | H3: lookup-only entity cache; never iterated into output | `entity_cache: HashMap<String, EntityClass>,` |
+| `packages/ddex-builder/src/security/entity_classifier.rs:235` | `disallowed_types` | H3 | H3: lookup-only entity cache; never iterated into output | `pub fn with_config(config: ClassifierConfig) -> Self {` |
+| `packages/ddex-builder/src/security/error_sanitizer.rs:10` | `disallowed_types` | H3 | H3: lookup-only error-code map and correlation store; never iterated into output | `use std::collections::HashMap;` |
+| `packages/ddex-builder/src/security/error_sanitizer.rs:91` | `disallowed_methods` | D21 | D21: opt-in error correlation ID; build() does not use ErrorSanitizer | `fn error_id(&self) -> String {` |
+| `packages/ddex-builder/src/security/error_sanitizer.rs:189` | `disallowed_types` | H3 | H3: lookup-only error-code map and correlation store; never iterated into output | `error_code_map: HashMap<ErrorContext, &'static str>,` |
+| `packages/ddex-builder/src/security/error_sanitizer.rs:194` | `disallowed_types` | H3 | H3: lookup-only error-code map and correlation store; never iterated into output | `correlation_store: HashMap<String, String>,` |
+| `packages/ddex-builder/src/security/error_sanitizer.rs:352` | `disallowed_types` | H3 | H3: lookup-only error-code map and correlation store; never iterated into output | `pub fn with_config(config: SanitizerConfig) -> Self {` |
+| `packages/ddex-builder/src/security/error_sanitizer.rs:373` | `disallowed_methods` | D21 | D21: opt-in error correlation ID; build() does not use ErrorSanitizer | `pub fn sanitize<E>(&mut self, error: E, context: ErrorContex` |
+| `packages/ddex-builder/src/security/error_sanitizer.rs:516` | `disallowed_types` | H3 | H3: lookup-only error-code map and correlation store; never iterated into output | `fn create_error_code_map() -> HashMap<ErrorContext, &'static` |
+| `packages/ddex-builder/src/security/path_validator.rs:21` | `disallowed_types` | H3 | H3: membership-only sets for path validation; not on the build path | `use std::collections::HashSet;` |
+| `packages/ddex-builder/src/security/path_validator.rs:60` | `disallowed_types` | H3 | H3: membership-only sets for path validation; not on the build path | `static WINDOWS_RESERVED_NAMES: Lazy<HashSet<&str>> = Lazy::n` |
+| `packages/ddex-builder/src/security/path_validator.rs:107` | `disallowed_types` | H3 | H3: membership-only sets for path validation; not on the build path | `pub allowed_extensions: HashSet<String>,` |
+| `packages/ddex-builder/src/security/path_validator.rs:117` | `disallowed_types` | H3 | H3: membership-only sets for path validation; not on the build path | `fn default() -> Self {` |
+| `packages/ddex-builder/src/security/path_validator.rs:534` | `disallowed_types` | H3 | H3: membership-only sets for path validation; not on the build path | `fn validate_symlinks(` |
+| `packages/ddex-builder/src/streaming/mod.rs:449` | `disallowed_methods` | D12, D13 | known bug D12, D13: removed in 0.6.0 determinism PR | `fn write_message_header(&mut self, header: &MessageHeaderReq` |
+| `packages/ddex-builder/src/verification.rs:8` | `disallowed_types` | H6 | H6: verification statistics; not build output | `use std::collections::HashMap;` |
+| `packages/ddex-builder/src/verification.rs:528` | `disallowed_types` | H6 | H6: verification statistics; not build output | `pub extensions_verified: HashMap<String, usize>,` |
+| `packages/ddex-builder/src/verification.rs:538` | `disallowed_types` | H6 | H6: verification statistics; not build output | `fn default() -> Self {` |
+| `packages/ddex-builder/tests/it/determinism.rs:27` | `disallowed_methods` | test/example | test only: the request is built once and cloned, so its timestamp is the same in every build | `fn create_test_build_request_base() -> BuildRequest {` |
+| `packages/ddex-builder/tests/it/determinism.rs:92` | `disallowed_methods` | test/example | test only: the request is built once and cloned, so its timestamps are the same in every build | `fn create_complex_build_request_base() -> BuildRequest {` |
+| `packages/ddex-builder/tests/it/determinism_0_6.rs:69` | `disallowed_methods` | test/example | test only: reads the clock to check the MessageId is not time-derived | `fn assert_not_time_derived(id: &str) {` |
+| `packages/ddex-builder/tests/it/determinism_0_6.rs:210` | `disallowed_methods` | test/example | test only: reads the clock to check the MessageId is not time-derived | `fn stable_hash_message_id_is_not_time_derived() {` |
 
 ## Facts for later PRs
 

@@ -217,6 +217,10 @@ impl Default for ClassifierConfig {
 pub struct EntityClassifier {
     config: ClassifierConfig,
     ddex_whitelist: IndexSet<String>,
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H3: lookup-only entity cache; never iterated into output"
+    )]
     entity_cache: HashMap<String, EntityClass>,
     metrics_history: VecDeque<EntityMetrics>,
 }
@@ -228,6 +232,10 @@ impl EntityClassifier {
     }
 
     /// Create a new entity classifier with custom configuration
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H3: lookup-only entity cache; never iterated into output"
+    )]
     pub fn with_config(config: ClassifierConfig) -> Self {
         let ddex_whitelist = Self::load_ddex_whitelist();
 

@@ -461,6 +461,10 @@ impl PartyTable {
 // Elements
 // ---------------------------------------------------------------------------
 
+#[allow(
+    clippy::disallowed_methods,
+    reason = "known bug D8: removed in 0.6.0 determinism PR"
+)]
 fn message_header(request: &BuildRequest) -> Element {
     let header = &request.header;
     let mut element = Element::new("MessageHeader");

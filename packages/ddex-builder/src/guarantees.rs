@@ -194,6 +194,10 @@ impl DeterminismGuaranteeValidator {
     }
 
     /// Validate a specific guarantee
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "D18: report timestamp; not build output"
+    )]
     pub fn validate_guarantee(
         &self,
         guarantee: &DeterminismGuarantee,
@@ -522,6 +526,10 @@ pub fn validate_deterministic_sorting() -> Result<(), BuildError> {
 }
 
 /// Generate a determinism guarantee report
+#[allow(
+    clippy::disallowed_methods,
+    reason = "D18: report timestamp; not build output"
+)]
 pub fn generate_guarantee_report(
     request: &crate::builder::BuildRequest,
     config: &DeterminismConfig,

@@ -717,6 +717,10 @@ impl OutputSanitizer {
     }
 
     /// Generate secure log messages (without sensitive details)
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "D20: log line timestamp; not build output"
+    )]
     pub fn create_secure_log_message(
         &self,
         operation: &str,
@@ -776,6 +780,10 @@ pub struct SecureTempFile {
 
 impl SecureTempFile {
     /// Create a secure temporary file
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "D20: random temp-file name; not build output"
+    )]
     pub fn new() -> Result<Self, BuildError> {
         use std::fs::OpenOptions;
         #[cfg(unix)]
@@ -838,6 +846,10 @@ pub mod utils {
     }
 
     /// Generate secure random ID
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "D20: random secure ID for callers; not build output"
+    )]
     pub fn generate_secure_id() -> String {
         uuid::Uuid::new_v4().to_string()
     }

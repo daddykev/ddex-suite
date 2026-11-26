@@ -7,6 +7,10 @@
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+#[allow(
+    clippy::disallowed_types,
+    reason = "H3: lookup-only error-code map and correlation store; never iterated into output"
+)]
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::Mutex;
@@ -84,6 +88,10 @@ pub trait SecureError: fmt::Display + fmt::Debug {
     fn error_context(&self) -> ErrorContext;
 
     /// Generate a unique error ID for correlation
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "D21: opt-in error correlation ID; build() does not use ErrorSanitizer"
+    )]
     fn error_id(&self) -> String {
         Uuid::new_v4().to_string()
     }
@@ -178,7 +186,15 @@ impl Default for SanitizerConfig {
 pub struct ErrorSanitizer {
     config: SanitizerConfig,
     redaction_rules: Vec<RedactionRule>,
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H3: lookup-only error-code map and correlation store; never iterated into output"
+    )]
     error_code_map: HashMap<ErrorContext, &'static str>,
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H3: lookup-only error-code map and correlation store; never iterated into output"
+    )]
     correlation_store: HashMap<String, String>,
 }
 
@@ -333,6 +349,10 @@ impl ErrorSanitizer {
     }
 
     /// Create a new error sanitizer with custom configuration
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H3: lookup-only error-code map and correlation store; never iterated into output"
+    )]
     pub fn with_config(config: SanitizerConfig) -> Self {
         let error_code_map = Self::create_error_code_map();
 
@@ -350,6 +370,10 @@ impl ErrorSanitizer {
     }
 
     /// Sanitize an error message based on context and mode
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "D21: opt-in error correlation ID; build() does not use ErrorSanitizer"
+    )]
     pub fn sanitize<E>(&mut self, error: E, context: ErrorContext) -> SanitizedError
     where
         E: std::error::Error + fmt::Display + fmt::Debug,
@@ -489,6 +513,10 @@ impl ErrorSanitizer {
     }
 
     /// Create error code mapping
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H3: lookup-only error-code map and correlation store; never iterated into output"
+    )]
     fn create_error_code_map() -> HashMap<ErrorContext, &'static str> {
         let mut map = HashMap::new();
         map.insert(ErrorContext::FileOpen, "E1001");

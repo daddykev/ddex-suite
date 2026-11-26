@@ -446,6 +446,10 @@ impl<W: IoWrite> StreamingBuilder<W> {
 
     // Private helper methods
 
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "known bug D12, D13: removed in 0.6.0 determinism PR"
+    )]
     fn write_message_header(&mut self, header: &MessageHeaderRequest) -> Result<(), BuildError> {
         // Generate message ID if not provided
         let default_id = Uuid::new_v4().to_string();

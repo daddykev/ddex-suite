@@ -210,6 +210,10 @@ pub struct ElementAnalysis {
     /// Total number of elements
     pub total_elements: usize,
     /// Elements by type/name
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H7: round-trip statistics; not build output"
+    )]
     pub elements_by_type: std::collections::HashMap<String, usize>,
     /// Unknown elements (not in schema)
     pub unknown_elements: usize,
@@ -223,6 +227,10 @@ pub struct AttributeAnalysis {
     /// Total number of attributes
     pub total_attributes: usize,
     /// Attributes by element type
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H7: round-trip statistics; not build output"
+    )]
     pub attributes_by_element: std::collections::HashMap<String, usize>,
     /// Unknown attributes (not in schema)
     pub unknown_attributes: usize,
@@ -251,6 +259,10 @@ pub struct ExtensionAnalysis {
     /// Total number of extensions
     pub total_extensions: usize,
     /// Extension namespaces found
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H7: round-trip statistics; not build output"
+    )]
     pub extension_namespaces: std::collections::HashMap<String, String>,
     /// Known extensions (recognized patterns)
     pub known_extensions: usize,
@@ -266,6 +278,10 @@ pub struct NamespaceAnalysis {
     /// Total number of namespaces
     pub total_namespaces: usize,
     /// Prefixed namespaces
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H7: round-trip statistics; not build output"
+    )]
     pub prefixed_namespaces: std::collections::HashMap<String, String>,
     /// Default namespace (if any)
     pub default_namespace: Option<String>,

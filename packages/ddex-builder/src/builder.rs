@@ -848,6 +848,10 @@ impl DDEXBuilder {
     }
 
     /// Generate UUID v4 IDs
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "known bug D1, D2: removed in 0.6.0 determinism PR"
+    )]
     fn generate_uuid_ids(
         &self,
         request: &mut BuildRequest,
@@ -896,6 +900,10 @@ impl DDEXBuilder {
     }
 
     /// Generate sequential IDs
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "known bug D4: removed in 0.6.0 determinism PR"
+    )]
     fn generate_sequential_ids(
         &self,
         request: &mut BuildRequest,
@@ -932,6 +940,10 @@ impl DDEXBuilder {
     }
 
     /// Generate stable hash-based IDs
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "known bug D5: removed in 0.6.0 determinism PR"
+    )]
     fn generate_stable_hash_ids(
         &self,
         request: &mut BuildRequest,
@@ -1267,6 +1279,10 @@ impl DDEXBuilder {
         Ok(xml)
     }
 
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "known bug D9: removed in 0.6.0 determinism PR"
+    )]
     fn serialize_update_header(
         &self,
         xml: &mut String,
