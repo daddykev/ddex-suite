@@ -13,6 +13,7 @@ dev-docs/*
 !dev-docs/PERFORMANCE.md
 !dev-docs/RELEASE_NOTES_0.5.0.md
 !dev-docs/DETERMINISM_AUDIT_0.6.0.md
+!dev-docs/REMOVALS_0.6.0.md
 
 # Archive directories
 archive/
