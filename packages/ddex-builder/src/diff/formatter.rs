@@ -386,6 +386,10 @@ impl DiffFormatter {
     }
 
     /// Generate DDEX UpdateReleaseMessage from changeset
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "known bug D15: removed in 0.6.0 determinism PR"
+    )]
     pub fn generate_update_message(
         changeset: &ChangeSet,
         message_id: Option<&str>,

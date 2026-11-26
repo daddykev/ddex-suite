@@ -144,3 +144,4 @@ test = false  # the CLI has no unit tests
 # Strict linting configuration to ensure determinism
 [lints.clippy]
 disallowed_types = "deny"
+disallowed_methods = "deny"

@@ -24,6 +24,10 @@ fn create_test_build_request() -> BuildRequest {
     crate::ern4_support::ern4_test_data(create_test_build_request_base())
 }
 
+#[allow(
+    clippy::disallowed_methods,
+    reason = "test only: the request is built once and cloned, so its timestamp is the same in every build"
+)]
 fn create_test_build_request_base() -> BuildRequest {
     BuildRequest {
         header: MessageHeaderRequest {
@@ -85,6 +89,10 @@ fn create_complex_build_request() -> BuildRequest {
     crate::ern4_support::ern4_test_data(create_complex_build_request_base())
 }
 
+#[allow(
+    clippy::disallowed_methods,
+    reason = "test only: the request is built once and cloned, so its timestamps are the same in every build"
+)]
 fn create_complex_build_request_base() -> BuildRequest {
     let mut extensions = IndexMap::new();
     extensions.insert(

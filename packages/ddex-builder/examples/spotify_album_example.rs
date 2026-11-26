@@ -188,6 +188,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 /// - **Distribution**: Direct to Spotify via DDEX
 /// - **Rights**: Worldwide streaming rights
 /// - **Audio Quality**: High-resolution source files
+#[allow(
+    clippy::disallowed_methods,
+    reason = "example only: stamps the sample request with the current time"
+)]
 fn create_spotify_album_request() -> BuildRequest {
     BuildRequest {
         // Message Header: Contains routing and control information

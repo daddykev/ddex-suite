@@ -1,1 +1,35 @@
-disallowed-types = ["std::collections::HashMap", "std::collections::HashSet"]
+# ddex-builder determinism lints (0.6.0). Clippy reads this file for every crate whose
+# manifest is in this directory or below it: ddex-builder and its bindings (bindings/*).
+# ddex-builder's Cargo.toml denies both lints (`[lints.clippy]`); the binding crates keep
+# clippy's default level (warn). Every existing use carries an
+# `#[allow(clippy::disallowed_*, reason = "...")]` that names its row in
+# dev-docs/DETERMINISM_AUDIT_0.6.0.md.
+
+# Ordered containers (BTreeMap/BTreeSet, IndexMap/IndexSet) are allowed. hashbrown, ahash and
+# dashmap are not dependencies of ddex-builder, so they cannot be named here.
+disallowed-types = [
+    { path = "std::collections::HashMap", reason = "iteration order is random per process; use IndexMap or BTreeMap" },
+    { path = "std::collections::HashSet", reason = "iteration order is random per process; use IndexSet or BTreeSet" },
+    { path = "std::hash::RandomState", reason = "randomly seeded hasher; output must not depend on it" },
+    { path = "std::hash::DefaultHasher", reason = "its algorithm may change between Rust releases; use sha2 or blake3 for anything that is kept" },
+]
+
+# `Instant::now` (std and web_time) is not listed: it is monotonic and only measures
+# durations (audit row D24); no wall-clock time can be read from it.
+disallowed-methods = [
+    { path = "chrono::Utc::now", reason = "build output must not depend on the clock; take the time from the request" },
+    { path = "chrono::Local::now", reason = "build output must not depend on the clock or the local time zone" },
+    { path = "chrono::Utc::today", reason = "build output must not depend on the clock" },
+    { path = "chrono::Local::today", reason = "build output must not depend on the clock or the local time zone" },
+    { path = "std::time::SystemTime::now", reason = "build output must not depend on the clock" },
+    { path = "uuid::Uuid::new_v4", reason = "random IDs make build output non-reproducible; derive IDs from the request" },
+    # uuid's v7 feature, rand (a dev-dependency) and getrandom are not available to every
+    # crate that reads this file, so these entries may not resolve there.
+    { path = "uuid::Uuid::now_v7", reason = "time-based random IDs make build output non-reproducible", allow-invalid = true },
+    { path = "uuid::Uuid::new_v7", reason = "time-based random IDs make build output non-reproducible", allow-invalid = true },
+    { path = "rand::thread_rng", reason = "randomness makes output non-reproducible", allow-invalid = true },
+    { path = "rand::rng", reason = "randomness makes output non-reproducible", allow-invalid = true },
+    { path = "rand::random", reason = "randomness makes output non-reproducible", allow-invalid = true },
+    { path = "getrandom::getrandom", reason = "randomness makes output non-reproducible", allow-invalid = true },
+    { path = "getrandom::fill", reason = "randomness makes output non-reproducible", allow-invalid = true },
+]

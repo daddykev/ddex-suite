@@ -103,6 +103,10 @@ impl ApiSecurityManager {
     }
 
     /// Create secure error response (without internal details)
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "D20: error-response timestamp; not build output"
+    )]
     pub fn create_secure_error_response(&self, error: &BuildError, request_id: &str) -> String {
         let sanitized_message = match error {
             BuildError::Security(_) => "Security validation failed",

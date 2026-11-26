@@ -751,6 +751,10 @@ impl UpdateGenerator {
         }
     }
 
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "known bug D11: removed in 0.6.0 determinism PR"
+    )]
     fn extract_entity_id(&self, path: &crate::diff::types::DiffPath) -> Result<String, BuildError> {
         // Extract entity ID from path - simplified implementation
         let path_str = path.to_string();
@@ -854,6 +858,10 @@ impl UpdateGenerator {
         })
     }
 
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "known bug D10: removed in 0.6.0 determinism PR"
+    )]
     fn create_update_metadata(
         &self,
         original_message_id: &str,
@@ -1085,6 +1093,10 @@ mod tests {
     }
 
     #[test]
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "D10: unit-test fixture timestamp; not build output"
+    )]
     fn test_operation_validation() {
         let generator = UpdateGenerator::new();
 

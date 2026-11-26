@@ -66,6 +66,10 @@ fn message_id(xml: &str) -> String {
 
 /// The MessageId must not come from the clock: no UTC date of today, and no run of digits
 /// within two days of the current Unix time (seconds or milliseconds).
+#[allow(
+    clippy::disallowed_methods,
+    reason = "test only: reads the clock to check the MessageId is not time-derived"
+)]
 fn assert_not_time_derived(id: &str) {
     let now = chrono::Utc::now();
     for format in ["%Y-%m-%d", "%Y%m%d"] {
@@ -203,6 +207,10 @@ fn sequential_message_id_is_not_time_derived() {
 /// stable hash of the same inputs with today's date added.
 #[test]
 #[ignore = "known bug: IdStrategy::StableHash hashes today's date into the MessageId (0.6.0 determinism)"]
+#[allow(
+    clippy::disallowed_methods,
+    reason = "test only: reads the clock to check the MessageId is not time-derived"
+)]
 fn stable_hash_message_id_is_not_time_derived() {
     let id = generated_message_id(IdStrategy::StableHash);
     assert_not_time_derived(&id);

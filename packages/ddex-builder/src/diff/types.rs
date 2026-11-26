@@ -42,6 +42,10 @@ pub struct ChangeSet {
 
 impl ChangeSet {
     /// Create a new empty changeset
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "known bug D16: removed in 0.6.0 determinism PR"
+    )]
     pub fn new() -> Self {
         Self {
             changes: Vec::new(),

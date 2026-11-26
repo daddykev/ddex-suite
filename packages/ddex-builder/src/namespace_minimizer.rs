@@ -8,6 +8,10 @@ use crate::canonical::rules::CanonicalNamespaceManager;
 use ddex_core::models::versions::ERNVersion;
 use ddex_core::namespace::{ConflictResolution, NamespaceRegistry};
 use indexmap::{IndexMap, IndexSet};
+#[allow(
+    clippy::disallowed_types,
+    reason = "H8: NamespaceMinimizer is not on the build path"
+)]
 use std::collections::HashMap;
 use tracing::debug;
 
@@ -30,6 +34,10 @@ pub struct NamespaceUsage {
     /// All namespaces used in the document
     pub used_namespaces: IndexSet<String>,
     /// Elements that use each namespace
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H8: NamespaceMinimizer is not on the build path"
+    )]
     pub namespace_elements: HashMap<String, IndexSet<String>>,
     /// Attribute namespaces
     pub attribute_namespaces: IndexSet<String>,
@@ -94,6 +102,10 @@ impl NamespaceMinimizer {
     }
 
     /// Analyze namespace usage throughout the document
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H8: NamespaceMinimizer is not on the build path"
+    )]
     fn analyze_namespace_usage(&self, ast: &AST) -> Result<NamespaceUsage, String> {
         let mut used_namespaces = IndexSet::new();
         let mut namespace_elements = HashMap::new();
@@ -129,6 +141,10 @@ impl NamespaceMinimizer {
     }
 
     /// Recursively analyze namespace usage in elements
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H8: NamespaceMinimizer is not on the build path"
+    )]
     fn analyze_element_usage(
         &self,
         element: &Element,
@@ -246,6 +262,10 @@ impl NamespaceMinimizer {
     }
 
     /// Generate a prefix for an unknown URI
+    #[allow(
+        clippy::disallowed_types,
+        reason = "D22: NamespaceMinimizer is not on the build path"
+    )]
     fn generate_prefix_for_uri(&self, uri: &str) -> String {
         // Simple heuristic: use domain name or create generic prefix
         if let Some(domain_start) = uri.find("://") {
@@ -455,6 +475,10 @@ mod tests {
     }
 
     #[test]
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H8: NamespaceMinimizer is not on the build path"
+    )]
     fn test_minimal_declarations() {
         let minimizer = NamespaceMinimizer::new(ERNVersion::V4_3);
 

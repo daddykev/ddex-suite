@@ -18,6 +18,10 @@
 use crate::error::BuildError;
 use once_cell::sync::Lazy;
 use regex::Regex;
+#[allow(
+    clippy::disallowed_types,
+    reason = "H3: membership-only sets for path validation; not on the build path"
+)]
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
@@ -53,6 +57,10 @@ static SUSPICIOUS_EXTENSIONS: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"(?i)\.(exe|bat|cmd|com|scr|pif|vbs|js|jar|dll|sys)$").unwrap());
 
 /// Windows reserved device names
+#[allow(
+    clippy::disallowed_types,
+    reason = "H3: membership-only sets for path validation; not on the build path"
+)]
 static WINDOWS_RESERVED_NAMES: Lazy<HashSet<&str>> = Lazy::new(|| {
     let mut set = HashSet::new();
     set.insert("CON");
@@ -96,12 +104,20 @@ pub struct PathValidationConfig {
     /// Whether to check for file existence
     pub check_existence: bool,
     /// Additional allowed file extensions
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H3: membership-only sets for path validation; not on the build path"
+    )]
     pub allowed_extensions: HashSet<String>,
     /// Whether to allow hidden files/directories
     pub allow_hidden: bool,
 }
 
 impl Default for PathValidationConfig {
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H3: membership-only sets for path validation; not on the build path"
+    )]
     fn default() -> Self {
         let mut allowed_extensions = HashSet::new();
         allowed_extensions.insert("xml".to_string());
@@ -515,6 +531,10 @@ impl PathValidator {
     }
 
     /// Validate symlinks to prevent symlink attacks
+    #[allow(
+        clippy::disallowed_types,
+        reason = "H3: membership-only sets for path validation; not on the build path"
+    )]
     fn validate_symlinks(
         &self,
         normalized: &Path,

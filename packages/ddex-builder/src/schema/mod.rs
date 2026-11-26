@@ -366,6 +366,10 @@ impl SchemaGenerator {
     }
 
     /// Generate complete JSON Schema for DDEX BuildRequest
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "D17: schema metadata timestamp; not DDEX build output"
+    )]
     pub fn generate_build_request_schema(&self) -> Result<SchemaGenerationResult, BuildError> {
         let mut warnings = Vec::new();
 
@@ -389,6 +393,10 @@ impl SchemaGenerator {
     }
 
     /// Generate schema for FlatRelease model
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "D17: schema metadata timestamp; not DDEX build output"
+    )]
     pub fn generate_flat_release_schema(&self) -> Result<SchemaGenerationResult, BuildError> {
         let mut warnings = Vec::new();
 
@@ -412,6 +420,10 @@ impl SchemaGenerator {
     }
 
     /// Generate schema for all DDEX element types
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "D17: schema metadata timestamp; not DDEX build output"
+    )]
     pub fn generate_complete_schema(&self) -> Result<SchemaGenerationResult, BuildError> {
         let mut warnings = Vec::new();
         let mut definitions = IndexMap::new();
@@ -478,6 +490,10 @@ impl SchemaGenerator {
     }
 
     /// Generate TypeScript type definitions from schema
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "D17: timestamp in generated TypeScript; not DDEX build output"
+    )]
     pub fn generate_typescript_types(&self, schema: &JsonSchema) -> Result<String, BuildError> {
         let mut typescript = String::new();
 
@@ -501,6 +517,10 @@ impl SchemaGenerator {
     }
 
     /// Generate Python TypedDict definitions from schema
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "D17: timestamp in generated Python; not DDEX build output"
+    )]
     pub fn generate_python_types(&self, schema: &JsonSchema) -> Result<String, BuildError> {
         let mut python = String::new();
 
