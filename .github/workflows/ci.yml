@@ -246,6 +246,8 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run typecheck
       - run: npm run build
+      - name: No CDN references, Monaco only on the Playground, Playground JS size
+        run: python3 ../scripts/website_bundle_check.py build
 
   xsd:
     name: XSD validation of builder output

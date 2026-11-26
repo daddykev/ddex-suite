@@ -3,7 +3,7 @@ import Layout from '@theme/Layout';
 import BrowserOnly from '@docusaurus/BrowserOnly';
 import { useColorMode } from '@docusaurus/theme-common';
 import { Allotment } from 'allotment';
-import Editor from '@monaco-editor/react';
+import CodeEditor from '../components/CodeEditor';
 import 'allotment/dist/style.css';
 import { PARSE_SAMPLES, BUILD_SAMPLES } from '../data/playgroundSamples';
 
@@ -88,7 +88,7 @@ const paneHeaderStyle: React.CSSProperties = {
 
 function PlaygroundComponent() {
   const { colorMode } = useColorMode();
-  const editorTheme = colorMode === 'dark' ? 'vs-dark' : 'light';
+  const editorTheme = colorMode === 'dark' ? 'vs-dark' : 'vs';
   const isNarrow = useIsNarrow();
 
   const [mode, setMode] = useState<Mode>('parser');
@@ -215,7 +215,7 @@ function PlaygroundComponent() {
         Input ({mode === 'parser' ? 'ERN XML' : 'JSON build request'})
       </div>
       <div style={{ flex: 1, minHeight: 0 }}>
-        <Editor
+        <CodeEditor
           language={inputLanguage}
           value={input}
           onChange={(value) => setInput(value || '')}
@@ -232,7 +232,7 @@ function PlaygroundComponent() {
         Output ({mode === 'parser' ? 'parsed JSON' : 'ERN XML'})
       </div>
       <div style={{ flex: 1, minHeight: 0 }}>
-        <Editor
+        <CodeEditor
           language={outputLanguage}
           value={output}
           options={{ ...editorOptions, readOnly: true, ariaLabel: 'Output (read only)' }}
