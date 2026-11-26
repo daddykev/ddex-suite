@@ -1,0 +1,50 @@
+# Runs the criterion benches that dev-docs/PERFORMANCE.md records, on a GitHub-hosted
+# runner, and prints the medians (scripts/criterion_summary.py) to the job summary. Run by
+# hand ("Run workflow"); a shared runner is noisier than a dedicated machine, so record
+# its numbers with the machine the job prints.
+name: Bench
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  bench:
+    name: cargo bench (ubuntu-latest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Machine
+        run: |
+          {
+            echo "## Machine"
+            echo '```'
+            echo "commit $GITHUB_SHA ($GITHUB_REF_NAME)"
+            echo "runner $RUNNER_NAME, image $ImageOS $ImageVersion"
+            lscpu | grep -E '^(Model name|CPU\(s\)|Thread|Core|Socket)'
+            free -h | head -2
+            rustc --version
+            cargo --version
+            echo "ddex-suite $(cargo metadata --no-deps --format-version 1 | python3 -c 'import json,sys; print({p["name"]: p["version"] for p in json.load(sys.stdin)["packages"]}["ddex-parser"])')"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: ddex-parser benches
+        run: cargo bench -p ddex-parser --bench throughput --bench fast_streaming_benchmark
+      - name: ddex-builder benches
+        run: cargo bench -p ddex-builder --bench performance --bench security --bench canonicalization --bench determinism
+      - name: Sanity limits (perf-tests, release)
+        run: "cargo test --release --features ddex-parser/perf-tests,ddex-builder/perf-tests perf:: -- --nocapture"
+      - name: Summary
+        run: |
+          { echo "## Criterion medians"; python3 scripts/criterion_summary.py target/criterion; } | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: criterion
+          path: target/criterion
