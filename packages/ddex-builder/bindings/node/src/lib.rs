@@ -386,11 +386,14 @@ impl DdexBuilder {
     #[napi]
     pub async unsafe fn validate(&mut self) -> Result<ValidationResult> {
         let builder = ddex_builder::builder::DDEXBuilder::new();
-        let built = self.build_request(None).map_err(|e| e.reason).and_then(|request| {
-            builder
-                .build(request, ddex_builder::builder::BuildOptions::default())
-                .map_err(|e| e.to_string())
-        });
+        let built = self
+            .build_request(None)
+            .map_err(|e| e.reason)
+            .and_then(|request| {
+                builder
+                    .build(request, ddex_builder::builder::BuildOptions::default())
+                    .map_err(|e| e.to_string())
+            });
         let result = match built {
             Ok(built) => ValidationResult {
                 is_valid: true,
