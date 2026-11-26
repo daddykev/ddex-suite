@@ -68,6 +68,14 @@ use serde::{Deserialize, Serialize};
     reason = "H4: custom canonicalization is not implemented (returns an error), so this map is never read"
 )]
 use std::collections::HashMap;
+
+/// `HashMap` for the serde-derived structs below, which a field-level allow cannot cover
+/// (the derived impls are separate items). Same type as `HashMap<K, V>`.
+#[allow(
+    clippy::disallowed_types,
+    reason = "H4: custom canonicalization is not implemented (returns an error), so this map is never read"
+)]
+type UnorderedMap<K, V> = HashMap<K, V>;
 use std::time::Duration;
 
 /// Version of the DB-C14N specification
@@ -150,11 +158,7 @@ pub struct CustomCanonicalizationRules {
     /// Custom attribute ordering rules
     pub attribute_ordering: Vec<String>,
     /// Custom element ordering rules
-    #[allow(
-        clippy::disallowed_types,
-        reason = "H4: custom canonicalization is not implemented (returns an error), so this map is never read"
-    )]
-    pub element_ordering: HashMap<String, Vec<String>>,
+    pub element_ordering: UnorderedMap<String, Vec<String>>,
 }
 
 impl Default for CustomCanonicalizationRules {

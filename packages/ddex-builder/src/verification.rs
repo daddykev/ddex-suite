@@ -10,6 +10,14 @@ use serde::{Deserialize, Serialize};
     reason = "H6: verification statistics; not build output"
 )]
 use std::collections::HashMap;
+
+/// `HashMap` for the serde-derived structs below, which a field-level allow cannot cover
+/// (the derived impls are separate items). Same type as `HashMap<K, V>`.
+#[allow(
+    clippy::disallowed_types,
+    reason = "H6: verification statistics; not build output"
+)]
+type UnorderedMap<K, V> = HashMap<K, V>;
 use std::time::{Duration, Instant};
 
 /// Build verifier for the fidelity options
@@ -525,11 +533,7 @@ pub struct VerificationStatistics {
     /// Processing instructions verified
     pub processing_instructions_verified: usize,
     /// Extensions verified
-    #[allow(
-        clippy::disallowed_types,
-        reason = "H6: verification statistics; not build output"
-    )]
-    pub extensions_verified: HashMap<String, usize>,
+    pub extensions_verified: UnorderedMap<String, usize>,
     /// Memory usage during verification
     pub memory_usage: usize,
 }

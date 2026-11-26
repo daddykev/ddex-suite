@@ -19,6 +19,14 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::time::{Duration, Instant};
 
+/// `HashMap` for the serde-derived structs below, which a field-level allow cannot cover
+/// (the derived impls are separate items). Same type as `HashMap<K, V>`.
+#[allow(
+    clippy::disallowed_types,
+    reason = "H7: round-trip statistics; not build output"
+)]
+type UnorderedMap<K, V> = std::collections::HashMap<K, V>;
+
 /// The error of an API that 0.5.x does not implement (it used to return a made-up result).
 pub(crate) fn not_implemented(api: &str, detail: &str) -> BuildError {
     BuildError::Other(format!("{api} is not implemented in 0.5.x: {detail}"))
@@ -210,11 +218,7 @@ pub struct ElementAnalysis {
     /// Total number of elements
     pub total_elements: usize,
     /// Elements by type/name
-    #[allow(
-        clippy::disallowed_types,
-        reason = "H7: round-trip statistics; not build output"
-    )]
-    pub elements_by_type: std::collections::HashMap<String, usize>,
+    pub elements_by_type: UnorderedMap<String, usize>,
     /// Unknown elements (not in schema)
     pub unknown_elements: usize,
     /// Elements preserved after round-trip
@@ -227,11 +231,7 @@ pub struct AttributeAnalysis {
     /// Total number of attributes
     pub total_attributes: usize,
     /// Attributes by element type
-    #[allow(
-        clippy::disallowed_types,
-        reason = "H7: round-trip statistics; not build output"
-    )]
-    pub attributes_by_element: std::collections::HashMap<String, usize>,
+    pub attributes_by_element: UnorderedMap<String, usize>,
     /// Unknown attributes (not in schema)
     pub unknown_attributes: usize,
     /// Attributes preserved after round-trip
@@ -259,11 +259,7 @@ pub struct ExtensionAnalysis {
     /// Total number of extensions
     pub total_extensions: usize,
     /// Extension namespaces found
-    #[allow(
-        clippy::disallowed_types,
-        reason = "H7: round-trip statistics; not build output"
-    )]
-    pub extension_namespaces: std::collections::HashMap<String, String>,
+    pub extension_namespaces: UnorderedMap<String, String>,
     /// Known extensions (recognized patterns)
     pub known_extensions: usize,
     /// Unknown extensions
@@ -278,11 +274,7 @@ pub struct NamespaceAnalysis {
     /// Total number of namespaces
     pub total_namespaces: usize,
     /// Prefixed namespaces
-    #[allow(
-        clippy::disallowed_types,
-        reason = "H7: round-trip statistics; not build output"
-    )]
-    pub prefixed_namespaces: std::collections::HashMap<String, String>,
+    pub prefixed_namespaces: UnorderedMap<String, String>,
     /// Default namespace (if any)
     pub default_namespace: Option<String>,
     /// Namespaces preserved after round-trip

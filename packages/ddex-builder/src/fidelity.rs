@@ -11,6 +11,14 @@ use serde::{Deserialize, Serialize};
     reason = "H5: fidelity config/statistics; not build output"
 )]
 use std::collections::HashMap;
+
+/// `HashMap` for the serde-derived structs below, which a field-level allow cannot cover
+/// (the derived impls are separate items). Same type as `HashMap<K, V>`.
+#[allow(
+    clippy::disallowed_types,
+    reason = "H5: fidelity config/statistics; not build output"
+)]
+type UnorderedMap<K, V> = HashMap<K, V>;
 use std::time::Duration;
 
 /// Fidelity configuration for XML preservation
@@ -217,11 +225,7 @@ pub struct AttributeValidationConfig {
     /// Validate attribute value constraints
     pub validate_constraints: bool,
     /// Custom validation rules per attribute
-    #[allow(
-        clippy::disallowed_types,
-        reason = "H5: fidelity config/statistics; not build output"
-    )]
-    pub custom_rules: HashMap<String, AttributeValidationRule>,
+    pub custom_rules: UnorderedMap<String, AttributeValidationRule>,
 }
 
 impl Default for AttributeValidationConfig {
@@ -298,11 +302,7 @@ pub struct NamespaceMinimizationRules {
     /// Namespaces that can be safely removed if unused
     pub can_remove: Vec<String>,
     /// Preferred prefix mappings
-    #[allow(
-        clippy::disallowed_types,
-        reason = "H5: fidelity config/statistics; not build output"
-    )]
-    pub preferred_prefixes: HashMap<String, String>,
+    pub preferred_prefixes: UnorderedMap<String, String>,
 }
 
 /// Default namespace handling
@@ -371,27 +371,15 @@ pub enum IndentationStyle {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FidelityStatistics {
     /// Elements preserved by category
-    #[allow(
-        clippy::disallowed_types,
-        reason = "H5: fidelity config/statistics; not build output"
-    )]
-    pub elements_preserved: HashMap<String, usize>,
+    pub elements_preserved: UnorderedMap<String, usize>,
     /// Attributes preserved by category
-    #[allow(
-        clippy::disallowed_types,
-        reason = "H5: fidelity config/statistics; not build output"
-    )]
-    pub attributes_preserved: HashMap<String, usize>,
+    pub attributes_preserved: UnorderedMap<String, usize>,
     /// Comments preserved
     pub comments_preserved: usize,
     /// Processing instructions preserved
     pub processing_instructions_preserved: usize,
     /// Extensions preserved by namespace
-    #[allow(
-        clippy::disallowed_types,
-        reason = "H5: fidelity config/statistics; not build output"
-    )]
-    pub extensions_preserved: HashMap<String, usize>,
+    pub extensions_preserved: UnorderedMap<String, usize>,
     /// Namespaces processed
     pub namespaces_processed: usize,
     /// Fidelity processing time
