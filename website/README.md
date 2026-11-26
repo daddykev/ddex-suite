@@ -37,4 +37,6 @@ the running interpreter needs both packages and pandas.)
 
 ## Deploy
 
-Deployment is manual (`firebase deploy`) and not part of CI.
+Deployment is manual (`firebase deploy`) and not part of CI. Run it from `website/` after
+`npm ci` here and in `functions/`: deploying hosting first runs `npm run build` (the
+`predeploy` in `firebase.json`), so a stale `build/` is never uploaded.

@@ -136,4 +136,5 @@ twine upload wheel-ddex-builder-*/*.whl sdist-ddex-builder/*.tar.gz
       (`website/functions/package.json` asks for the new version, which exists only once
       published): `cd website/functions && npm install ddex-parser@<version>
       ddex-builder@<version>`, and commit `package-lock.json`.
-- [ ] Update the website (`cd website && npm run build && firebase deploy`).
+- [ ] Update the website (`cd website && npm ci && (cd functions && npm ci) && firebase deploy`;
+      the hosting `predeploy` in `website/firebase.json` runs `npm run build` first).
