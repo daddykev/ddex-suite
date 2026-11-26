@@ -54,7 +54,8 @@ impl Arena {
         Box::new(value)
     }
 
-    /// Get total allocated memory
+    /// The total `size_of` of the values passed to [`Arena::alloc`]. The values themselves
+    /// are boxed, not stored in the arena, so this is a count, not the arena's memory.
     pub fn allocated_bytes(&self) -> usize {
         self.chunks.borrow().iter().map(|chunk| chunk.len()).sum()
     }
@@ -336,8 +337,21 @@ impl CompactAST {
             attributes.insert(key_idx, value_idx);
         }
 
-        // Convert children (placeholder - would need full recursive conversion)
-        let children = Vec::new(); // Simplified for now
+        // Children, recursively (before 0.5.1 they were dropped)
+        let children = element
+            .children
+            .iter()
+            .map(|child| match child {
+                crate::ast::Node::Element(e) => CompactNodeRef::Element(self.convert_element(e)),
+                crate::ast::Node::Text(text) => CompactNodeRef::Text(self.intern_string(text)),
+                crate::ast::Node::Comment(comment) => {
+                    CompactNodeRef::Comment(self.intern_string(&comment.content))
+                }
+                crate::ast::Node::SimpleComment(comment) => {
+                    CompactNodeRef::Comment(self.intern_string(comment))
+                }
+            })
+            .collect();
 
         let compact_element = CompactElement {
             name_idx,

@@ -115,6 +115,16 @@ pub struct StreamingBuilder<W: IoWrite> {
     estimated_total_items: Option<usize>,
 }
 
+impl<W: IoWrite + Default> StreamingBuilder<W> {
+    /// The writer, with everything written so far flushed to it (call after
+    /// `finish_message` to get the complete document).
+    pub fn into_inner(self) -> Result<W, BuildError> {
+        self.buffer_manager
+            .into_inner()
+            .map_err(|e| BuildError::Io(e.to_string()))
+    }
+}
+
 impl<W: IoWrite> StreamingBuilder<W> {
     /// Create a new streaming builder with the given writer
     pub fn new(writer: W) -> Result<Self, BuildError> {

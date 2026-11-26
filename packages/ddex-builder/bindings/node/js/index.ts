@@ -211,7 +211,7 @@ export class DDEXBuilder {
    *
    * console.log('XML:', result.xml);
    * console.log('Build time:', result.statistics?.buildTimeMs, 'ms');
-   * console.log('Fidelity score:', result.verification?.fidelityScore);
+   * console.log('Round trip:', result.verification?.roundTripSuccess, result.verification?.issues);
    * ```
    */
   async buildWithFidelity(data?: BuildRequest | null, fidelityOptions?: FidelityOptions): Promise<BuildResult> {
@@ -223,7 +223,8 @@ export class DDEXBuilder {
    *
    * @param originalXml - Original DDEX XML to test against
    * @param fidelityOptions - Fidelity options for the test
-   * @returns Promise resolving to verification results with fidelity score
+   * @returns Promise resolving to the round-trip result: `roundTripSuccess` and the
+   *   differences in `issues` (`fidelityScore` is always null; no score is computed)
    * @throws {Error} When round-trip test fails or XML is invalid
    *
    * @example
@@ -233,10 +234,8 @@ export class DDEXBuilder {
    *   canonicalization: 'db-c14n-1.0'
    * });
    *
-   * if (verification.roundTripSuccess) {
-   *   console.log('Fidelity score:', verification.fidelityScore);
-   * } else {
-   *   console.log('Issues:', verification.issues);
+   * if (!verification.roundTripSuccess) {
+   *   console.log('Differences:', verification.issues);
    * }
    * ```
    */

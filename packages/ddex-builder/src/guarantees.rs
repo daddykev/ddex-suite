@@ -226,25 +226,20 @@ impl DeterminismGuaranteeValidator {
         timestamp: chrono::DateTime<chrono::Utc>,
     ) -> Result<GuaranteeValidationResult, BuildError> {
         let (passed, details, evidence) = match guarantee {
-            DeterminismGuarantee::DeterministicCollections => {
-                // This should be enforced by clippy rules
-                (
-                    true,
-                    "IndexMap usage enforced by clippy rules in clippy.toml".to_string(),
-                    Some(
-                        "forbid = ['std::collections::HashMap', 'std::collections::HashSet']"
-                            .to_string(),
-                    ),
-                )
-            }
-            DeterminismGuarantee::StableSorting => (
-                true,
-                "All sorting operations use stable algorithms with consistent comparators"
+            // Not verified: there is no code analysis at runtime. Before 0.5.1 both passed
+            // with canned evidence.
+            DeterminismGuarantee::DeterministicCollections => (
+                false,
+                "Not verified in 0.5.x, and not true yet: ddex-builder still uses HashMap and \
+                 HashSet (clippy.toml disallows them, but that lint is allowed to fail in CI \
+                 until 0.6.0)"
                     .to_string(),
-                Some(
-                    "sort_by() and sort_unstable_by() are only used with deterministic comparators"
-                        .to_string(),
-                ),
+                None,
+            ),
+            DeterminismGuarantee::StableSorting => (
+                false,
+                "Not verified in 0.5.x (no code analysis at runtime)".to_string(),
+                None,
             ),
             _ => {
                 return Err(BuildError::DeterminismGuaranteeViolated {
@@ -273,72 +268,18 @@ impl DeterminismGuaranteeValidator {
         let verifier = DeterminismVerifier::new(self.config.clone());
         let result = verifier.verify(request, 3)?;
 
+        // What is checked is that repeated builds are byte-identical; the specific property
+        // named by the guarantee is not checked separately.
         let (passed, details, evidence) = if result.is_deterministic {
-            match guarantee {
-                DeterminismGuarantee::FixedTimestamps => {
-                    // Verify that timestamps are consistent across builds
-                    let evidence = format!(
-                        "All {} iterations produced identical timestamps",
-                        result.iterations
-                    );
-                    (
-                        true,
-                        "Timestamps are fixed and consistent across builds".to_string(),
-                        Some(evidence),
-                    )
-                }
-                DeterminismGuarantee::UnicodeNormalization => {
-                    let evidence =
-                        "String normalization verified through deterministic output".to_string();
-                    (
-                        true,
-                        "Unicode normalization is applied consistently".to_string(),
-                        Some(evidence),
-                    )
-                }
-                DeterminismGuarantee::StableHashing => {
-                    let evidence = format!("SHA-256 hashes: {:?}", result.hashes);
-                    (
-                        true,
-                        "SHA-256 hashing produces consistent results".to_string(),
-                        Some(evidence),
-                    )
-                }
-                DeterminismGuarantee::CanonicalOrdering => {
-                    let evidence =
-                        "Element ordering verified through deterministic output".to_string();
-                    (
-                        true,
-                        "Canonical element ordering is maintained".to_string(),
-                        Some(evidence),
-                    )
-                }
-                DeterminismGuarantee::LockedNamespacePrefixes => {
-                    let evidence =
-                        "Namespace prefixes verified through deterministic output".to_string();
-                    (
-                        true,
-                        "Namespace prefixes are locked and consistent".to_string(),
-                        Some(evidence),
-                    )
-                }
-                DeterminismGuarantee::CanonicalXmlOutput => {
-                    let evidence = format!(
-                        "DB-C14N/1.0 canonicalization produces {} identical outputs",
-                        result.iterations
-                    );
-                    (
-                        true,
-                        "XML output follows DB-C14N/1.0 specification".to_string(),
-                        Some(evidence),
-                    )
-                }
-                _ => (
-                    true,
-                    "Guarantee validated through deterministic build verification".to_string(),
-                    None,
+            (
+                true,
+                format!(
+                    "{} builds of the request produced byte-identical XML; {:?} itself is not \
+                     checked separately",
+                    result.iterations, guarantee
                 ),
-            }
+                Some(format!("SHA-256: {:?}", result.hashes)),
+            )
         } else {
             let details = format!(
                 "Determinism verification failed: {} differences found",
@@ -562,23 +503,22 @@ impl DeterminismGuaranteeValidator {
     }
 }
 
-/// Validate that HashMap/HashSet are not used in output code paths
+/// Not implemented in 0.5.x: returns an error (before 0.5.1 it returned `Ok(())` without
+/// checking; ddex-builder still uses HashMap/HashSet, see clippy.toml).
 pub fn validate_no_hashmap_usage() -> Result<(), BuildError> {
-    // This would typically be enforced by clippy rules in clippy.toml
-    // For now, we'll assume it's properly configured
-
-    // In a real implementation, you might use static analysis tools
-    // or runtime checks to ensure IndexMap is used everywhere
-
-    Ok(())
+    Err(crate::round_trip::not_implemented(
+        "validate_no_hashmap_usage",
+        "there is no code analysis at runtime; the clippy determinism lint is the check",
+    ))
 }
 
-/// Validate that all collections are sorted deterministically
+/// Not implemented in 0.5.x: returns an error (before 0.5.1 it returned `Ok(())` without
+/// checking).
 pub fn validate_deterministic_sorting() -> Result<(), BuildError> {
-    // This would be validated through code analysis to ensure
-    // all sorting operations use deterministic comparators
-
-    Ok(())
+    Err(crate::round_trip::not_implemented(
+        "validate_deterministic_sorting",
+        "there is no code analysis at runtime",
+    ))
 }
 
 /// Generate a determinism guarantee report

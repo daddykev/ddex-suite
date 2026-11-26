@@ -623,29 +623,18 @@ impl UpdateGenerator {
         Ok(update_message)
     }
 
-    /// Apply an update to a base message to produce a new complete message
+    /// Not implemented in 0.5.x: returns an error. Before 0.5.1 every update operation was a
+    /// no-op and the "updated" message was an XML declaration and a comment, returned as
+    /// success.
     pub fn apply_update(
         &self,
-        base_xml: &str,
-        update: &UpdateReleaseMessage,
+        _base_xml: &str,
+        _update: &UpdateReleaseMessage,
     ) -> Result<String, BuildError> {
-        // Parse base message
-        let mut base_ast = self.parse_xml_to_ast(base_xml)?;
-
-        // Apply each operation in dependency order
-        let ordered_operations = self.order_operations_by_dependencies(&update.update_list)?;
-
-        for operation in &ordered_operations {
-            self.apply_operation_to_ast(&mut base_ast, operation)?;
-        }
-
-        // Apply entity-level updates
-        self.apply_resource_updates(&mut base_ast, &update.resource_updates)?;
-        self.apply_release_updates(&mut base_ast, &update.release_updates)?;
-        self.apply_deal_updates(&mut base_ast, &update.deal_updates)?;
-
-        // Serialize back to XML
-        self.ast_to_xml(&base_ast)
+        Err(crate::round_trip::not_implemented(
+            "UpdateGenerator::apply_update",
+            "update operations are not applied to a base message yet",
+        ))
     }
 
     /// Validate an update for consistency and safety
@@ -913,85 +902,6 @@ impl UpdateGenerator {
             message_control_type: Some("UpdateMessage".to_string()),
             message_created_date_time: Some(metadata.update_created_timestamp.to_rfc3339()),
         }
-    }
-
-    fn order_operations_by_dependencies(
-        &self,
-        operations: &[UpdateOperation],
-    ) -> Result<Vec<UpdateOperation>, BuildError> {
-        // Simplified topological sort - in production, implement proper dependency resolution
-        let mut ordered = operations.to_vec();
-
-        // Sort by operation ID as a simple ordering
-        ordered.sort_by(|a, b| a.operation_id.cmp(&b.operation_id));
-
-        Ok(ordered)
-    }
-
-    fn apply_operation_to_ast(
-        &self,
-        _ast: &mut crate::ast::AST,
-        operation: &UpdateOperation,
-    ) -> Result<(), BuildError> {
-        // Simplified AST modification - in production, implement proper AST updates
-        match operation.action {
-            UpdateAction::Add => {
-                // Add logic here
-            }
-            UpdateAction::Delete => {
-                // Delete logic here
-            }
-            UpdateAction::Replace => {
-                // Replace logic here
-            }
-            UpdateAction::Move => {
-                // Move logic here
-            }
-        }
-        Ok(())
-    }
-
-    fn apply_resource_updates(
-        &self,
-        _ast: &mut crate::ast::AST,
-        updates: &IndexMap<String, ResourceUpdate>,
-    ) -> Result<(), BuildError> {
-        // Apply resource-specific updates
-        for (_resource_id, _update) in updates {
-            // Implementation would modify AST based on resource update
-        }
-        Ok(())
-    }
-
-    fn apply_release_updates(
-        &self,
-        _ast: &mut crate::ast::AST,
-        updates: &IndexMap<String, ReleaseUpdate>,
-    ) -> Result<(), BuildError> {
-        // Apply release-specific updates
-        for (_release_id, _update) in updates {
-            // Implementation would modify AST based on release update
-        }
-        Ok(())
-    }
-
-    fn apply_deal_updates(
-        &self,
-        _ast: &mut crate::ast::AST,
-        updates: &IndexMap<String, DealUpdate>,
-    ) -> Result<(), BuildError> {
-        // Apply deal-specific updates
-        for (_deal_id, _update) in updates {
-            // Implementation would modify AST based on deal update
-        }
-        Ok(())
-    }
-
-    fn ast_to_xml(&self, _ast: &crate::ast::AST) -> Result<String, BuildError> {
-        // Simplified XML serialization - in production, use proper XML generation
-        Ok(format!(
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!-- Updated DDEX Message -->\n"
-        ))
     }
 
     fn validate_operation(

@@ -256,7 +256,11 @@ impl AttributeValidator {
             .push(rule);
     }
 
-    /// Add custom validation function
+    /// Registers one of the built-in validators by name: `ddex_territory_code`,
+    /// `ddex_language_code` or `ddex_currency_code`. In 0.5.x the closure is NOT stored (the
+    /// built-in validator of that name is used instead), and any other name is not
+    /// registered, so a `ValidationRule::Custom` naming it fails validation as an unknown
+    /// validator. Storing arbitrary closures is planned (KNOWN_ISSUES.md).
     pub fn add_custom_validator<F>(&mut self, name: String, _validator: F)
     where
         F: Fn(&AttributeValue) -> Result<(), String> + 'static,

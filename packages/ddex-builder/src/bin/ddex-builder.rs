@@ -1,9 +1,10 @@
 //! DDEX Builder CLI - Comprehensive command-line interface for DDEX XML processing
 //!
-//! This CLI provides tools for converting, validating and comparing DDEX XML files.
-//! Known issues (KNOWN_ISSUES.md): `build` is a stub that writes a placeholder document,
-//! `--validate` never fails, and presets do not change the output. Use the library or a
-//! binding to build.
+//! This CLI builds DDEX XML from a JSON / YAML / TOML build request (`build`, which runs
+//! `DDEXBuilder::build` and its preflight validation) and converts between versions
+//! (`convert`). In 0.5.x `diff`, `validate`, `watch` and `server` are not implemented: they
+//! exit with an error (before 0.5.1 they printed made-up results). Presets do not change the
+//! output (KNOWN_ISSUES.md).
 
 use clap::{Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::{generate, Shell};
@@ -637,7 +638,10 @@ fn handle_build_command(
     if !is_quiet() {
         println!("{} DDEX XML built successfully", style("✓").green());
         if let Some(preset) = cmd.preset {
-            println!("  Preset: {}", preset_to_string(&preset));
+            println!(
+                "  Preset: {} (presets do not change the output in 0.5.x)",
+                preset_to_string(&preset)
+            );
         }
         if let Some(version) = cmd.version {
             println!("  Version: {:?}", version);
@@ -703,116 +707,17 @@ fn handle_convert_command(
 }
 
 fn handle_diff_command(
-    cmd: DiffCommand,
+    _cmd: DiffCommand,
     _config: &ConfigFile,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let xml1 = fs::read_to_string(&cmd.file1)?;
-    let xml2 = fs::read_to_string(&cmd.file2)?;
-
-    let _diff_config = diff::DiffConfig {
-        ignore_formatting: cmd.ignore_whitespace,
-        ..Default::default()
-    };
-    // TODO: Parse XML to AST for proper semantic diffing
-    // For now, create a placeholder changeset
-    let changeset = diff::types::ChangeSet::new();
-
-    let formatted_output = match cmd.format {
-        DiffFormat::Human => diff::formatter::DiffFormatter::format_summary(&changeset),
-        DiffFormat::Json => serde_json::to_string_pretty(&changeset)?,
-        DiffFormat::Update => {
-            let mut update_generator = messages::UpdateGenerator::new();
-            let _update_message = update_generator.create_update(&xml1, &xml2, "cli-generated")?;
-            // TODO: Implement XML serialization for UpdateReleaseMessage
-            format!("<!-- Update message XML would be serialized here -->")
-        }
-    };
-
-    write_output(&formatted_output, &cmd.output)?;
-
-    if !is_quiet() && cmd.format == DiffFormat::Human {
-        if changeset.changes.is_empty() {
-            println!("{} Files are identical", style("✓").green());
-        } else {
-            println!(
-                "{} {} differences found",
-                style("!").yellow(),
-                changeset.changes.len()
-            );
-        }
-    }
-
-    Ok(())
+    Err("`ddex-builder diff` is not implemented in 0.5.x: the semantic diff is planned (it printed 'Files are identical' for any input)".into())
 }
 
 fn handle_validate_command(
-    cmd: ValidateCommand,
+    _cmd: ValidateCommand,
     _config: &ConfigFile,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut all_valid = true;
-    let mut results = Vec::new();
-
-    for file_path in &cmd.files {
-        let _xml_content = fs::read_to_string(file_path)?;
-
-        let mut builder = Builder::new();
-        if let Some(preset) = &cmd.preset {
-            let preset_name = preset_to_string(preset);
-            builder.apply_preset(&preset_name, false)?;
-        }
-
-        let validation_config = ValidationConfig {
-            level: if cmd.strict {
-                PreflightLevel::Strict
-            } else {
-                PreflightLevel::Warn
-            },
-            profile: cmd.profile.clone(),
-            ..Default::default()
-        };
-
-        let _validator = PreflightValidator::new(validation_config);
-        // TODO: Parse XML content to BuildRequest for validation
-        // For now, create a placeholder result
-        let result = ValidationResult {
-            errors: Vec::new(),
-            warnings: Vec::new(),
-            info: Vec::new(),
-            passed: true,
-        };
-
-        let file_valid = result.errors.is_empty();
-        all_valid = all_valid && file_valid;
-
-        results.push((file_path.clone(), result));
-
-        if cmd.fail_fast && !file_valid {
-            break;
-        }
-    }
-
-    // Output results
-    match cmd.output_format {
-        ValidateFormat::Human => {
-            for (file_path, result) in &results {
-                print_validation_result_human(file_path, result);
-            }
-        }
-        ValidateFormat::Json => {
-            let json_output = serde_json::to_string_pretty(&results)?;
-            println!("{}", json_output);
-        }
-        ValidateFormat::Junit => {
-            let junit_output = format_junit_results(&results)?;
-            println!("{}", junit_output);
-        }
-    }
-
-    if !all_valid {
-        process::exit(1);
-    }
-
-    Ok(())
+    Err("`ddex-builder validate` is not implemented in 0.5.x: reading DDEX XML needs the parser; use `ddex-parser validate` (it reported every file as valid)".into())
 }
 
 fn handle_schema_command(
@@ -1119,95 +1024,17 @@ fn handle_preset_command(
 }
 
 fn handle_watch_command(
-    cmd: WatchCommand,
+    _cmd: WatchCommand,
     _config: &ConfigFile,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    if !is_quiet() {
-        println!("👀 Watching {} for changes...", cmd.path.display());
-        println!("   Pattern: {}", cmd.pattern);
-        if let Some(ref output_dir) = cmd.output_dir {
-            println!("   Output: {}", output_dir.display());
-        }
-        println!("   Press Ctrl+C to stop");
-    }
-
-    // Initial build if requested
-    if cmd.initial_build {
-        if !is_quiet() {
-            println!("🔨 Running initial build...");
-        }
-        run_watch_build(&cmd)?;
-    }
-
-    // TODO: Implement file watching using notify crate
-    // For now, just simulate watching
-
-    // In a real implementation, this would use the notify crate:
-    // let (tx, rx) = mpsc::channel::<notify::Event>();
-    // let mut watcher = notify::recommended_watcher(move |res| {
-    //     match res {
-    //         Ok(event) => tx.send(event).unwrap(),
-    //         Err(e) => eprintln!("watch error: {:?}", e),
-    //     }
-    // })?;
-    // watcher.watch(&cmd.path, notify::RecursiveMode::from(cmd.recursive))?;
-
-    // File watching is not implemented: only the initial build (if requested) runs.
-    if !is_quiet() {
-        println!(
-            "File watching simulation - in real implementation, this would use the notify crate"
-        );
-    }
-
-    Ok(())
+    Err("`ddex-builder watch` is not implemented in 0.5.x: no files are watched; run `ddex-builder build` instead".into())
 }
 
 fn handle_server_command(
-    cmd: ServerCommand,
+    _cmd: ServerCommand,
     _config: &ConfigFile,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    if !is_quiet() {
-        println!("🚀 Starting DDEX Builder HTTP API server...");
-        println!("   Address: {}:{}", cmd.bind, cmd.port);
-        println!("   Workers: {}", cmd.workers);
-        if cmd.cors {
-            println!("   CORS: enabled");
-        }
-        if cmd.tls_cert.is_some() && cmd.tls_key.is_some() {
-            println!("   TLS: enabled");
-        }
-        if let Some(rate_limit) = cmd.rate_limit {
-            println!("   Rate limit: {} requests/minute per IP", rate_limit);
-        }
-        println!("   Press Ctrl+C to stop");
-    }
-
-    // TODO: Implement HTTP server using axum or warp
-    // Server endpoints would include:
-    // POST /build - Build DDEX XML from JSON/YAML/TOML
-    // POST /convert - Convert between DDEX versions
-    // POST /validate - Validate DDEX XML
-    // GET /presets - List available presets
-    // GET /presets/{id} - Get preset details
-    // POST /diff - Compare two DDEX files
-    // GET /health - Health check endpoint
-    // GET /metrics - Prometheus metrics (if enabled)
-
-    // For now, just simulate server running
-    println!("HTTP API server would start here");
-    println!("Available endpoints:");
-    println!("  POST /api/v1/build        - Build DDEX XML");
-    println!("  POST /api/v1/convert      - Convert DDEX versions");
-    println!("  POST /api/v1/validate     - Validate DDEX XML");
-    println!("  GET  /api/v1/presets      - List presets");
-    println!("  GET  /api/v1/presets/{{id}} - Get preset details");
-    println!("  POST /api/v1/diff         - Compare DDEX files");
-    println!("  GET  /api/v1/health       - Health check");
-
-    // Simulate server running
-    std::thread::park();
-
-    Ok(())
+    Err("`ddex-builder server` is not implemented in 0.5.x: there is no HTTP server (it printed endpoints and waited)".into())
 }
 
 fn handle_completions_command(cmd: CompletionsCommand) -> Result<(), Box<dyn std::error::Error>> {
@@ -1303,49 +1130,26 @@ fn preset_to_string(preset: &PresetChoice) -> String {
 }
 
 fn validate_input_data(
-    _data: &JsonValue,
-    _builder: &Builder,
+    data: &JsonValue,
+    builder: &Builder,
     _strict: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // TODO: Implement input validation logic
-    Ok(())
+    // Preflight validation runs as part of the build.
+    build_ddex_xml(data, builder).map(|_| ())
 }
 
 fn build_ddex_xml(
-    _data: &JsonValue,
-    _builder: &Builder,
+    data: &JsonValue,
+    builder: &Builder,
 ) -> Result<String, Box<dyn std::error::Error>> {
-    // TODO: Implement actual DDEX XML building
-    Ok("<xml><!-- DDEX XML would be generated here --></xml>".to_string())
-}
-
-fn print_validation_result_human(file_path: &Path, result: &ValidationResult) {
-    if result.errors.is_empty() {
-        println!("{} {} - Valid", style("✓").green(), file_path.display());
-    } else {
-        println!(
-            "{} {} - {} errors, {} warnings",
-            style("✗").red(),
-            file_path.display(),
-            result.errors.len(),
-            result.warnings.len()
-        );
-
-        for error in &result.errors {
-            println!("  {} {:?}", style("Error:").red(), error);
-        }
-
-        for warning in &result.warnings {
-            println!("  {} {:?}", style("Warning:").yellow(), warning);
-        }
+    let mut request: BuildRequest = serde_json::from_value(data.clone())
+        .map_err(|e| format!("the input is not a build request: {e}"))?;
+    if let Some(version) = builder.target_version() {
+        request.version = version.to_string().trim_start_matches("ERN/").to_string();
     }
-}
-
-fn format_junit_results(
-    _results: &[(PathBuf, ValidationResult)],
-) -> Result<String, Box<dyn std::error::Error>> {
-    // TODO: Implement JUnit XML format
-    Ok("<testsuite><!-- JUnit results would be here --></testsuite>".to_string())
+    Ok(DDEXBuilder::new()
+        .build(request, BuildOptions::default())?
+        .xml)
 }
 
 fn is_quiet() -> bool {
@@ -1448,33 +1252,6 @@ fn get_preset_details(preset_id: &str) -> Result<PresetDetails, Box<dyn std::err
         }),
         _ => Err(format!("Preset '{}' not found", preset_id).into()),
     }
-}
-
-fn run_watch_build(cmd: &WatchCommand) -> Result<(), Box<dyn std::error::Error>> {
-    // TODO: Implement actual file watching and building
-    if let Some(ref command) = cmd.command {
-        // Execute custom command
-        let output = std::process::Command::new("sh")
-            .arg("-c")
-            .arg(command)
-            .output()?;
-
-        if !output.status.success() {
-            return Err(format!(
-                "Command failed: {}",
-                String::from_utf8_lossy(&output.stderr)
-            )
-            .into());
-        }
-    } else {
-        // Default build behavior
-        if !is_quiet() {
-            println!("  Building files matching pattern: {}", cmd.pattern);
-        }
-        // TODO: Scan for files matching pattern and build them
-    }
-
-    Ok(())
 }
 
 fn verify_build_determinism(

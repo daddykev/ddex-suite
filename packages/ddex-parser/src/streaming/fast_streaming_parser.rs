@@ -27,6 +27,8 @@ pub struct FastStreamingParser {
     party_end: memmem::Finder<'static>,
     deal_start: memmem::Finder<'static>,
     deal_end: memmem::Finder<'static>,
+    /// Statistics of the last `parse_streaming` run
+    last_stats: Option<FastParsingStats>,
 }
 
 /// Fast streaming element with minimal allocation
@@ -88,6 +90,7 @@ impl FastStreamingParser {
             party_end: memmem::Finder::new(b"</Party>"),
             deal_start: memmem::Finder::new(b"<Deal"),
             deal_end: memmem::Finder::new(b"</Deal>"),
+            last_stats: None,
         }
     }
 
@@ -255,12 +258,14 @@ impl FastStreamingParser {
             },
         };
 
+        self.last_stats = Some(stats.clone());
         Ok(FastStreamingIterator::new(elements, stats))
     }
 
-    /// Get current parsing statistics
+    /// Statistics of the last `parse_streaming` run (all zero before the first run; before
+    /// 0.5.1 always zero)
     pub fn get_stats(&self) -> FastParsingStats {
-        FastParsingStats {
+        self.last_stats.clone().unwrap_or(FastParsingStats {
             throughput_mbps: 0.0,
             elements_per_second: 0.0,
             total_bytes: 0,
@@ -268,7 +273,7 @@ impl FastStreamingParser {
             elapsed: Duration::from_secs(0),
             peak_memory_mb: 0.0,
             avg_element_size: 0.0,
-        }
+        })
     }
 }
 

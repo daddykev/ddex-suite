@@ -89,8 +89,8 @@ against the DDEX XSD or the AVS business rules.
 
 `parse` reads the whole document. The streaming APIs (`ParseMode::Stream`, the
 `stream*` iterators, `FastStreamingParser`) are experimental and opt-in: they read a
-subset of the fields, and the fast path behind `SecurityConfig::relaxed()` returns no
-releases. The parallel iterator does not currently scale with the thread count.
+subset of the fields, and the fast path behind `SecurityConfig::relaxed()` is not
+implemented (`parse` returns an error with that setting). The parallel iterator does not currently scale with the thread count.
 
 ## Performance
 

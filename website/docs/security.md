@@ -41,7 +41,7 @@ assert.throws(() => new DdexParser().parseSync(xxe), /DTD declarations are disab
 
 In Rust, `DDEXParser::with_config` takes a different `SecurityConfig`. Do not use
 `SecurityConfig::relaxed()`: it switches to the experimental fast streaming path, which
-returns no releases (see [known issues](./known-issues.md)).
+is not implemented, so `parse` returns an error (see [known issues](./known-issues.md)).
 
 ## Text passes through, escaped
 

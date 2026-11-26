@@ -154,41 +154,21 @@ impl PyDDEXParser {
         PyParsedERNMessage::new(parsed).to_dataframe(py, schema)
     }
 
-    /// Create DDEX XML from pandas DataFrame  
+    /// Not implemented in the parser: raises `NotImplementedError`. Before 0.5.1 it returned
+    /// a mock document (made-up message header, not valid ERN 4.3). Build from a DataFrame
+    /// with `ddex_builder.DDEXBuilder().from_dataframe(...)`.
     #[pyo3(signature = (df, schema="flat", template=None))]
     pub fn from_dataframe(
         &self,
-        py: Python,
         df: &Bound<'_, PyAny>,
         schema: &str,
         template: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<String> {
-        // Check if it's a pandas DataFrame
-        let pandas = py.import("pandas").map_err(|_| {
-            PyValueError::new_err(
-                "pandas is required for from_dataframe(). Install with: pip install pandas",
-            )
-        })?;
-
-        let dataframe_type = pandas.getattr("DataFrame")?;
-        if !df.is_instance(&dataframe_type)? {
-            return Err(PyValueError::new_err("Input must be a pandas DataFrame"));
-        }
-
-        // Convert DataFrame to records (list of dictionaries)
-        let to_dict_method = df.getattr("to_dict")?;
-        let records = to_dict_method.call1(("records",))?;
-        let records_list: Vec<Bound<'_, PyDict>> = records.extract()?;
-
-        match schema {
-            "flat" => self.build_ddex_from_flat_dataframe(py, records_list, template),
-            "releases" => self.build_ddex_from_releases_dataframe(py, records_list, template),
-            "tracks" => self.build_ddex_from_tracks_dataframe(py, records_list, template),
-            _ => Err(PyValueError::new_err(format!(
-                "Unknown schema '{}'. Supported schemas: 'flat', 'releases', 'tracks'",
-                schema
-            ))),
-        }
+        let _ = (df, schema, template);
+        Err(pyo3::exceptions::PyNotImplementedError::new_err(
+            "DDEXParser.from_dataframe is not implemented in 0.5.x: build from a DataFrame \
+             with ddex_builder.DDEXBuilder().from_dataframe(...)",
+        ))
     }
 
     /// Detect DDEX version
@@ -227,197 +207,6 @@ impl PyDDEXParser {
             }
         };
         Ok(result)
-    }
-
-    // Helper methods for building DDEX from DataFrames
-    fn build_ddex_from_flat_dataframe(
-        &self,
-        _py: Python,
-        records: Vec<Bound<'_, PyDict>>,
-        _template: Option<&Bound<'_, PyAny>>,
-    ) -> PyResult<String> {
-        // For now, return a mock DDEX XML structure
-        // In a full implementation, this would reconstruct proper DDEX XML
-        // from the flattened DataFrame records
-        let mut ddex_content = String::new();
-        ddex_content.push_str(r#"<?xml version="1.0" encoding="UTF-8"?>"#);
-        ddex_content.push_str(r#"<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43">"#);
-        ddex_content.push_str(r#"<MessageHeader>"#);
-
-        // Extract message header info from first record if available
-        if let Some(first_record) = records.first() {
-            if let Some(message_id) = first_record.get_item("message_id")? {
-                if let Ok(id) = message_id.extract::<String>() {
-                    ddex_content.push_str(&format!("<MessageId>{}</MessageId>", id));
-                }
-            }
-            ddex_content.push_str("<MessageSender><PartyId>Sender</PartyId></MessageSender>");
-            ddex_content
-                .push_str("<MessageRecipient><PartyId>Recipient</PartyId></MessageRecipient>");
-            ddex_content
-                .push_str("<MessageCreatedDateTime>2023-01-01T00:00:00Z</MessageCreatedDateTime>");
-        }
-
-        ddex_content.push_str("</MessageHeader>");
-        ddex_content.push_str("<UpdateIndicator>OriginalFile</UpdateIndicator>");
-        ddex_content.push_str("<ReleaseList>");
-
-        // Add releases from records
-        for record in &records {
-            if let Some(record_type) = record.get_item("type")? {
-                if let Ok(type_str) = record_type.extract::<String>() {
-                    if type_str == "release" {
-                        ddex_content.push_str("<Release>");
-
-                        if let Some(release_id) = record.get_item("release_id")? {
-                            if let Ok(id) = release_id.extract::<String>() {
-                                ddex_content.push_str(&format!(
-                                    "<ReleaseId><ProprietaryId>{}</ProprietaryId></ReleaseId>",
-                                    id
-                                ));
-                            }
-                        }
-
-                        if let Some(title) = record.get_item("title")? {
-                            if let Ok(title_str) = title.extract::<String>() {
-                                ddex_content.push_str(&format!(
-                                    "<ReferenceTitle><TitleText>{}</TitleText></ReferenceTitle>",
-                                    title_str
-                                ));
-                            }
-                        }
-
-                        ddex_content.push_str("</Release>");
-                    }
-                }
-            }
-        }
-
-        ddex_content.push_str("</ReleaseList>");
-        ddex_content.push_str("</ern:NewReleaseMessage>");
-
-        Ok(ddex_content)
-    }
-
-    fn build_ddex_from_releases_dataframe(
-        &self,
-        _py: Python,
-        records: Vec<Bound<'_, PyDict>>,
-        _template: Option<&Bound<'_, PyAny>>,
-    ) -> PyResult<String> {
-        // Build DDEX focused on releases schema
-        let mut ddex_content = String::new();
-        ddex_content.push_str(r#"<?xml version="1.0" encoding="UTF-8"?>"#);
-        ddex_content.push_str(r#"<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43">"#);
-        ddex_content.push_str(r#"<MessageHeader><MessageId>DataFrame-Generated</MessageId><MessageSender><PartyId>DataFrameSender</PartyId></MessageSender><MessageRecipient><PartyId>DataFrameRecipient</PartyId></MessageRecipient><MessageCreatedDateTime>2023-01-01T00:00:00Z</MessageCreatedDateTime></MessageHeader>"#);
-        ddex_content.push_str("<UpdateIndicator>OriginalFile</UpdateIndicator>");
-        ddex_content.push_str("<ReleaseList>");
-
-        for record in &records {
-            ddex_content.push_str("<Release>");
-
-            if let Some(release_id) = record.get_item("release_id")? {
-                if let Ok(id) = release_id.extract::<String>() {
-                    ddex_content.push_str(&format!(
-                        "<ReleaseId><ProprietaryId>{}</ProprietaryId></ReleaseId>",
-                        id
-                    ));
-                }
-            }
-
-            if let Some(title) = record.get_item("title")? {
-                if let Ok(title_str) = title.extract::<String>() {
-                    ddex_content.push_str(&format!(
-                        "<ReferenceTitle><TitleText>{}</TitleText></ReferenceTitle>",
-                        title_str
-                    ));
-                }
-            }
-
-            ddex_content.push_str("</Release>");
-        }
-
-        ddex_content.push_str("</ReleaseList>");
-        ddex_content.push_str("</ern:NewReleaseMessage>");
-
-        Ok(ddex_content)
-    }
-
-    fn build_ddex_from_tracks_dataframe(
-        &self,
-        _py: Python,
-        records: Vec<Bound<'_, PyDict>>,
-        _template: Option<&Bound<'_, PyAny>>,
-    ) -> PyResult<String> {
-        // Build DDEX with tracks/sound recordings focus
-        // Group tracks by release_id
-
-        let mut releases_map: std::collections::HashMap<String, Vec<&Bound<'_, PyDict>>> =
-            std::collections::HashMap::new();
-
-        for record in &records {
-            if let Some(release_id) = record.get_item("release_id")? {
-                if let Ok(id) = release_id.extract::<String>() {
-                    releases_map.entry(id).or_insert_with(Vec::new).push(record);
-                }
-            }
-        }
-
-        let mut ddex_content = String::new();
-        ddex_content.push_str(r#"<?xml version="1.0" encoding="UTF-8"?>"#);
-        ddex_content.push_str(r#"<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43">"#);
-        ddex_content.push_str(r#"<MessageHeader><MessageId>DataFrame-Tracks</MessageId><MessageSender><PartyId>DataFrameSender</PartyId></MessageSender><MessageRecipient><PartyId>DataFrameRecipient</PartyId></MessageRecipient><MessageCreatedDateTime>2023-01-01T00:00:00Z</MessageCreatedDateTime></MessageHeader>"#);
-        ddex_content.push_str("<UpdateIndicator>OriginalFile</UpdateIndicator>");
-        ddex_content.push_str("<ReleaseList>");
-
-        for (release_id, tracks) in releases_map {
-            ddex_content.push_str("<Release>");
-            ddex_content.push_str(&format!(
-                "<ReleaseId><ProprietaryId>{}</ProprietaryId></ReleaseId>",
-                release_id
-            ));
-
-            if let Some(first_track) = tracks.first() {
-                if let Some(title) = first_track.get_item("release_title")? {
-                    if let Ok(title_str) = title.extract::<String>() {
-                        ddex_content.push_str(&format!(
-                            "<ReferenceTitle><TitleText>{}</TitleText></ReferenceTitle>",
-                            title_str
-                        ));
-                    }
-                }
-            }
-
-            // Add sound recordings
-            ddex_content.push_str("<SoundRecordingList>");
-            for track in tracks {
-                ddex_content.push_str("<SoundRecording>");
-
-                if let Some(track_id) = track.get_item("track_id")? {
-                    if let Ok(id) = track_id.extract::<String>() {
-                        ddex_content.push_str(&format!("<SoundRecordingId><ProprietaryId>{}</ProprietaryId></SoundRecordingId>", id));
-                    }
-                }
-
-                if let Some(track_title) = track.get_item("track_title")? {
-                    if let Ok(title_str) = track_title.extract::<String>() {
-                        ddex_content.push_str(&format!(
-                            "<ReferenceTitle><TitleText>{}</TitleText></ReferenceTitle>",
-                            title_str
-                        ));
-                    }
-                }
-
-                ddex_content.push_str("</SoundRecording>");
-            }
-            ddex_content.push_str("</SoundRecordingList>");
-            ddex_content.push_str("</Release>");
-        }
-
-        ddex_content.push_str("</ReleaseList>");
-        ddex_content.push_str("</ern:NewReleaseMessage>");
-
-        Ok(ddex_content)
     }
 }
 

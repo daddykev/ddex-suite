@@ -3,9 +3,7 @@
 
 use crate::error::ParseError;
 use crate::parser::security::SecurityConfig;
-use ddex_core::models::graph::{
-    MessageHeader, MessageRecipient, MessageSender, MessageType, Release, ReleaseType,
-};
+use ddex_core::models::graph::{MessageHeader, Release, ReleaseType};
 use ddex_core::models::versions::ERNVersion;
 use ddex_core::models::{Identifier, IdentifierType, LocalizedString};
 use quick_xml::{events::Event, Reader};
@@ -15,12 +13,8 @@ use std::io::BufRead;
 /// Enhanced multi-release parser with accurate counting and content extraction
 #[derive(Debug, Clone)]
 pub struct MultiReleaseParser {
-    /// DDEX version being parsed
-    version: ERNVersion,
     /// Security configuration
     security_config: SecurityConfig,
-    /// Enable detailed parsing (vs count-only mode)
-    detailed_parsing: bool,
     /// Maximum releases to parse (0 = unlimited)
     max_releases: usize,
     /// Track parsing statistics
@@ -47,7 +41,8 @@ pub struct MultiReleaseResult {
     pub releases: Vec<Release>,
     /// Parsing statistics
     pub stats: MultiReleaseStats,
-    /// Message header information
+    /// Not read in 0.5.x: always `None` (before 0.5.1, an invented header with the message
+    /// ID `MSG_<version>` and the current time). `DDEXParser::parse` reads the header.
     pub message_header: Option<MessageHeader>,
     /// Raw release count (fast counting)
     pub release_count: usize,
@@ -68,31 +63,27 @@ struct ReleaseContext {
 }
 
 impl MultiReleaseParser {
-    /// Create a new multi-release parser
-    pub fn new(version: ERNVersion) -> Self {
+    /// Create a new multi-release parser (the version is not used in 0.5.x)
+    pub fn new(_version: ERNVersion) -> Self {
         Self {
-            version,
             security_config: SecurityConfig::default(),
-            detailed_parsing: true,
             max_releases: 0,
             stats: MultiReleaseStats::default(),
         }
     }
 
     /// Create parser with custom security configuration
-    pub fn with_security_config(version: ERNVersion, security_config: SecurityConfig) -> Self {
+    pub fn with_security_config(_version: ERNVersion, security_config: SecurityConfig) -> Self {
         Self {
-            version,
             security_config,
-            detailed_parsing: true,
             max_releases: 0,
             stats: MultiReleaseStats::default(),
         }
     }
 
-    /// Set whether to perform detailed parsing or just counting
-    pub fn detailed_parsing(mut self, enabled: bool) -> Self {
-        self.detailed_parsing = enabled;
+    /// No effect in 0.5.x (it only controlled the invented header removed in 0.5.1); kept
+    /// for compatibility.
+    pub fn detailed_parsing(self, _enabled: bool) -> Self {
         self
     }
 
@@ -187,7 +178,7 @@ impl MultiReleaseParser {
         let mut depth = 0;
         let mut elements_processed = 0;
         let mut release_references = Vec::new();
-        let mut message_header: Option<MessageHeader> = None;
+        let message_header: Option<MessageHeader> = None;
         let mut in_release_list = false;
         let mut release_list_count = 0;
 
@@ -265,13 +256,6 @@ impl MultiReleaseParser {
                                 self.stats.main_releases += 1;
                             } else {
                                 self.stats.secondary_releases += 1;
-                            }
-                        }
-                        "MessageHeader" | "ern:MessageHeader" if message_header.is_none() => {
-                            // Parse message header if detailed parsing is enabled
-                            if self.detailed_parsing {
-                                message_header =
-                                    Some(self.parse_message_header(&mut xml_reader, &mut buf)?);
                             }
                         }
                         _ => {
@@ -393,9 +377,11 @@ impl MultiReleaseParser {
     /// Create a default release structure
     fn create_default_release(&self) -> Release {
         Release {
-            release_reference: format!("REL_{:?}_{}", self.version, chrono::Utc::now().timestamp()),
+            // Filled from the document; absent values stay empty (before 0.5.1: an invented
+            // reference with a timestamp and the title "Untitled Release").
+            release_reference: String::new(),
             release_id: Vec::new(),
-            release_title: vec![LocalizedString::new("Untitled Release".to_string())],
+            release_title: Vec::new(),
             release_subtitle: None,
             release_type: None,
             genre: Vec::new(),
@@ -421,41 +407,6 @@ impl MultiReleaseParser {
             p_line: Vec::new(),
             parental_warnings: Vec::new(),
         }
-    }
-
-    /// Parse message header
-    fn parse_message_header<R: BufRead>(
-        &self,
-        _reader: &mut Reader<R>,
-        _buf: &mut [u8],
-    ) -> Result<MessageHeader, ParseError> {
-        // Simplified header creation for now
-        Ok(MessageHeader {
-            message_id: format!("MSG_{:?}", self.version),
-            message_type: MessageType::NewReleaseMessage,
-            message_created_date_time: chrono::Utc::now(),
-            message_sender: MessageSender {
-                party_id: Vec::new(),
-                party_name: Vec::new(),
-                trading_name: None,
-                extensions: None,
-                attributes: None,
-                comments: None,
-            },
-            message_recipient: MessageRecipient {
-                party_id: Vec::new(),
-                party_name: Vec::new(),
-                trading_name: None,
-                extensions: None,
-                attributes: None,
-                comments: None,
-            },
-            message_control_type: None,
-            message_thread_id: Some("MULTI_RELEASE_THREAD".to_string()),
-            extensions: None,
-            attributes: None,
-            comments: None,
-        })
     }
 
     /// Process elements within a release context

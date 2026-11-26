@@ -104,21 +104,30 @@ pub struct FidelityOptions {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildStatistics {
     pub build_time_ms: f64,
-    pub memory_used_bytes: u32,
+    /// Not measured: always null (before 0.5.1, twice the XML size).
+    pub memory_used_bytes: Option<u32>,
     pub xml_size_bytes: u32,
+    /// Elements in the output.
     pub element_count: u32,
+    /// Attributes in the output, namespace declarations excluded.
     pub attribute_count: u32,
+    /// Namespace declarations in the output.
     pub namespace_count: u32,
-    pub extension_count: u32,
-    pub canonicalization_time_ms: f64,
+    /// Not measured: always null.
+    pub extension_count: Option<u32>,
+    /// Not measured separately (canonicalization is part of the build): always null
+    /// (before 0.5.1, a constant 2.0).
+    pub canonicalization_time_ms: Option<f64>,
     pub verification_time_ms: Option<f64>,
 }
 
 #[napi(object)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VerificationResult {
+    /// Parse → build → parse found no difference on the compared fields.
     pub round_trip_success: bool,
-    pub fidelity_score: f64,
+    /// No score is computed: always null (before 0.5.1, a made-up 0.98 or 1.0).
+    pub fidelity_score: Option<f64>,
     pub canonicalization_consistent: bool,
     pub determinism_verified: bool,
     pub issues: Vec<String>,
@@ -145,6 +154,68 @@ pub struct FidelityInfo {
     pub attribute_order_preserved: bool,
     pub namespace_prefixes_preserved: bool,
     pub perfect_fidelity_enabled: bool,
+}
+
+/// Parse with ddex-parser (the parse function the round trip needs).
+fn parse_xml(xml: &str) -> std::result::Result<ddex_core::models::flat::ParsedERNMessage, String> {
+    ddex_parser::DDEXParser::new()
+        .parse(Cursor::new(xml.as_bytes()))
+        .map_err(|e| e.to_string())
+}
+
+/// A real Parse → Build → Parse round trip of `xml` (ddex_builder::round_trip). A failure to
+/// parse or build is reported as `roundTripSuccess: false` with the error as the issue.
+fn round_trip(xml: &str) -> VerificationResult {
+    match ddex_builder::round_trip::verify_round_trip(xml, parse_xml) {
+        Ok(result) => VerificationResult {
+            round_trip_success: result.success,
+            fidelity_score: None,
+            canonicalization_consistent: result.canonical,
+            determinism_verified: result.deterministic,
+            issues: result.differences,
+            checksums_match: Some(result.checksums_match),
+        },
+        Err(e) => VerificationResult {
+            round_trip_success: false,
+            fidelity_score: None,
+            canonicalization_consistent: false,
+            determinism_verified: false,
+            issues: vec![format!("round trip failed: {e}")],
+            checksums_match: None,
+        },
+    }
+}
+
+/// (elements, attributes without namespace declarations, namespace declarations) of `xml`.
+fn count_xml(xml: &str) -> (u32, u32, u32) {
+    use quick_xml::events::Event;
+    let (mut elements, mut attributes, mut namespaces) = (0, 0, 0);
+    let mut reader = quick_xml::Reader::from_str(xml);
+    loop {
+        match reader.read_event() {
+            Ok(Event::Start(e)) | Ok(Event::Empty(e)) => {
+                elements += 1;
+                for attr in e.attributes().flatten() {
+                    let key = attr.key.as_ref();
+                    if key == b"xmlns" || key.starts_with(b"xmlns:") {
+                        namespaces += 1;
+                    } else {
+                        attributes += 1;
+                    }
+                }
+            }
+            Ok(Event::Eof) | Err(_) => break,
+            Ok(_) => {}
+        }
+    }
+    (elements, attributes, namespaces)
+}
+
+/// The builder's presets (`ddex_builder::presets::all_presets`).
+fn core_preset(name: &str) -> Result<ddex_builder::presets::PartnerPreset> {
+    ddex_builder::presets::all_presets()
+        .shift_remove(name)
+        .ok_or_else(|| Error::new(Status::InvalidArg, format!("Unknown preset: {name}")))
 }
 
 #[napi]
@@ -219,6 +290,19 @@ impl DdexBuilder {
         data: Option<serde_json::Value>,
         fidelity_options: Option<FidelityOptions>,
     ) -> Result<BuildResult> {
+        // The output is always DB-C14N/1.0; other algorithms are not implemented.
+        if let Some(algorithm) = fidelity_options
+            .as_ref()
+            .and_then(|o| o.canonicalization.as_deref())
+            .filter(|a| !matches!(*a, "none" | "db_c14n"))
+        {
+            return Err(Error::new(
+                Status::InvalidArg,
+                format!(
+                    "canonicalization '{algorithm}' is not implemented in 0.5.x (only db_c14n)"
+                ),
+            ));
+        }
         let start_time = std::time::Instant::now();
 
         let build_request = self.build_request(data)?;
@@ -235,69 +319,46 @@ impl DdexBuilder {
         let build_time = start_time.elapsed().as_millis() as f64;
         self.stats.total_build_time_ms += build_time;
 
-        // Generate statistics if requested
+        // Statistics computed from the output; what is not measured is null.
         let statistics = if fidelity_options
             .as_ref()
             .and_then(|o| o.collect_statistics)
             .unwrap_or(false)
         {
+            let (element_count, attribute_count, namespace_count) = count_xml(&result.xml);
             Some(BuildStatistics {
                 build_time_ms: build_time,
-                memory_used_bytes: result.xml.len() as u32 * 2,
+                memory_used_bytes: None,
                 xml_size_bytes: result.xml.len() as u32,
-                element_count: result.xml.matches('<').count() as u32,
-                attribute_count: result.xml.matches('=').count() as u32,
-                namespace_count: result.xml.matches("xmlns").count() as u32,
-                extension_count: if result.xml.contains("xmlns:") { 1 } else { 0 },
-                canonicalization_time_ms: 2.0, // Mock value
+                element_count,
+                attribute_count,
+                namespace_count,
+                extension_count: None,
+                canonicalization_time_ms: None,
                 verification_time_ms: None,
             })
         } else {
             None
         };
 
-        // Generate verification result if requested
+        // A real round trip of the built XML (before 0.5.1: constants, all passing).
+        let mut statistics = statistics;
         let verification = if fidelity_options
             .as_ref()
             .and_then(|o| o.enable_verification)
             .unwrap_or(false)
         {
-            Some(VerificationResult {
-                round_trip_success: true,
-                fidelity_score: 1.0,
-                canonicalization_consistent: true,
-                determinism_verified: true,
-                issues: vec![],
-                checksums_match: Some(true),
-            })
+            let started = std::time::Instant::now();
+            let verification = round_trip(&result.xml);
+            if let Some(stats) = statistics.as_mut() {
+                stats.verification_time_ms = Some(started.elapsed().as_secs_f64() * 1000.0);
+            }
+            Some(verification)
         } else {
             None
         };
 
-        // Generate fidelity info based on options
-        let fidelity_info = if let Some(ref opts) = fidelity_options {
-            Some(FidelityInfo {
-                fidelity_level: if opts.enable_perfect_fidelity.unwrap_or(false) {
-                    "perfect".to_string()
-                } else {
-                    "balanced".to_string()
-                },
-                canonicalization_algorithm: opts
-                    .canonicalization
-                    .clone()
-                    .unwrap_or_else(|| "db_c14n".to_string()),
-                comments_preserved: opts.preserve_comments.unwrap_or(false),
-                extensions_preserved: opts.preserve_extensions.unwrap_or(true),
-                processing_instructions_preserved: opts
-                    .preserve_processing_instructions
-                    .unwrap_or(false),
-                attribute_order_preserved: opts.preserve_attribute_order.unwrap_or(true),
-                namespace_prefixes_preserved: opts.preserve_namespace_prefixes.unwrap_or(true),
-                perfect_fidelity_enabled: opts.enable_perfect_fidelity.unwrap_or(false),
-            })
-        } else {
-            None
-        };
+        let fidelity_info = fidelity_options.as_ref().map(applied_fidelity);
 
         Ok(BuildResult {
             xml: result.xml,
@@ -307,39 +368,40 @@ impl DdexBuilder {
         })
     }
 
+    /// Parse → build → parse `originalXml` and compare the two parsed messages on the
+    /// fields a build request carries (ddex_builder::round_trip). `issues` lists the
+    /// differences; `fidelityScore` is null (no score is computed). The fidelity options
+    /// are not applied in 0.5.x. Before 0.5.1 this returned a made-up success.
     #[napi]
     pub async unsafe fn test_round_trip_fidelity(
         &mut self,
-        _original_xml: String,
+        original_xml: String,
         _fidelity_options: Option<FidelityOptions>,
     ) -> Result<VerificationResult> {
-        // In a full implementation, this would:
-        // 1. Parse the original XML
-        // 2. Build it back to XML
-        // 3. Compare the results
-        // For now, return a mock positive result
-
-        Ok(VerificationResult {
-            round_trip_success: true,
-            fidelity_score: 0.98, // 98% fidelity score
-            canonicalization_consistent: true,
-            determinism_verified: true,
-            issues: vec!["Minor whitespace differences in comments".to_string()],
-            checksums_match: Some(true),
-        })
+        Ok(round_trip(&original_xml))
     }
 
+    /// Runs the build's preflight validation on the added releases and resources (before
+    /// 0.5.1 it only checked that a release had been added).
     #[napi]
-    pub async fn validate(&self) -> Result<ValidationResult> {
-        Ok(ValidationResult {
-            is_valid: !self.releases.is_empty(),
-            errors: if self.releases.is_empty() {
-                vec!["At least one release is required".to_string()]
-            } else {
-                vec![]
+    pub async unsafe fn validate(&mut self) -> Result<ValidationResult> {
+        let request = self.build_request(None)?;
+        let builder = ddex_builder::builder::DDEXBuilder::new();
+        let result = match builder.build(request, ddex_builder::builder::BuildOptions::default()) {
+            Ok(built) => ValidationResult {
+                is_valid: true,
+                errors: vec![],
+                warnings: built.warnings.iter().map(|w| w.message.clone()).collect(),
             },
-            warnings: vec![],
-        })
+            Err(e) => ValidationResult {
+                is_valid: false,
+                errors: vec![e.to_string()],
+                warnings: vec![],
+            },
+        };
+        self.stats.validation_errors = result.errors.len() as u32;
+        self.stats.validation_warnings = result.warnings.len() as u32;
+        Ok(result)
     }
 
     #[napi]
@@ -362,160 +424,55 @@ impl DdexBuilder {
         Ok(())
     }
 
+    /// The builder's presets (`ddex_builder::presets::all_presets`).
     #[napi]
     pub fn get_available_presets(&self) -> Result<Vec<String>> {
-        // Return list of available preset names
-        Ok(vec![
-            "spotify_album".to_string(),
-            "spotify_single".to_string(),
-            "spotify_ep".to_string(),
-            "youtube_album".to_string(),
-            "youtube_video".to_string(),
-            "youtube_single".to_string(),
-            "apple_music_43".to_string(),
-        ])
+        Ok(ddex_builder::presets::all_presets().into_keys().collect())
     }
 
     #[napi]
     pub fn get_preset_info(&self, preset_name: String) -> Result<PresetInfo> {
-        match preset_name.as_str() {
-            "spotify_album" => Ok(PresetInfo {
-                name: "spotify_album".to_string(),
-                description: "Spotify Album ERN 4.3 requirements with audio quality validation"
-                    .to_string(),
-                version: "1.0.0".to_string(),
-                profile: "AudioAlbum".to_string(),
-                required_fields: vec![
-                    "ISRC".to_string(),
-                    "UPC".to_string(),
-                    "ReleaseDate".to_string(),
-                    "Genre".to_string(),
-                    "ExplicitContent".to_string(),
-                    "AlbumTitle".to_string(),
-                    "ArtistName".to_string(),
-                    "TrackTitle".to_string(),
-                ],
-                disclaimer: "Based on Spotify public documentation. Verify current requirements."
-                    .to_string(),
-            }),
-            "spotify_single" => Ok(PresetInfo {
-                name: "spotify_single".to_string(),
-                description: "Spotify Single ERN 4.3 requirements with simplified track structure"
-                    .to_string(),
-                version: "1.0.0".to_string(),
-                profile: "AudioSingle".to_string(),
-                required_fields: vec![
-                    "ISRC".to_string(),
-                    "UPC".to_string(),
-                    "ReleaseDate".to_string(),
-                    "Genre".to_string(),
-                    "ExplicitContent".to_string(),
-                    "TrackTitle".to_string(),
-                    "ArtistName".to_string(),
-                ],
-                disclaimer: "Based on Spotify public documentation. Verify current requirements."
-                    .to_string(),
-            }),
-            "youtube_video" => Ok(PresetInfo {
-                name: "youtube_video".to_string(),
-                description: "YouTube Music Video ERN 4.2/4.3 with video resource handling"
-                    .to_string(),
-                version: "1.0.0".to_string(),
-                profile: "VideoSingle".to_string(),
-                required_fields: vec![
-                    "ISRC".to_string(),
-                    "ISVN".to_string(),
-                    "ReleaseDate".to_string(),
-                    "Genre".to_string(),
-                    "ContentID".to_string(),
-                    "VideoResource".to_string(),
-                    "AudioResource".to_string(),
-                    "VideoTitle".to_string(),
-                    "ArtistName".to_string(),
-                    "AssetType".to_string(),
-                    "VideoQuality".to_string(),
-                ],
-                disclaimer:
-                    "Based on YouTube Partner documentation. Video encoding requirements may vary."
-                        .to_string(),
-            }),
-            _ => Err(Error::new(
-                Status::InvalidArg,
-                format!("Unknown preset: {}", preset_name),
-            )),
-        }
+        let preset = core_preset(&preset_name)?;
+        Ok(PresetInfo {
+            name: preset_name,
+            description: preset.description,
+            version: preset.version,
+            profile: format!("{:?}", preset.config.profile),
+            required_fields: preset.required_fields,
+            disclaimer: preset.disclaimer,
+        })
     }
 
+    /// Checks that the preset exists. Presets do not change the output in 0.5.x
+    /// (KNOWN_ISSUES.md), so nothing else happens.
     #[napi]
     pub fn apply_preset(&mut self, preset_name: String) -> Result<()> {
-        // Validate preset exists
-        let _preset_info = self.get_preset_info(preset_name.clone())?;
-
-        // In a full implementation, this would apply the preset configuration
-        // to the internal builder state. For now, we just validate the preset exists.
-        Ok(())
+        core_preset(&preset_name).map(|_| ())
     }
 
+    /// The preset's validation rules (`ddex_builder::presets`).
     #[napi]
     pub fn get_preset_validation_rules(&self, preset_name: String) -> Result<Vec<ValidationRule>> {
-        match preset_name.as_str() {
-            "spotify_album" | "spotify_single" => Ok(vec![
+        let preset = core_preset(&preset_name)?;
+        Ok(preset
+            .validation_rules
+            .iter()
+            .map(|(field, rule)| {
+                let detail = format!("{rule:?}");
+                let rule_type = detail
+                    .split(|c: char| !c.is_alphanumeric())
+                    .next()
+                    .unwrap_or_default()
+                    .to_string();
                 ValidationRule {
-                    field_name: "ISRC".to_string(),
-                    rule_type: "Required".to_string(),
-                    message: "ISRC is required for Spotify releases".to_string(),
-                    parameters: None,
-                },
-                ValidationRule {
-                    field_name: "AudioQuality".to_string(),
-                    rule_type: "AudioQuality".to_string(),
-                    message: "Minimum 16-bit/44.1kHz audio quality required".to_string(),
-                    parameters: Some(
-                        [
-                            ("min_bit_depth".to_string(), "16".to_string()),
-                            ("min_sample_rate".to_string(), "44100".to_string()),
-                        ]
-                        .iter()
-                        .cloned()
-                        .collect(),
-                    ),
-                },
-                ValidationRule {
-                    field_name: "TerritoryCode".to_string(),
-                    rule_type: "TerritoryCode".to_string(),
-                    message: "Territory code must be 'Worldwide' or 'WW'".to_string(),
-                    parameters: Some(
-                        [("allowed".to_string(), "Worldwide,WW".to_string())]
-                            .iter()
-                            .cloned()
-                            .collect(),
-                    ),
-                },
-            ]),
-            "youtube_video" | "youtube_album" => Ok(vec![
-                ValidationRule {
-                    field_name: "ContentID".to_string(),
-                    rule_type: "Required".to_string(),
-                    message: "Content ID is required for YouTube releases".to_string(),
-                    parameters: None,
-                },
-                ValidationRule {
-                    field_name: "VideoQuality".to_string(),
-                    rule_type: "OneOf".to_string(),
-                    message: "Video quality must be HD720, HD1080, or 4K".to_string(),
-                    parameters: Some(
-                        [("options".to_string(), "HD720,HD1080,4K".to_string())]
-                            .iter()
-                            .cloned()
-                            .collect(),
-                    ),
-                },
-            ]),
-            _ => Err(Error::new(
-                Status::InvalidArg,
-                format!("Unknown preset: {}", preset_name),
-            )),
-        }
+                    field_name: field.clone(),
+                    message: format!("{field}: {detail}"),
+                    parameters: (rule_type != detail)
+                        .then(|| HashMap::from([("rule".to_string(), detail.clone())])),
+                    rule_type,
+                }
+            })
+            .collect())
     }
 
     /// The core build request: `data` as given (missing `releases`/`deals` mean none), with
@@ -871,6 +828,11 @@ impl StreamingDdexBuilder {
         let stats = builder
             .finish_message()
             .map_err(|e| Error::new(Status::Unknown, format!("Failed to finish message: {}", e)))?;
+        // Keep the written document for get_xml (before 0.5.1 it was dropped with the
+        // builder, so get_xml returned "").
+        self.buffer = builder
+            .into_inner()
+            .map_err(|e| Error::new(Status::Unknown, format!("Failed to finish message: {}", e)))?;
 
         Ok(StreamingStats {
             releases_written: stats.releases_written as u32,
@@ -934,5 +896,21 @@ fn structure_error(xml: &str) -> Option<String> {
             Ok(_) => {}
             Err(e) => return Some(format!("XML parsing error: {e}")),
         }
+    }
+}
+
+/// What `buildWithFidelity` applied: DB-C14N/1.0 canonical output; the preservation
+/// options are not applied in 0.5.x (before 0.5.1 the options were echoed back as if they
+/// had been).
+fn applied_fidelity(_options: &FidelityOptions) -> FidelityInfo {
+    FidelityInfo {
+        fidelity_level: "not applied in 0.5.x".to_string(),
+        canonicalization_algorithm: "db_c14n".to_string(),
+        comments_preserved: false,
+        extensions_preserved: false,
+        processing_instructions_preserved: false,
+        attribute_order_preserved: false,
+        namespace_prefixes_preserved: false,
+        perfect_fidelity_enabled: false,
     }
 }

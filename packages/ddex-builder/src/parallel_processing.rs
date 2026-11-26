@@ -64,7 +64,8 @@ impl ParallelProcessor {
         })
     }
 
-    /// Process a build request with parallel optimizations
+    /// Validate a build request's releases and tracks, in parallel above the threshold. It
+    /// builds no XML (use `DDEXBuilder::build` for that), so its times are validation times.
     pub fn process_build_parallel(
         &self,
         request: &BuildRequest,
@@ -145,6 +146,7 @@ impl ParallelProcessor {
     ) -> Result<Vec<ProcessedElement>, BuildError> {
         // Process tracks in parallel if there are enough of them
         if release.tracks.len() >= self.config.parallel_threshold {
+            let started = Instant::now();
             let processed_tracks: Result<Vec<_>, BuildError> = release
                 .tracks
                 .par_iter()
@@ -156,7 +158,7 @@ impl ParallelProcessor {
             // Create release element
             let release_element = ProcessedElement {
                 name: "Release".to_string(),
-                processing_time: std::time::Duration::from_nanos(1), // Minimal for structure
+                processing_time: started.elapsed(),
                 element_count: 1 + tracks.len(),
             };
 
@@ -173,20 +175,18 @@ impl ParallelProcessor {
         &self,
         release: &ReleaseRequest,
     ) -> Result<Vec<ProcessedElement>, BuildError> {
-        let mut results = Vec::new();
-
-        // Process release
-        let release_element = ProcessedElement {
-            name: "Release".to_string(),
-            processing_time: std::time::Duration::from_nanos(1),
-            element_count: 1,
-        };
-        results.push(release_element);
-
-        // Process tracks
+        let started = Instant::now();
+        let mut tracks = Vec::new();
         for track in &release.tracks {
-            results.push(self.process_track(track)?);
+            tracks.push(self.process_track(track)?);
         }
+        // The release's time covers its tracks (it was a constant 1 ns before 0.5.1).
+        let mut results = vec![ProcessedElement {
+            name: "Release".to_string(),
+            processing_time: started.elapsed(),
+            element_count: 1,
+        }];
+        results.extend(tracks);
 
         Ok(results)
     }
@@ -419,7 +419,9 @@ pub struct ParallelBuildResult {
 }
 
 impl ParallelBuildResult {
-    /// Check if build met performance targets
+    /// Whether the validation time (no XML is built) is under fixed thresholds: 5 ms for
+    /// one track, 10 ms up to 20 tracks, 50 ms above. It says nothing about build time;
+    /// measured build times are in dev-docs/PERFORMANCE.md.
     pub fn meets_performance_target(&self) -> bool {
         match self.total_tracks {
             1 => self.processing_time.as_millis() < 5, // Single track: <5ms

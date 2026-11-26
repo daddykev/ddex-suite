@@ -71,5 +71,6 @@ pub struct MessageStats {
     pub release_count: usize,
     pub track_count: usize,
     pub deal_count: usize,
+    /// Sum of the resources' durations, in seconds (a resource without one counts 0).
     pub total_duration: u64,
 }

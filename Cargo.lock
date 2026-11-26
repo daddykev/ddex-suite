@@ -546,6 +546,7 @@ version = "0.5.0"
 dependencies = [
  "ddex-builder",
  "ddex-core",
+ "ddex-parser",
  "napi",
  "napi-build",
  "napi-derive",

@@ -81,6 +81,8 @@ pub struct WorkingStreamingParser<R: BufRead> {
     // Element-specific data preserved during parsing
     release_attributes: std::collections::HashMap<String, String>,
     resource_attributes: std::collections::HashMap<String, String>,
+    /// `ReleaseResourceReference` / `ResourceReference` values inside the current release
+    release_resource_refs: Vec<String>,
 
     // Statistics and monitoring
     bytes_processed: u64,
@@ -114,6 +116,7 @@ impl<R: BufRead> WorkingStreamingParser<R> {
             current_fields: std::collections::HashMap::new(),
             release_attributes: std::collections::HashMap::new(),
             resource_attributes: std::collections::HashMap::new(),
+            release_resource_refs: Vec::new(),
             bytes_processed: 0,
             elements_yielded: 0,
             start_time: Instant::now(),
@@ -231,6 +234,7 @@ impl<R: BufRead> WorkingStreamingParser<R> {
             "Release" => {
                 self.in_release = true;
                 self.current_fields.clear();
+                self.release_resource_refs.clear();
                 // Store release attributes for later use
                 self.release_attributes = self.current_attributes.clone();
             }
@@ -257,6 +261,13 @@ impl<R: BufRead> WorkingStreamingParser<R> {
 
         // Store current text content
         let text_content = self.text_buffer.clone();
+        if self.in_release
+            && matches!(name, "ReleaseResourceReference" | "ResourceReference")
+            && !text_content.trim().is_empty()
+        {
+            self.release_resource_refs
+                .push(text_content.trim().to_string());
+        }
         if !text_content.is_empty() {
             self.current_fields.insert(name.to_string(), text_content);
         }
@@ -266,16 +277,19 @@ impl<R: BufRead> WorkingStreamingParser<R> {
             "MessageHeader" => {
                 self.in_message_header = false;
                 Some(WorkingStreamingElement::MessageHeader {
+                    // An absent value is an empty string (before 0.5.1: "unknown" and the
+                    // current time; the real element name was not read).
                     message_id: self
                         .current_fields
                         .get("MessageId")
-                        .unwrap_or(&"unknown".to_string())
-                        .clone(),
+                        .cloned()
+                        .unwrap_or_default(),
                     created_date_time: self
                         .current_fields
-                        .get("CreatedDateTime")
-                        .unwrap_or(&chrono::Utc::now().to_rfc3339())
-                        .clone(),
+                        .get("MessageCreatedDateTime")
+                        .or_else(|| self.current_fields.get("CreatedDateTime"))
+                        .cloned()
+                        .unwrap_or_default(),
                     version: self.version,
                 })
             }
@@ -285,15 +299,15 @@ impl<R: BufRead> WorkingStreamingParser<R> {
                     .release_attributes
                     .get("ReleaseReference")
                     .or_else(|| self.current_fields.get("ReleaseReference"))
-                    .unwrap_or(&format!("REL-{}", self.elements_yielded))
-                    .clone();
+                    .cloned()
+                    .unwrap_or_default();
                 let title = self
                     .current_fields
                     .get("TitleText")
                     .or_else(|| self.current_fields.get("Title"))
                     .or_else(|| self.current_fields.get("ReferenceTitle"))
-                    .unwrap_or(&"Untitled Release".to_string())
-                    .clone();
+                    .cloned()
+                    .unwrap_or_default();
                 Some(WorkingStreamingElement::Release {
                     reference,
                     title,
@@ -378,8 +392,8 @@ impl<R: BufRead> WorkingStreamingParser<R> {
         self.resource_attributes
             .get("ResourceReference")
             .or_else(|| self.current_fields.get("ResourceReference"))
-            .unwrap_or(&format!("RES-{}", self.elements_yielded))
-            .clone()
+            .cloned()
+            .unwrap_or_default()
     }
 
     /// Get resource title from current context
@@ -388,15 +402,14 @@ impl<R: BufRead> WorkingStreamingParser<R> {
             .get("TitleText")
             .or_else(|| self.current_fields.get("Title"))
             .or_else(|| self.current_fields.get("ReferenceTitle"))
-            .unwrap_or(&"Untitled Resource".to_string())
-            .clone()
+            .cloned()
+            .unwrap_or_default()
     }
 
-    /// Extract resource references from current release context
+    /// The release's `ReleaseResourceReference` / `ResourceReference` values, in document
+    /// order (before 0.5.1 always empty)
     fn extract_resource_references(&self) -> Vec<String> {
-        // This is a simplified implementation
-        // In a real implementation, we'd track ResourceReference elements
-        vec![]
+        self.release_resource_refs.clone()
     }
 
     /// Update memory usage tracking

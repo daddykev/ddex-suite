@@ -7,8 +7,8 @@
 //! compared; CHANGELOG.md lists it. Run with `--nocapture` to print the results table.
 
 use crate::ern4_support::{parse, request_from_parsed, validate_xsd, xsd_skipped};
+use ddex_builder::round_trip::compare_flat as compare;
 use ddex_builder::{BuildOptions, DDEXBuilder};
-use ddex_core::models::flat::FlattenedMessage;
 use std::path::PathBuf;
 
 fn samples() -> Vec<(&'static str, PathBuf)> {
@@ -24,89 +24,6 @@ fn samples() -> Vec<(&'static str, PathBuf)> {
         out.extend(files.into_iter().map(|p| (version, p)));
     }
     out
-}
-
-/// Differences between the original and the re-parsed message on the compared fields.
-fn compare(original: &FlattenedMessage, rebuilt: &FlattenedMessage) -> Vec<String> {
-    let mut diffs = Vec::new();
-    let mut check = |what: String, a: String, b: String| {
-        if a != b {
-            diffs.push(format!("{what}: {a} -> {b}"));
-        }
-    };
-    check(
-        "release count".into(),
-        original.releases.len().to_string(),
-        rebuilt.releases.len().to_string(),
-    );
-    for (o, r) in original.releases.iter().zip(&rebuilt.releases) {
-        check(
-            "release title".into(),
-            format!("{:?}", o.default_title),
-            format!("{:?}", r.default_title),
-        );
-        check(
-            "ICPN".into(),
-            format!("{:?}", o.identifiers.upc),
-            format!("{:?}", r.identifiers.upc),
-        );
-        check(
-            "release type".into(),
-            o.release_type.clone(),
-            r.release_type.clone(),
-        );
-        check(
-            "display artist".into(),
-            format!("{:?}", o.display_artist),
-            format!("{:?}", r.display_artist),
-        );
-        check(
-            "track count".into(),
-            o.tracks.len().to_string(),
-            r.tracks.len().to_string(),
-        );
-        for (i, (ot, rt)) in o.tracks.iter().zip(&r.tracks).enumerate() {
-            let t = |f: &str| format!("track {} {f}", i + 1);
-            check(
-                t("ISRC"),
-                format!("{:?}", ot.isrc),
-                format!("{:?}", rt.isrc),
-            );
-            check(
-                t("title"),
-                format!("{:?}", ot.title),
-                format!("{:?}", rt.title),
-            );
-            check(
-                t("duration"),
-                format!("{:?}", ot.duration.map(|d| d.as_secs())),
-                format!("{:?}", rt.duration.map(|d| d.as_secs())),
-            );
-            check(
-                t("disc"),
-                format!("{:?}", ot.disc_number),
-                format!("{:?}", rt.disc_number),
-            );
-            check(
-                t("position"),
-                ot.position.to_string(),
-                rt.position.to_string(),
-            );
-        }
-    }
-    check(
-        "deal count".into(),
-        original.deals.len().to_string(),
-        rebuilt.deals.len().to_string(),
-    );
-    for (i, (od, rd)) in original.deals.iter().zip(&rebuilt.deals).enumerate() {
-        check(
-            format!("deal {} releases", i + 1),
-            format!("{:?}", od.releases),
-            format!("{:?}", rd.releases),
-        );
-    }
-    diffs
 }
 
 #[test]

@@ -48,6 +48,14 @@ pub struct BufferManager<W: IoWrite> {
     flush_callback: Option<FlushCallback>,
 }
 
+impl<W: IoWrite + Default> BufferManager<W> {
+    /// Flushes every buffer and returns the writer.
+    pub fn into_inner(mut self) -> IoResult<W> {
+        self.flush_all()?;
+        Ok(std::mem::take(&mut self.writer))
+    }
+}
+
 impl<W: IoWrite> BufferManager<W> {
     /// Create a new buffer manager with default configuration
     pub fn new(writer: W, max_buffer_size: usize) -> IoResult<Self> {

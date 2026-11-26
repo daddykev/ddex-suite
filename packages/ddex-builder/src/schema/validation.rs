@@ -665,7 +665,7 @@ impl SchemaValidator {
     ) {
         // Handle if/then/else conditions
         if let Some(ref if_schema) = schema.if_schema {
-            let condition_result = self.test_condition(data, if_schema);
+            let condition_result = self.test_condition(data, if_schema, depth);
 
             if condition_result {
                 if let Some(ref then_schema) = schema.then_schema {
@@ -780,9 +780,23 @@ impl SchemaValidator {
         }
     }
 
-    fn test_condition(&self, _data: &JsonValue, _if_schema: &JsonSchema) -> bool {
-        // Simplified condition testing - would need full implementation
-        true
+    /// Whether `data` is valid against the `if` schema (before 0.5.1 this was always true,
+    /// so `then` always applied and `else` never did).
+    fn test_condition(&self, data: &JsonValue, if_schema: &JsonSchema, depth: usize) -> bool {
+        let mut errors = Vec::new();
+        let mut warnings = Vec::new();
+        let mut properties_validated = 0;
+        self.validate_recursive(
+            data,
+            if_schema,
+            "",
+            "if",
+            depth + 1,
+            &mut errors,
+            &mut warnings,
+            &mut properties_validated,
+        );
+        errors.is_empty()
     }
 
     fn resolve_reference(&self, reference: &str) -> Option<JsonSchema> {

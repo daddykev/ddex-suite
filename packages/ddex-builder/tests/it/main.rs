@@ -17,6 +17,7 @@ mod ern4_support;
 mod ern4_xsd;
 mod error_sanitizer;
 mod golden_files;
+mod honest_results;
 mod linker;
 mod linker_xml_integration;
 mod presets;
