@@ -134,10 +134,10 @@
 //!
 //! ```bash
 //! # Generate complete schema
-//! ddex-builder schema --version 4.3 --profile AudioAlbum --output schema.json
+//! ddex-builder schema --ddex-version 4.3 --profile AudioAlbum --output schema.json
 //!
 //! # Include TypeScript and Python types
-//! ddex-builder schema --version 4.3 --profile AudioAlbum \
+//! ddex-builder schema --ddex-version 4.3 --profile AudioAlbum \
 //!   --typescript --python --examples --strict
 //! ```
 
