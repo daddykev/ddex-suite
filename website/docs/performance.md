@@ -13,12 +13,13 @@ full results are in
 
 ## Method and machine
 
-- **Machine**: Apple M1 Pro (8 cores), 16 GB, macOS 15.8.3
-- **Toolchain**: Rust 1.89.0, `cargo bench` (release profile: `opt-level = 3`, fat LTO,
+- **Machine**: GitHub-hosted `ubuntu-latest` runner, Intel Xeon 6975P-C, 4 vCPUs, 15 GiB
+  (the repository's Bench workflow, `.github/workflows/bench.yml`)
+- **Toolchain**: Rust 1.100.0, `cargo bench` (release profile: `opt-level = 3`, fat LTO,
   `codegen-units = 1`)
 - **Measurement**: criterion defaults (100 samples; 10 for the 10 MB inputs), median
-  estimate
-- **Date**: 2026-11-22, ddex-suite 0.5.0
+  estimate. A shared runner is noisier than a dedicated machine.
+- **Date**: 2026-11-26, ddex-suite 0.5.1
 
 ```bash
 cargo bench -p ddex-parser --bench throughput --bench fast_streaming_benchmark
@@ -35,21 +36,21 @@ measured separately.
 
 | Sample | Size | Time | Throughput |
 |---|---:|---:|---:|
-| 1 Audio.xml | 75 KB | 3.39 ms | 21.2 MiB/s |
-| 2 Video.xml | 13 KB | 0.64 ms | 19.7 MiB/s |
-| 3 MixedMedia.xml | 126 KB | 5.40 ms | 22.3 MiB/s |
-| 4 SimpleAudioSingle.xml | 330 KB | 14.3 ms | 22.0 MiB/s |
-| 5 SimpleVideoSingle.xml | 10 KB | 0.50 ms | 18.2 MiB/s |
-| 6 Ringtone.xml | 116 KB | 4.91 ms | 22.6 MiB/s |
-| 7 LongformMusicalWorkVideo.xml | 50 KB | 1.97 ms | 24.2 MiB/s |
-| 8 DjMix.xml | 19 KB | 0.94 ms | 19.7 MiB/s |
-| Variant Classical.xml | 59 KB | 2.68 ms | 20.9 MiB/s |
+| 1 Audio.xml | 75 KB | 1.70 ms | 42.3 MiB/s |
+| 2 Video.xml | 13 KB | 0.35 ms | 36.3 MiB/s |
+| 3 MixedMedia.xml | 126 KB | 2.84 ms | 42.4 MiB/s |
+| 4 SimpleAudioSingle.xml | 330 KB | 7.43 ms | 42.4 MiB/s |
+| 5 SimpleVideoSingle.xml | 10 KB | 0.27 ms | 33.4 MiB/s |
+| 6 Ringtone.xml | 116 KB | 2.68 ms | 41.4 MiB/s |
+| 7 LongformMusicalWorkVideo.xml | 50 KB | 1.02 ms | 46.6 MiB/s |
+| 8 DjMix.xml | 19 KB | 0.51 ms | 36.4 MiB/s |
+| Variant Classical.xml | 59 KB | 1.36 ms | 41.2 MiB/s |
 
 A ~10 MB ERN 4.3 catalog (`1 Audio.xml` with its sound recordings repeated, about 4,000
-resources) parses in **441 ms (22.7 MiB/s)**.
+resources) parses in **211 ms (47.3 MiB/s)**.
 
-The parser runs at about 20–24 MiB/s on real ERN 4.3 documents whatever their size: a
-typical album message takes a few milliseconds.
+The parser runs at about 33–47 MiB/s on real ERN 4.3 documents whatever their size: a
+typical album message takes under 2 milliseconds.
 
 ## Building
 
@@ -58,12 +59,12 @@ default options, DB-C14N canonical output):
 
 | Request | Time |
 |---|---:|
-| 1 track | 2.73 ms |
-| 12 tracks | 11.4 ms |
-| 50 tracks | 41.7 ms |
-| 100 tracks | 80.4 ms |
+| 1 track | 1.72 ms |
+| 12 tracks | 8.29 ms |
+| 50 tracks | 29.6 ms |
+| 100 tracks | 57.8 ms |
 
-That is roughly 0.8 ms per track plus about 2 ms per message.
+That is roughly 0.56 ms per track plus 1–1.5 ms per message.
 
 ## Streaming iterators
 
@@ -72,17 +73,17 @@ model, so they are not comparable with `parse`. On the 10 MB catalog:
 
 | Iterator | Time | Throughput |
 |---|---:|---:|
-| `WorkingStreamIterator` | 59.8 ms | 167 MiB/s |
-| `FastZeroCopyIterator` | 11.7 ms | 854 MiB/s |
-| `ParallelStreamingIterator`, 1 thread | 11.6 ms | 862 MiB/s |
-| `ParallelStreamingIterator`, 8 threads | 11.6 ms | 866 MiB/s |
+| `WorkingStreamIterator` | 55.5 ms | 180 MiB/s |
+| `FastZeroCopyIterator` | 15.3 ms | 655 MiB/s |
+| `ParallelStreamingIterator`, 1 thread | 16.1 ms | 621 MiB/s |
+| `ParallelStreamingIterator`, 4 threads | 16.1 ms | 622 MiB/s |
 
-The parallel iterator does not scale with the thread count (1, 2, 4 and 8 threads all take
-11.6 ms); making it scale is planned for 0.6.0.
+The parallel iterator does not scale with the thread count (1, 2 and 4 threads all take
+16.1 ms; the runner has 4 vCPUs); making it scale is planned for 0.6.0.
 
 ## Regression limits
 
 CI does not time anything. Behind the `perf-tests` feature (release builds only) a few tests
-fail if an operation becomes about 10 times slower than the numbers above, for example the
+fail if an operation becomes about 10 times slower than the 0.5.0 numbers, for example the
 typical album parse (limit 35 ms) or the 100-track build (limit 810 ms). Debug builds are
 50–100 times slower than release builds.

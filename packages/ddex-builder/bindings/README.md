@@ -8,7 +8,7 @@ The DDEX Builder bindings offer consistent APIs across different platforms while
 
 - **Node.js** - Native performance using napi-rs
 - **Python** - Full integration with pandas DataFrames using PyO3  
-- **WASM** - Browser-compatible with 420KB bundle (complete XML generation)
+- **WASM** - Browser-compatible (runs the core builder; not published, build it with `wasm-pack`)
 
 All bindings support the same core functionality:
 - Building deterministic DDEX XML with DB-C14N/1.0 canonicalization
@@ -334,9 +334,8 @@ console.log('Valid XML:', result.isValid);
 - **WASM**: 116KB (optimized for web)
 
 ### Build Performance
-- Typical release: <15ms build time
-- 100 tracks: <50ms build time
-- Memory usage: <10MB for large catalogs
+Measured build times (native builder, 0.5.1, GitHub-hosted runner: 1 track 1.7 ms, 100
+tracks 58 ms) and the machine are in [dev-docs/PERFORMANCE.md](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md). The bindings call the same core builder.
 
 ### Platform Support
 

@@ -121,9 +121,9 @@ need into a `BuildRequest`.
 
 ## Performance
 
-Criterion benches on an Apple M1 Pro, release profile: ERN 4.3 with 1 track builds in
-2.7 ms, 12 tracks in 11.4 ms and 100 tracks in 80 ms, about 0.8 ms per track plus 2 ms
-per message ([details](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md)).
+Criterion benches on a GitHub-hosted runner (Intel Xeon, 4 vCPUs), release profile,
+0.5.1: ERN 4.3 with 1 track builds in 1.7 ms, 12 tracks in 8.3 ms and 100 tracks in 58 ms,
+about 0.56 ms per track plus 1–1.5 ms per message ([details](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md)).
 
 ## Links
 

@@ -1,5 +1,10 @@
 # DDEX Suite Comprehensive Performance Benchmark Results
 
+> **Superseded, not reproduced.** This 2025 report predates the criterion benches; several
+> of its figures timed the `SecurityConfig::relaxed()` fast path, which returns no releases,
+> or other work that was not a real parse or build. The recorded numbers are in
+> [dev-docs/PERFORMANCE.md](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md).
+
 **Test Date**: 2025-09-11  
 **Test Environment**: macOS ARM64, 30.5MB max test file  
 **Benchmark Coverage**: 7 major performance areas across 3 bindings

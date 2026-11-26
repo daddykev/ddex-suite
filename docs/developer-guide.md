@@ -348,12 +348,10 @@ mod tests {
 }
 ```
 
-### Performance Requirements
+### Performance
 
-- **Build time**: <15ms for typical releases
-- **Memory usage**: <50MB for large files
-- **Determinism**: 100% reproducible output
-- **Security**: Zero known vulnerabilities
+Measured numbers come from the criterion benches and are recorded in [dev-docs/PERFORMANCE.md](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md); re-record
+it when a change should move them. Full determinism is planned for 0.6.0.
 
 ### Documentation Standards
 
@@ -734,16 +732,10 @@ let isrc_key = string_manager.intern("ISRC");
 let title_key = string_manager.intern("Title");
 ```
 
-### Performance Targets
+### Performance Numbers
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| Build Time (10KB) | <5ms | `cargo bench small_release` |
-| Build Time (100KB) | <10ms | `cargo bench medium_release` |
-| Build Time (1MB) | <50ms | `cargo bench large_release` |
-| Memory Usage | <50MB | `cargo run --features=dhat-heap` |
-| Determinism | 100% | `cargo test determinism` |
-| Throughput | >100 req/s | `cargo bench concurrent` |
+Run the benches listed in [dev-docs/PERFORMANCE.md](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md) (`cargo bench -p ddex-builder --bench performance`, ...);
+that file holds the recorded results and the machine they were measured on.
 
 ## Testing Strategy
 
