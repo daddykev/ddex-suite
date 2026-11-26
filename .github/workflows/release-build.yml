@@ -1,5 +1,10 @@
-# Builds the release packages and uploads them as workflow artifacts. It does NOT publish
-# anything: download the artifacts and publish by hand, in the order given in PUBLISH.md.
+# Builds the release packages and uploads them as workflow artifacts: the three crates, the
+# npm tarballs, the Python wheels and sdists, and a CycloneDX SBOM for each artifact family.
+# Every artifact gets a signed build-provenance attestation, and each package its SBOM
+# attestation (job `attest`), verifiable with
+# `gh attestation verify <file> --repo daddykev/ddex-suite`.
+# It does NOT publish anything: download the artifacts, verify them and publish those exact
+# files by hand, as PUBLISH.md says.
 name: Release build
 
 on:
@@ -12,6 +17,69 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # ---------------------------------------------------------------- crates.io
+  # The .crate files `cargo publish` uploads. cargo packages reproducibly (fixed mtimes),
+  # so PUBLISH.md re-packages the same commit with the same cargo version, recorded in
+  # cargo-version.txt, and publishes only if the checksums match these attested files.
+  crates:
+    name: crates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      # Packaged together: ddex-parser and ddex-builder resolve the unpublished ddex-core
+      # from the local package. Each crate is built from its .crate file (verify).
+      - run: cargo package -p ddex-core -p ddex-parser -p ddex-builder
+      - name: Record the cargo version and the checksums
+        run: |
+          set -euo pipefail
+          cargo --version | tee target/package/cargo-version.txt
+          (cd target/package && sha256sum *.crate)
+      - uses: actions/upload-artifact@v7
+        with:
+          name: crates
+          path: |
+            target/package/*.crate
+            target/package/cargo-version.txt
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------- SBOMs
+  # CycloneDX 1.5 JSON from Cargo.lock (cargo-cyclonedx, all targets), one per shipped
+  # artifact family: the three crates, the Rust crate compiled into each npm package's
+  # native binaries (the npm packages have no npm dependencies besides their own platform
+  # packages) and the one compiled into each Python wheel (the Python packages have no
+  # required dependencies). An sdist is the source of the same crate as its wheels.
+  sbom:
+    name: SBOMs (CycloneDX)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo install cargo-cyclonedx --locked --version 0.5.10
+      - name: Generate
+        run: |
+          set -euo pipefail
+          cargo cyclonedx --format json --spec-version 1.5 --target all --override-filename sbom
+          mkdir -p sbom
+          for pair in \
+            ddex-core:packages/core \
+            ddex-parser:packages/ddex-parser \
+            ddex-builder:packages/ddex-builder \
+            ddex-parser-node:packages/ddex-parser/bindings/node \
+            ddex-builder-node:packages/ddex-builder/bindings/node \
+            ddex-parser-python:packages/ddex-parser/bindings/python \
+            ddex-builder-python:packages/ddex-builder/bindings/python; do
+            name="${pair%%:*}" dir="${pair#*:}"
+            file="$(ls "$dir"/sbom*.json)"
+            python3 -c 'import json, sys; b = json.load(open(sys.argv[1])); c = b["metadata"]["component"]; assert c["name"] == sys.argv[2], c["name"]; print(sys.argv[2], c["version"], len(b.get("components", [])), "components")' "$file" "$name"
+            cp "$file" "sbom/$name.cdx.json"
+          done
+      - uses: actions/upload-artifact@v7
+        with:
+          name: sbom
+          path: sbom/*.cdx.json
+          if-no-files-found: error
+
   # ---------------------------------------------------------------- PyPI
   # macOS: both wheels build on macos-latest (Apple Silicon); x86_64 is cross-compiled there,
   # as GitHub's last Intel image (macos-15-intel) is retired in August 2027. Each macOS
@@ -247,10 +315,11 @@ jobs:
           path: packages/${{ matrix.package }}/bindings/node/*.${{ matrix.platform.name }}.node
           if-no-files-found: error
 
+  # Installs the npm-packages tarballs (the ones attested and published) for this platform.
   # darwin-x64 is tested on macos-latest (Apple Silicon) with an x64 Node under Rosetta 2.
   node-install-test:
     name: install-test node ${{ matrix.platform.name }}
-    needs: node-binaries
+    needs: npm-packages
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       fail-fast: false
@@ -281,36 +350,31 @@ jobs:
           test "$(node -p process.arch)" = "$NODE_ARCH"
       - uses: actions/download-artifact@v8
         with:
-          pattern: node-*-${{ matrix.platform.name }}
-          path: binaries
-          merge-multiple: true
-      # Each package is packed twice: its platform package (npm/<platform>, with the
-      # binary copied in) and the main package. Installing both tarballs is what a user
-      # gets from npm on this platform.
-      - name: Pack and install the platform and main packages
+          name: npm-packages
+          path: ${{ runner.temp }}/packs
+      # Each package's main tarball and its platform tarball: what a user gets from npm on
+      # this platform.
+      - name: Install the platform and main packages
         env:
           PLATFORM: ${{ matrix.platform.name }}
         run: |
           set -euo pipefail
           packs="$RUNNER_TEMP/packs"
-          mkdir -p "$packs" "$RUNNER_TEMP/app"
-          for pkg in ddex-parser ddex-builder; do
-            dir="packages/$pkg/bindings/node"
-            cp "binaries/$pkg-node.$PLATFORM.node" "$dir/npm/$PLATFORM/"
-            npm pack "./$dir/npm/$PLATFORM" --pack-destination "$packs"
-            npm pack "./$dir" --pack-destination "$packs"
-          done
+          mkdir -p "$RUNNER_TEMP/app"
           cd "$RUNNER_TEMP/app"
           npm init -y >/dev/null
-          npm install --no-audit --no-fund "$packs"/*.tgz
+          npm install --no-audit --no-fund \
+            "$packs"/ddex-parser-[0-9]*.tgz "$packs/ddex-parser-$PLATFORM"-[0-9]*.tgz \
+            "$packs"/ddex-builder-[0-9]*.tgz "$packs/ddex-builder-$PLATFORM"-[0-9]*.tgz
       - name: Import, parse and build
         working-directory: ${{ runner.temp }}/app
         run: node "$GITHUB_WORKSPACE/scripts/release_smoke.js" "$GITHUB_WORKSPACE/examples/Samples43/1 Audio.xml"
 
   # Pack every npm package the release publishes (the two main packages and the eight
-  # platform packages, each with its binary) and check each tarball's exact file list.
-  npm-pack-check:
-    name: npm pack contents
+  # platform packages, each with its binary), check each tarball's exact file list and
+  # upload them: these tarballs are what `npm publish <tarball>` publishes.
+  npm-packages:
+    name: npm packages (pack, check contents)
     needs: node-binaries
     runs-on: ubuntu-latest
     steps:
@@ -337,3 +401,88 @@ jobs:
           done
       - name: Check the tarballs
         run: python3 scripts/check_npm_packs.py packs --version "$(node -p "require('./packages/ddex-parser/bindings/node/package.json').version")"
+      - name: Checksums
+        run: (cd packs && sha256sum *.tgz)
+      - uses: actions/upload-artifact@v7
+        with:
+          name: npm-packages
+          path: packs/*.tgz
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------- attestations
+  # Signed (Sigstore, GitHub's public-good instance) attestations, stored in the
+  # repository's attestations: SLSA build provenance for every file the workflow produces,
+  # and an SBOM attestation binding each package to its family's SBOM. Verify a file with
+  #   gh attestation verify <file> --repo daddykev/ddex-suite
+  # (scripts/verify_release_artifacts.sh verifies a whole download). This is the only job
+  # with id-token / attestations write access.
+  attest:
+    name: attest provenance and SBOMs
+    needs: [crates, sbom, wheels, sdist, node-binaries, npm-packages]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+      - name: Files to attest
+        run: find artifacts -type f | sort
+      - name: Build provenance (every artifact)
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            artifacts/crates/*.crate
+            artifacts/crates/cargo-version.txt
+            artifacts/npm-packages/*.tgz
+            artifacts/node-*/*.node
+            artifacts/wheel-*/*.whl
+            artifacts/sdist-*/*.tar.gz
+            artifacts/sbom/*.cdx.json
+      # One SBOM attestation per family (actions/attest with sbom-path; actions/attest-sbom
+      # is deprecated in its favour).
+      - name: SBOM ddex-core crate
+        uses: actions/attest@v4
+        with:
+          subject-path: artifacts/crates/ddex-core-*.crate
+          sbom-path: artifacts/sbom/ddex-core.cdx.json
+      - name: SBOM ddex-parser crate
+        uses: actions/attest@v4
+        with:
+          subject-path: artifacts/crates/ddex-parser-*.crate
+          sbom-path: artifacts/sbom/ddex-parser.cdx.json
+      - name: SBOM ddex-builder crate
+        uses: actions/attest@v4
+        with:
+          subject-path: artifacts/crates/ddex-builder-*.crate
+          sbom-path: artifacts/sbom/ddex-builder.cdx.json
+      - name: SBOM ddex-parser npm packages
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            artifacts/npm-packages/ddex-parser-*.tgz
+            artifacts/node-ddex-parser-*/*.node
+          sbom-path: artifacts/sbom/ddex-parser-node.cdx.json
+      - name: SBOM ddex-builder npm packages
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            artifacts/npm-packages/ddex-builder-*.tgz
+            artifacts/node-ddex-builder-*/*.node
+          sbom-path: artifacts/sbom/ddex-builder-node.cdx.json
+      - name: SBOM ddex-parser Python wheels and sdist
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            artifacts/wheel-ddex-parser-*/*.whl
+            artifacts/sdist-ddex-parser/*.tar.gz
+          sbom-path: artifacts/sbom/ddex-parser-python.cdx.json
+      - name: SBOM ddex-builder Python wheels and sdist
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            artifacts/wheel-ddex-builder-*/*.whl
+            artifacts/sdist-ddex-builder/*.tar.gz
+          sbom-path: artifacts/sbom/ddex-builder-python.cdx.json
