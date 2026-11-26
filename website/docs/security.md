@@ -83,8 +83,8 @@ The full list, with the tests that pin each one, is in
 
 ## Supply chain and reporting
 
-- `Cargo.lock` is committed. A [`deny.toml`](https://github.com/daddykev/ddex-suite/blob/main/deny.toml)
-  for `cargo-deny` is in the repository but not run in CI yet.
+- `Cargo.lock` is committed. CI runs `cargo-deny` (advisories, banned crates, licenses,
+  sources) with the policy in [`deny.toml`](https://github.com/daddykev/ddex-suite/blob/main/deny.toml).
 - Every wheel and npm package is installed and smoke-tested before a release is published;
   publishing is a manual step.
 

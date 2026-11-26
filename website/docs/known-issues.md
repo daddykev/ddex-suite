@@ -30,12 +30,18 @@ summarizes the ones you are most likely to meet. Report new ones on
   `detect_version` return `"V4_3"`, not `"4.3"`.
 - **Malformed XML**: `]]>` in text is accepted, and mismatched tags come back as a generic
   XML error.
+- **`sanity_check` is a placeholder** (Rust, Node.js `sanityCheck`, Python): it reports any
+  input as valid ERN 4.3. Use `parse` to check that a message can be read.
+- **Python `ParseOptions` has no effect**: its fields are accepted for forward compatibility
+  but do not change the result.
 
 ## Builder
 
 - **Not byte-for-byte deterministic yet.** Values the request leaves out (message ID,
-  references, creation time) are generated, and the stable-hash ID option puts the current
-  date into the message ID.
+  references, creation time) are generated from random UUIDs or the clock, the stable-hash
+  ID option puts the current date into the message ID, and the sequential option the
+  current Unix time. Update messages always carry the current time, and the streaming
+  writer generates a random message ID and the current time when they are missing.
 - **Presets do not change the output.** The preset APIs (`applyPreset`, `apply_preset`,
   partner presets) have no effect on `build` in 0.5.0.
 - **ERN 3.8.x targets**: video resources are rejected, and a release identified only by an
@@ -71,4 +77,4 @@ summarizes the ones you are most likely to meet. Report new ones on
 
 Later, on the way to **1.0.0**: a built-in bridge from parsed messages to build requests (true
 Parse → Modify → Build), a semantic diff, TypeScript API reference pages, and supply-chain
-hardening (`cargo-deny` in CI, SBOMs and signed artifacts).
+hardening (SBOMs and signed artifacts; `cargo-deny` already runs in CI).

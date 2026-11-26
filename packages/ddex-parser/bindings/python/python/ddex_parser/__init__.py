@@ -31,8 +31,20 @@ __all__ = ["DDEXParser", "ParseOptions", "ParseResult", "parse", "__version__"]
 
 
 class ParseOptions:
-    """Options for parsing DDEX XML."""
-    
+    """Options for parsing DDEX XML.
+
+    Accepted for forward compatibility; none of them currently changes the result
+    (see KNOWN_ISSUES.md):
+
+    - ``include_raw_extensions``, ``include_comments``: passed to the Rust parser, which
+      does not read them.
+    - ``validate_references``: when True (the default) the Rust parser logs unresolved
+      references through ``tracing``, which the Python binding does not surface; the
+      parsed message is the same either way.
+    - ``streaming``: not read by the binding; ``parse`` always uses the complete parser.
+    - ``timeout``: not passed to the Rust parser (``to_dict`` leaves it out).
+    """
+
     def __init__(
         self,
         include_raw_extensions: bool = False,
@@ -58,7 +70,9 @@ class ParseOptions:
 
 
 class ParseResult:
-    """Result of parsing a DDEX message."""
+    """Unused: ``DDEXParser.parse`` returns the native ``ParsedERNMessage``, whose
+    ``message_id()``, ``version()`` and ``release_count()`` are methods. Kept so existing
+    imports keep working."""
     
     def __init__(self, data: Dict[str, Any]):
         self._data = data
@@ -117,7 +131,9 @@ class DDEXParser:
         return self._parser.detect_version(xml)
     
     def sanity_check(self, xml: Union[str, bytes]) -> Dict[str, Any]:
-        """Perform sanity check on DDEX XML."""
+        """Placeholder: returns ``{"is_valid": True, "version": "V4_3", "errors": [],
+        "warnings": []}`` for any input (see KNOWN_ISSUES.md). Use ``parse`` to check that a
+        message can be read."""
         return self._parser.sanity_check(xml)
 
 

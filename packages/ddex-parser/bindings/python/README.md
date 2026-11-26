@@ -56,6 +56,14 @@ print(tracks[["track_index", "track_title", "isrc", "duration", "disc_number", "
   spelling (`"V4_3"`).
 - `stream(xml)` parses the whole document and then yields its releases one by one; it
   does not reduce memory use.
+- `ParseOptions` (`include_raw_extensions`, `include_comments`, `validate_references`,
+  `streaming`, `timeout`) is accepted for forward compatibility; none of its fields
+  currently changes the result.
+- `sanity_check(xml)` is a placeholder that reports any input as valid ERN 4.3; use
+  `parse` to check that a message can be read.
+- The `ddex-parser` command prints a JSON summary (`ddex-parser parse release.xml`),
+  the detected version (`version`), or whether the file parses (`check`; this is not XSD
+  validation).
 
 ## Security
 

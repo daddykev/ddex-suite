@@ -53,6 +53,23 @@ decision needed)". The security policy above does not settle them:
 | Native `ParsedERNMessage.message_id` is a method, not the documented `str` attribute | `tests/test_parser.py::TestDDEXParser::test_parse_string`, `test_parse_bytes`, `test_parse_async`, `test_convenience_function` |
 | Native `detect_version` returns `"V4_3"`, while the docs use `"4.3"` | `tests/test_parser.py::TestDDEXParser::test_detect_version` |
 
+## Unresolved dependency advisories
+
+`cargo deny check advisories` runs in CI; these are ignored in `deny.toml`, each with its
+reason, until the upgrade lands.
+
+| Advisory | Crate | Status |
+|---|---|---|
+| RUSTSEC-2026-0194 (vulnerability) | quick-xml 0.31, 0.36 | Quadratic run time for the duplicate-attribute check on a start tag with many attributes (`BytesStart::attributes()`, used by the parser on untrusted input). Needs quick-xml >= 0.41; `ParseError` / `BuildError` implement `From<quick_xml::Error>`, so the upgrade is its own PR. |
+| RUSTSEC-2026-0195 (vulnerability) | quick-xml 0.31, 0.36 | Unbounded namespace-declaration allocation in `NsReader`, which the workspace does not use. Same upgrade. |
+| RUSTSEC-2026-0176, RUSTSEC-2026-0177 (vulnerabilities) | pyo3 0.24 | Out-of-bounds read in `PyList`/`PyTuple` iterator `nth`/`nth_back`; missing `Sync` bound on `PyCFunction::new_closure`. The bindings call neither directly. Needs pyo3 >= 0.29 with numpy, pythonize and pyo3-async-runtimes; its own PR. |
+| RUSTSEC-2026-0543 (unmaintained) | chrono | Direct dependency of every crate; no replacement chosen. |
+| RUSTSEC-2026-0249 (unmaintained) | smartstring | ddex-builder; to be replaced. |
+| RUSTSEC-2025-0119 (unmaintained) | number_prefix | Via indicatif 0.17 (parser CLI); indicatif 0.18 drops it. |
+| RUSTSEC-2024-0436 (unmaintained) | paste | Via rmp / rmp-serde (parser CLI MessagePack output). |
+| RUSTSEC-2024-0449 (unmaintained) | unsafe-libyaml | Via serde_yaml (deprecated; CLI YAML support). |
+| RUSTSEC-2026-0441 (unmaintained) | pin-utils | Via futures-util (pyo3-async-runtimes, tokio-test). |
+
 ## Not pinned by a test (seen during the cleanup)
 
 - ddex-parser `ParseMode::Stream` (experimental, opt-in since 0.5.0; `parse()` never selects
@@ -74,6 +91,36 @@ decision needed)". The security policy above does not settle them:
   `chunkSize`, the fidelity options, `collectStatistics`, `validationLevel`, ...).
   `ParsedMessage.statistics` (all zeros) and `fidelityInfo` (an echo of the options) were
   removed.
+- ddex-builder output is not deterministic (planned for 0.6.0). Values the request leaves
+  out are generated from randomness or the clock:
+  - `DDEXBuilder::build`, default `IdStrategy::UUID` (and `UUIDv7`, which falls back to
+    it): `MessageId` `MSG_<uuid v4>`, release references `R<uuid>`, resource references
+    `A<uuid>` (`builder.rs`, `generate_uuid_ids`).
+  - `IdStrategy::Sequential`: `MessageId` is `MSG_` plus the current Unix time
+    (`generate_sequential_ids`). `IdStrategy::StableHash`: the `MessageId` hash includes
+    today's date (`generate_stable_hash_ids`; the pinned golden-file entry above).
+  - `MessageCreatedDateTime` falls back to the current time (`generator/ern4.rs` and
+    `generator/ern38.rs`, `message_header`).
+  - Update messages (`create_update*`, `serialize_update`): `MessageCreatedDateTime` and
+    `UpdateCreatedDateTime` are always the current time (`messages/update_release.rs`,
+    `create_update_metadata`), and an entity ID that cannot be read from the diff path
+    becomes `unknown_` plus random hex (`extract_entity_id`).
+  - Streaming writer (`streaming::StreamingBuilder`): a missing `MessageId` becomes a random
+    UUID and a missing `MessageCreatedDateTime` the current time (`write_message_header`).
+
+  Giving `message_id`, `message_created_date_time`, `release_reference` and each track's
+  `resource_reference` makes `DDEXBuilder::build` output repeatable; update messages always
+  carry the current time.
+- ddex-parser `DDEXParser::sanity_check` is a placeholder (`lib.rs`): it returns
+  `is_valid: true`, version 4.3 and no errors without reading its input. The Python
+  `sanity_check` and Node `sanityCheck` call it (Node first rejects empty input and input
+  that does not start with `<`). The Python CLI's `check` command does a full parse instead.
+- Python parser binding: no `ParseOptions` field changes the result. `include_raw_extensions`
+  and `include_comments` reach the Rust `ParseOptions`, which nothing reads;
+  `validate_references` (Rust `resolve_references`) only controls `tracing` warnings for
+  unresolved references, which the binding does not surface; `streaming` is not read by
+  `rust_parse_options_from_dict`; `timeout` is left out by `ParseOptions.to_dict`. The fields
+  are kept (accepted for forward compatibility) so existing code keeps working.
 - ERN 3.8.1 builder output is not XSD-checked: no official 3.8.1 schema can be obtained
   (DDEX no longer serves ERN 3.x XSDs, and no archived copy of the 3.8.1 one exists). It
   is the 3.8.2 document in the 381 namespace (`it::ern38_xsd`), and the content models

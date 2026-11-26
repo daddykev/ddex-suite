@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Nothing here changes a public Rust, Node or Python API, feature flag or CLI.
+
+### Fixed
+- Python `ddex-parser` command: `parse` failed on every file (it read `message_id`,
+  `version` and `release_count` as attributes, but they are methods, and asked for a
+  `releases` attribute that does not exist). It now prints the message ID, version,
+  control type, release count and the first three releases. `check` did no checking (it
+  used the placeholder `sanity_check`); it now does a full parse. Errors go to stderr with
+  exit code 1. An end-to-end test runs the installed command on official samples in CI.
+
+### Removed
+- Unused dependencies. ddex-parser: ahash, bytes, crossbeam-channel, csv, futures,
+  parking_lot, tokio, toml, uuid. ddex-builder: futures, is-terminal, mime, smallstr,
+  tokio (the dev-dependency stays), xmltree. The `async`, `tokio` and `futures` features
+  remain as empty features, so existing feature lists keep working.
+
+### Changed
+- CI runs `cargo-deny` (advisories, bans, licenses, sources). `deny.toml` uses the current
+  cargo-deny format, and its license allow-list matches the dependency graph.
+
+### Security
+- Cargo.lock: semver-compatible updates for advisories bytes 1.11.1 (RUSTSEC-2026-0007),
+  rand 0.8.6 / 0.9.3 (RUSTSEC-2026-0097), anyhow 1.0.103 (RUSTSEC-2026-0190),
+  crossbeam-epoch 0.9.20 (RUSTSEC-2026-0204), tokio 1.51.6 (RUSTSEC-2026-0386),
+  rustix 1.1.6 (RUSTSEC-2026-0486) and url 2.5.9 (RUSTSEC-2026-0592).
+- Still open (KNOWN_ISSUES.md): quick-xml RUSTSEC-2026-0194 / -0195 and pyo3
+  RUSTSEC-2026-0176 / -0177, which need dependency upgrades, and seven unmaintained crates.
+
+### Documentation
+- Python `ParseOptions`: documented that none of its fields currently changes the result.
+  `sanity_check` / `sanityCheck` (Rust, Node, Python): documented as a placeholder that
+  reports any input as valid ERN 4.3.
+- KNOWN_ISSUES.md, the READMEs and the docs list every source of builder non-determinism
+  (added: the sequential ID strategy's timestamp, update messages and the streaming
+  writer). `IdStrategy::UUIDv7` is documented as falling back to v4.
+
 ## [0.5.0] - 2026-11-22
 
 Every package (crates, npm, PyPI, WASM) is released at 0.5.0. The breaking changes are

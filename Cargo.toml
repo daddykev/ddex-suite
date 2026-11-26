@@ -35,7 +35,6 @@ uuid = { version = "1.5", features = ["v4", "serde", "js"] }
 
 # Optional/feature-gated dependencies
 tokio = { version = "1.35", features = ["full"] }
-futures = "0.3"
 ts-rs = "7.1"
 
 # Development dependencies
