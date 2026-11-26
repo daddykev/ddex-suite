@@ -918,9 +918,23 @@ fn get_extension_for_format(format: &OutputFormat) -> String {
 fn validate_xml_only(file_path: &Path) -> Result<ValidationResult> {
     let xml_content = fs::read_to_string(file_path)?;
 
-    // Basic XML validation using quick-xml
-    match quick_xml::Reader::from_str(&xml_content).read_event() {
-        Ok(_) => Ok(ValidationResult {
+    // Well-formedness of the whole document (before 0.5.1, only its first event was read),
+    // including references to undefined entities.
+    let error = match ddex_core::xml_refs::check_document(xml_content.as_bytes()) {
+        Err(entity) => Err(entity.to_string()),
+        Ok(()) => {
+            let mut reader = quick_xml::Reader::from_str(&xml_content);
+            loop {
+                match reader.read_event() {
+                    Ok(quick_xml::events::Event::Eof) => break Ok(()),
+                    Ok(_) => {}
+                    Err(e) => break Err(e.to_string()),
+                }
+            }
+        }
+    };
+    match error {
+        Ok(()) => Ok(ValidationResult {
             errors: vec![],
             warnings: vec![],
             info: vec!["XML is well-formed".to_string()],

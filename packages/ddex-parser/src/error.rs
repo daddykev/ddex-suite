@@ -119,6 +119,11 @@ impl std::error::Error for ParseError {}
 // From implementations for error conversion
 impl From<std::io::Error> for ParseError {
     fn from(err: std::io::Error) -> Self {
+        // A checked input (`ddex_core::xml_refs::CheckedRead`) fails its reads after a
+        // reference to an undefined entity.
+        if let Some(entity) = ddex_core::xml_refs::UndefinedEntity::from_io_error(&err) {
+            return crate::xml_text::undefined_entity(entity);
+        }
         ParseError::IoError(err.to_string())
     }
 }
@@ -133,6 +138,11 @@ impl From<std::str::Utf8Error> for ParseError {
 
 impl From<quick_xml::Error> for ParseError {
     fn from(err: quick_xml::Error) -> Self {
+        if let quick_xml::Error::Io(io) = &err {
+            if let Some(entity) = ddex_core::xml_refs::UndefinedEntity::from_io_error(io) {
+                return crate::xml_text::undefined_entity(entity);
+            }
+        }
         ParseError::XmlError(err.to_string())
     }
 }

@@ -4,6 +4,7 @@ pub mod error;
 pub mod ffi;
 pub mod models;
 pub mod namespace;
+pub mod xml_refs;
 
 // Re-export commonly used types
 pub use error::{DDEXError, ErrorLocation};

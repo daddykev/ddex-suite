@@ -6,7 +6,14 @@
 //! joins such a run back into that one escaped text, so code written against the old events
 //! keeps its behaviour. [`attr_value`] resolves references in an attribute value without the
 //! attribute-value normalization that quick-xml 0.40 added to `unescape_value`, as before.
+//!
+//! References to undefined entities (`&foo;` with no DTD) are errors in every reader:
+//! readers over a `BufRead` read through [`Checked`] and call [`check`] after each event,
+//! and readers that have the whole document call [`check_document`] first. Both report
+//! [`undefined_entity`], which names the entity and gives its line and column.
 
+use crate::error::ParseError;
+use ddex_core::xml_refs::{CheckedRead, UndefinedEntity};
 use quick_xml::escape::{unescape, EscapeError};
 use quick_xml::events::attributes::Attribute;
 use quick_xml::events::{BytesRef, Event};
@@ -49,8 +56,8 @@ impl TextRun {
     }
 }
 
-/// The text of one reference (`amp` -> `&`, `#13` -> carriage return). An unknown entity
-/// (DTDs are rejected, so only the predefined ones exist) yields an empty string.
+/// The text of one reference (`amp` -> `&`, `#13` -> carriage return). An undefined entity
+/// yields an empty string, but the readers have failed on it before (see the module docs).
 pub(crate) fn ref_text(reference: &BytesRef) -> String {
     let raw = format!("&{};", String::from_utf8_lossy(reference));
     unescape(&raw).map(|s| s.into_owned()).unwrap_or_default()
@@ -64,4 +71,30 @@ pub(crate) fn attr_value(attr: &Attribute) -> Result<String, String> {
     unescape(text)
         .map(|s| s.into_owned())
         .map_err(|e: EscapeError| e.to_string())
+}
+
+/// An input that is scanned for references to undefined entities as it is read.
+pub(crate) type Checked<R> = CheckedRead<R>;
+
+/// The error for a reference to an undefined entity: `MalformedXml` at the byte offset of
+/// the `&`, with a message such as `undefined entity '&foo;' at line 74, column 30`.
+pub(crate) fn undefined_entity(entity: &UndefinedEntity) -> ParseError {
+    ParseError::MalformedXml {
+        message: entity.to_string(),
+        position: entity.offset as usize,
+    }
+}
+
+/// Fails if the input has consumed a reference to an undefined entity. Called after each
+/// event, it fails on the event that holds the reference.
+pub(crate) fn check<R>(input: &Checked<R>) -> Result<(), ParseError> {
+    match input.error() {
+        Some(entity) => Err(undefined_entity(entity)),
+        None => Ok(()),
+    }
+}
+
+/// Fails on the first reference to an undefined entity in a whole document.
+pub(crate) fn check_document(xml: &[u8]) -> Result<(), ParseError> {
+    ddex_core::xml_refs::check_document(xml).map_err(|entity| undefined_entity(&entity))
 }

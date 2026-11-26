@@ -295,6 +295,9 @@ impl FfiValidator {
 
     /// Validate XML structure in FFI input
     fn validate_xml_structure(&self, xml: &str) -> Result<(), BuildError> {
+        ddex_core::xml_refs::check_document(xml.as_bytes()).map_err(|entity| {
+            BuildError::Security(format!("Invalid XML structure in FFI input: {entity}"))
+        })?;
         let mut reader = quick_xml::Reader::from_str(xml);
         reader.config_mut().expand_empty_elements = false;
 

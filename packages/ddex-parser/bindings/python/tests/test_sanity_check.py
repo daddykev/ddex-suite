@@ -104,7 +104,7 @@ def test_duplicate_attribute_and_undefined_entity_are_reported():
     assert result["is_valid"] is False
     assert result["version"] == "V4_3"
     assert any("Invalid attribute" in e for e in result["errors"]), result["errors"]
-    assert any("Undefined entity &undefined;" in e for e in result["errors"]), result["errors"]
+    assert "Undefined entity '&undefined;' at line 1, column 90" in result["errors"], result["errors"]
 
 
 def test_non_ddex_xml_is_invalid_without_a_version():

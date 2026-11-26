@@ -27,6 +27,8 @@ ts-rs = { version = "7.1", optional = true }
 # Extension system dependencies
 indexmap = { version = "2.5", features = ["serde"] }
 html-escape = "0.2"
+# Undefined-entity scanner (xml_refs)
+memchr = "2.7"
 # Validation dependencies
 url = "2.4"
 regex = "1.10"

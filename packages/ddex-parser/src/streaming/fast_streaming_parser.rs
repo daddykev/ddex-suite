@@ -101,6 +101,7 @@ impl FastStreamingParser {
         // Read entire buffer at once - critical for performance
         let mut buffer = Vec::with_capacity(50 * 1024 * 1024); // 50MB initial capacity
         let bytes_read = reader.read_to_end(&mut buffer)?;
+        crate::xml_text::check_document(&buffer)?;
 
         // Pre-allocate results with generous capacity to avoid reallocation
         let mut elements = Vec::with_capacity(50000);

@@ -18,6 +18,7 @@ mod malformed_xml;
 mod parse_options;
 mod playground_regression;
 mod serialization;
+mod undefined_entities;
 mod utf8_handling;
 mod vendor_quirks;
 mod version_detection;

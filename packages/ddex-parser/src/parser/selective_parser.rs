@@ -105,7 +105,7 @@ impl SelectiveParser {
     /// Extract all targeted fields from XML
     pub fn extract_fields<R: BufRead>(&mut self, reader: R) -> Result<SelectiveResult, ParseError> {
         let start_time = std::time::Instant::now();
-        let mut xml_reader = Reader::from_reader(reader);
+        let mut xml_reader = Reader::from_reader(crate::xml_text::Checked::new(reader));
         xml_reader.config_mut().trim_text(true);
 
         let mut values: std::collections::HashMap<String, Vec<String>> =
@@ -118,6 +118,7 @@ impl SelectiveParser {
         let mut text_run = crate::xml_text::TextRun::default();
         loop {
             let event = xml_reader.read_event_into(&mut buf);
+            crate::xml_text::check(xml_reader.get_ref())?;
             // One text value per run of Text / GeneralRef events (one Text event before
             // quick-xml 0.38), handled before the event that ends the run, as before.
             if let Ok(ref ev) = event {
@@ -213,6 +214,7 @@ impl SelectiveParser {
         reader
             .read_to_end(&mut buffer)
             .map_err(|e| ParseError::IoError(format!("Failed to read input: {}", e)))?;
+        crate::xml_text::check_document(&buffer)?;
 
         // Convert to string for faster pattern matching
         let content = std::str::from_utf8(&buffer).map_err(|e| ParseError::InvalidUtf8 {

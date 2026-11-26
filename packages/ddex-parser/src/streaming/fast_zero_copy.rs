@@ -17,6 +17,8 @@ pub struct FastZeroCopyParser {
     read_buffer: Vec<u8>,
     /// Leftover data from previous chunk
     leftover: Vec<u8>,
+    /// Scans the chunks for references to undefined entities
+    references: ddex_core::xml_refs::ReferenceScanner,
     /// String cache for avoiding allocations
     string_cache: HashMap<Vec<u8>, String>,
     /// Statistics
@@ -30,6 +32,7 @@ impl FastZeroCopyParser {
         Self {
             read_buffer: vec![0; 64 * 1024], // 64KB buffer
             leftover: Vec::new(),
+            references: ddex_core::xml_refs::ReferenceScanner::new(),
             string_cache: HashMap::with_capacity(512),
             bytes_processed: 0,
             elements_found: 0,
@@ -53,6 +56,9 @@ impl FastZeroCopyParser {
         &mut self,
         chunk: &[u8],
     ) -> Result<Vec<WorkingStreamingElement>, ParseError> {
+        self.references
+            .feed(chunk)
+            .map_err(|entity| crate::xml_text::undefined_entity(&entity))?;
         self.bytes_processed += chunk.len() as u64;
         let mut results = Vec::new();
 

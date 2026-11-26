@@ -28,7 +28,7 @@ pub struct ParseProgress {
 /// Part of the public streaming API for parsing large DDEX files efficiently.
 #[allow(dead_code)]
 pub struct StreamingParser<R: BufRead> {
-    reader: Reader<R>,
+    reader: Reader<crate::xml_text::Checked<R>>,
     _version: ERNVersion,
     progress_callback: Option<Box<dyn FnMut(ParseProgress) + Send>>,
     start_time: Instant,
@@ -56,7 +56,7 @@ impl<R: BufRead> StreamingParser<R> {
         version: ERNVersion,
         security_config: &crate::parser::security::SecurityConfig,
     ) -> Self {
-        let mut xml_reader = Reader::from_reader(reader);
+        let mut xml_reader = Reader::from_reader(crate::xml_text::Checked::new(reader));
         xml_reader.config_mut().trim_text(true);
         xml_reader.config_mut().check_end_names = true;
         xml_reader.config_mut().expand_empty_elements = false;
@@ -118,7 +118,9 @@ impl<R: BufRead> StreamingParser<R> {
 
         // Skip to MessageHeader element
         loop {
-            match self.reader.read_event_into(&mut self.buffer) {
+            let read = self.reader.read_event_into(&mut self.buffer);
+            crate::xml_text::check(self.reader.get_ref())?;
+            match read {
                 Ok(Event::Start(ref e)) => {
                     self.current_depth += 1;
 
@@ -178,7 +180,9 @@ impl<R: BufRead> StreamingParser<R> {
 
         self.buffer.clear();
         loop {
-            match self.reader.read_event_into(&mut self.buffer) {
+            let read = self.reader.read_event_into(&mut self.buffer);
+            crate::xml_text::check(self.reader.get_ref())?;
+            match read {
                 Ok(Event::Start(ref e)) => match e.name().as_ref() {
                     b"MessageId" => {
                         message_id = self.read_text_element()?;
@@ -249,7 +253,9 @@ impl<R: BufRead> StreamingParser<R> {
 
         self.buffer.clear();
         loop {
-            match self.reader.read_event_into(&mut self.buffer) {
+            let read = self.reader.read_event_into(&mut self.buffer);
+            crate::xml_text::check(self.reader.get_ref())?;
+            match read {
                 Ok(Event::Start(ref e)) => match e.name().as_ref() {
                     b"PartyId" => {
                         let value = self.read_text_element()?;
@@ -295,7 +301,9 @@ impl<R: BufRead> StreamingParser<R> {
 
         self.buffer.clear();
         loop {
-            match self.reader.read_event_into(&mut self.buffer) {
+            let read = self.reader.read_event_into(&mut self.buffer);
+            crate::xml_text::check(self.reader.get_ref())?;
+            match read {
                 Ok(Event::Start(ref e)) => match e.name().as_ref() {
                     b"PartyId" => {
                         let value = self.read_text_element()?;
@@ -352,6 +360,7 @@ impl<R: BufRead> StreamingParser<R> {
 
         loop {
             let event = self.reader.read_event_into(&mut self.buffer);
+            crate::xml_text::check(self.reader.get_ref())?;
             // A run of Text / GeneralRef events is one text value (one Text event before
             // quick-xml 0.38); the last run before the end tag wins, as before.
             if let Ok(ref ev) = event {
@@ -392,7 +401,9 @@ impl<R: BufRead> StreamingParser<R> {
         self.buffer.clear();
 
         while local_depth > 0 {
-            match self.reader.read_event_into(&mut self.buffer) {
+            let read = self.reader.read_event_into(&mut self.buffer);
+            crate::xml_text::check(self.reader.get_ref())?;
+            match read {
                 Ok(Event::Start(_)) => {
                     local_depth += 1;
                     self.current_depth += 1;
@@ -451,7 +462,9 @@ impl<'a, R: BufRead> ReleaseIterator<'a, R> {
     fn find_next_release(&mut self) -> Result<Option<Release>, ParseError> {
         loop {
             self.parser.buffer.clear();
-            match self.parser.reader.read_event_into(&mut self.parser.buffer) {
+            let read = self.parser.reader.read_event_into(&mut self.parser.buffer);
+            crate::xml_text::check(self.parser.reader.get_ref())?;
+            match read {
                 Ok(Event::Start(ref e)) => match e.name().as_ref() {
                     b"ReleaseList" => {
                         self.in_release_list = true;
@@ -514,7 +527,9 @@ impl<'a, R: BufRead> ReleaseIterator<'a, R> {
 
         self.parser.buffer.clear();
         loop {
-            match self.parser.reader.read_event_into(&mut self.parser.buffer) {
+            let read = self.parser.reader.read_event_into(&mut self.parser.buffer);
+            crate::xml_text::check(self.parser.reader.get_ref())?;
+            match read {
                 Ok(Event::Start(ref e)) => match e.name().as_ref() {
                     b"ReleaseReference" => {
                         release.release_reference = self.parser.read_text_element()?;
@@ -648,35 +663,36 @@ impl<'a, R: BufRead> DealIterator<'a, R> {
     fn read_next_release_deal(&mut self) -> Result<Option<Vec<Deal>>, ParseError> {
         loop {
             self.parser.buffer.clear();
-            let release_deal_start =
-                match self.parser.reader.read_event_into(&mut self.parser.buffer) {
-                    Ok(Event::Start(ref e)) => match e.name().as_ref() {
-                        b"DealList" => {
-                            self.parser.current_depth += 1;
-                            self.in_deal_list = true;
-                            continue;
-                        }
-                        b"ReleaseDeal" if self.in_deal_list => e.to_owned(),
-                        // Not yet inside the message root (stream_deals called at the start of the
-                        // document): descend into the root instead of skipping it.
-                        _ if self.parser.current_depth == 0 => {
-                            self.parser.current_depth += 1;
-                            continue;
-                        }
-                        _ => {
-                            self.parser.current_depth += 1;
-                            self.parser.skip_element()?;
-                            continue;
-                        }
-                    },
-                    Ok(Event::End(ref e)) if e.name().as_ref() == b"DealList" => {
-                        self.parser.current_depth = self.parser.current_depth.saturating_sub(1);
-                        return Ok(None);
+            let read = self.parser.reader.read_event_into(&mut self.parser.buffer);
+            crate::xml_text::check(self.parser.reader.get_ref())?;
+            let release_deal_start = match read {
+                Ok(Event::Start(ref e)) => match e.name().as_ref() {
+                    b"DealList" => {
+                        self.parser.current_depth += 1;
+                        self.in_deal_list = true;
+                        continue;
                     }
-                    Ok(Event::Eof) => return Ok(None),
-                    Err(e) => return Err(ParseError::XmlError(e.to_string())),
-                    _ => continue,
-                };
+                    b"ReleaseDeal" if self.in_deal_list => e.to_owned(),
+                    // Not yet inside the message root (stream_deals called at the start of the
+                    // document): descend into the root instead of skipping it.
+                    _ if self.parser.current_depth == 0 => {
+                        self.parser.current_depth += 1;
+                        continue;
+                    }
+                    _ => {
+                        self.parser.current_depth += 1;
+                        self.parser.skip_element()?;
+                        continue;
+                    }
+                },
+                Ok(Event::End(ref e)) if e.name().as_ref() == b"DealList" => {
+                    self.parser.current_depth = self.parser.current_depth.saturating_sub(1);
+                    return Ok(None);
+                }
+                Ok(Event::Eof) => return Ok(None),
+                Err(e) => return Err(ParseError::XmlError(e.to_string())),
+                _ => continue,
+            };
 
             // The validator must see the ReleaseDeal start tag so the matching end tag balances.
             let mut validator = crate::parser::xml_validator::XmlValidator::strict();
