@@ -18,9 +18,8 @@ produced this way and are superseded by this file.
 
 ## Machine and run
 
-- ddex-suite 0.5.1 code (commit `460eed7`, branch `bench/0.5.1`; the version string still
-  read 0.5.0, the bump came later), recorded 2026-11-26 by the Bench workflow,
-  [run 45797376953](https://github.com/daddykev/ddex-suite/actions/runs/45797376953)
+- ddex-suite 0.5.1, the release commit (`387a4fd`, main), recorded 2026-11-26 by the Bench
+  workflow, [run 45806273167](https://github.com/daddykev/ddex-suite/actions/runs/45806273167)
 - GitHub-hosted `ubuntu-latest` runner (image ubuntu26 20261116.88.1): Intel Xeon 6975P-C,
   4 vCPUs (2 cores × 2 threads), 15 GiB
 - Rust 1.100.0, `cargo bench` (bench profile = release: `opt-level = 3`, fat LTO,
@@ -41,18 +40,18 @@ Official ERN 4.3 samples (`examples/Samples43`, bench `throughput`, group
 
 | Sample | Size | Time | Throughput |
 |---|---:|---:|---:|
-| 1 Audio.xml | 75 KB | 1.70 ms | 42.3 MiB/s |
+| 1 Audio.xml | 75 KB | 1.68 ms | 42.6 MiB/s |
 | 2 Video.xml | 13 KB | 0.35 ms | 36.3 MiB/s |
-| 3 MixedMedia.xml | 126 KB | 2.84 ms | 42.4 MiB/s |
-| 4 SimpleAudioSingle.xml | 330 KB | 7.43 ms | 42.4 MiB/s |
-| 5 SimpleVideoSingle.xml | 10 KB | 0.27 ms | 33.4 MiB/s |
+| 3 MixedMedia.xml | 126 KB | 2.84 ms | 42.3 MiB/s |
+| 4 SimpleAudioSingle.xml | 330 KB | 7.40 ms | 42.5 MiB/s |
+| 5 SimpleVideoSingle.xml | 10 KB | 0.27 ms | 33.3 MiB/s |
 | 6 Ringtone.xml | 116 KB | 2.68 ms | 41.4 MiB/s |
-| 7 LongformMusicalWorkVideo.xml | 50 KB | 1.02 ms | 46.6 MiB/s |
-| 8 DjMix.xml | 19 KB | 0.51 ms | 36.4 MiB/s |
-| Variant Classical.xml | 59 KB | 1.36 ms | 41.2 MiB/s |
+| 7 LongformMusicalWorkVideo.xml | 50 KB | 1.03 ms | 46.3 MiB/s |
+| 8 DjMix.xml | 19 KB | 0.51 ms | 36.1 MiB/s |
+| Variant Classical.xml | 59 KB | 1.36 ms | 41.1 MiB/s |
 
 A ~10 MB ERN 4.3 catalog (`1 Audio.xml` with its sound recordings repeated, about 4,000
-resources; group `large_catalog_43`): **211 ms, 47.3 MiB/s**.
+resources; group `large_catalog_43`): **210 ms, 47.6 MiB/s**.
 
 The complete parser runs at about 33–47 MiB/s on real ERN 4.3 documents, whatever their
 size; a typical album message parses in under 2 milliseconds.
@@ -64,11 +63,11 @@ their numbers are not comparable with `parse`.
 
 | Iterator | Time | Throughput |
 |---|---:|---:|
-| `WorkingStreamIterator` | 55.5 ms | 180 MiB/s |
-| `FastZeroCopyIterator` | 15.3 ms | 655 MiB/s |
-| `ParallelStreamingIterator`, 1 thread | 16.1 ms | 621 MiB/s |
-| `ParallelStreamingIterator`, 2 threads | 16.1 ms | 620 MiB/s |
-| `ParallelStreamingIterator`, 4 threads | 16.1 ms | 622 MiB/s |
+| `WorkingStreamIterator` | 54.5 ms | 184 MiB/s |
+| `FastZeroCopyIterator` | 15.2 ms | 660 MiB/s |
+| `ParallelStreamingIterator`, 1 thread | 16.1 ms | 622 MiB/s |
+| `ParallelStreamingIterator`, 2 threads | 16.1 ms | 623 MiB/s |
+| `ParallelStreamingIterator`, 4 threads | 16.1 ms | 623 MiB/s |
 
 The parallel iterator does not scale with the thread count (it runs on one thread; a
 scaling one is planned for 0.6.0). The runner has 4 vCPUs, so 8 threads were not
@@ -76,7 +75,7 @@ measured.
 
 ### `FastStreamingParser` (bench `fast_streaming_benchmark`)
 
-About 790–990 MiB/s on its generated inputs (e.g. "10MB" group: 2.91 ms; "100MB": 13 ms).
+About 790–980 MiB/s on its generated inputs (e.g. "10MB" group: 2.94 ms; "100MB": 13.2 ms).
 Caveats: this is the parser behind `SecurityConfig::relaxed()`, whose conversion to the
 message model is not implemented (`parse` returns an error with that setting since 0.5.1,
 KNOWN_ISSUES.md), so it measures scanning, not extraction; the group labels are nominal
@@ -92,23 +91,23 @@ Complete ERN 4.3 requests (`benches/common`: one release, N sound recordings, de
 
 | Request | Time |
 |---|---:|
-| 1 track | 1.72 ms |
-| 12 tracks | 8.29 ms |
-| 50 tracks (`xml_generation`) | 29.6 ms |
-| 100 tracks | 57.8 ms |
+| 1 track | 1.70 ms |
+| 12 tracks | 8.22 ms |
+| 50 tracks (`xml_generation`) | 29.3 ms |
+| 100 tracks | 57.0 ms |
 
-Bench `determinism`, group `single_build`: 5 tracks 3.62 ms, 50 tracks 29.5 ms,
-200 tracks 115 ms. Its `determinism_verification` groups build each request 2, 3 or 5
-times (e.g. `verify_3x` 5 / 50 / 200 tracks: 13.5 / 89.9 / 343 ms). The cost is roughly
-0.56 ms per track plus 1–1.5 ms per message; `DDEXBuilder::new()` alone is 63 µs.
+Bench `determinism`, group `single_build`: 5 tracks 3.60 ms, 50 tracks 29.3 ms,
+200 tracks 113 ms. Its `determinism_verification` groups build each request 2, 3 or 5
+times (e.g. `verify_3x` 5 / 50 / 200 tracks: 13.4 / 89.3 / 340 ms). The cost is roughly
+0.55 ms per track plus 1–1.5 ms per message; `DDEXBuilder::new()` alone is 63 µs.
 
 Other groups:
 
 | Bench | Time |
 |---|---:|
-| `canonicalization` `canonicalize_small` | 84.3 µs |
+| `canonicalization` `canonicalize_small` | 83.5 µs |
 | `canonicalization` `canonical_hash` | 0.19 µs |
-| `performance` `parallel_processor` 1 / 12 / 50 tracks | 0.18 µs / 10.9 µs / 26.3 µs |
+| `performance` `parallel_processor` 1 / 12 / 50 tracks | 0.31 µs / 11.2 µs / 26.9 µs |
 
 `ParallelProcessor::process_build_parallel` validates the request and does not write XML,
 so its numbers are not comparable with `build`.
@@ -117,9 +116,9 @@ so its numbers are not comparable with `build`.
 
 | Operation | Baseline | With the helper |
 |---|---:|---:|
-| 4 paths: `Path::new(..).components()` vs `PathValidator::validate` | 77 ns | 17 µs |
+| 4 paths: `Path::new(..).components()` vs `PathValidator::validate` | 82 ns | 17 µs |
 | 3 entities: string lengths vs `EntityClassifier::validate_entity_chain` | 1.2 ns | 279 ns |
-| 3 I/O errors: `format!` vs `ErrorSanitizer::sanitize_io_error` | 228 ns | 3.2 µs |
+| 3 I/O errors: `format!` vs `ErrorSanitizer::sanitize_io_error` | 237 ns | 3.1 µs |
 
 The helpers add far more than 5 % over these trivial baselines (path validation is about
 4 µs per path), which is negligible next to a build.
@@ -128,11 +127,11 @@ The helpers add far more than 5 % over these trivial baselines (path validation 
 
 | Test | Recorded | Limit |
 |---|---:|---:|
-| ddex-parser `perf::typical_album_parses_within_sanity_limit` (1 Audio.xml) | 1.77 ms | 35 ms |
-| ddex-parser `perf::ten_mb_catalog_parses_within_sanity_limit` | 214 ms | 4.5 s |
-| ddex-builder `perf::single_track_builds_within_sanity_limit` | 2.00 ms | 28 ms |
-| ddex-builder `perf::twelve_track_album_builds_within_sanity_limit` | 8.38 ms | 115 ms |
-| ddex-builder `perf::hundred_track_compilation_builds_within_sanity_limit` | 58.0 ms | 810 ms |
+| ddex-parser `perf::typical_album_parses_within_sanity_limit` (1 Audio.xml) | 1.78 ms | 35 ms |
+| ddex-parser `perf::ten_mb_catalog_parses_within_sanity_limit` | 213 ms | 4.5 s |
+| ddex-builder `perf::single_track_builds_within_sanity_limit` | 2.97 ms | 28 ms |
+| ddex-builder `perf::twelve_track_album_builds_within_sanity_limit` | 8.30 ms | 115 ms |
+| ddex-builder `perf::hundred_track_compilation_builds_within_sanity_limit` | 57.4 ms | 810 ms |
 
 In debug builds these tests are ignored (debug is 50–100× slower).
 

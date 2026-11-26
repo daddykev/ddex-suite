@@ -88,9 +88,9 @@
 //! (Intel Xeon 6975P-C, 4 vCPUs), release profile (`dev-docs/PERFORMANCE.md`):
 //!
 //! - **1 track**: 1.7 ms
-//! - **12 tracks**: 8.3 ms
-//! - **50 tracks**: 29.6 ms
-//! - **100 tracks**: 58 ms (about 0.56 ms per track plus 1–1.5 ms per message)
+//! - **12 tracks**: 8.2 ms
+//! - **50 tracks**: 29.3 ms
+//! - **100 tracks**: 57 ms (about 0.55 ms per track plus 1–1.5 ms per message)
 //!
 //! Memory use has not been measured.
 //!

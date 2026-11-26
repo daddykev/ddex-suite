@@ -335,7 +335,7 @@ console.log('Valid XML:', result.isValid);
 
 ### Build Performance
 Measured build times (native builder, 0.5.1, GitHub-hosted runner: 1 track 1.7 ms, 100
-tracks 58 ms) and the machine are in [dev-docs/PERFORMANCE.md](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md). The bindings call the same core builder.
+tracks 57 ms) and the machine are in [dev-docs/PERFORMANCE.md](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md). The bindings call the same core builder.
 
 ### Platform Support
 

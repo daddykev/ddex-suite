@@ -306,8 +306,8 @@ Criterion benches on a GitHub-hosted runner (Intel Xeon, 4 vCPUs), release profi
 |---|---:|
 | Parse an official ERN 4.3 sample (10–330 KB) | 0.27–7.4 ms (about 33–47 MiB/s) |
 | Parse `1 Audio.xml` (75 KB, a typical album) | 1.7 ms |
-| Parse a ~10 MB ERN 4.3 catalog | 211 ms (47.3 MiB/s) |
-| Build ERN 4.3, 1 / 12 / 100 tracks | 1.7 / 8.3 / 58 ms |
+| Parse a ~10 MB ERN 4.3 catalog | 210 ms (47.6 MiB/s) |
+| Build ERN 4.3, 1 / 12 / 100 tracks | 1.7 / 8.2 / 57 ms |
 
 ## 🗂️ Repository layout
 

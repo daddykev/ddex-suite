@@ -19,7 +19,8 @@ full results are in
   `codegen-units = 1`)
 - **Measurement**: criterion defaults (100 samples; 10 for the 10 MB inputs), median
   estimate. A shared runner is noisier than a dedicated machine.
-- **Date**: 2026-11-26, ddex-suite 0.5.1
+- **Date**: 2026-11-26, ddex-suite 0.5.1 (release commit `387a4fd`, Bench
+  [run 45806273167](https://github.com/daddykev/ddex-suite/actions/runs/45806273167))
 
 ```bash
 cargo bench -p ddex-parser --bench throughput --bench fast_streaming_benchmark
@@ -36,18 +37,18 @@ measured separately.
 
 | Sample | Size | Time | Throughput |
 |---|---:|---:|---:|
-| 1 Audio.xml | 75 KB | 1.70 ms | 42.3 MiB/s |
+| 1 Audio.xml | 75 KB | 1.68 ms | 42.6 MiB/s |
 | 2 Video.xml | 13 KB | 0.35 ms | 36.3 MiB/s |
-| 3 MixedMedia.xml | 126 KB | 2.84 ms | 42.4 MiB/s |
-| 4 SimpleAudioSingle.xml | 330 KB | 7.43 ms | 42.4 MiB/s |
-| 5 SimpleVideoSingle.xml | 10 KB | 0.27 ms | 33.4 MiB/s |
+| 3 MixedMedia.xml | 126 KB | 2.84 ms | 42.3 MiB/s |
+| 4 SimpleAudioSingle.xml | 330 KB | 7.40 ms | 42.5 MiB/s |
+| 5 SimpleVideoSingle.xml | 10 KB | 0.27 ms | 33.3 MiB/s |
 | 6 Ringtone.xml | 116 KB | 2.68 ms | 41.4 MiB/s |
-| 7 LongformMusicalWorkVideo.xml | 50 KB | 1.02 ms | 46.6 MiB/s |
-| 8 DjMix.xml | 19 KB | 0.51 ms | 36.4 MiB/s |
-| Variant Classical.xml | 59 KB | 1.36 ms | 41.2 MiB/s |
+| 7 LongformMusicalWorkVideo.xml | 50 KB | 1.03 ms | 46.3 MiB/s |
+| 8 DjMix.xml | 19 KB | 0.51 ms | 36.1 MiB/s |
+| Variant Classical.xml | 59 KB | 1.36 ms | 41.1 MiB/s |
 
 A ~10 MB ERN 4.3 catalog (`1 Audio.xml` with its sound recordings repeated, about 4,000
-resources) parses in **211 ms (47.3 MiB/s)**.
+resources) parses in **210 ms (47.6 MiB/s)**.
 
 The parser runs at about 33–47 MiB/s on real ERN 4.3 documents whatever their size: a
 typical album message takes under 2 milliseconds.
@@ -59,12 +60,12 @@ default options, DB-C14N canonical output):
 
 | Request | Time |
 |---|---:|
-| 1 track | 1.72 ms |
-| 12 tracks | 8.29 ms |
-| 50 tracks | 29.6 ms |
-| 100 tracks | 57.8 ms |
+| 1 track | 1.70 ms |
+| 12 tracks | 8.22 ms |
+| 50 tracks | 29.3 ms |
+| 100 tracks | 57.0 ms |
 
-That is roughly 0.56 ms per track plus 1–1.5 ms per message.
+That is roughly 0.55 ms per track plus 1–1.5 ms per message.
 
 ## Streaming iterators
 
@@ -73,10 +74,10 @@ model, so they are not comparable with `parse`. On the 10 MB catalog:
 
 | Iterator | Time | Throughput |
 |---|---:|---:|
-| `WorkingStreamIterator` | 55.5 ms | 180 MiB/s |
-| `FastZeroCopyIterator` | 15.3 ms | 655 MiB/s |
-| `ParallelStreamingIterator`, 1 thread | 16.1 ms | 621 MiB/s |
-| `ParallelStreamingIterator`, 4 threads | 16.1 ms | 622 MiB/s |
+| `WorkingStreamIterator` | 54.5 ms | 184 MiB/s |
+| `FastZeroCopyIterator` | 15.2 ms | 660 MiB/s |
+| `ParallelStreamingIterator`, 1 thread | 16.1 ms | 622 MiB/s |
+| `ParallelStreamingIterator`, 4 threads | 16.1 ms | 623 MiB/s |
 
 The parallel iterator does not scale with the thread count (1, 2 and 4 threads all take
 16.1 ms; the runner has 4 vCPUs); making it scale is planned for 0.6.0.
