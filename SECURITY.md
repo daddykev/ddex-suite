@@ -2,11 +2,14 @@
 
 ## Reporting a vulnerability
 
-Please do not open a public GitHub issue for a security problem. Email
-[security@ddex-suite.org](mailto:security@ddex-suite.org) with a description, steps to
-reproduce (a minimal XML message or build request helps most), the affected package and
-version, and the impact you see. Fixes are released as patch versions and described in
-[CHANGELOG.md](CHANGELOG.md).
+Please do not open a public GitHub issue for a security problem. Report it privately on
+GitHub: **[Report a vulnerability](https://github.com/daddykev/ddex-suite/security/advisories/new)**
+(the repository's **Security** tab, then "Report a vulnerability"). Only you and the
+maintainer can see the report and the discussion that follows.
+
+Include a description, steps to reproduce (a minimal XML message or build request helps
+most), the affected package and version, and the impact you see. Fixes are released as
+patch versions and described in [CHANGELOG.md](CHANGELOG.md).
 
 ## Supported versions
 

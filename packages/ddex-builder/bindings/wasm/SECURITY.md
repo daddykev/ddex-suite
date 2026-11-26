@@ -429,7 +429,7 @@ If you discover a security vulnerability in the DDEX Builder WASM module:
 
 1. **DO NOT** create a public GitHub issue
 2. **DO NOT** disclose the vulnerability publicly
-3. **DO** email security@ddex-suite.com with:
+3. **DO** report it privately on GitHub, [Report a vulnerability](https://github.com/daddykev/ddex-suite/security/advisories/new), with:
    - Description of the vulnerability
    - Steps to reproduce
    - Potential impact assessment
@@ -493,4 +493,4 @@ The DDEX Builder WASM module leverages multiple layers of security:
 
 By following the security best practices outlined in this document, you can safely integrate the DDEX Builder WASM module into your applications while maintaining a strong security posture.
 
-For questions about security or to report vulnerabilities, contact: **security@ddex-suite.com**
+To report a vulnerability, use [Report a vulnerability](https://github.com/daddykev/ddex-suite/security/advisories/new) (GitHub private vulnerability reporting; see the repository's [SECURITY.md](https://github.com/daddykev/ddex-suite/blob/main/SECURITY.md)).
