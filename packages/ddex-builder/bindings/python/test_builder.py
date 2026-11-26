@@ -71,11 +71,12 @@ def test_basic_usage():
     assert stats.releases_count == 1
     assert stats.resources_count == 1
     
-    # Test validation
+    # Validation runs the build's preflight validation: no message header was given, so it
+    # fails and says so (before 0.5.1 it only checked that a release had been added).
     validation_result = builder.validate()
     print(f'✓ Validation completed: is_valid={validation_result.is_valid}, errors={len(validation_result.errors)}')
-    assert validation_result.is_valid == True
-    assert len(validation_result.errors) == 0
+    assert validation_result.is_valid is False
+    assert any("header" in e for e in validation_result.errors), validation_result.errors
     
     # Test build
     try:

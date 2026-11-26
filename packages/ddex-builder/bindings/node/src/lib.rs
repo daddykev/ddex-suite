@@ -385,9 +385,13 @@ impl DdexBuilder {
     /// 0.5.1 it only checked that a release had been added).
     #[napi]
     pub async unsafe fn validate(&mut self) -> Result<ValidationResult> {
-        let request = self.build_request(None)?;
         let builder = ddex_builder::builder::DDEXBuilder::new();
-        let result = match builder.build(request, ddex_builder::builder::BuildOptions::default()) {
+        let built = self.build_request(None).map_err(|e| e.reason).and_then(|request| {
+            builder
+                .build(request, ddex_builder::builder::BuildOptions::default())
+                .map_err(|e| e.to_string())
+        });
+        let result = match built {
             Ok(built) => ValidationResult {
                 is_valid: true,
                 errors: vec![],
@@ -395,7 +399,7 @@ impl DdexBuilder {
             },
             Err(e) => ValidationResult {
                 is_valid: false,
-                errors: vec![e.to_string()],
+                errors: vec![e],
                 warnings: vec![],
             },
         };

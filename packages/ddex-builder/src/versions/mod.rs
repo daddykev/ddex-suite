@@ -764,9 +764,13 @@ impl VersionManager {
         ]
     }
 
+    /// The ERN namespace declared in `xml_content`, with or without a prefix
+    /// (`xmlns:ern="http://ddex.net/xml/ern/43"`). Before 0.5.1 only an unprefixed `xmlns`
+    /// was read, so DDEX messages (which use `xmlns:ern`) gave no namespace evidence.
     fn extract_namespace(&self, xml_content: &str) -> Option<String> {
-        // Simple regex to extract namespace from XML
-        let re = regex::Regex::new(r#"xmlns="([^"]+)""#).ok()?;
+        let re =
+            regex::Regex::new(r#"xmlns(?::[A-Za-z_][\w.-]*)?="(http://ddex\.net/xml/ern/[^"]+)""#)
+                .ok()?;
         re.captures(xml_content)?
             .get(1)
             .map(|m| m.as_str().to_string())

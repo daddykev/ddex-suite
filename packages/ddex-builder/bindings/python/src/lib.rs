@@ -676,14 +676,20 @@ impl DdexBuilder {
     /// Runs the build's preflight validation on the added releases and resources (before
     /// 0.5.1 it only checked that a release had been added).
     pub fn validate(&mut self) -> PyResult<ValidationResult> {
-        let request = self.build_request(None, None)?;
-        let result = match DDEXBuilder::new().build(request, BuildOptions::default()) {
+        let result = match self
+            .build_request(None, None)
+            .map_err(|e| e.to_string())
+            .and_then(|request| {
+                DDEXBuilder::new()
+                    .build(request, BuildOptions::default())
+                    .map_err(|e| e.to_string())
+            }) {
             Ok(built) => ValidationResult::new(
                 true,
                 vec![],
                 built.warnings.iter().map(|w| w.message.clone()).collect(),
             ),
-            Err(e) => ValidationResult::new(false, vec![e.to_string()], vec![]),
+            Err(e) => ValidationResult::new(false, vec![e], vec![]),
         };
         self.stats.validation_errors = result.errors.len() as u32;
         self.stats.validation_warnings = result.warnings.len() as u32;

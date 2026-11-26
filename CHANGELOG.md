@@ -118,13 +118,18 @@ exit with an error.
     namespace declaration next to the old one (not well-formed XML); fixed. Its per-step
     counts and warnings were also added twice.
   - Rust `VersionManager::detect_version` / `Builder::detect_version` returned ERN 4.3 for
-    input with no version evidence; now an error. Conversion paths carried invented
+    input with no version evidence (now an error), and read only an unprefixed `xmlns`, so
+    DDEX messages (`xmlns:ern`) were detected from element names alone and the official ERN
+    4.3 samples came out as 4.2; the prefixed ERN namespace is read now. Conversion paths carried invented
     fidelity figures and `production_ready: true`; now 0.0 (not measured) and false.
   - Rust `ParallelProcessor` release times were a constant 1 ns; now measured.
   - Rust `CompactAST::from_ast` dropped every child element; it converts them.
   - Rust `SchemaValidator`: `if` conditions were always true (`then` always applied).
   - Builder CLI: `build` wrote a placeholder document and printed success; it now builds
-    the request with `DDEXBuilder::build`. `diff` ("Files are identical"), `validate`
+    the request with `DDEXBuilder::build`. Every subcommand with a DDEX version option
+    failed clap's argument check (its id clashed with `--version`; debug builds panicked at
+    startup); the option of `preset list` and `watch` is now `--ddex-version`, like the
+    other subcommands' (it was `--version`, which printed the CLI version). `diff` ("Files are identical"), `validate`
     (every file valid), `watch` and `server` now exit with "not implemented in 0.5.x".
   - Parser `parse` with `SecurityConfig::relaxed()` (`parse_fast_streaming`) returned an
     empty message with an invented header; now an error.

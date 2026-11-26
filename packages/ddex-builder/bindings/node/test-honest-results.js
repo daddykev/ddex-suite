@@ -27,7 +27,10 @@ const request = {
     release_reference: 'R0',
     title: [{ text: 'Album' }],
     artist: 'Artist',
+    label: 'Label',
     release_type: 'Album',
+    genre: 'Pop',
+    parental_warning_type: 'NotExplicit',
     tracks: [1, 2].map((n) => ({
       track_id: `T${n}`,
       resource_reference: `A${n}`,
@@ -36,6 +39,7 @@ const request = {
       duration: 'PT3M42S',
       artist: 'Artist',
       resource_type: 'MusicalWorkSoundRecording',
+      parental_warning_type: 'NotExplicit',
     })),
   }],
   deals: [{

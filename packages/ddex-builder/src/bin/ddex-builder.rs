@@ -84,7 +84,7 @@ struct BuildCommand {
 
     /// DDEX version to generate
     #[arg(long = "ddex-version", value_enum)]
-    version: Option<DdexVersionArg>,
+    ddex_version: Option<DdexVersionArg>,
 
     /// Content profile to use
     #[arg(short, long)]
@@ -173,7 +173,7 @@ struct ValidateCommand {
     files: Vec<PathBuf>,
 
     /// DDEX version for validation
-    #[arg(long = "ddex-version", value_enum)]
+    #[arg(id = "ddex_version", long = "ddex-version", value_enum)]
     version: Option<DdexVersionArg>,
 
     /// Content profile for validation
@@ -200,7 +200,7 @@ struct ValidateCommand {
 #[derive(Args)]
 struct SchemaCommand {
     /// DDEX version for schema generation
-    #[arg(long = "ddex-version", value_enum)]
+    #[arg(id = "ddex_version", long = "ddex-version", value_enum)]
     version: DdexVersionArg,
 
     /// Content profile
@@ -271,7 +271,7 @@ enum PresetOperation {
 #[derive(Args)]
 struct PresetListCommand {
     /// Filter by DDEX version
-    #[arg(long, value_enum)]
+    #[arg(id = "ddex_version", long = "ddex-version", value_enum)]
     version: Option<DdexVersionArg>,
 
     /// Filter by partner
@@ -342,7 +342,7 @@ struct WatchCommand {
     output_dir: Option<PathBuf>,
 
     /// DDEX version to use for building
-    #[arg(long, value_enum)]
+    #[arg(id = "ddex_version", long = "ddex-version", value_enum)]
     version: Option<DdexVersionArg>,
 
     /// Preset to apply
@@ -615,7 +615,7 @@ fn handle_build_command(
             .map_err(|e| format!("Failed to apply preset '{}': {}", preset_name, e))?;
     }
 
-    if let Some(version) = cmd.version {
+    if let Some(version) = cmd.ddex_version {
         builder.with_version(version.into());
     }
 
@@ -643,7 +643,7 @@ fn handle_build_command(
                 preset_to_string(&preset)
             );
         }
-        if let Some(version) = cmd.version {
+        if let Some(version) = cmd.ddex_version {
             println!("  Version: {:?}", version);
         }
         if cmd.verify_determinism {
