@@ -1,7 +1,7 @@
 ---
 sidebar_position: 12
 title: Known issues and roadmap
-description: The open issues that matter most when using 0.5.0, and what is planned for 0.6.0.
+description: The open issues that matter most when using 0.5.1, and what is planned for 0.6.0.
 ---
 
 # Known issues and roadmap

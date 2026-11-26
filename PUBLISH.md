@@ -1,7 +1,7 @@
 # Publishing DDEX Suite
 
 Every package is released at the same version: `[workspace.package] version` in the root
-`Cargo.toml` (0.5.0 at the time of writing). Nothing is published automatically. The
+`Cargo.toml` (0.5.1 at the time of writing). Nothing is published automatically. The
 **Release build** workflow (`.github/workflows/release-build.yml`, run by hand with
 "Run workflow") builds and install-tests every release file, writes CycloneDX SBOMs, and
 signs a build-provenance attestation for each file. You download those files, verify them,
@@ -132,4 +132,8 @@ twine upload wheel-ddex-builder-*/*.whl sdist-ddex-builder/*.tar.gz
 - [ ] Tag the release: `git tag v<version> && git push origin v<version>`.
 - [ ] Install from the registries on a clean machine (`npm install ddex-parser ddex-builder`,
       `pip install ddex-parser ddex-builder`) and run the smoke scripts against them.
+- [ ] Refresh the Cloud Functions lockfile, which still resolves the previous release
+      (`website/functions/package.json` asks for the new version, which exists only once
+      published): `cd website/functions && npm install ddex-parser@<version>
+      ddex-builder@<version>`, and commit `package-lock.json`.
 - [ ] Update the website (`cd website && npm run build && firebase deploy`).

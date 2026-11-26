@@ -14,7 +14,7 @@ parser: `npm install ddex-parser`, `pip install ddex-parser`.
 
 ```toml
 [dependencies]
-ddex-parser = "0.5.0"
+ddex-parser = "0.5.1"
 ```
 
 ## Example

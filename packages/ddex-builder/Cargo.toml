@@ -20,7 +20,7 @@ features = []
 
 [dependencies]
 # Core dependency
-ddex-core = { version = "0.5.0", path = "../core" }
+ddex-core = { version = "0.5.1", path = "../core" }
 
 # Deterministic collections (CRITICAL for determinism)
 indexmap = { version = "2.5", features = ["serde"] }

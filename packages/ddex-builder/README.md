@@ -25,7 +25,7 @@ missing. Full determinism is planned for 0.6.0; see
 
 ```toml
 [dependencies]
-ddex-builder = "0.5.0"
+ddex-builder = "0.5.1"
 ```
 
 ## Example
@@ -116,8 +116,8 @@ need into a `BuildRequest`.
 - Text is XML-escaped on output. `build` checks the fields the target version requires;
   it does not validate the output against the XSD or the AVS business rules at runtime.
 - The preset APIs (`presets`, partner presets) do not change `DDEXBuilder::build` output
-  in 0.5.0, and the `ddex-builder` command-line tool writes a placeholder document; see
-  the known issues.
+  in 0.5.x. The `ddex-builder` command-line tool's `build` runs `DDEXBuilder::build`; its
+  `diff`, `validate`, `watch` and `server` are not implemented. See the known issues.
 
 ## Performance
 

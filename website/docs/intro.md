@@ -1,7 +1,7 @@
 ---
 sidebar_position: 1
 title: Introduction
-description: What DDEX Suite does, what it does not do, and its status at 0.5.0.
+description: What DDEX Suite does, what it does not do, and its status at 0.5.1.
 ---
 
 # Introduction
@@ -52,14 +52,17 @@ plus `ddex-core` on crates.io. All of them are released together at the same ver
   `MessageCreatedDateTime` that the request leaves out are generated, so two builds of the
   same request can differ. Full determinism is planned for 0.6.0.
 - **Presets do not change the output.** The builder's preset APIs exist but have no effect
-  on `build` in 0.5.0.
+  on `build` in 0.5.x.
 - **No streaming in Node.js or Python.** `parse` reads the whole document. The Rust
   streaming APIs are experimental and read a subset of the fields.
 
 ## Status
 
-The current release is **0.5.0**, a pre-1.0 release: APIs can still change between minor
-versions, and 0.5.0 itself has breaking changes (see [Migrating to 0.5.0](./migration.md)).
+The current release is **0.5.1**, a pre-1.0 patch release (security fixes and fixes of
+results that were not computed; see the
+[changelog](https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md)). APIs can still
+change between minor versions, and 0.5.0 had breaking changes (see
+[Migrating to 0.5.0](./migration.md)).
 Open bugs are listed in [Known issues and roadmap](./known-issues.md).
 
 DDEX Suite is designed to complement [DDEX Workbench](https://ddex-workbench.org): the suite

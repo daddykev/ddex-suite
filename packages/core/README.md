@@ -22,7 +22,7 @@ You normally use this crate through `ddex-parser`, whose `DDEXParser::parse` ret
 
 ```toml
 [dependencies]
-ddex-core = "0.5.0"
+ddex-core = "0.5.1"
 ```
 
 ## Example

@@ -233,7 +233,7 @@ function Features() {
   return (
     <section className={styles.featureComparison}>
       <div className="container">
-        <h2>What you get in 0.5.0</h2>
+        <h2>What you get in 0.5.1</h2>
         <div className="row">
           {features.map((feature) => (
             <div key={feature.title} className={clsx('col col--4', styles.featureTileCol)}>

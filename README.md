@@ -51,7 +51,7 @@ Beyond the core implementation, this is a showcase of **software craftsmanship a
 
 ## 🚧 Development Status
 
-**Latest Release**: Suite v0.5.0 🎉  
+**Latest Release**: Suite v0.5.1 🎉  
 **Next Release**: Suite v0.6.0  
 **Goal**: Suite v1.0.0
 
@@ -61,9 +61,9 @@ All packages are released together at the same version.
 
 | Package | npm | PyPI | crates.io | Version |
 |---------|-----|------|-----------|---------|
-| **ddex-core** | - | - | ✅ [Published](https://crates.io/crates/ddex-core) | v0.5.0 |
-| **ddex-parser** | ✅ [Published](https://www.npmjs.com/package/ddex-parser) | ✅ [Published](https://pypi.org/project/ddex-parser/) | ✅ [Published](https://crates.io/crates/ddex-parser) | v0.5.0 |
-| **ddex-builder** | ✅ [Published](https://www.npmjs.com/package/ddex-builder) | ✅ [Published](https://pypi.org/project/ddex-builder/) | ✅ [Published](https://crates.io/crates/ddex-builder) | v0.5.0 |
+| **ddex-core** | - | - | ✅ [Published](https://crates.io/crates/ddex-core) | v0.5.1 |
+| **ddex-parser** | ✅ [Published](https://www.npmjs.com/package/ddex-parser) | ✅ [Published](https://pypi.org/project/ddex-parser/) | ✅ [Published](https://crates.io/crates/ddex-parser) | v0.5.1 |
+| **ddex-builder** | ✅ [Published](https://www.npmjs.com/package/ddex-builder) | ✅ [Published](https://pypi.org/project/ddex-builder/) | ✅ [Published](https://crates.io/crates/ddex-builder) | v0.5.1 |
 
 ### Progress Overview
 
@@ -243,7 +243,7 @@ conversion from a parsed message to a build request yet.
 - **Streaming**: `parse` reads the whole document. The Rust streaming APIs are
   experimental and opt-in, and read a subset of the fields. The parallel streaming
   iterator does not currently scale with the thread count (planned for 0.6.0).
-- **Presets**: the builder's preset APIs do not change the output in 0.5.0.
+- **Presets**: the builder's preset APIs do not change the output in 0.5.x.
 
 Open bugs are listed in
 [KNOWN_ISSUES.md](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md).
@@ -322,6 +322,7 @@ Criterion benches on a GitHub-hosted runner (Intel Xeon, 4 vCPUs), release profi
 - Documentation: [ddex-suite.org](https://ddex-suite.org), [docs.rs/ddex-core](https://docs.rs/ddex-core), [docs.rs/ddex-parser](https://docs.rs/ddex-parser), [docs.rs/ddex-builder](https://docs.rs/ddex-builder)
 - [Blueprint](https://github.com/daddykev/ddex-suite/blob/main/blueprint.md)
 - [Changelog](https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md)
+- [0.5.1 release notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.1.md)
 - [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md)
 - [Known issues](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md)
 - [Report an issue](https://github.com/daddykev/ddex-suite/issues)
@@ -341,9 +342,9 @@ DDEX Suite is designed to complement [DDEX Workbench](https://ddex-workbench.org
 ---
 
 **Repository**: https://github.com/daddykev/ddex-suite  
-**Status**: v0.5.0 released; v0.6.0 in development  
-**Parser**: v0.5.0 on [npm](https://www.npmjs.com/package/ddex-parser), [PyPI](https://pypi.org/project/ddex-parser/) and [crates.io](https://crates.io/crates/ddex-parser)  
-**Builder**: v0.5.0 on [npm](https://www.npmjs.com/package/ddex-builder), [PyPI](https://pypi.org/project/ddex-builder/) and [crates.io](https://crates.io/crates/ddex-builder)  
-**Core**: v0.5.0 on [crates.io](https://crates.io/crates/ddex-core)  
+**Status**: v0.5.1 released; v0.6.0 in development  
+**Parser**: v0.5.1 on [npm](https://www.npmjs.com/package/ddex-parser), [PyPI](https://pypi.org/project/ddex-parser/) and [crates.io](https://crates.io/crates/ddex-parser)  
+**Builder**: v0.5.1 on [npm](https://www.npmjs.com/package/ddex-builder), [PyPI](https://pypi.org/project/ddex-builder/) and [crates.io](https://crates.io/crates/ddex-builder)  
+**Core**: v0.5.1 on [crates.io](https://crates.io/crates/ddex-core)  
 **Suite Goal**: v1.0.0  
 **Last Updated**: November 22, 2026

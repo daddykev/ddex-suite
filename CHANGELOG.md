@@ -5,12 +5,37 @@ All notable changes to the DDEX Suite project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.5.1] - 2026-11-26
 
-No Node or Python signature, feature flag or CLI changes (`sanity_check` now returns real
-results, undefined entities are errors everywhere, and the builder's `validate_structure`
-reads the whole document; see "Fixed"). One Rust API change comes with the quick-xml security update; see
-"Changed (Rust API)".
+A patch release: security updates (quick-xml, pyo3), errors instead of silently dropped
+undefined entities, and real results (or explicit "not implemented in 0.5.x" errors) from
+APIs that returned values they did not compute. Release artifacts now come with SBOMs and
+signed build-provenance attestations. Changes that can affect callers: one Rust API change
+with the quick-xml update ("Changed (Rust API)"); the Node / Python builder fields that
+held made-up numbers are now nullable ("Changed"); APIs listed under "Fixed" that faked a
+result now return an error; the builder CLI's `diff`, `validate`, `watch` and `server`
+exit with an error.
+
+### Security
+- quick-xml 0.41.0 (from 0.36.2 in the crates and 0.31.0 in the Node and Python builder
+  bindings): fixes RUSTSEC-2026-0194, quadratic run time checking a start tag with many
+  attributes for duplicates, which the parser does on untrusted input, and
+  RUSTSEC-2026-0195 (unbounded namespace declarations in `NsReader`, which the workspace
+  does not use). A regression test parses an official sample with 50,000 extra root
+  attributes (distinct and duplicate).
+- pyo3 0.29.3 (from 0.24.2) in the Python bindings, with pythonize, numpy and
+  pyo3-async-runtimes 0.29: fixes RUSTSEC-2026-0176 (out-of-bounds read in `PyList` /
+  `PyTuple` iterator `nth`) and RUSTSEC-2026-0177 (missing `Sync` bound on
+  `PyCFunction::new_closure`). The Python API is unchanged: the modules keep requiring the
+  GIL (`gil_used = true`, the 0.24 behaviour) and the classes keep accepting instances as
+  arguments (`from_py_object`). Building the Python bindings from source now needs Rust
+  1.83; the published crates stay at 1.82.
+- Cargo.lock: semver-compatible updates for advisories bytes 1.11.1 (RUSTSEC-2026-0007),
+  rand 0.8.6 / 0.9.3 (RUSTSEC-2026-0097), anyhow 1.0.103 (RUSTSEC-2026-0190),
+  crossbeam-epoch 0.9.20 (RUSTSEC-2026-0204), tokio 1.51.6 (RUSTSEC-2026-0386),
+  rustix 1.1.6 (RUSTSEC-2026-0486) and url 2.5.9 (RUSTSEC-2026-0592).
+- Still open (KNOWN_ISSUES.md): six unmaintained crates with no maintained release to move
+  to.
 
 ### Fixed
 - Undefined entities: a reference to an entity that is neither predefined nor a character
@@ -124,16 +149,6 @@ reads the whole document; see "Fixed"). One Rust API change comes with the quick
     `NotImplementedError` (use the builder's `from_dataframe`).
   - WASM parser `parse_stream` panicked (`todo!`); it rejects with an error.
 
-### Removed
-- Unused dependencies. ddex-parser: ahash, bytes, crossbeam-channel, csv, futures,
-  parking_lot, tokio, toml, uuid. ddex-builder: futures, is-terminal, mime, smallstr,
-  tokio (the dev-dependency stays), xmltree. The `async`, `tokio` and `futures` features
-  remain as empty features, so existing feature lists keep working.
-- Unused dependencies of the (unpublished) binding crates: builder Node binding tokio,
-  uuid, chrono, indexmap; builder Python binding serde, pythonize, uuid, indexmap; parser
-  Node binding chrono; parser Python binding serde, serde_json, chrono; parser WASM
-  binding js-sys.
-
 ### Added
 - Rust: `ddex_builder::round_trip::verify_round_trip` (with `RoundTripVerification`),
   `RoundTripTester::test_round_trip_with`, `Builder::test_round_trip_fidelity_with`, the
@@ -186,28 +201,23 @@ reads the whole document; see "Fixed"). One Rust API change comes with the quick
   results are unchanged (references in text, now separate events in quick-xml, are joined
   as before; attribute values are not normalized).
 
-### Security
-- quick-xml 0.41.0 (from 0.36.2 in the crates and 0.31.0 in the Node and Python builder
-  bindings): fixes RUSTSEC-2026-0194, quadratic run time checking a start tag with many
-  attributes for duplicates, which the parser does on untrusted input, and
-  RUSTSEC-2026-0195 (unbounded namespace declarations in `NsReader`, which the workspace
-  does not use). A regression test parses an official sample with 50,000 extra root
-  attributes (distinct and duplicate).
-- pyo3 0.29.3 (from 0.24.2) in the Python bindings, with pythonize, numpy and
-  pyo3-async-runtimes 0.29: fixes RUSTSEC-2026-0176 (out-of-bounds read in `PyList` /
-  `PyTuple` iterator `nth`) and RUSTSEC-2026-0177 (missing `Sync` bound on
-  `PyCFunction::new_closure`). The Python API is unchanged: the modules keep requiring the
-  GIL (`gil_used = true`, the 0.24 behaviour) and the classes keep accepting instances as
-  arguments (`from_py_object`). Building the Python bindings from source now needs Rust
-  1.83; the published crates stay at 1.82.
-- Cargo.lock: semver-compatible updates for advisories bytes 1.11.1 (RUSTSEC-2026-0007),
-  rand 0.8.6 / 0.9.3 (RUSTSEC-2026-0097), anyhow 1.0.103 (RUSTSEC-2026-0190),
-  crossbeam-epoch 0.9.20 (RUSTSEC-2026-0204), tokio 1.51.6 (RUSTSEC-2026-0386),
-  rustix 1.1.6 (RUSTSEC-2026-0486) and url 2.5.9 (RUSTSEC-2026-0592).
-- Still open (KNOWN_ISSUES.md): six unmaintained crates with no maintained release to move
-  to.
+### Removed
+- Unused dependencies. ddex-parser: ahash, bytes, crossbeam-channel, csv, futures,
+  parking_lot, tokio, toml, uuid. ddex-builder: futures, is-terminal, mime, smallstr,
+  tokio (the dev-dependency stays), xmltree. The `async`, `tokio` and `futures` features
+  remain as empty features, so existing feature lists keep working.
+- Unused dependencies of the (unpublished) binding crates: builder Node binding tokio,
+  uuid, chrono, indexmap; builder Python binding serde, pythonize, uuid, indexmap; parser
+  Node binding chrono; parser Python binding serde, serde_json, chrono; parser WASM
+  binding js-sys.
 
 ### Documentation
+- Performance numbers re-measured for 0.5.1 on a GitHub-hosted runner by the new Bench
+  workflow (`.github/workflows/bench.yml`, run by hand); `dev-docs/PERFORMANCE.md`, the
+  READMEs, docs.rs pages and the website quote them with that machine. Figures with no
+  measurement behind them were removed from the other docs.
+- `SecureXmlReader` documents that entity and character references reach the caller
+  undecoded and unchecked.
 - SECURITY.md rewritten to describe what is in place (parser defenses, cargo-deny in CI,
   release smoke tests) and what is not (SBOMs, provenance, signing, fuzzing in CI). It no
   longer claims `cargo audit`, SBOM generation, compliance certifications or a 1.x line.
