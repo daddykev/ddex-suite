@@ -80,18 +80,25 @@ export interface FidelityOptions {
 }
 export interface BuildStatistics {
   buildTimeMs: number
-  memoryUsedBytes: number
+  /** Not measured: always null (before 0.5.1, twice the XML size). */
+  memoryUsedBytes?: number
   xmlSizeBytes: number
   elementCount: number
   attributeCount: number
   namespaceCount: number
-  extensionCount: number
-  canonicalizationTimeMs: number
+  /** Not measured: always null. */
+  extensionCount?: number
+  /**
+   * Not measured separately (canonicalization is part of the build): always null
+   * (before 0.5.1, a constant 2.0).
+   */
+  canonicalizationTimeMs?: number
   verificationTimeMs?: number
 }
 export interface VerificationResult {
   roundTripSuccess: boolean
-  fidelityScore: number
+  /** No score is computed: always null (before 0.5.1, a made-up 0.98 or 1.0). */
+  fidelityScore?: number
   canonicalizationConsistent: boolean
   determinismVerified: boolean
   issues: Array<string>

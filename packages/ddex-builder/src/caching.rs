@@ -714,7 +714,9 @@ impl CacheStats {
 pub struct CacheManager;
 
 impl CacheManager {
-    /// Get global cache statistics
+    /// Global cache statistics: the schema and hash hits and misses of `get_schema` and
+    /// `fast_hash` (before 0.5.1 they were never counted and always 0). The validation and
+    /// template caches are not reachable through `CacheManager`, so their counts are 0.
     pub fn stats() -> CacheStats {
         GLOBAL_CACHE.read().unwrap().stats().clone()
     }
@@ -736,8 +738,21 @@ impl CacheManager {
         compiler: impl FnOnce() -> Result<CompiledSchema, BuildError>,
     ) -> Result<CompiledSchema, BuildError> {
         let mut cache = GLOBAL_CACHE.write().unwrap();
-        let schema = cache.schemas.get_or_compile(version, profile, compiler)?;
-        Ok(schema.clone())
+        // The compiler runs only on a miss; hits and misses feed `CacheManager::stats`.
+        let mut missed = false;
+        let schema = cache
+            .schemas
+            .get_or_compile(version, profile, || {
+                missed = true;
+                compiler()
+            })?
+            .clone();
+        if missed {
+            cache.stats.schema_misses += 1;
+        } else {
+            cache.stats.schema_hits += 1;
+        }
+        Ok(schema)
     }
 
     /// Fast hash computation with caching
@@ -754,7 +769,9 @@ impl CacheManager {
         };
 
         let mut cache = GLOBAL_CACHE.write().unwrap();
-        cache.hash_cache.get_or_compute(&key, value, |v| {
+        let mut missed = false;
+        let hash = cache.hash_cache.get_or_compute(&key, value, |v| {
+            missed = true;
             match algorithm {
                 "blake3" => {
                     let mut hasher = Blake3Hasher::new();
@@ -769,7 +786,13 @@ impl CacheManager {
                     format!("{:016x}", hasher.finish())
                 }
             }
-        })
+        });
+        if missed {
+            cache.stats.hash_misses += 1;
+        } else {
+            cache.stats.hash_hits += 1;
+        }
+        hash
     }
 }
 

@@ -444,15 +444,9 @@ impl VersionConverter {
             let to = window[1];
 
             match self.convert_single_step(&current_xml, from, to, &options, report) {
-                ConversionResult::Success {
-                    xml,
-                    report: step_report,
-                } => {
+                // The step updated `report` itself (its returned report is a copy of it).
+                ConversionResult::Success { xml, .. } => {
                     current_xml = xml;
-                    report.warnings.extend(step_report.warnings);
-                    report.elements_converted += step_report.elements_converted;
-                    report.elements_dropped += step_report.elements_dropped;
-                    report.elements_added += step_report.elements_added;
                 }
                 ConversionResult::Failure { error, .. } => {
                     return ConversionResult::Failure {
@@ -488,8 +482,10 @@ impl VersionConverter {
         };
 
         match self.transform_xml(xml_content, rules, options) {
-            Ok((transformed_xml, conversion_warnings)) => {
+            Ok((transformed_xml, conversion_warnings, counts)) => {
                 report.warnings.extend(conversion_warnings);
+                report.elements_converted += counts.converted;
+                report.elements_dropped += counts.dropped;
                 ConversionResult::Success {
                     xml: transformed_xml,
                     report: report.clone(),
@@ -507,7 +503,7 @@ impl VersionConverter {
         xml_content: &str,
         rules: &ConversionRules,
         options: &ConversionOptions,
-    ) -> Result<(String, Vec<ConversionWarning>), Box<dyn std::error::Error>> {
+    ) -> Result<(String, Vec<ConversionWarning>, ElementCounts), Box<dyn std::error::Error>> {
         // A reference to an undefined entity (`&foo;`, no DTD) is an error, not copied.
         ddex_core::xml_refs::check_document(xml_content.as_bytes())?;
         let mut reader = Reader::from_str(xml_content);
@@ -517,6 +513,7 @@ impl VersionConverter {
         let mut elements_stack = Vec::new();
         let mut skip_element = false;
         let mut skip_depth = 0;
+        let mut counts = ElementCounts::default();
 
         loop {
             match reader.read_event_into(&mut buf) {
@@ -527,6 +524,14 @@ impl VersionConverter {
                     if skip_element {
                         skip_depth += 1;
                         continue;
+                    }
+                    if matches!(
+                        rules.element_mappings.get(&element_name),
+                        Some(ElementMapping::Deprecated { .. })
+                    ) {
+                        counts.dropped += 1;
+                    } else {
+                        counts.converted += 1;
                     }
 
                     match rules.element_mappings.get(&element_name) {
@@ -651,6 +656,7 @@ impl VersionConverter {
                 }
                 Ok(Event::Empty(ref e)) => {
                     if !skip_element {
+                        counts.converted += 1;
                         writer.write_event(Event::Empty(e.clone()))?;
                     }
                 }
@@ -662,34 +668,38 @@ impl VersionConverter {
 
         let result = writer.into_inner().into_inner();
         let transformed_xml = String::from_utf8(result)?;
-        Ok((transformed_xml, warnings))
+        Ok((transformed_xml, warnings, counts))
     }
 
+    /// Replaces the value of each namespace declaration (`xmlns`, `xmlns:*`) that names the
+    /// source namespace with the target namespace. (Before 0.5.1 the new declaration was
+    /// appended, so the element had the attribute twice: not well-formed XML.)
     fn update_namespace_attributes(
         &self,
         element: &mut BytesStart,
         namespace_mapping: &NamespaceMapping,
     ) {
-        // Update xmlns attributes to new namespace
-        let mut attrs_to_update = Vec::new();
-
-        for (i, attr_result) in element.attributes().enumerate() {
-            if let Ok(attr) = attr_result {
-                let key = String::from_utf8_lossy(attr.key.as_ref());
-                let value = String::from_utf8_lossy(&attr.value);
-
-                if key == "xmlns" && value == namespace_mapping.from {
-                    attrs_to_update.push((i, "xmlns".to_string(), namespace_mapping.to.clone()));
-                } else if key.starts_with("xmlns:") && value == namespace_mapping.from {
-                    attrs_to_update.push((i, key.to_string(), namespace_mapping.to.clone()));
-                }
-            }
+        let attrs: Vec<(Vec<u8>, Vec<u8>)> = element
+            .attributes()
+            .flatten()
+            .map(|attr| {
+                let key = attr.key.as_ref().to_vec();
+                let is_declaration = key == b"xmlns" || key.starts_with(b"xmlns:");
+                let value =
+                    if is_declaration && attr.value.as_ref() == namespace_mapping.from.as_bytes() {
+                        namespace_mapping.to.as_bytes().to_vec()
+                    } else {
+                        attr.value.to_vec()
+                    };
+                (key, value)
+            })
+            .collect();
+        let mut updated =
+            BytesStart::new(String::from_utf8_lossy(element.name().as_ref()).into_owned());
+        for (key, value) in &attrs {
+            updated.push_attribute((key.as_slice(), value.as_slice()));
         }
-
-        // Apply namespace updates
-        for (_, key, new_value) in attrs_to_update {
-            element.extend_attributes(std::iter::once((key.as_str(), new_value.as_str())));
-        }
+        *element = updated;
     }
 
     /// Get list of supported version conversions
@@ -701,6 +711,14 @@ impl VersionConverter {
     pub fn can_convert(&self, from: DdexVersion, to: DdexVersion) -> bool {
         self.find_conversion_path(from, to).is_some()
     }
+}
+
+/// Elements written (`converted`) and left out as deprecated (`dropped`) by one conversion
+/// step; no step adds elements, so `ConversionReport::elements_added` stays 0.
+#[derive(Debug, Default, Clone, Copy)]
+struct ElementCounts {
+    converted: usize,
+    dropped: usize,
 }
 
 impl Default for VersionConverter {

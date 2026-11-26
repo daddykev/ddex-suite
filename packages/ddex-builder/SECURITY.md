@@ -191,22 +191,10 @@ SanitizerConfig {
 
 ## Performance Impact
 
-The security improvements have been designed for minimal performance impact:
-
-| Security Component | Performance Overhead | Notes |
-|--------------------|---------------------|--------|
-| Path Validation | <2% | Cached regex patterns, optimized normalization |
-| Entity Classification | <3% | Efficient pattern matching, LRU cache |
-| Error Sanitization | <1% | Lazy regex compilation, string interning |
-| **Total Overhead** | **<5%** | Measured across 10,000 operations |
-
-### Benchmarks
-
-```rust
-// Path validation: 10,000 paths in 1.2ms (baseline: 1.18ms)
-// Entity classification: 10,000 entities in 2.8ms (baseline: 2.75ms) 
-// Error sanitization: 10,000 errors in 0.9ms (baseline: 0.88ms)
-```
+Measured with bench `security` (results in [dev-docs/PERFORMANCE.md](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md)): path validation costs tens of
+microseconds per path, entity-chain validation hundreds of nanoseconds, and error
+sanitization a few microseconds per error. That is far more than their trivial baselines,
+and negligible next to a build (milliseconds).
 
 ## Threat Mitigation
 

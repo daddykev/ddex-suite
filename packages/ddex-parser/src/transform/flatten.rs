@@ -17,7 +17,6 @@ use ddex_core::models::graph::{
 };
 use ddex_core::models::versions::ERNVersion;
 use indexmap::IndexMap;
-use std::collections::HashMap;
 
 pub struct Flattener;
 
@@ -36,7 +35,8 @@ impl Flattener {
             release_count: releases.len(),
             track_count: releases.iter().map(|r| r.tracks.len()).sum(),
             deal_count: graph.deals.len(),
-            total_duration: 0, // Set to 0 if no duration
+            // Seconds, summed over the message's resources (each once); before 0.5.1 always 0.
+            total_duration: Self::calculate_total_duration(&resources),
         };
 
         Ok(FlattenedMessage {
@@ -284,8 +284,7 @@ impl Flattener {
         releases.iter().map(|r| r.track_count).sum()
     }
 
-    #[allow(dead_code)]
-    fn calculate_total_duration(resources: &HashMap<String, ParsedResource>) -> u64 {
+    fn calculate_total_duration(resources: &IndexMap<String, ParsedResource>) -> u64 {
         resources
             .values()
             .filter_map(|r| r.duration)

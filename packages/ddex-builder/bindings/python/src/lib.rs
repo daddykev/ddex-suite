@@ -1,6 +1,6 @@
 use ::ddex_builder::builder::{
-    BuildOptions, BuildRequest, DDEXBuilder, LocalizedStringRequest, MessageHeaderRequest,
-    PartyRequest, ReleaseRequest, ResourceKind, TrackRequest,
+    BuildOptions, BuildRequest, DDEXBuilder, LocalizedStringRequest, ReleaseRequest, ResourceKind,
+    TrackRequest,
 };
 use ::ddex_parser::DDEXParser;
 use ddex_core::models::flat::ParsedERNMessage;
@@ -402,8 +402,9 @@ impl FidelityOptions {
 pub struct BuildStatistics {
     #[pyo3(get, set)]
     pub build_time_ms: f64,
+    /// Not measured: always None (before 0.5.1, twice the XML size).
     #[pyo3(get, set)]
-    pub memory_used_bytes: u32,
+    pub memory_used_bytes: Option<u32>,
     #[pyo3(get, set)]
     pub xml_size_bytes: u32,
     #[pyo3(get, set)]
@@ -412,10 +413,12 @@ pub struct BuildStatistics {
     pub attribute_count: u32,
     #[pyo3(get, set)]
     pub namespace_count: u32,
+    /// Not measured: always None.
     #[pyo3(get, set)]
-    pub extension_count: u32,
+    pub extension_count: Option<u32>,
+    /// Not measured separately (part of the build): always None (before 0.5.1, 2.0).
     #[pyo3(get, set)]
-    pub canonicalization_time_ms: f64,
+    pub canonicalization_time_ms: Option<f64>,
     #[pyo3(get, set)]
     pub verification_time_ms: Option<f64>,
 }
@@ -425,13 +428,13 @@ impl BuildStatistics {
     #[new]
     pub fn new(
         build_time_ms: f64,
-        memory_used_bytes: u32,
+        memory_used_bytes: Option<u32>,
         xml_size_bytes: u32,
         element_count: u32,
         attribute_count: u32,
         namespace_count: u32,
-        extension_count: u32,
-        canonicalization_time_ms: f64,
+        extension_count: Option<u32>,
+        canonicalization_time_ms: Option<f64>,
         verification_time_ms: Option<f64>,
     ) -> Self {
         BuildStatistics {
@@ -458,10 +461,12 @@ impl BuildStatistics {
 #[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
 pub struct VerificationResult {
+    /// Parse → build → parse found no difference on the compared fields.
     #[pyo3(get, set)]
     pub round_trip_success: bool,
+    /// No score is computed: always None (before 0.5.1, a size-ratio heuristic or 1.0).
     #[pyo3(get, set)]
-    pub fidelity_score: f64,
+    pub fidelity_score: Option<f64>,
     #[pyo3(get, set)]
     pub canonicalization_consistent: bool,
     #[pyo3(get, set)]
@@ -477,7 +482,7 @@ impl VerificationResult {
     #[new]
     pub fn new(
         round_trip_success: bool,
-        fidelity_score: f64,
+        fidelity_score: Option<f64>,
         canonicalization_consistent: bool,
         determinism_verified: bool,
         issues: Vec<String>,
@@ -495,8 +500,9 @@ impl VerificationResult {
 
     fn __repr__(&self) -> String {
         format!(
-            "VerificationResult(success={}, fidelity_score={:.2})",
-            self.round_trip_success, self.fidelity_score
+            "VerificationResult(success={}, issues={})",
+            self.round_trip_success,
+            self.issues.len()
         )
     }
 }
@@ -592,6 +598,17 @@ impl DdexBuilder {
         fidelity_options: Option<&FidelityOptions>,
         request: Option<Bound<'_, PyAny>>,
     ) -> PyResult<BuildResult> {
+        // The output is always DB-C14N/1.0; other algorithms are not implemented.
+        if let Some(algorithm) = fidelity_options
+            .map(|o| o.canonicalization.as_str())
+            .filter(|a| !matches!(*a, "none" | "db_c14n"))
+        {
+            return Err(PyErr::new::<pyo3::exceptions::PyNotImplementedError, _>(
+                format!(
+                    "canonicalization '{algorithm}' is not implemented in 0.5.x (only db_c14n)"
+                ),
+            ));
+        }
         let start_time = std::time::Instant::now();
 
         let build_request = self.build_request(request, None)?;
@@ -608,33 +625,32 @@ impl DdexBuilder {
         let build_time = start_time.elapsed().as_millis() as f64;
         self.stats.total_build_time_ms += build_time;
 
-        // Generate statistics if requested
-        let statistics = if fidelity_options.map_or(false, |o| o.collect_statistics) {
+        // Statistics computed from the output; what is not measured is None.
+        let mut statistics = if fidelity_options.map_or(false, |o| o.collect_statistics) {
+            let (elements, attributes, namespaces) = count_xml(&result.xml);
             Some(BuildStatistics::new(
                 build_time,
-                result.xml.len() as u32 * 2,
+                None,
                 result.xml.len() as u32,
-                result.xml.matches('<').count() as u32,
-                result.xml.matches('=').count() as u32,
-                result.xml.matches("xmlns").count() as u32,
-                if result.xml.contains("xmlns:") { 1 } else { 0 },
-                2.0, // Mock canonicalization time
+                elements,
+                attributes,
+                namespaces,
+                None,
+                None,
                 None,
             ))
         } else {
             None
         };
 
-        // Generate verification result if requested
+        // A real round trip of the built XML (before 0.5.1: constants, all passing).
         let verification = if fidelity_options.map_or(false, |o| o.enable_verification) {
-            Some(VerificationResult::new(
-                true,
-                1.0,
-                true,
-                true,
-                vec![],
-                Some(true),
-            ))
+            let started = std::time::Instant::now();
+            let verification = round_trip(&result.xml);
+            if let Some(stats) = statistics.as_mut() {
+                stats.verification_time_ms = Some(started.elapsed().as_secs_f64() * 1000.0);
+            }
+            Some(verification)
         } else {
             None
         };
@@ -642,105 +658,42 @@ impl DdexBuilder {
         Ok(BuildResult::new(result.xml, statistics, verification))
     }
 
+    /// Parse → build → parse `original_xml` and compare the two parsed messages on the
+    /// fields a build request carries (ddex_builder::round_trip). `issues` lists the
+    /// differences; `fidelity_score` is None (no score is computed). The fidelity options
+    /// are not applied in 0.5.x. Before 0.5.1 the result was not compared: success was
+    /// always true and the score came from the size ratio.
+    #[pyo3(signature = (original_xml, fidelity_options = None))]
     pub fn test_round_trip_fidelity(
         &mut self,
         original_xml: String,
         fidelity_options: Option<&FidelityOptions>,
     ) -> PyResult<VerificationResult> {
-        let mut issues = Vec::new();
-
-        // 1. Parse the original XML
-        let mut parser = DDEXParser::new();
-        let cursor = Cursor::new(original_xml.as_bytes());
-        let parsed_result = match parser.parse_with_options(cursor, Default::default()) {
-            Ok(result) => result,
-            Err(e) => {
-                issues.push(format!("Failed to parse original XML: {}", e));
-                return Ok(VerificationResult::new(
-                    false,
-                    0.0,
-                    false,
-                    false,
-                    issues,
-                    Some(false),
-                ));
-            }
-        };
-
-        // 2. Build it back to XML using the builder
-        let builder = DDEXBuilder::new();
-        let options = BuildOptions::default();
-
-        // Create build request from parsed data (simplified conversion)
-        let build_request = match self.create_build_request_from_parsed(&parsed_result) {
-            Ok(request) => request,
-            Err(e) => {
-                issues.push(format!("Failed to create build request: {}", e));
-                return Ok(VerificationResult::new(
-                    false,
-                    0.0,
-                    false,
-                    false,
-                    issues,
-                    Some(false),
-                ));
-            }
-        };
-
-        let rebuilt_xml = match builder.build(build_request, options) {
-            Ok(result) => result.xml,
-            Err(e) => {
-                issues.push(format!("Failed to rebuild XML: {}", e));
-                return Ok(VerificationResult::new(
-                    false,
-                    0.0,
-                    false,
-                    false,
-                    issues,
-                    Some(false),
-                ));
-            }
-        };
-
-        // 3. Compare the results (basic comparison for now)
-        let original_size = original_xml.len();
-        let rebuilt_size = rebuilt_xml.len();
-        let size_ratio = if original_size > 0 {
-            (rebuilt_size as f64) / (original_size as f64)
-        } else {
-            0.0
-        };
-
-        // Calculate fidelity score based on size similarity and successful round-trip
-        let fidelity_score = if (0.8..=1.2).contains(&size_ratio) {
-            0.95
-        } else {
-            0.7
-        };
-
-        // Check if verification is enabled
-        let enable_verification = fidelity_options.map_or(false, |o| o.enable_verification);
-
-        Ok(VerificationResult::new(
-            true, // round_trip_success
-            fidelity_score,
-            true, // canonicalization_consistent (simplified)
-            true, // determinism_verified (simplified)
-            issues,
-            Some(enable_verification),
-        ))
+        let _ = fidelity_options;
+        Ok(round_trip(&original_xml))
     }
 
-    pub fn validate(&self) -> ValidationResult {
-        ValidationResult::new(
-            !self.releases.is_empty(),
-            if self.releases.is_empty() {
-                vec!["At least one release is required".to_string()]
-            } else {
-                vec![]
-            },
-            vec![],
-        )
+    /// Runs the build's preflight validation on the added releases and resources (before
+    /// 0.5.1 it only checked that a release had been added).
+    pub fn validate(&mut self) -> PyResult<ValidationResult> {
+        let result = match self
+            .build_request(None, None)
+            .map_err(|e| e.to_string())
+            .and_then(|request| {
+                DDEXBuilder::new()
+                    .build(request, BuildOptions::default())
+                    .map_err(|e| e.to_string())
+            }) {
+            Ok(built) => ValidationResult::new(
+                true,
+                vec![],
+                built.warnings.iter().map(|w| w.message.clone()).collect(),
+            ),
+            Err(e) => ValidationResult::new(false, vec![e], vec![]),
+        };
+        self.stats.validation_errors = result.errors.len() as u32;
+        self.stats.validation_warnings = result.warnings.len() as u32;
+        Ok(result)
     }
 
     pub fn get_stats(&self) -> BuilderStats {
@@ -753,152 +706,55 @@ impl DdexBuilder {
         self.stats = BuilderStats::new(0, 0, 0.0, 0.0, 0, 0);
     }
 
+    /// The builder's presets (`ddex_builder::presets::all_presets`).
     pub fn get_available_presets(&self) -> Vec<String> {
-        vec![
-            "spotify_album".to_string(),
-            "spotify_single".to_string(),
-            "spotify_ep".to_string(),
-            "youtube_album".to_string(),
-            "youtube_video".to_string(),
-            "youtube_single".to_string(),
-            "apple_music_43".to_string(),
-        ]
+        ddex_builder::presets::all_presets().into_keys().collect()
     }
 
     pub fn get_preset_info(&self, preset_name: String) -> PyResult<PresetInfo> {
-        match preset_name.as_str() {
-            "spotify_album" => Ok(PresetInfo::new(
-                "spotify_album".to_string(),
-                "Spotify Album ERN 4.3 requirements with audio quality validation".to_string(),
-                "1.0.0".to_string(),
-                "AudioAlbum".to_string(),
-                vec![
-                    "ISRC".to_string(),
-                    "UPC".to_string(),
-                    "ReleaseDate".to_string(),
-                    "Genre".to_string(),
-                    "ExplicitContent".to_string(),
-                    "AlbumTitle".to_string(),
-                    "ArtistName".to_string(),
-                    "TrackTitle".to_string(),
-                ],
-                "Based on Spotify public documentation. Verify current requirements.".to_string(),
-            )),
-            "spotify_single" => Ok(PresetInfo::new(
-                "spotify_single".to_string(),
-                "Spotify Single ERN 4.3 requirements with simplified track structure".to_string(),
-                "1.0.0".to_string(),
-                "AudioSingle".to_string(),
-                vec![
-                    "ISRC".to_string(),
-                    "UPC".to_string(),
-                    "ReleaseDate".to_string(),
-                    "Genre".to_string(),
-                    "ExplicitContent".to_string(),
-                    "TrackTitle".to_string(),
-                    "ArtistName".to_string(),
-                ],
-                "Based on Spotify public documentation. Verify current requirements.".to_string(),
-            )),
-            "youtube_video" => Ok(PresetInfo::new(
-                "youtube_video".to_string(),
-                "YouTube Music Video ERN 4.2/4.3 with video resource handling".to_string(),
-                "1.0.0".to_string(),
-                "VideoSingle".to_string(),
-                vec![
-                    "ISRC".to_string(),
-                    "ISVN".to_string(),
-                    "ReleaseDate".to_string(),
-                    "Genre".to_string(),
-                    "ContentID".to_string(),
-                    "VideoResource".to_string(),
-                    "AudioResource".to_string(),
-                    "VideoTitle".to_string(),
-                    "ArtistName".to_string(),
-                    "AssetType".to_string(),
-                    "VideoQuality".to_string(),
-                ],
-                "Based on YouTube Partner documentation. Video encoding requirements may vary."
-                    .to_string(),
-            )),
-            _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-                "Unknown preset: {}",
-                preset_name
-            ))),
-        }
+        let preset = core_preset(&preset_name)?;
+        Ok(PresetInfo::new(
+            preset_name,
+            preset.description,
+            preset.version,
+            format!("{:?}", preset.config.profile),
+            preset.required_fields,
+            preset.disclaimer,
+        ))
     }
 
+    /// Checks that the preset exists. Presets do not change the output in 0.5.x
+    /// (KNOWN_ISSUES.md), so nothing else happens.
     pub fn apply_preset(&mut self, preset_name: String) -> PyResult<()> {
-        // Validate preset exists
-        let _preset_info = self.get_preset_info(preset_name.clone())?;
-
-        // In a full implementation, this would apply the preset configuration
-        // to the internal builder state. For now, we just validate the preset exists.
-        Ok(())
+        core_preset(&preset_name).map(|_| ())
     }
 
+    /// The preset's validation rules (`ddex_builder::presets`).
     pub fn get_preset_validation_rules(
         &self,
         preset_name: String,
     ) -> PyResult<Vec<ValidationRulePy>> {
-        match preset_name.as_str() {
-            "spotify_album" | "spotify_single" => Ok(vec![
+        let preset = core_preset(&preset_name)?;
+        Ok(preset
+            .validation_rules
+            .iter()
+            .map(|(field, rule)| {
+                let detail = format!("{rule:?}");
+                let rule_type = detail
+                    .split(|c: char| !c.is_alphanumeric())
+                    .next()
+                    .unwrap_or_default()
+                    .to_string();
+                let parameters = (rule_type != detail)
+                    .then(|| HashMap::from([("rule".to_string(), detail.clone())]));
                 ValidationRulePy::new(
-                    "ISRC".to_string(),
-                    "Required".to_string(),
-                    "ISRC is required for Spotify releases".to_string(),
-                    None,
-                ),
-                ValidationRulePy::new(
-                    "AudioQuality".to_string(),
-                    "AudioQuality".to_string(),
-                    "Minimum 16-bit/44.1kHz audio quality required".to_string(),
-                    Some(
-                        [
-                            ("min_bit_depth".to_string(), "16".to_string()),
-                            ("min_sample_rate".to_string(), "44100".to_string()),
-                        ]
-                        .iter()
-                        .cloned()
-                        .collect(),
-                    ),
-                ),
-                ValidationRulePy::new(
-                    "TerritoryCode".to_string(),
-                    "TerritoryCode".to_string(),
-                    "Territory code must be 'Worldwide' or 'WW'".to_string(),
-                    Some(
-                        [("allowed".to_string(), "Worldwide,WW".to_string())]
-                            .iter()
-                            .cloned()
-                            .collect(),
-                    ),
-                ),
-            ]),
-            "youtube_video" | "youtube_album" => Ok(vec![
-                ValidationRulePy::new(
-                    "ContentID".to_string(),
-                    "Required".to_string(),
-                    "Content ID is required for YouTube releases".to_string(),
-                    None,
-                ),
-                ValidationRulePy::new(
-                    "VideoQuality".to_string(),
-                    "OneOf".to_string(),
-                    "Video quality must be HD720, HD1080, or 4K".to_string(),
-                    Some(
-                        [("options".to_string(), "HD720,HD1080,4K".to_string())]
-                            .iter()
-                            .cloned()
-                            .collect(),
-                    ),
-                ),
-            ]),
-            _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-                "Unknown preset: {}",
-                preset_name
-            ))),
-        }
+                    field.clone(),
+                    rule_type,
+                    format!("{field}: {detail}"),
+                    parameters,
+                )
+            })
+            .collect())
     }
 
     /// Build DDEX XML from pandas DataFrame
@@ -1178,106 +1034,6 @@ fn structure_error(xml: &str) -> Option<String> {
 }
 
 impl DdexBuilder {
-    fn create_build_request_from_parsed(
-        &self,
-        parsed_result: &ParsedERNMessage,
-    ) -> PyResult<BuildRequest> {
-        // Convert parsed result back to build request (simplified implementation).
-        // Values come from the parsed message; nothing is filled in when the source lacks it.
-        let party = |org: &ddex_core::models::flat::Organization| PartyRequest {
-            // PartyName is optional in the parsed message; no name is added when absent.
-            party_name: org
-                .name
-                .iter()
-                .map(|text| LocalizedStringRequest {
-                    text: text.clone(),
-                    language_code: None,
-                })
-                .collect(),
-            party_id: Some(org.id.clone()).filter(|id| !id.is_empty()),
-            party_reference: None,
-        };
-        let header = MessageHeaderRequest {
-            message_id: Some(parsed_result.flat.message_id.clone()),
-            message_sender: party(&parsed_result.flat.sender),
-            message_recipient: party(&parsed_result.flat.recipient),
-            message_control_type: Some(parsed_result.flat.message_type.clone()),
-            message_created_date_time: Some(parsed_result.flat.message_date.to_rfc3339()),
-        };
-
-        let mut releases = Vec::new();
-        for release in &parsed_result.flat.releases {
-            // The builder needs an ISRC, title and duration for every track. If the parsed
-            // message doesn't have one, fail with a clear error instead of inventing a value.
-            let missing = |field: &str, track_id: &str| {
-                PyValueError::new_err(format!(
-                    "cannot rebuild track '{}': the parsed message has no {}",
-                    track_id, field
-                ))
-            };
-            let tracks: Vec<TrackRequest> = release
-                .tracks
-                .iter()
-                .map(|track| {
-                    Ok(TrackRequest {
-                        track_id: track.track_id.clone(),
-                        resource_reference: Some(track.track_id.clone()),
-                        isrc: track
-                            .isrc
-                            .clone()
-                            .ok_or_else(|| missing("ISRC", &track.track_id))?,
-                        title: track
-                            .title
-                            .clone()
-                            .ok_or_else(|| missing("title", &track.track_id))?,
-                        duration: track
-                            .duration
-                            .map(|d| format!("PT{}S", d.as_secs()))
-                            .ok_or_else(|| missing("duration", &track.track_id))?,
-                        // Empty when the parsed track has no artist; builder validation decides.
-                        artist: track.display_artist.clone().unwrap_or_default(),
-                        ..Default::default()
-                    })
-                })
-                .collect::<PyResult<_>>()?;
-
-            releases.push(ReleaseRequest {
-                release_id: release.release_id.clone(),
-                release_reference: Some(release.release_id.clone()),
-                // Empty when the parsed release has no title; builder validation decides.
-                title: release
-                    .default_title
-                    .iter()
-                    .map(|text| LocalizedStringRequest {
-                        text: text.clone(),
-                        language_code: None,
-                    })
-                    .collect(),
-                // Empty when the parsed release has no artist; builder validation decides.
-                artist: release.display_artist.clone().unwrap_or_default(),
-                label: None,        // Simplified
-                release_date: None, // Simplified
-                upc: None,          // Simplified
-                tracks,
-                resource_references: Some(
-                    release.tracks.iter().map(|t| t.track_id.clone()).collect(),
-                ),
-                ..Default::default()
-            });
-        }
-
-        Ok(BuildRequest {
-            header,
-            // Rebuild in the version that was parsed (e.g. 3.8.1 stays 3.8.1).
-            version: parsed_result.graph.version.as_str().to_string(),
-            profile: parsed_result.flat.profile.clone(),
-            releases,
-            deals: vec![],
-            extensions: None,
-            ..Default::default()
-        })
-    }
-
     /// The core build request: `request` as given (missing `releases`/`deals` mean none),
     /// with `releases` (from a DataFrame) or else the stored releases when it has none.
     fn build_request(
@@ -1550,6 +1306,70 @@ fn releases_from_track_rows(records: &Bound<'_, PyList>) -> PyResult<Vec<Release
 
 // gil_used = true keeps the pyo3 0.24 behaviour (0.28 changed the default to declaring
 // free-threaded support, which these bindings have not been tested for).
+/// Parse with ddex-parser (the parse function the round trip needs).
+fn parse_xml(xml: &str) -> Result<ParsedERNMessage, String> {
+    DDEXParser::new()
+        .parse_with_options(Cursor::new(xml.as_bytes()), Default::default())
+        .map_err(|e| e.to_string())
+}
+
+/// A real Parse → Build → Parse round trip of `xml` (ddex_builder::round_trip). A failure to
+/// parse or build is reported as `round_trip_success: False` with the error as the issue.
+fn round_trip(xml: &str) -> VerificationResult {
+    match ddex_builder::round_trip::verify_round_trip(xml, parse_xml) {
+        Ok(result) => VerificationResult::new(
+            result.success,
+            None,
+            result.canonical,
+            result.deterministic,
+            result.differences,
+            Some(result.checksums_match),
+        ),
+        Err(e) => VerificationResult::new(
+            false,
+            None,
+            false,
+            false,
+            vec![format!("round trip failed: {e}")],
+            None,
+        ),
+    }
+}
+
+/// (elements, attributes without namespace declarations, namespace declarations) of `xml`.
+fn count_xml(xml: &str) -> (u32, u32, u32) {
+    use quick_xml::events::Event;
+    let (mut elements, mut attributes, mut namespaces) = (0, 0, 0);
+    let mut reader = quick_xml::Reader::from_str(xml);
+    loop {
+        match reader.read_event() {
+            Ok(Event::Start(e)) | Ok(Event::Empty(e)) => {
+                elements += 1;
+                for attr in e.attributes().flatten() {
+                    let key = attr.key.as_ref();
+                    if key == b"xmlns" || key.starts_with(b"xmlns:") {
+                        namespaces += 1;
+                    } else {
+                        attributes += 1;
+                    }
+                }
+            }
+            Ok(Event::Eof) | Err(_) => break,
+            Ok(_) => {}
+        }
+    }
+    (elements, attributes, namespaces)
+}
+
+/// The builder's preset named `name`.
+fn core_preset(name: &str) -> PyResult<ddex_builder::presets::PartnerPreset> {
+    ddex_builder::presets::all_presets()
+        .shift_remove(name)
+        .ok_or_else(|| {
+            PyErr::new::<pyo3::exceptions::PyValueError, _>(format!("Unknown preset: {name}"))
+        })
+}
+
 #[pymodule(gil_used = true)]
 fn _internal(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Release>()?;

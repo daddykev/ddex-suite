@@ -149,21 +149,25 @@ impl FastZeroCopyParser {
             let message_id = if let Some(id) = self.extract_tag_content(header_data, b"MessageId") {
                 self.intern_string(id)
             } else {
-                "unknown".to_string()
+                String::new()
             };
 
-            // Extract CreatedDateTime
-            let created_date_time =
-                if let Some(dt) = self.extract_tag_content(header_data, b"CreatedDateTime") {
-                    self.intern_string(dt)
-                } else {
-                    chrono::Utc::now().to_rfc3339()
-                };
+            // Absent values are empty (before 0.5.1: "unknown", the current time and ERN 4.3
+            // whatever the document; the real element name was not read).
+            let created_date_time = match self
+                .extract_tag_content(header_data, b"MessageCreatedDateTime")
+                .or_else(|| self.extract_tag_content(header_data, b"CreatedDateTime"))
+            {
+                Some(dt) => self.intern_string(dt),
+                None => String::new(),
+            };
 
             return Ok(Some(WorkingStreamingElement::MessageHeader {
                 message_id,
                 created_date_time,
-                version: ERNVersion::V4_3,
+                // The namespace's version; ERN 4.3 (what stream_zero_copy assumes) when the
+                // chunk holds no ERN namespace.
+                version: namespace_version(data).unwrap_or(ERNVersion::V4_3),
             }));
         }
 
@@ -186,7 +190,7 @@ impl FastZeroCopyParser {
             {
                 self.intern_string(attr)
             } else {
-                format!("REL-{}", self.elements_found)
+                String::new()
             };
 
             // Extract title from TitleText nested in ReferenceTitle
@@ -194,7 +198,7 @@ impl FastZeroCopyParser {
                 if let Some(title_data) = self.extract_tag_content(release_data, b"TitleText") {
                     self.intern_string(title_data)
                 } else {
-                    "Untitled Release".to_string()
+                    String::new()
                 };
 
             // Extract resource references (simplified)
@@ -224,14 +228,14 @@ impl FastZeroCopyParser {
             {
                 self.intern_string(attr)
             } else {
-                format!("RES-{}", self.elements_found)
+                String::new()
             };
 
             let title =
                 if let Some(title_data) = self.extract_tag_content(recording_data, b"TitleText") {
                     self.intern_string(title_data)
                 } else {
-                    "Untitled Track".to_string()
+                    String::new()
                 };
 
             let duration = self
@@ -325,6 +329,22 @@ impl FastZeroCopyParser {
             elapsed_time: elapsed,
             throughput_mb_per_sec: throughput,
         }
+    }
+}
+
+/// The ERN version named by an ERN namespace in `data`, if any.
+fn namespace_version(data: &[u8]) -> Option<ERNVersion> {
+    let find = |ns: &[u8]| memchr::memmem::find(data, ns).is_some();
+    if find(b"http://ddex.net/xml/ern/43") {
+        Some(ERNVersion::V4_3)
+    } else if find(b"http://ddex.net/xml/ern/42") {
+        Some(ERNVersion::V4_2)
+    } else if find(b"http://ddex.net/xml/ern/382") {
+        Some(ERNVersion::V3_8_2)
+    } else if find(b"http://ddex.net/xml/ern/381") {
+        Some(ERNVersion::V3_8_1)
+    } else {
+        None
     }
 }
 

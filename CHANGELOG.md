@@ -5,12 +5,37 @@ All notable changes to the DDEX Suite project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.5.1] - 2026-11-26
 
-No Node or Python signature, feature flag or CLI changes (`sanity_check` now returns real
-results, undefined entities are errors everywhere, and the builder's `validate_structure`
-reads the whole document; see "Fixed"). One Rust API change comes with the quick-xml security update; see
-"Changed (Rust API)".
+A patch release: security updates (quick-xml, pyo3), errors instead of silently dropped
+undefined entities, and real results (or explicit "not implemented in 0.5.x" errors) from
+APIs that returned values they did not compute. Release artifacts now come with SBOMs and
+signed build-provenance attestations. Changes that can affect callers: one Rust API change
+with the quick-xml update ("Changed (Rust API)"); the Node / Python builder fields that
+held made-up numbers are now nullable ("Changed"); APIs listed under "Fixed" that faked a
+result now return an error; the builder CLI's `diff`, `validate`, `watch` and `server`
+exit with an error.
+
+### Security
+- quick-xml 0.41.0 (from 0.36.2 in the crates and 0.31.0 in the Node and Python builder
+  bindings): fixes RUSTSEC-2026-0194, quadratic run time checking a start tag with many
+  attributes for duplicates, which the parser does on untrusted input, and
+  RUSTSEC-2026-0195 (unbounded namespace declarations in `NsReader`, which the workspace
+  does not use). A regression test parses an official sample with 50,000 extra root
+  attributes (distinct and duplicate).
+- pyo3 0.29.3 (from 0.24.2) in the Python bindings, with pythonize, numpy and
+  pyo3-async-runtimes 0.29: fixes RUSTSEC-2026-0176 (out-of-bounds read in `PyList` /
+  `PyTuple` iterator `nth`) and RUSTSEC-2026-0177 (missing `Sync` bound on
+  `PyCFunction::new_closure`). The Python API is unchanged: the modules keep requiring the
+  GIL (`gil_used = true`, the 0.24 behaviour) and the classes keep accepting instances as
+  arguments (`from_py_object`). Building the Python bindings from source now needs Rust
+  1.83; the published crates stay at 1.82.
+- Cargo.lock: semver-compatible updates for advisories bytes 1.11.1 (RUSTSEC-2026-0007),
+  rand 0.8.6 / 0.9.3 (RUSTSEC-2026-0097), anyhow 1.0.103 (RUSTSEC-2026-0190),
+  crossbeam-epoch 0.9.20 (RUSTSEC-2026-0204), tokio 1.51.6 (RUSTSEC-2026-0386),
+  rustix 1.1.6 (RUSTSEC-2026-0486) and url 2.5.9 (RUSTSEC-2026-0592).
+- Still open (KNOWN_ISSUES.md): six unmaintained crates with no maintained release to move
+  to.
 
 ### Fixed
 - Undefined entities: a reference to an entity that is neither predefined nor a character
@@ -53,17 +78,88 @@ reads the whole document; see "Fixed"). One Rust API change comes with the quick
   annotations now name and the package now exports. `ParseResult` stays exported (unused,
   kept for compatibility).
 
-### Removed
-- Unused dependencies. ddex-parser: ahash, bytes, crossbeam-channel, csv, futures,
-  parking_lot, tokio, toml, uuid. ddex-builder: futures, is-terminal, mime, smallstr,
-  tokio (the dev-dependency stays), xmltree. The `async`, `tokio` and `futures` features
-  remain as empty features, so existing feature lists keep working.
-- Unused dependencies of the (unpublished) binding crates: builder Node binding tokio,
-  uuid, chrono, indexmap; builder Python binding serde, pythonize, uuid, indexmap; parser
-  Node binding chrono; parser Python binding serde, serde_json, chrono; parser WASM
-  binding js-sys.
+- Fabricated results (each API used to report success, a score, a count or a value it did
+  not compute; KNOWN_ISSUES.md lists what is still not implemented):
+  - Node `testRoundTripFidelity` returned a constant 0.98 success with an invented issue;
+    it now parses, builds and parses again and lists the differences (`fidelityScore` null).
+  - Python `test_round_trip_fidelity` reported success whatever the result, with a score
+    from the size ratio; now the same real round trip.
+  - Node / Python `buildWithFidelity` / `build_with_fidelity`: verification was a constant
+    "all passed"; it is now a round trip of the output. Statistics counted `<` and `=`
+    characters and reported a mock 2.0 ms canonicalization time; they now count elements,
+    attributes and namespace declarations, and are null where not measured. `fidelityInfo`
+    echoed the options; it now reports what was applied (DB-C14N, nothing else).
+  - Node / Python `validate`: true when a release had been added; now the build's
+    preflight validation (its errors also feed `getStats().validationErrors`).
+  - Node / Python preset methods listed seven partner presets the builder does not have;
+    they now list and describe `ddex_builder::presets`.
+  - Node `StreamingDdexBuilder.getXml` returned `""`; it returns the written document.
+  - Rust `RoundTripTester::test_round_trip` / `Builder::test_round_trip_fidelity` compared
+    the input with itself; they now return an error (no parser in the builder) and
+    `test_round_trip_with` / `verify_round_trip` run a real round trip.
+  - Rust `RoundTripTester::analyze_fidelity` derived its score from the options; now an error.
+  - Rust `BuildVerifier::verify` / `Builder::verify_build` reported round-trip and schema
+    verification as passed without running them; they are now reported as not done.
+  - Rust `Builder::canonicalize` returned the input unchanged for every algorithm; it now
+    runs DB-C14N/1.0 and returns an error for C14N, C14N 1.1 and custom rules.
+  - Rust `Builder::build_with_fidelity` reported counts as 0 and canonicalization as applied
+    for algorithms it does not implement; it counts the output and rejects them.
+  - Rust `version_info` / `fidelity_engine_info` claimed "Perfect Fidelity", round-trip and
+    extension support.
+  - Rust `UpdateGenerator::apply_update` / `DDEXBuilder::apply_update` returned an almost
+    empty document as success; now an error.
+  - Rust determinism guarantees `DeterministicCollections` / `StableSorting` and
+    `validate_no_hashmap_usage` / `validate_deterministic_sorting` always passed; they now
+    report "not verified" / return an error. `DeterminismVerifier::verify` with fewer than 2
+    iterations reported "deterministic" without building (now an error);
+    `verify_with_threading_stress` dropped the threads' builds (now compared).
+  - Rust `CacheManager::stats` was always zero; it counts schema and hash hits and misses.
+  - Rust `VersionConverter::convert` reported 0 converted elements, and wrote the new
+    namespace declaration next to the old one (not well-formed XML); fixed. Its per-step
+    counts and warnings were also added twice.
+  - Rust `VersionManager::detect_version` / `Builder::detect_version` returned ERN 4.3 for
+    input with no version evidence (now an error), and read only an unprefixed `xmlns`, so
+    DDEX messages (`xmlns:ern`) were detected from element names alone and the official ERN
+    4.3 samples came out as 4.2; the prefixed ERN namespace is read now. Conversion paths carried invented
+    fidelity figures and `production_ready: true`; now 0.0 (not measured) and false.
+  - Rust `ParallelProcessor` release times were a constant 1 ns; now measured.
+  - Rust `CompactAST::from_ast` dropped every child element; it converts them.
+  - Rust `SchemaValidator`: `if` conditions were always true (`then` always applied).
+  - Builder CLI: `build` wrote a placeholder document and printed success; it now builds
+    the request with `DDEXBuilder::build`. Every subcommand with a DDEX version option
+    failed clap's argument check (its id clashed with `--version`; debug builds panicked at
+    startup); the option of `preset list` and `watch` is now `--ddex-version`, like the
+    other subcommands' (it was `--version`, which printed the CLI version). `diff` ("Files are identical"), `validate`
+    (every file valid), `watch` and `server` now exit with "not implemented in 0.5.x".
+  - Parser `parse` with `SecurityConfig::relaxed()` (`parse_fast_streaming`) returned an
+    empty message with an invented header; now an error.
+  - Parser `flat.stats.total_duration` (Node `totalDurationSeconds`) was always 0; it is the
+    sum of the resources' durations.
+  - Parser `VersionAdapter` returned a "PLACEHOLDER" header and empty deal terms; now an
+    error. `MultiReleaseParser`'s header was invented (now `None`), and its releases had
+    invented references and the title "Untitled Release" (now empty when absent).
+  - Parser streaming iterators (`stream`, `stream_parallel`, `stream_zero_copy`) filled
+    missing values with "unknown", the current time, `REL-n` / `RES-n` and "Untitled ...",
+    did not read `MessageCreatedDateTime`, and returned no release resource references;
+    absent values are now empty, the date and references are read, and the zero-copy header
+    takes its version from the namespace.
+  - Parser `StreamingParser::stream_resources` / `stream_parties` yielded nothing; they
+    yield a "not implemented" error (`ParseMode::Stream` returns no resources or parties).
+  - Parser `ParallelBenchmark::measure_parallel_speedup` compared identical code paths; now
+    an error. `ParallelStreamingParser::get_stats` invented a depth of 10 and its memory;
+    now 0 (not tracked). `FastStreamingParser::get_stats` was always zero; it returns the
+    last run's statistics.
+  - Parser CLI: `stats` reported every file as ERN 4.3; `validate --ddex-version` was ignored.
+  - Python parser `DDEXParser.from_dataframe` returned a mock document; now
+    `NotImplementedError` (use the builder's `from_dataframe`).
+  - WASM parser `parse_stream` panicked (`todo!`); it rejects with an error.
 
 ### Added
+- Rust: `ddex_builder::round_trip::verify_round_trip` (with `RoundTripVerification`),
+  `RoundTripTester::test_round_trip_with`, `Builder::test_round_trip_fidelity_with`, the
+  parsed-message to build-request mapping `round_trip::request_from_parsed` and
+  `compare_flat` (`round_trip::parsed`); `StreamingBuilder::into_inner` /
+  `BufferManager::into_inner`; `ParallelStreamingParser::worker_threads`.
 - Release artifacts are built in GitHub Actions with signed build-provenance attestations
   and SBOMs, verifiable with `gh attestation verify <file> --repo daddykev/ddex-suite`,
   provided the published files are the ones release-build produced. `release-build.yml`
@@ -79,6 +175,11 @@ reads the whole document; see "Fixed"). One Rust API change comes with the quick
   stays manual: no npm `--provenance`, no PyPI trusted-publishing attestations.
 
 ### Changed
+- Node / Python builder: `fidelityScore` / `fidelity_score`, `memoryUsedBytes`,
+  `extensionCount` and `canonicalizationTimeMs` (and their Python names) are now nullable
+  and always null: they are not computed. Node `validate()` takes `&mut self` internally
+  (unchanged in JavaScript); Python `validate()` can raise if the stored request cannot be
+  converted.
 - Security contact: vulnerabilities are reported privately by email to
   `security@ddex-suite.org` (SECURITY.md, the website's security page, the WASM builder's
   SECURITY.md and `docs/security-audit.md`), replacing an unconfirmed address;
@@ -105,28 +206,23 @@ reads the whole document; see "Fixed"). One Rust API change comes with the quick
   results are unchanged (references in text, now separate events in quick-xml, are joined
   as before; attribute values are not normalized).
 
-### Security
-- quick-xml 0.41.0 (from 0.36.2 in the crates and 0.31.0 in the Node and Python builder
-  bindings): fixes RUSTSEC-2026-0194, quadratic run time checking a start tag with many
-  attributes for duplicates, which the parser does on untrusted input, and
-  RUSTSEC-2026-0195 (unbounded namespace declarations in `NsReader`, which the workspace
-  does not use). A regression test parses an official sample with 50,000 extra root
-  attributes (distinct and duplicate).
-- pyo3 0.29.3 (from 0.24.2) in the Python bindings, with pythonize, numpy and
-  pyo3-async-runtimes 0.29: fixes RUSTSEC-2026-0176 (out-of-bounds read in `PyList` /
-  `PyTuple` iterator `nth`) and RUSTSEC-2026-0177 (missing `Sync` bound on
-  `PyCFunction::new_closure`). The Python API is unchanged: the modules keep requiring the
-  GIL (`gil_used = true`, the 0.24 behaviour) and the classes keep accepting instances as
-  arguments (`from_py_object`). Building the Python bindings from source now needs Rust
-  1.83; the published crates stay at 1.82.
-- Cargo.lock: semver-compatible updates for advisories bytes 1.11.1 (RUSTSEC-2026-0007),
-  rand 0.8.6 / 0.9.3 (RUSTSEC-2026-0097), anyhow 1.0.103 (RUSTSEC-2026-0190),
-  crossbeam-epoch 0.9.20 (RUSTSEC-2026-0204), tokio 1.51.6 (RUSTSEC-2026-0386),
-  rustix 1.1.6 (RUSTSEC-2026-0486) and url 2.5.9 (RUSTSEC-2026-0592).
-- Still open (KNOWN_ISSUES.md): six unmaintained crates with no maintained release to move
-  to.
+### Removed
+- Unused dependencies. ddex-parser: ahash, bytes, crossbeam-channel, csv, futures,
+  parking_lot, tokio, toml, uuid. ddex-builder: futures, is-terminal, mime, smallstr,
+  tokio (the dev-dependency stays), xmltree. The `async`, `tokio` and `futures` features
+  remain as empty features, so existing feature lists keep working.
+- Unused dependencies of the (unpublished) binding crates: builder Node binding tokio,
+  uuid, chrono, indexmap; builder Python binding serde, pythonize, uuid, indexmap; parser
+  Node binding chrono; parser Python binding serde, serde_json, chrono; parser WASM
+  binding js-sys.
 
 ### Documentation
+- Performance numbers re-measured for 0.5.1 on a GitHub-hosted runner by the new Bench
+  workflow (`.github/workflows/bench.yml`, run by hand); `dev-docs/PERFORMANCE.md`, the
+  READMEs, docs.rs pages and the website quote them with that machine. Figures with no
+  measurement behind them were removed from the other docs.
+- `SecureXmlReader` documents that entity and character references reach the caller
+  undecoded and unchecked.
 - SECURITY.md rewritten to describe what is in place (parser defenses, cargo-deny in CI,
   release smoke tests) and what is not (SBOMs, provenance, signing, fuzzing in CI). It no
   longer claims `cargo audit`, SBOM generation, compliance certifications or a 1.x line.

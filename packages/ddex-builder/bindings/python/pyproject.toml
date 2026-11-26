@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "ddex-builder"
-version = "0.5.0"
+version = "0.5.1"
 description = "DDEX ERN XML builder (ERN 4.3, 4.2, 3.8.2) for Python, from dicts or pandas DataFrames"
 readme = "README.md"
 authors = [{name = "Kevin Marques Moo"}]

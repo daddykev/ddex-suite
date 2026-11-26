@@ -188,12 +188,8 @@ This report verifies that all three language bindings (Node.js, Python, WASM) pr
 - **Python**: ~3MB wheel package
 - **WASM**: 116KB optimized bundle ✅
 
-### Build Performance (Test Results)
-- **Node.js**: ~1ms for simple release
-- **Python**: ~1ms for simple release  
-- **WASM**: ~1ms for simple release
-
-All bindings meet the <15ms target for typical releases.
+### Build Performance
+Not measured per binding. The native builder's measured build times are in [dev-docs/PERFORMANCE.md](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md).
 
 ## Testing Results
 

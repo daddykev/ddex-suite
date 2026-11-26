@@ -17,7 +17,6 @@ use std::time::Instant;
 /// Parallel streaming parser for multi-core processing
 pub struct ParallelStreamingParser {
     worker_threads: usize,
-    chunk_size: usize,
     start_time: Instant,
     total_bytes_processed: Arc<Mutex<u64>>,
     total_elements_found: Arc<Mutex<u64>>,
@@ -28,7 +27,6 @@ impl ParallelStreamingParser {
     pub fn new() -> Self {
         Self {
             worker_threads: num_cpus::get().max(2), // Use at least 2 threads
-            chunk_size: 1024 * 1024,                // 1MB chunks for parallel processing
             start_time: Instant::now(),
             total_bytes_processed: Arc::new(Mutex::new(0)),
             total_elements_found: Arc::new(Mutex::new(0)),
@@ -39,14 +37,19 @@ impl ParallelStreamingParser {
     pub fn with_threads(threads: usize) -> Self {
         Self {
             worker_threads: threads.max(1),
-            chunk_size: 1024 * 1024,
             start_time: Instant::now(),
             total_bytes_processed: Arc::new(Mutex::new(0)),
             total_elements_found: Arc::new(Mutex::new(0)),
         }
     }
 
-    /// Parse data in parallel using multiple threads
+    /// The configured thread count. It is not used in 0.5.x: `parse_parallel` runs on one
+    /// thread (a parallel iterator that scales is planned for 0.6.0).
+    pub fn worker_threads(&self) -> usize {
+        self.worker_threads
+    }
+
+    /// Parse data (on one thread in 0.5.x, whatever the thread count)
     pub fn parse_parallel(&self, data: &[u8]) -> Result<Vec<WorkingStreamingElement>, ParseError> {
         // For now, use optimized single-threaded processing to ensure consistency
         // The performance gain comes from the fast zero-copy parser optimizations
@@ -93,10 +96,12 @@ impl ParallelStreamingParser {
         WorkingStreamingStats {
             bytes_processed,
             elements_yielded: elements_found as usize,
+            // Depth and memory are not tracked by this parser: 0 (before 0.5.1, a constant
+            // 10 and chunk size x threads).
             current_depth: 0,
-            max_depth_reached: 10,
-            current_memory_bytes: self.chunk_size * self.worker_threads,
-            max_memory_used_bytes: self.chunk_size * self.worker_threads,
+            max_depth_reached: 0,
+            current_memory_bytes: 0,
+            max_memory_used_bytes: 0,
             elapsed_time: elapsed,
             throughput_mb_per_sec: throughput,
         }
@@ -198,108 +203,15 @@ impl<R: BufRead> Iterator for ParallelStreamingIterator<R> {
 pub struct ParallelBenchmark;
 
 impl ParallelBenchmark {
-    pub fn measure_parallel_speedup(data: &[u8]) -> Result<ParallelBenchmarkResult, ParseError> {
-        println!("🚀 Measuring Parallel Performance Speedup");
-        println!("Data size: {:.2} MB", data.len() as f64 / (1024.0 * 1024.0));
-
-        // Measure single-threaded performance
-        let start = Instant::now();
-        let single_parser = ParallelStreamingParser::with_threads(1);
-        let single_elements = single_parser.parse_parallel(data)?;
-        let single_time = start.elapsed();
-
-        // Measure parallel performance with different thread counts
-        let mut thread_results = Vec::new();
-
-        for threads in [2, 4, 6, 8] {
-            if threads <= num_cpus::get() {
-                let start = Instant::now();
-                let parallel_parser = ParallelStreamingParser::with_threads(threads);
-                let parallel_elements = parallel_parser.parse_parallel(data)?;
-                let parallel_time = start.elapsed();
-
-                let speedup = single_time.as_secs_f64() / parallel_time.as_secs_f64();
-                let efficiency = (speedup / threads as f64) * 100.0;
-                let throughput =
-                    (data.len() as f64 / (1024.0 * 1024.0)) / parallel_time.as_secs_f64();
-
-                thread_results.push(ThreadResult {
-                    threads,
-                    time: parallel_time,
-                    speedup,
-                    efficiency,
-                    throughput_mb_per_sec: throughput,
-                    elements_found: parallel_elements.len(),
-                });
-
-                println!(
-                    "  {} threads: {:.3}s, {:.1}x speedup, {:.1}% efficiency, {:.1} MB/s",
-                    threads,
-                    parallel_time.as_secs_f64(),
-                    speedup,
-                    efficiency,
-                    throughput
-                );
-
-                // Verify element count consistency
-                assert_eq!(
-                    single_elements.len(),
-                    parallel_elements.len(),
-                    "Element count mismatch: single={}, parallel={}",
-                    single_elements.len(),
-                    parallel_elements.len()
-                );
-            }
-        }
-
-        let single_throughput = (data.len() as f64 / (1024.0 * 1024.0)) / single_time.as_secs_f64();
-
-        let best_result = thread_results
-            .iter()
-            .max_by(|a, b| {
-                a.throughput_mb_per_sec
-                    .partial_cmp(&b.throughput_mb_per_sec)
-                    .unwrap()
-            })
-            .unwrap();
-
-        let best_speedup = best_result.speedup;
-        let best_throughput = best_result.throughput_mb_per_sec;
-        let target_achieved = best_result.throughput_mb_per_sec >= 280.0;
-
-        let result = ParallelBenchmarkResult {
-            single_threaded_time: single_time,
-            single_threaded_throughput: single_throughput,
-            single_threaded_elements: single_elements.len(),
-            thread_results,
-            best_speedup,
-            best_throughput,
-            target_achieved,
-        };
-
-        println!("\n📊 PARALLEL PERFORMANCE SUMMARY");
-        println!(
-            "Single-threaded: {:.1} MB/s",
-            result.single_threaded_throughput
-        );
-        println!(
-            "Best parallel: {:.1} MB/s ({:.1}x speedup)",
-            result.best_throughput, result.best_speedup
-        );
-        println!(
-            "Target (280 MB/s): {}",
-            if result.target_achieved {
-                "✅ ACHIEVED!"
-            } else {
-                "❌ Not achieved"
-            }
-        );
-
-        if result.target_achieved {
-            println!("🎉 SUCCESS: 480x performance improvement target achieved with parallel processing!");
-        }
-
-        Ok(result)
+    /// Not implemented in 0.5.x: returns an error. `ParallelStreamingParser` processes on
+    /// one thread whatever the thread count (a scaling parallel iterator is planned for
+    /// 0.6.0), so there is no speedup to measure; before 0.5.1 this compared identical code
+    /// paths and judged them against a fixed 280 MB/s target.
+    pub fn measure_parallel_speedup(_data: &[u8]) -> Result<ParallelBenchmarkResult, ParseError> {
+        Err(ParseError::InvalidValue {
+            field: "ParallelBenchmark::measure_parallel_speedup".to_string(),
+            value: "not implemented in 0.5.x (the parallel parser runs on one thread)".to_string(),
+        })
     }
 }
 

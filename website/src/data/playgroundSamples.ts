@@ -1,5 +1,5 @@
 // Playground samples. The two ERN messages validate against the ERN 4.3 XSD, and the
-// build request builds with ddex-builder 0.5.0 into XML that validates against the same XSD.
+// build request builds with ddex-builder 0.5.1 into XML that validates against the same XSD.
 // Party IDs are DPID-format placeholders; ISRCs, ICPNs and the GRid are made up.
 
 export const PARSE_SAMPLES: Record<string, string> = {
@@ -202,7 +202,7 @@ export const PARSE_SAMPLES: Record<string, string> = {
 </ern:NewReleaseMessage>`,
 };
 
-/** A complete ddex-builder 0.5.0 BuildRequest for ERN 4.3 (snake_case field names). */
+/** A complete ddex-builder 0.5.1 BuildRequest for ERN 4.3 (snake_case field names). */
 export const BUILD_SAMPLES: Record<string, string> = {
   'ERN 4.3 single build request': `{
   "version": "4.3",

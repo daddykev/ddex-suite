@@ -236,7 +236,7 @@ pub struct ConversionMetadata {
     pub warning_count: usize,
     /// Number of errors encountered
     pub error_count: usize,
-    /// Estimated fidelity percentage
+    /// Estimated fidelity percentage: not measured in 0.5.x (0.0)
     pub fidelity_percentage: f64,
 }
 
@@ -301,11 +301,13 @@ pub struct ConversionPath {
     pub to: DdexVersion,
     /// Conversion difficulty
     pub difficulty: ConversionDifficulty,
-    /// Expected fidelity
+    /// Expected fidelity: not measured in 0.5.x, always 0.0 (before 0.5.1 it held
+    /// unmeasured estimates between 0.70 and 0.95)
     pub fidelity: f64,
     /// Major changes involved
     pub major_changes: Vec<String>,
-    /// Recommended for production use
+    /// Recommended for production use: false for every path in 0.5.x (the conversions are
+    /// not validated against the target XSDs)
     pub production_ready: bool,
 }
 
@@ -510,6 +512,17 @@ impl VersionManager {
             }
         }
 
+        // No evidence at all (no ERN namespace, schema version or version-specific element):
+        // an error, not ERN 4.3 with confidence 0 (before 0.5.1).
+        if version_scores.values().all(|score| *score == 0.0) {
+            return Err(BuildError::InvalidFormat {
+                field: "xml".to_string(),
+                message: "no ERN version found (no ERN namespace, MessageSchemaVersionId or \
+                          version-specific element)"
+                    .to_string(),
+            });
+        }
+
         // Determine best match
         let (detected_version, confidence) = version_scores
             .into_iter()
@@ -583,54 +596,54 @@ impl VersionManager {
                 from: DdexVersion::Ern382,
                 to: DdexVersion::Ern42,
                 difficulty: ConversionDifficulty::Moderate,
-                fidelity: 0.85,
+                fidelity: 0.0,
                 major_changes: vec![
                     "Namespace migration".to_string(),
                     "Element structure updates".to_string(),
                     "New optional elements".to_string(),
                 ],
-                production_ready: true,
+                production_ready: false,
             },
             ConversionPath {
                 from: DdexVersion::Ern42,
                 to: DdexVersion::Ern43,
                 difficulty: ConversionDifficulty::Trivial,
-                fidelity: 0.95,
+                fidelity: 0.0,
                 major_changes: vec![
                     "Minor element additions".to_string(),
                     "Enhanced validation rules".to_string(),
                 ],
-                production_ready: true,
+                production_ready: false,
             },
             ConversionPath {
                 from: DdexVersion::Ern382,
                 to: DdexVersion::Ern43,
                 difficulty: ConversionDifficulty::Complex,
-                fidelity: 0.80,
+                fidelity: 0.0,
                 major_changes: vec![
                     "Major namespace changes".to_string(),
                     "Significant structural updates".to_string(),
                     "New required elements".to_string(),
                 ],
-                production_ready: true,
+                production_ready: false,
             },
             // Downgrade paths
             ConversionPath {
                 from: DdexVersion::Ern43,
                 to: DdexVersion::Ern42,
                 difficulty: ConversionDifficulty::Moderate,
-                fidelity: 0.90,
+                fidelity: 0.0,
                 major_changes: vec![
                     "Remove newer elements".to_string(),
                     "Downgrade validation rules".to_string(),
                 ],
-                production_ready: true,
+                production_ready: false,
             },
             ConversionPath {
                 from: DdexVersion::Ern42,
                 to: DdexVersion::Ern382,
                 difficulty: ConversionDifficulty::Challenging,
-                fidelity: 0.75,
+                fidelity: 0.0,
                 major_changes: vec![
                     "Legacy namespace mapping".to_string(),
                     "Remove modern elements".to_string(),
@@ -642,7 +655,7 @@ impl VersionManager {
                 from: DdexVersion::Ern43,
                 to: DdexVersion::Ern382,
                 difficulty: ConversionDifficulty::Challenging,
-                fidelity: 0.70,
+                fidelity: 0.0,
                 major_changes: vec![
                     "Major structural downgrade".to_string(),
                     "Significant feature removal".to_string(),
@@ -751,9 +764,13 @@ impl VersionManager {
         ]
     }
 
+    /// The ERN namespace declared in `xml_content`, with or without a prefix
+    /// (`xmlns:ern="http://ddex.net/xml/ern/43"`). Before 0.5.1 only an unprefixed `xmlns`
+    /// was read, so DDEX messages (which use `xmlns:ern`) gave no namespace evidence.
     fn extract_namespace(&self, xml_content: &str) -> Option<String> {
-        // Simple regex to extract namespace from XML
-        let re = regex::Regex::new(r#"xmlns="([^"]+)""#).ok()?;
+        let re =
+            regex::Regex::new(r#"xmlns(?::[A-Za-z_][\w.-]*)?="(http://ddex\.net/xml/ern/[^"]+)""#)
+                .ok()?;
         re.captures(xml_content)?
             .get(1)
             .map(|m| m.as_str().to_string())

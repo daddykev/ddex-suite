@@ -667,13 +667,7 @@ let results = parallel_builder.build_batch(requests)?;
 
 ### Performance Benchmarks
 
-| Operation | Size | Performance | Memory |
-|-----------|------|-------------|---------|
-| Parse 10KB | 10KB | <5ms | 2MB |
-| Parse 100KB | 100KB | <10ms | 5MB |
-| Parse 1MB | 1MB | <50ms | 15MB |
-| Build release | ~50KB | <15ms | 8MB |
-| Batch (100 releases) | 5MB | <200ms | 50MB |
+Measured parse and build times, and the machine they were measured on, are in [dev-docs/PERFORMANCE.md](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md).
 
 ## Troubleshooting
 

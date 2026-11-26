@@ -13,7 +13,7 @@ pub use ddex_core::models::versions::ERNVersion;
 
 use parser::security::SecurityConfig;
 use serde::{Deserialize, Serialize};
-use streaming::{StreamingConfig, WorkingStreamIterator};
+use streaming::WorkingStreamIterator;
 
 #[cfg(feature = "zero-copy")]
 use streaming::fast_zero_copy::FastZeroCopyIterator;
@@ -148,155 +148,22 @@ impl DDEXParser {
         Ok(ParallelStreamingIterator::new(reader, version))
     }
 
-    /// Parse with the experimental fast streaming path (`FastStreamingParser`), used when
-    /// `SecurityConfig::relaxed()` / `enable_fast_streaming` is set. Known bug: it returns no
-    /// releases or resources (KNOWN_ISSUES.md); use [`DDEXParser::parse`].
+    /// Not implemented in 0.5.x: returns an error. `parse` and `parse_with_options` call it
+    /// when `SecurityConfig::enable_fast_streaming` is set (as `SecurityConfig::relaxed()`
+    /// does), so with that setting they fail too. Before 0.5.1 it returned a message with no
+    /// releases or resources and an invented header ("FAST_STREAMING_MESSAGE", version 4.3,
+    /// the current time). Use the default `SecurityConfig` (or set `enable_fast_streaming`
+    /// to false).
     pub fn parse_fast_streaming<R: std::io::BufRead>(
         &mut self,
-        mut reader: R,
+        _reader: R,
     ) -> Result<ddex_core::models::flat::ParsedERNMessage, error::ParseError> {
-        use crate::streaming::fast_streaming_parser::{FastElementType, FastStreamingParser};
-
-        // Create streaming config from security config
-        let streaming_config = StreamingConfig {
-            security: self.config.clone(),
-            buffer_size: 64 * 1024,        // 64KB buffer
-            max_memory: 200 * 1024 * 1024, // 200MB memory limit
-            chunk_size: 512,               // 512KB chunks
-            enable_progress: false,        // Disable for max speed
-            progress_interval: 0,
-        };
-
-        // Create and use the ACTUAL fast parser
-        let mut fast_parser = FastStreamingParser::new(streaming_config);
-
-        // Parse using the fast streaming method
-        let iterator = fast_parser.parse_streaming(&mut reader, None)?;
-
-        // Count elements from the fast iterator
-        let mut release_count = 0;
-        let mut _resource_count = 0;
-
-        for (_total_elements, element) in iterator.enumerate() {
-            match element.element_type {
-                FastElementType::Release => {
-                    release_count += 1;
-                }
-                FastElementType::Resource => {
-                    _resource_count += 1;
-                }
-                _ => {} // Handle other types as needed
-            }
-        }
-
-        // Create a minimal ParsedERNMessage with the parsed data
-        use ddex_core::models::common::{Identifier, IdentifierType, LocalizedString};
-        use ddex_core::models::flat::{
-            FlattenedMessage, MessageStats, Organization, ParsedERNMessage,
-        };
-        use ddex_core::models::graph::{
-            ERNMessage, MessageControlType, MessageHeader, MessageRecipient, MessageSender,
-            MessageType,
-        };
-        use ddex_core::models::versions::ERNVersion;
-        use indexmap::IndexMap;
-
-        // Create minimal flattened message
-        let flat_message = FlattenedMessage {
-            message_id: "FAST_STREAMING_MESSAGE".to_string(),
-            message_type: "NewReleaseMessage".to_string(),
-            message_date: chrono::Utc::now(),
-            sender: Organization {
-                name: Some("Fast Streaming Parser".to_string()),
-                id: "FAST_PARSER".to_string(),
-                extensions: None,
-            },
-            recipient: Organization {
-                name: Some("Streaming Service Recipient".to_string()),
-                id: "STREAMING_SERVICE_RECIPIENT".to_string(),
-                extensions: None,
-            },
-            releases: Vec::new(), // TODO: Convert FastStreamingElements to ParsedReleases
-            resources: IndexMap::new(), // TODO: Convert FastStreamingElements to ParsedResources
-            deals: Vec::new(),
-            parties: IndexMap::new(),
-            version: "4.3".to_string(),
-            profile: None,
-            stats: MessageStats {
-                release_count,
-                track_count: 0,
-                deal_count: 0,
-                total_duration: 0,
-            },
-            extensions: None,
-            message_control_type: None,
-        };
-
-        // Create minimal graph message (placeholder)
-        let graph_message = ERNMessage {
-            message_header: MessageHeader {
-                message_id: "FAST_STREAMING_MESSAGE".to_string(),
-                message_type: MessageType::NewReleaseMessage,
-                message_created_date_time: chrono::Utc::now(),
-                message_sender: MessageSender {
-                    party_id: vec![Identifier {
-                        id_type: IdentifierType::Proprietary,
-                        value: "FAST_PARSER".to_string(),
-                        namespace: Some("PADPIDA".to_string()),
-                    }],
-                    party_name: vec![LocalizedString {
-                        text: "Fast Streaming Parser".to_string(),
-                        language_code: Some("en".to_string()),
-                        script: None,
-                    }],
-                    trading_name: None,
-                    attributes: None,
-                    extensions: None,
-                    comments: None,
-                },
-                message_recipient: MessageRecipient {
-                    party_id: vec![Identifier {
-                        id_type: IdentifierType::Proprietary,
-                        value: "STREAMING_SERVICE_RECIPIENT".to_string(),
-                        namespace: Some("PADPIDA".to_string()),
-                    }],
-                    party_name: vec![LocalizedString {
-                        text: "Streaming Service Recipient".to_string(),
-                        language_code: Some("en".to_string()),
-                        script: None,
-                    }],
-                    trading_name: None,
-                    attributes: None,
-                    extensions: None,
-                    comments: None,
-                },
-                message_control_type: Some(MessageControlType::LiveMessage),
-                message_thread_id: None,
-                attributes: None,
-                extensions: None,
-                comments: None,
-            },
-            parties: Vec::new(),
-            resources: Vec::new(),
-            releases: Vec::new(),
-            deals: Vec::new(),
-            version: ERNVersion::V4_3,
-            profile: None,
-            message_audit_trail: None,
-            attributes: None,
-            extensions: None,
-            legacy_extensions: None,
-            comments: None,
-            track_releases: Vec::new(),
-        };
-
-        let message = ParsedERNMessage {
-            graph: graph_message,
-            flat: flat_message,
-            extensions: None,
-        };
-
-        Ok(message)
+        Err(error::ParseError::InvalidValue {
+            field: "SecurityConfig::enable_fast_streaming".to_string(),
+            value: "true (the fast streaming parse is not implemented in 0.5.x; set it to \
+                    false, the default)"
+                .to_string(),
+        })
     }
 
     /// Detect DDEX version from XML

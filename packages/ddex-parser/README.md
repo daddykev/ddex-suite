@@ -14,7 +14,7 @@ parser: `npm install ddex-parser`, `pip install ddex-parser`.
 
 ```toml
 [dependencies]
-ddex-parser = "0.5.0"
+ddex-parser = "0.5.1"
 ```
 
 ## Example
@@ -89,14 +89,15 @@ against the DDEX XSD or the AVS business rules.
 
 `parse` reads the whole document. The streaming APIs (`ParseMode::Stream`, the
 `stream*` iterators, `FastStreamingParser`) are experimental and opt-in: they read a
-subset of the fields, and the fast path behind `SecurityConfig::relaxed()` returns no
-releases. The parallel iterator does not currently scale with the thread count.
+subset of the fields, and the fast path behind `SecurityConfig::relaxed()` is not
+implemented (`parse` returns an error with that setting). The parallel iterator does not currently scale with the thread count.
 
 ## Performance
 
-Criterion benches on an Apple M1 Pro, release profile: a typical ERN 4.3 album message
-(75 KB) parses in 3.4 ms, the official ERN 4.3 samples (10–330 KB) in 0.5–14 ms, and a
-~10 MB catalog in 441 ms, about 20–24 MiB/s whatever the size
+Criterion benches on a GitHub-hosted runner (Intel Xeon, 4 vCPUs), release profile, 0.5.1:
+a typical ERN 4.3 album message (75 KB) parses in 1.7 ms, the official ERN 4.3 samples
+(10–330 KB) in 0.27–7.4 ms, and a ~10 MB catalog in 211 ms, about 33–47 MiB/s whatever
+the size
 ([details](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md)).
 
 ## Links

@@ -459,27 +459,17 @@ impl DeterminismVerifier {
         self
     }
 
-    /// Verify that output is deterministic by building multiple times
+    /// Verify that output is deterministic by building `iterations` times (at least 2;
+    /// fewer is an error; before 0.5.1 it reported "deterministic" without building)
     pub fn verify(
         &self,
         request: &super::builder::BuildRequest,
         iterations: usize,
     ) -> Result<DeterminismResult, super::error::BuildError> {
         if iterations < 2 {
-            return Ok(DeterminismResult {
-                is_deterministic: true,
-                iterations: 1,
-                outputs: vec![],
-                hashes: vec![],
-                differences: vec![],
-                runtime_stats: DeterminismStats {
-                    total_time_ms: 0,
-                    avg_build_time_ms: 0,
-                    min_build_time_ms: 0,
-                    max_build_time_ms: 0,
-                    overhead_percentage: 0.0,
-                },
-            });
+            return Err(super::error::BuildError::Validation(format!(
+                "determinism verification needs at least 2 iterations, got {iterations}"
+            )));
         }
 
         let start_time = std::time::Instant::now();
@@ -573,25 +563,14 @@ impl DeterminismVerifier {
         Ok(result.is_deterministic)
     }
 
-    /// Verify with different HashMap iteration orders (stress test)
+    /// The same as [`DeterminismVerifier::verify`]: no HashMap stress is applied (a
+    /// process cannot change another map's iteration order; each `HashMap` is seeded on its
+    /// own). Before 0.5.1 it built throwaway maps and claimed a stress test.
     pub fn verify_with_hashmap_stress(
         &self,
         request: &super::builder::BuildRequest,
         iterations: usize,
     ) -> Result<DeterminismResult, super::error::BuildError> {
-        use std::collections::HashMap;
-
-        // Force different HashMap iteration orders by inserting dummy data
-        // in different orders to trigger different hash states
-        for i in 0..iterations {
-            let mut dummy_map = HashMap::new();
-            for j in 0..(i % 10 + 1) {
-                dummy_map.insert(format!("key_{}", j), format!("value_{}", j));
-            }
-            // Access map to potentially affect global hash state
-            let _: Vec<_> = dummy_map.iter().collect();
-        }
-
         self.verify(request, iterations)
     }
 
@@ -626,10 +605,23 @@ impl DeterminismVerifier {
             handle.join().unwrap();
         }
 
-        let _thread_results = results.lock().unwrap();
-        // Convert thread results to normal verification format
-        // This is a simplified version - in practice you'd need to adapt this
-        self.verify(request, iterations)
+        // Sequential builds, then the threads' builds compared with them: any difference
+        // makes the result non-deterministic (before 0.5.1 the threads' results were dropped).
+        let mut result = self.verify(request, iterations.max(2))?;
+        let thread_results = std::mem::take(&mut *results.lock().unwrap());
+        for thread_result in thread_results {
+            let xml = thread_result?.xml;
+            let hash = self.calculate_sha256(&xml);
+            if result.hashes.first() != Some(&hash) {
+                result.is_deterministic = false;
+            }
+            result.hashes.push(hash);
+            if self.include_outputs {
+                result.outputs.push(xml);
+            }
+            result.iterations += 1;
+        }
+        Ok(result)
     }
 
     fn calculate_sha256(&self, data: &str) -> String {

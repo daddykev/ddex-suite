@@ -13,6 +13,7 @@ mod ern4_build_inputs;
 mod ern4_tracks;
 mod error_contract;
 mod fast_streaming;
+mod honest_results;
 mod large_file;
 mod malformed_xml;
 mod parse_options;

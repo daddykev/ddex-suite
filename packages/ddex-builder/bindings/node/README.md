@@ -128,9 +128,13 @@ new DdexBuilder()
 
 ## Scope
 
-- Use `build(request)`. The preset methods (`applyPreset`, `getAvailablePresets`, ...) do
-  not change its output in 0.5.0, `StreamingDdexBuilder` only writes the old 3.8-style
-  tree, and `validateStructure` reports invalid XML as valid; see the known issues.
+- Use `build(request)`. The preset methods (`applyPreset`, `getAvailablePresets`, ...)
+  list the builder's presets, which do not change its output in 0.5.x, and
+  `StreamingDdexBuilder` only writes the old 3.8-style tree; see the known issues.
+- `testRoundTripFidelity(xml)` parses, builds and parses again, and lists in `issues` the
+  differences on the fields a build request carries (round trips are not lossless:
+  contributors, P/C lines, images and other data are not rebuilt). `fidelityScore` is
+  always null: no score is computed.
 - Text is XML-escaped on output. `build` checks the fields the target version requires;
   it does not validate the output against the XSD or the AVS business rules at runtime.
 

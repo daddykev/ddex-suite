@@ -141,7 +141,12 @@ print(len(xml), "bytes")
 ## Scope
 
 - Use `build(request)` or `from_dataframe(...)`. The preset methods (`apply_preset`, ...)
-  do not change the output in 0.5.0; see the known issues.
+  list the builder's presets, which do not change the output in 0.5.x; see the known
+  issues.
+- `test_round_trip_fidelity(xml)` parses, builds and parses again, and lists in `issues`
+  the differences on the fields a build request carries (round trips are not lossless:
+  contributors, P/C lines, images and other data are not rebuilt). `fidelity_score` is
+  always `None`: no score is computed.
 - Text is XML-escaped on output. `build` checks the fields the target version requires;
   it does not validate the output against the XSD or the AVS business rules at runtime.
 

@@ -89,10 +89,8 @@ function batchBuild(requests: BuildRequest[]): Promise<BuildResult[]>;
 
 ### Performance
 
-- Initialization: ~5ms
-- Small release (1 track): ~8ms
-- Medium album (10 tracks): ~25ms
-- Large catalog (100 releases): ~800ms
+The WASM build has not been benchmarked. Measured numbers for the native builder are in
+[dev-docs/PERFORMANCE.md](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md).
 
 ### Memory Usage
 

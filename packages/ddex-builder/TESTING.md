@@ -218,27 +218,11 @@ let config = StressTestConfig {
 };
 ```
 
-## Performance Targets
+## Performance
 
-The test suite validates these performance targets:
-
-### Fidelity Testing
-- Parse time: <5ms for 10KB, <50ms for 1MB files
-- Build time: <15ms for typical releases
-- Round-trip fidelity: 100% for valid inputs
-- Semantic equivalence: ≥90% for round-trip operations
-
-### Determinism Testing  
-- Deterministic output: 100% identical across builds
-- Build variance: <1ms standard deviation
-- Memory consistency: <5% variance across iterations
-
-### Stress Testing
-- Large files: 100MB processed in <5 minutes
-- Many tracks: 10K tracks processed in <30 seconds  
-- Memory usage: <1GB for typical workloads
-- Concurrent success: ≥95% under load
-- Sustained throughput: ≥100 operations/minute
+The test suite asserts no performance targets. The only timing checks are sanity limits
+(about 10× the recorded numbers) behind the `perf-tests` feature, in release mode; the
+recorded numbers come from the criterion benches and are in [dev-docs/PERFORMANCE.md](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md).
 
 ## Monitoring and Reporting
 

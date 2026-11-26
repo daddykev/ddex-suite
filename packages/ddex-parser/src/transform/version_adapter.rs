@@ -18,69 +18,29 @@ impl VersionAdapter {
         }
     }
 
-    /// Transform version-specific MessageHeader to common model
+    /// Not implemented in 0.5.x: returns an error (before 0.5.1 it ignored the XML and
+    /// returned a header with the message ID "PLACEHOLDER" and the current time). The
+    /// parser reads headers with `DDEXParser::parse`.
     pub fn adapt_message_header(
         &self,
         _xml_data: &[u8],
     ) -> Result<ddex_core::models::graph::MessageHeader, ParseError> {
-        // Placeholder implementation
-        use ddex_core::models::graph::{
-            MessageHeader, MessageRecipient, MessageSender, MessageType,
-        };
-
-        Ok(MessageHeader {
-            message_id: "PLACEHOLDER".to_string(),
-            message_type: MessageType::NewReleaseMessage,
-            message_created_date_time: chrono::Utc::now(),
-            message_sender: MessageSender {
-                party_id: Vec::new(),
-                party_name: Vec::new(),
-                trading_name: None,
-                extensions: None,
-                attributes: None,
-                comments: None,
-            },
-            message_recipient: MessageRecipient {
-                party_id: Vec::new(),
-                party_name: Vec::new(),
-                trading_name: None,
-                extensions: None,
-                attributes: None,
-                comments: None,
-            },
-            message_control_type: None,
-            message_thread_id: None,
-            extensions: None,
-            attributes: None,
-            comments: None,
-        })
+        Err(not_implemented("VersionAdapter::adapt_message_header"))
     }
 
-    /// Adapt DealTerms based on version
+    /// Not implemented in 0.5.x: returns an error (before 0.5.1 it ignored the XML and
+    /// returned empty deal terms). The parser reads deals with `DDEXParser::parse`.
     pub fn adapt_deal_terms(
         &self,
         _xml_data: &[u8],
     ) -> Result<ddex_core::models::graph::DealTerms, ParseError> {
-        // Placeholder implementation
-        use ddex_core::models::graph::DealTerms;
+        Err(not_implemented("VersionAdapter::adapt_deal_terms"))
+    }
+}
 
-        Ok(DealTerms {
-            validity_period: None,
-            start_date: None,
-            end_date: None,
-            territory_code: Vec::new(),
-            excluded_territory_code: Vec::new(),
-            distribution_channel: Vec::new(),
-            excluded_distribution_channel: Vec::new(),
-            commercial_model_type: Vec::new(),
-            use_type: Vec::new(),
-            price_information: Vec::new(),
-            wholesale_price: Vec::new(),
-            suggested_retail_price: Vec::new(),
-            pre_order_date: None,
-            pre_order_preview_date: None,
-            instant_gratification_date: None,
-            takedown_date: None,
-        })
+fn not_implemented(api: &str) -> ParseError {
+    ParseError::InvalidValue {
+        field: api.to_string(),
+        value: "not implemented in 0.5.x (use DDEXParser::parse)".to_string(),
     }
 }

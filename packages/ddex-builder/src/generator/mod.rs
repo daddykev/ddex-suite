@@ -84,13 +84,13 @@
 //!
 //! ## Performance Characteristics
 //!
-//! Criterion benches of `DDEXBuilder::build` for ERN 4.3 on an Apple M1 Pro, release
-//! profile (`dev-docs/PERFORMANCE.md`):
+//! Criterion benches of `DDEXBuilder::build` for ERN 4.3, 0.5.1, on a GitHub-hosted runner
+//! (Intel Xeon 6975P-C, 4 vCPUs), release profile (`dev-docs/PERFORMANCE.md`):
 //!
-//! - **1 track**: 2.7 ms
-//! - **12 tracks**: 11.4 ms
-//! - **50 tracks**: 41.7 ms
-//! - **100 tracks**: 80 ms (about 0.8 ms per track plus 2 ms per message)
+//! - **1 track**: 1.7 ms
+//! - **12 tracks**: 8.3 ms
+//! - **50 tracks**: 29.6 ms
+//! - **100 tracks**: 58 ms (about 0.56 ms per track plus 1–1.5 ms per message)
 //!
 //! Memory use has not been measured.
 //!

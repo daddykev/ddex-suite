@@ -139,28 +139,20 @@ impl BuildVerifier {
         })
     }
 
-    /// Verify round-trip capability: XML → Parse → Build → Compare
+    /// Not implemented in 0.5.x (the builder has no parser), so `verify` reports
+    /// `round_trip_success: false` with this error as an issue. Before 0.5.1 it reported
+    /// success without checking anything. `ddex_builder::round_trip::verify_round_trip`
+    /// runs a real round trip with the parser's parse function.
     fn verify_round_trip(
         &self,
         _xml_output: &str,
         _fidelity_options: &FidelityOptions,
     ) -> Result<RoundTripVerificationResult, BuildError> {
-        // This would integrate with the ddex-parser to test round-trip
-        // For now, we'll simulate the verification
-        let issues = Vec::new();
-
-        // TODO: Integrate with ddex-parser when available
-        // let parser = ddex_parser::DDEXParser::new();
-        // let parsed = parser.parse(xml_output)?;
-        // let rebuilt_xml = self.build(parsed)?;
-        // let canonical_original = canonicalize(xml_output)?;
-        // let canonical_rebuilt = canonicalize(rebuilt_xml)?;
-        // let success = canonical_original == canonical_rebuilt;
-
-        Ok(RoundTripVerificationResult {
-            success: true, // Placeholder
-            issues,
-        })
+        Err(crate::round_trip::not_implemented(
+            "BuildVerifier round-trip verification",
+            "the builder has no parser; use ddex_builder::round_trip::verify_round_trip with \
+             ddex_parser's parse",
+        ))
     }
 
     /// Verify canonicalization consistency
@@ -174,16 +166,24 @@ impl BuildVerifier {
 
         match &fidelity_options.canonicalization {
             CanonicalizationAlgorithm::None => {
-                // No canonicalization - just verify XML is well-formed
-                if let Err(e) = quick_xml::Reader::from_str(xml_output).read_event() {
-                    success = false;
-                    issues.push(VerificationIssue {
-                        severity: VerificationSeverity::Error,
-                        category: "xml-wellformed".to_string(),
-                        message: format!("XML is not well-formed: {}", e),
-                        path: None,
-                        suggestion: Some("Check XML syntax".to_string()),
-                    });
+                // No canonicalization: check that the whole document is well-formed
+                let mut reader = quick_xml::Reader::from_str(xml_output);
+                loop {
+                    match reader.read_event() {
+                        Ok(quick_xml::events::Event::Eof) => break,
+                        Ok(_) => {}
+                        Err(e) => {
+                            success = false;
+                            issues.push(VerificationIssue {
+                                severity: VerificationSeverity::Error,
+                                category: "xml-wellformed".to_string(),
+                                message: format!("XML is not well-formed: {}", e),
+                                path: None,
+                                suggestion: Some("Check XML syntax".to_string()),
+                            });
+                            break;
+                        }
+                    }
                 }
             }
             CanonicalizationAlgorithm::C14N
@@ -234,14 +234,13 @@ impl BuildVerifier {
                 }
             }
             CanonicalizationAlgorithm::Custom(_rules) => {
-                // Verify custom canonicalization rules
-                // TODO: Implement custom canonicalization verification
+                success = false;
                 issues.push(VerificationIssue {
-                    severity: VerificationSeverity::Info,
+                    severity: VerificationSeverity::Error,
                     category: "canonicalization".to_string(),
-                    message: "Custom canonicalization verification not yet implemented".to_string(),
+                    message: "custom canonicalization is not implemented in 0.5.x".to_string(),
                     path: None,
-                    suggestion: None,
+                    suggestion: Some("Use CanonicalizationAlgorithm::DbC14N".to_string()),
                 });
             }
         }
@@ -275,9 +274,21 @@ impl BuildVerifier {
             }
         }
 
-        // TODO: Add actual DDEX schema validation
-        // This would require integrating with a schema validation library
-        // and loading the appropriate DDEX schemas
+        // XSD validation is not run (CI validates the builder's output against the official
+        // XSDs; there is no validator at runtime), so a well-formed document is not reported
+        // as schema-valid.
+        if success {
+            success = false;
+            issues.push(VerificationIssue {
+                severity: VerificationSeverity::Error,
+                category: "schema".to_string(),
+                message: "XSD validation is not implemented in 0.5.x; only well-formedness was \
+                          checked (it passed)"
+                    .to_string(),
+                path: None,
+                suggestion: Some("Validate against the DDEX XSDs externally".to_string()),
+            });
+        }
 
         Ok(SchemaVerificationResult { success, issues })
     }
@@ -366,31 +377,15 @@ impl BuildVerifier {
         }
     }
 
-    /// Canonicalize XML using the specified algorithm
+    /// Canonicalize XML using the specified algorithm: DB-C14N/1.0 (`DbC14N`) or nothing
+    /// (`None`); the other algorithms are not implemented in 0.5.x (before 0.5.1 they
+    /// returned the input unchanged).
     fn canonicalize_xml(
         &self,
         xml: &str,
         algorithm: &CanonicalizationAlgorithm,
     ) -> Result<String, BuildError> {
-        match algorithm {
-            CanonicalizationAlgorithm::None => Ok(xml.to_string()),
-            CanonicalizationAlgorithm::C14N => {
-                // TODO: Implement C14N canonicalization
-                Ok(xml.to_string()) // Placeholder
-            }
-            CanonicalizationAlgorithm::C14N11 => {
-                // TODO: Implement C14N11 canonicalization
-                Ok(xml.to_string()) // Placeholder
-            }
-            CanonicalizationAlgorithm::DbC14N => {
-                // TODO: Implement DB-C14N canonicalization
-                Ok(xml.to_string()) // Placeholder
-            }
-            CanonicalizationAlgorithm::Custom(_rules) => {
-                // TODO: Implement custom canonicalization
-                Ok(xml.to_string()) // Placeholder
-            }
-        }
+        crate::canonicalize_with(xml, algorithm)
     }
 }
 

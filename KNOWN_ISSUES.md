@@ -12,7 +12,7 @@ Classification and history: `dev-docs/TEST_TRIAGE.md`.
 
 | Bug | Test(s) |
 |---|---|
-| `parse_fast_streaming` (used when `SecurityConfig::relaxed()` / `enable_fast_streaming` is set) returns no releases or resources; the conversion is a TODO in `lib.rs` | `it::fast_streaming::test_fast_streaming_connection_basic`, `…_explicitly` |
+| `parse_fast_streaming` (used by `parse` when `SecurityConfig::relaxed()` / `enable_fast_streaming` is set) is not implemented: since 0.5.1 it returns an error (before, an empty message with an invented header) | `it::fast_streaming::test_fast_streaming_connection_basic`, `…_explicitly` |
 | `StreamingParser::stream_releases` skips the message root element (only `stream_deals` descends into it), so it yields nothing for a full document | `it::utf8_handling::streaming_parser_handles_utf8` |
 | quick-xml's own end-tag/attribute checks fire first and come back as a generic `XmlError`, pre-empting the typed `MismatchedTags` / `UnexpectedClosingTag` / `InvalidAttribute` variants from `parser::xml_validator` | `it::malformed_xml::test_mismatched_opening_closing_tags`, `test_unexpected_closing_tag`, `test_duplicate_attributes`, `test_complex_malformed_structure` |
 | `]]>` in character data is accepted (not well-formed XML) and the surrounding text is mangled | `it::malformed_xml::test_cdata_terminator_in_text_is_rejected` |
@@ -70,8 +70,10 @@ reason, until the upgrade lands.
 ## Not pinned by a test (seen during the cleanup)
 
 - ddex-parser `ParseMode::Stream` (experimental, opt-in since 0.5.0; `parse()` never selects
-  it): `parser/stream.rs` reads a subset of the fields (no territory details, dates, P/C
-  lines, genres, labels, track layout, ...) and still trims text.
+  it): `parser/stream.rs` reads a subset of the fields (no resources or parties, no
+  territory details, dates, P/C lines, genres, labels, track layout, ...) and still trims
+  text. `StreamingParser::stream_resources` / `stream_parties` are not implemented: each
+  yields one "not implemented in 0.5.x" error (before 0.5.1, nothing).
 - ddex-parser ERN 3.8.x release display artists: each `DisplayArtist/PartyName/FullName`
   becomes an artist with the role `MainArtist` regardless of its `ArtistRole` (kept as
   before 0.5.0 so no existing value changed; 3.8.x track artists use the real role).
@@ -124,6 +126,58 @@ reason, until the upgrade lands.
 - ddex-builder WASM binding: `DdexDiffViewer` compares the two documents as single text nodes (it wraps each document in one text node instead of parsing it, like `DDEXBuilder::diff_xml`), so any difference is one change.
 - ddex-parser `FastStreamingParser::new(StreamingConfig)` ignores the config: buffer size, `max_memory` and the `SecurityConfig` limits are not applied on the fast path (`SecurityConfig::relaxed()` / `enable_fast_streaming`).
 - ddex-builder `DDEXBuilder::diff_xml` / `diff_xml_with_config` / `diff_request_with_xml` are stubs: `parse_xml_to_ast` wraps the whole document in one text node, so any difference is reported as a single `/#text` modification. The `DiffEngine` itself works on real ASTs.
-- ddex-builder CLI: `build` writes a placeholder document (`build_ddex_xml` returns `<xml><!-- DDEX XML would be generated here --></xml>`), and `--validate` never fails (`validate_input_data` returns `Ok(())`). Presets and the target version set on `ddex_builder::Builder` do not affect `DDEXBuilder::build` output. (The no-op `batch` subcommand was removed for the same reason.)
-- The Node builder binding's `validateStructure` reports `isValid: true` for invalid XML (`npm test` prints it without failing).
+- ddex-builder CLI: `diff`, `validate`, `watch` and `server` are not implemented and exit
+  with an error (before 0.5.1 they printed "Files are identical", passed every file,
+  simulated watching and printed endpoints without a server). `build` runs
+  `DDEXBuilder::build` since 0.5.1. Presets do not affect the output. (The no-op `batch`
+  subcommand was removed in 0.5.0.)
+- Presets (`Builder::apply_preset`, Node / Python `applyPreset` / `apply_preset`) do not
+  change the build output; the binding preset methods list and describe the builder's
+  presets (before 0.5.1 they returned a hard-coded list of partner presets the builder does
+  not have).
 - ERN prefixed local elements (`<ern:PartyId>`, not schema-valid) are handled inconsistently: some are found, `MessageSender/PartyId` is not.
+
+## Not implemented in 0.5.x
+
+These APIs returned made-up results before 0.5.1 (success, scores, counts, invented values).
+They now fail, or report the value as not measured, instead:
+
+- ddex-builder round trip and fidelity (`round_trip`, `verification`, `lib.rs`):
+  - `RoundTripTester::test_round_trip` and `Builder::test_round_trip_fidelity` return an
+    error (the builder has no parser); `test_round_trip_with` / `test_round_trip_fidelity_with`
+    and `round_trip::verify_round_trip` take the parser's parse function and run a real
+    round trip. Node `testRoundTripFidelity` and Python `test_round_trip_fidelity` run it.
+    Round trips compare only the fields a build request carries (not lossless: contributors,
+    P and C lines, images, ... are not rebuilt), and `fidelity_score` / `fidelityScore` is
+    always null.
+  - `RoundTripTester::analyze_fidelity` returns an error.
+  - `BuildVerifier::verify` (used by `Builder::verify_build` and `build_with_fidelity`)
+    reports round-trip verification and XSD validation as not done (`false`, with the
+    reason as an issue).
+  - C14N, C14N 1.1 and custom canonicalization (`Builder::canonicalize`,
+    `build_with_fidelity`, the bindings' `canonicalization` option) return an error; only
+    DB-C14N/1.0 is implemented.
+  - The other fidelity options (comments, extensions, attribute order, ...) are not applied.
+    `BuildStatistics` canonicalization / validation time, peak memory and input size are not
+    measured (0 in Rust, null in Node / Python, as are memory, extension count and
+    canonicalization time in the bindings).
+- ddex-builder `UpdateGenerator::apply_update` / `DDEXBuilder::apply_update` return an error
+  (the operations were no-ops and the result an almost empty document).
+- ddex-builder determinism: `guarantees::validate_no_hashmap_usage` and
+  `validate_deterministic_sorting` return an error; the `DeterministicCollections` and
+  `StableSorting` guarantees report `passed: false` (not verified; ddex-builder still uses
+  HashMap); the runtime guarantees check only that repeated builds are byte-identical.
+  `DeterminismVerifier::verify` needs at least 2 iterations; `verify_with_hashmap_stress`
+  applies no stress (it is `verify`).
+- ddex-builder versions: `ConversionPath::fidelity` (and `fidelity_percentage`) are not
+  measured (0.0) and no path is `production_ready`.
+- ddex-parser: `transform::version_adapter::VersionAdapter` methods return an error;
+  `ParallelBenchmark::measure_parallel_speedup` returns an error (the parallel parser runs
+  on one thread); `MultiReleaseParser`'s `message_header` is always `None`.
+- Python parser binding: the native `DDEXParser.from_dataframe` raises
+  `NotImplementedError` (use `ddex_builder.DDEXBuilder().from_dataframe`).
+- WASM parser binding: `parse_stream` rejects with an error (it panicked).
+- ddex-core `AttributeValidator::add_custom_validator` does not store the closure: only
+  the built-in validators `ddex_territory_code`, `ddex_language_code` and
+  `ddex_currency_code` can be registered, and a custom rule naming any other validator
+  fails validation as unknown.

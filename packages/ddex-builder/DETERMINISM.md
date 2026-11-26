@@ -255,15 +255,8 @@ LC_ALL=de_DE.UTF-8 cargo test determinism_tests::test_locale_independence
 
 ### Performance Impact
 
-Determinism verification adds minimal overhead:
-
-| Operation | Single Build | 3-iter Verify | 10-iter Verify |
-|-----------|--------------|---------------|-----------------|
-| Small (5 tracks) | ~2ms | ~6ms | ~20ms |
-| Medium (50 tracks) | ~8ms | ~24ms | ~80ms |
-| Large (200 tracks) | ~25ms | ~75ms | ~250ms |
-
-Overhead is typically 200-300% of single build time, making it suitable for CI/CD pipelines.
+Verifying with N iterations builds the request N times, so it costs about N single builds.
+Measured single-build times (bench `determinism`, group `single_build`) are in [dev-docs/PERFORMANCE.md](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md).
 
 ## Debugging Non-Determinism
 

@@ -1,7 +1,7 @@
 ---
 sidebar_position: 12
 title: Known issues and roadmap
-description: The open issues that matter most when using 0.5.0, and what is planned for 0.6.0.
+description: The open issues that matter most when using 0.5.1, and what is planned for 0.6.0.
 ---
 
 # Known issues and roadmap
@@ -17,9 +17,9 @@ summarizes the ones you are most likely to meet. Report new ones on
   supported API. `ParseMode::Stream` and the `stream*` iterators read a subset of the fields
   (no territory details, dates, P and C lines, genres, labels or track layout) and still trim
   text. `StreamingParser::stream_releases` yields nothing for a full document.
-- **`SecurityConfig::relaxed()` returns no releases.** It switches to the fast streaming
-  path, whose conversion to the model is not written yet, and that path ignores its memory
-  and security settings.
+- **`SecurityConfig::relaxed()` makes `parse` fail.** It switches to the fast streaming
+  path, which is not implemented: since 0.5.1 it returns an error (before, a message with
+  no releases).
 - **The parallel streaming iterator does not scale** with the thread count.
 - **Deals**: with several `ValidityPeriod`s in one deal the last dates win;
   `StartDateTime` / `EndDateTime` are not read; the flat deal has no commercial model type.
@@ -41,7 +41,7 @@ summarizes the ones you are most likely to meet. Report new ones on
   current Unix time. Update messages always carry the current time, and the streaming
   writer generates a random message ID and the current time when they are missing.
 - **Presets do not change the output.** The preset APIs (`applyPreset`, `apply_preset`,
-  partner presets) have no effect on `build` in 0.5.0.
+  partner presets) have no effect on `build` in 0.5.x.
 - **ERN 3.8.x targets**: video resources are rejected, and a release identified only by an
   ISRC cannot be built. An empty `MessageId` is reported as missing for 3.8.2.
 - **Empty titles**: the request cannot express a present but empty title; `""` means "not

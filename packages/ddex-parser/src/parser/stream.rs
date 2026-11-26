@@ -610,9 +610,23 @@ impl<'a, R: BufRead> ResourceIterator<'a, R> {
 impl<'a, R: BufRead> Iterator for ResourceIterator<'a, R> {
     type Item = Result<Resource, ParseError>;
 
+    /// Not implemented in 0.5.x: yields one error, then ends (before 0.5.1 it yielded
+    /// nothing, as if the message had no resources).
     fn next(&mut self) -> Option<Self::Item> {
-        // Similar implementation to ReleaseIterator
-        None // Placeholder
+        if self._done {
+            return None;
+        }
+        self._done = true;
+        Some(Err(stream_not_implemented(
+            "StreamingParser::stream_resources",
+        )))
+    }
+}
+
+fn stream_not_implemented(api: &str) -> ParseError {
+    ParseError::InvalidValue {
+        field: api.to_string(),
+        value: "not implemented in 0.5.x (use DDEXParser::parse)".to_string(),
     }
 }
 
@@ -633,8 +647,16 @@ impl<'a, R: BufRead> PartyIterator<'a, R> {
 impl<'a, R: BufRead> Iterator for PartyIterator<'a, R> {
     type Item = Result<Party, ParseError>;
 
+    /// Not implemented in 0.5.x: yields one error, then ends (before 0.5.1 it yielded
+    /// nothing, as if the message had no parties).
     fn next(&mut self) -> Option<Self::Item> {
-        None // Placeholder
+        if self._done {
+            return None;
+        }
+        self._done = true;
+        Some(Err(stream_not_implemented(
+            "StreamingParser::stream_parties",
+        )))
     }
 }
 
@@ -748,8 +770,8 @@ pub fn parse_streaming<R: BufRead>(
 
     // Collect releases in chunks to limit memory
     let mut releases = Vec::new();
-    let mut resources = Vec::new();
-    let mut parties = Vec::new();
+    let resources = Vec::new();
+    let parties = Vec::new();
     let mut deals = Vec::new();
 
     // Stream releases
@@ -758,17 +780,8 @@ pub fn parse_streaming<R: BufRead>(
         releases.push(release);
     }
 
-    // Stream resources
-    for resource_result in parser.stream_resources() {
-        let resource = resource_result?;
-        resources.push(resource);
-    }
-
-    // Stream parties
-    for party_result in parser.stream_parties() {
-        let party = party_result?;
-        parties.push(party);
-    }
+    // Resources and parties are not streamed in 0.5.x (stream_resources / stream_parties
+    // are not implemented): this experimental path returns none of them.
 
     // Stream deals
     for deal_result in parser.stream_deals() {

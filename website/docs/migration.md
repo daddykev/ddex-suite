@@ -18,7 +18,7 @@ the full list of changes is in the
   them yourself.
 - **Large inputs return the complete model.** `parse` used to switch to a streaming path
   above 10 MB, which returned fewer fields. It now always uses the complete parser; large
-  inputs take about as long per MB as small ones (about 20–24 MiB/s).
+  inputs take about as long per MB as small ones (see [Performance](./performance.md)).
 - **New fields.** Release dates, P and C lines, genres, parental warnings, labels,
   `MessageControlType`, deal end dates, the track layout and ERN 3.8.2 territory details are
   read in ERN 3.8.2, 4.2 and 4.3 ([parse output reference](./parse-output.mdx)). Absent values

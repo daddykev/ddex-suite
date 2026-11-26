@@ -152,6 +152,14 @@ impl Default for SecurityConfig {
 }
 
 /// Secure XML reader with XXE protection
+///
+/// It returns quick-xml events with depth, element-count, size and timeout limits applied,
+/// and does not decode them. In particular, entity and character references (`&amp;`,
+/// `&#233;`, `&foo;`) reach the caller undecoded and unchecked, as `Event::GeneralRef`
+/// events: this reader does not reject a reference to an undefined entity (unlike the
+/// builder's DB-C14N canonicalizer and the parser, which fail on one). Callers must handle
+/// them, for example by resolving the predefined entities and character references and
+/// treating any other name as an error (`ddex_core::xml_refs::is_defined`).
 pub struct SecureXmlReader<R: BufRead> {
     reader: Reader<R>,
     config: SecurityConfig,

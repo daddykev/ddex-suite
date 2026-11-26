@@ -242,19 +242,19 @@ pub enum VerificationSeverity {
 pub struct BuildStatistics {
     /// Total build time
     pub build_time: Duration,
-    /// Time spent on canonicalization
+    /// Time spent on canonicalization (not measured in 0.5.x: 0)
     pub canonicalization_time: Duration,
-    /// Time spent on validation
+    /// Time spent on validation (not measured in 0.5.x: 0)
     pub validation_time: Duration,
     /// Time spent on verification
     pub verification_time: Duration,
-    /// Peak memory usage during build
+    /// Peak memory usage during build (not measured in 0.5.x: 0)
     pub peak_memory_bytes: usize,
     /// Number of elements processed
     pub element_count: usize,
     /// Number of attributes processed
     pub attribute_count: usize,
-    /// Size of input data
+    /// Size of input data (not measured in 0.5.x: 0)
     pub input_size_bytes: usize,
     /// Size of output data
     pub output_size_bytes: usize,
@@ -735,11 +735,23 @@ impl Builder {
         presets::all_presets()
     }
 
-    /// Build DDEX XML with the fidelity options and optional verification
+    /// Build DDEX XML (DB-C14N/1.0 canonical output, as `DDEXBuilder::build`) with optional
+    /// statistics and verification. The other fidelity options are not applied in 0.5.x;
+    /// a canonicalization algorithm other than `DbC14N` or `None` is an error (it is not
+    /// implemented). The statistics count the output's elements, attributes, namespace
+    /// declarations, comments and processing instructions; the times other than
+    /// `build_time` / `verification_time`, `peak_memory_bytes` and `input_size_bytes` are
+    /// not measured and stay 0.
     pub fn build_with_fidelity(
         &self,
         request: &builder::BuildRequest,
     ) -> Result<FidelityBuildResult, error::BuildError> {
+        if !matches!(
+            self.fidelity_options.canonicalization,
+            CanonicalizationAlgorithm::DbC14N | CanonicalizationAlgorithm::None
+        ) {
+            canonicalize_with("", &self.fidelity_options.canonicalization)?;
+        }
         let start_time = std::time::Instant::now();
         let mut statistics = BuildStatistics::default();
 
@@ -752,6 +764,7 @@ impl Builder {
 
         statistics.build_time = start_time.elapsed();
         statistics.output_size_bytes = build_result.xml.len();
+        count_xml(&build_result.xml, &mut statistics);
 
         // Perform verification if enabled
         let verification_result = if self.fidelity_options.enable_verification {
@@ -772,6 +785,7 @@ impl Builder {
             };
             let verifier = verification::BuildVerifier::new(verification_config);
             let result = verifier.verify(&build_result.xml, &self.fidelity_options)?;
+            statistics.verification_time = result.verification_time;
 
             // Convert verification::VerificationResult to VerificationResult
             Some(VerificationResult {
@@ -813,15 +827,9 @@ impl Builder {
                 None
             },
             verification_result,
-            canonicalization_applied: self.fidelity_options.canonicalization
-                != CanonicalizationAlgorithm::None,
-            db_c14n_version: if self.fidelity_options.canonicalization
-                == CanonicalizationAlgorithm::DbC14N
-            {
-                Some(DB_C14N_VERSION.to_string())
-            } else {
-                None
-            },
+            // `DDEXBuilder::build` always writes DB-C14N/1.0 canonical output.
+            canonicalization_applied: true,
+            db_c14n_version: Some(DB_C14N_VERSION.to_string()),
         })
     }
 
@@ -872,47 +880,50 @@ impl Builder {
         })
     }
 
-    /// Test round-trip fidelity: XML → Parse → Build → Parse → Compare
+    /// Not implemented in 0.5.x (the builder has no parser): returns an error. Use
+    /// [`Builder::test_round_trip_fidelity_with`] with the parser's parse function. Before
+    /// 0.5.1 this reported success without building anything.
     pub fn test_round_trip_fidelity(
         &self,
         original_xml: &str,
     ) -> Result<RoundTripResult, error::BuildError> {
         let round_trip = round_trip::RoundTripTester::new(self.fidelity_options.clone());
         let result = round_trip.test_round_trip(original_xml)?;
+        Ok(Self::round_trip_result(result))
+    }
 
-        // Convert round_trip::RoundTripResult to RoundTripResult
-        Ok(RoundTripResult {
+    /// Round trip XML → Parse → Build → Parse → compare, with `parse` the parser's parse
+    /// function ([`round_trip::verify_round_trip`]).
+    pub fn test_round_trip_fidelity_with<F>(
+        &self,
+        original_xml: &str,
+        parse: F,
+    ) -> Result<RoundTripResult, error::BuildError>
+    where
+        F: Fn(&str) -> Result<ddex_core::models::flat::ParsedERNMessage, String>,
+    {
+        let round_trip = round_trip::RoundTripTester::new(self.fidelity_options.clone());
+        let result = round_trip.test_round_trip_with(original_xml, parse)?;
+        Ok(Self::round_trip_result(result))
+    }
+
+    fn round_trip_result(result: round_trip::RoundTripResult) -> RoundTripResult {
+        RoundTripResult {
             success: result.success,
             original_xml: result.original_xml,
             rebuilt_xml: result.rebuilt_xml,
             byte_identical: result.byte_identical,
             differences: result.differences,
             test_time: result.test_time,
-        })
+        }
     }
 
-    /// Canonicalize XML using the configured algorithm
+    /// Canonicalize XML using the configured algorithm: DB-C14N/1.0 (`DbC14N`, with
+    /// [`DB_C14N`]) or nothing (`None`). C14N, C14N 1.1 and custom rules are not
+    /// implemented in 0.5.x and return an error (before 0.5.1 every algorithm returned the
+    /// input unchanged).
     pub fn canonicalize(&self, xml_content: &str) -> Result<String, error::BuildError> {
-        match &self.fidelity_options.canonicalization {
-            CanonicalizationAlgorithm::None => Ok(xml_content.to_string()),
-            CanonicalizationAlgorithm::C14N => {
-                // TODO: Implement C14N canonicalization
-                Ok(xml_content.to_string())
-            }
-            CanonicalizationAlgorithm::C14N11 => {
-                // TODO: Implement C14N11 canonicalization
-                Ok(xml_content.to_string())
-            }
-            CanonicalizationAlgorithm::DbC14N => {
-                // TODO: Implement DB-C14N canonicalization using canonical module
-                Ok(xml_content.to_string())
-            }
-            CanonicalizationAlgorithm::Custom(rules) => {
-                // TODO: Implement custom canonicalization
-                let _ = rules; // Avoid unused parameter warning
-                Ok(xml_content.to_string())
-            }
-        }
+        canonicalize_with(xml_content, &self.fidelity_options.canonicalization)
     }
 
     /// Get DB-C14N/1.0 configuration details
@@ -1008,21 +1019,74 @@ pub enum NamespaceHandling {
 /// Version information for the builder
 pub fn version_info() -> String {
     format!(
-        "DDEX Builder v{} • DB-C14N/{} • Perfect Fidelity Engine • Rust {}",
+        "DDEX Builder v{} • DB-C14N/{} • Rust {}",
         env!("CARGO_PKG_VERSION"),
         DB_C14N_VERSION,
         env!("CARGO_PKG_RUST_VERSION", "unknown")
     )
 }
 
-/// Get a one-line description of the fidelity features (the string keeps its historical
-/// "Perfect Fidelity Engine" name)
+/// A one-line description of the fidelity features as they are in this version (before
+/// 0.5.1 it claimed round-trip and extension support).
 pub fn fidelity_engine_info() -> String {
     format!(
-        "Perfect Fidelity Engine v{} • Round-trip: ✓ • DB-C14N/{} • Extensions: ✓",
+        "Fidelity features v{} • DB-C14N/{} output • Round-trip: verify_round_trip compares \
+         the fields the build request carries (not lossless) • Extensions: not rebuilt",
         env!("CARGO_PKG_VERSION"),
         DB_C14N_VERSION
     )
+}
+
+/// Counts the elements, attributes (namespace declarations excluded), namespace
+/// declarations, comments and processing instructions of `xml` into `stats`.
+fn count_xml(xml: &str, stats: &mut BuildStatistics) {
+    use quick_xml::events::Event;
+    let mut reader = quick_xml::Reader::from_str(xml);
+    loop {
+        match reader.read_event() {
+            Ok(Event::Start(e)) | Ok(Event::Empty(e)) => {
+                stats.element_count += 1;
+                for attr in e.attributes().flatten() {
+                    let key = attr.key.as_ref();
+                    if key == b"xmlns" || key.starts_with(b"xmlns:") {
+                        stats.namespace_count += 1;
+                    } else {
+                        stats.attribute_count += 1;
+                    }
+                }
+            }
+            Ok(Event::Comment(_)) => stats.comment_count += 1,
+            Ok(Event::PI(_)) => stats.processing_instruction_count += 1,
+            Ok(Event::Eof) | Err(_) => break,
+            Ok(_) => {}
+        }
+    }
+}
+
+/// `xml` canonicalized with `algorithm`: DB-C14N/1.0 or nothing; the other algorithms are
+/// not implemented in 0.5.x.
+pub(crate) fn canonicalize_with(
+    xml: &str,
+    algorithm: &CanonicalizationAlgorithm,
+) -> Result<String, error::BuildError> {
+    match algorithm {
+        CanonicalizationAlgorithm::None => Ok(xml.to_string()),
+        CanonicalizationAlgorithm::DbC14N => {
+            DB_C14N::new(determinism::DeterminismConfig::default()).canonicalize(xml)
+        }
+        CanonicalizationAlgorithm::C14N => Err(round_trip::not_implemented(
+            "C14N canonicalization",
+            "only DB-C14N/1.0 (CanonicalizationAlgorithm::DbC14N) is implemented",
+        )),
+        CanonicalizationAlgorithm::C14N11 => Err(round_trip::not_implemented(
+            "C14N 1.1 canonicalization",
+            "only DB-C14N/1.0 (CanonicalizationAlgorithm::DbC14N) is implemented",
+        )),
+        CanonicalizationAlgorithm::Custom(_) => Err(round_trip::not_implemented(
+            "custom canonicalization",
+            "only DB-C14N/1.0 (CanonicalizationAlgorithm::DbC14N) is implemented",
+        )),
+    }
 }
 
 #[cfg(test)]

@@ -25,7 +25,7 @@ missing. Full determinism is planned for 0.6.0; see
 
 ```toml
 [dependencies]
-ddex-builder = "0.5.0"
+ddex-builder = "0.5.1"
 ```
 
 ## Example
@@ -116,14 +116,14 @@ need into a `BuildRequest`.
 - Text is XML-escaped on output. `build` checks the fields the target version requires;
   it does not validate the output against the XSD or the AVS business rules at runtime.
 - The preset APIs (`presets`, partner presets) do not change `DDEXBuilder::build` output
-  in 0.5.0, and the `ddex-builder` command-line tool writes a placeholder document; see
-  the known issues.
+  in 0.5.x. The `ddex-builder` command-line tool's `build` runs `DDEXBuilder::build`; its
+  `diff`, `validate`, `watch` and `server` are not implemented. See the known issues.
 
 ## Performance
 
-Criterion benches on an Apple M1 Pro, release profile: ERN 4.3 with 1 track builds in
-2.7 ms, 12 tracks in 11.4 ms and 100 tracks in 80 ms, about 0.8 ms per track plus 2 ms
-per message ([details](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md)).
+Criterion benches on a GitHub-hosted runner (Intel Xeon, 4 vCPUs), release profile,
+0.5.1: ERN 4.3 with 1 track builds in 1.7 ms, 12 tracks in 8.3 ms and 100 tracks in 58 ms,
+about 0.56 ms per track plus 1–1.5 ms per message ([details](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md)).
 
 ## Links
 

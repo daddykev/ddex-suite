@@ -1,5 +1,10 @@
 # Perfect Fidelity Engine Examples
 
+> **Not what 0.5.x does.** These examples predate the current API and are not built or run
+> in CI. Round trips are not lossless in 0.5.x (they compare the fields a build request
+> carries), the fidelity options other than DB-C14N output are not applied, and there is no
+> fidelity score. See `ddex_builder::round_trip::verify_round_trip` and KNOWN_ISSUES.md.
+
 This directory contains comprehensive examples demonstrating the Perfect Fidelity Engine capabilities of the DDEX Suite. These examples showcase how to achieve 100% round-trip fidelity with DDEX XML files while preserving all original features including comments, extensions, formatting, and metadata.
 
 ## 🎯 Overview
@@ -191,17 +196,9 @@ Each example provides detailed console output showing:
 - 💡 **Recommendations** for optimization
 - 🔍 **Analysis results** with fidelity scores
 
-## 📊 Performance Targets
+## 📊 Performance
 
-The Perfect Fidelity Engine is designed to meet these performance targets:
-
-| File Size | Parse Time | Build Time | Memory Usage | Throughput |
-|-----------|------------|------------|--------------|------------|
-| 0-10KB    | <5ms      | <10ms      | <10MB       | >2 MB/s    |
-| 10-100KB  | <20ms     | <50ms      | <50MB       | >5 MB/s    |
-| 100KB-1MB | <100ms    | <200ms     | <200MB      | >10 MB/s   |
-| 1-10MB    | <500ms    | <1s        | <500MB      | >20 MB/s   |
-| 10-100MB  | <5s       | <10s       | <1GB        | >20 MB/s   |
+Not benchmarked. Measured parse and build numbers are in [dev-docs/PERFORMANCE.md](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md).
 
 ## 🎛️ Configuration Options
 

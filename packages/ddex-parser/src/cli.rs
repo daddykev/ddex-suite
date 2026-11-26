@@ -668,7 +668,7 @@ fn handle_stats_command(cmd: StatsCommand) -> Result<()> {
             path: file_path.clone(),
             size_bytes: file_size,
             parse_time_ms: parse_duration.as_secs_f64() * 1000.0,
-            ddex_version: Some(ddex_core::models::versions::ERNVersion::V4_3), // TODO: Extract from result
+            ddex_version: Some(result.graph.version),
             element_count: count_elements_flat(&result.flat),
         });
     }
@@ -952,7 +952,7 @@ fn validate_xml_only(file_path: &Path) -> Result<ValidationResult> {
 fn validate_ddex_file(
     file_path: &Path,
     _level: ValidationLevel,
-    _ddex_version: Option<String>,
+    ddex_version: Option<String>,
 ) -> Result<ValidationResult> {
     use ddex_parser::DDEXParser;
 
@@ -960,16 +960,32 @@ fn validate_ddex_file(
     let parser = DDEXParser::new();
 
     match parser.sanity_check(std::io::Cursor::new(xml_content.as_bytes())) {
-        Ok(result) => Ok(ValidationResult {
-            errors: result.errors.clone(),
-            warnings: vec![],
-            info: if result.is_valid {
-                vec![format!("Valid DDEX {:?}", result.version)]
-            } else {
-                vec![]
-            },
-            passed: result.is_valid,
-        }),
+        Ok(mut result) => {
+            // --ddex-version: the detected version must match (before 0.5.1 it was ignored).
+            if let Some(expected) = ddex_version {
+                let found = result.version.as_str();
+                if expected
+                    .trim_start_matches("ERN")
+                    .trim_start_matches(['/', ' '])
+                    != found
+                {
+                    result.is_valid = false;
+                    result
+                        .errors
+                        .push(format!("Expected ERN {expected}, found ERN {found}"));
+                }
+            }
+            Ok(ValidationResult {
+                errors: result.errors.clone(),
+                warnings: vec![],
+                info: if result.is_valid {
+                    vec![format!("Valid DDEX {:?}", result.version)]
+                } else {
+                    vec![]
+                },
+                passed: result.is_valid,
+            })
+        }
         Err(e) => Ok(ValidationResult {
             errors: vec![format!("Validation error: {}", e)],
             warnings: vec![],

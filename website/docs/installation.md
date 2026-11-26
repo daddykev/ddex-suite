@@ -7,7 +7,7 @@ description: Install ddex-parser and ddex-builder for Rust, Node.js or Python, a
 # Installation
 
 Install the parser, the builder, or both. The two are independent packages and are released
-together at the same version (0.5.0).
+together at the same version (0.5.1).
 
 ## Rust
 
@@ -19,8 +19,8 @@ or in `Cargo.toml`:
 
 ```toml
 [dependencies]
-ddex-parser = "0.5.0"
-ddex-builder = "0.5.0"
+ddex-parser = "0.5.1"
+ddex-builder = "0.5.1"
 ```
 
 The minimum supported Rust version is **1.82** (checked in CI). `ddex-core`, the shared
