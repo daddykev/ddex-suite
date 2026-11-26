@@ -25,7 +25,13 @@ Classification and history: `dev-docs/TEST_TRIAGE.md`.
 | ERN 3.8.x targets: `ReleaseIdRequest` has no ISRC, so a 3.8.2 release (or track release) identified only by `ReleaseId/ISRC` cannot be rebuilt (the parser reads it since 0.5.0) | `it::ern38_round_trip` (expected failures: the 8 YouTube 3.8.2 audio samples `721620118165_*`, `USGCV1172318_*`) |
 | ERN 3.8.2 target: an empty `MessageId` (`<MessageId/>`, valid `xs:string`, parsed as `""`) is reported as missing, while the 4.x targets write it | `it::ern38_round_trip::official_4x_samples_rebuilt_as_ern382` (expected failures: Samples42/43 `8 DjMix.xml`) |
 | The request model cannot express a present but empty title: `TrackRequest.title` / release title `""` mean "not given" and the build fails with the required-field error (whitespace-only titles are written faithfully) | `it::whitespace_round_trip::empty_title_is_reported_missing_by_the_builder` |
-| The stable-hash MessageId includes `Utc::now()`'s date (`builder.rs`, `generate_stable_hash_ids`), so output changes daily and the golden snapshot goes stale | `it::golden_files::test_audio_album_golden` |
+| The stable-hash MessageId includes `Utc::now()`'s date (`builder.rs`, `generate_stable_hash_ids`), so output changes daily and the golden snapshot goes stale | `it::golden_files::test_audio_album_golden`, `it::determinism_0_6::stable_hash_message_id_is_not_time_derived`, `…::id_strategy_stable_hash_is_byte_identical` |
+| Not deterministic (0.6.0; rows D1–D3 of `dev-docs/DETERMINISM_AUDIT_0.6.0.md`): `IdStrategy::UUID` (the default) fills an omitted `MessageId` with `MSG_<uuid v4>` and omitted release/resource references with `R<uuid>` / `A<uuid>`; `IdStrategy::UUIDv7` falls back to the same v4 IDs | `it::determinism_0_6::default_options_generated_ids_are_byte_identical`, `…::id_strategy_uuid_is_byte_identical`, `…::id_strategy_uuidv7_is_byte_identical` |
+| Not deterministic (0.6.0; D4): `IdStrategy::Sequential` makes the `MessageId` `MSG_` plus the current Unix time | `it::determinism_0_6::id_strategy_sequential_is_byte_identical`, `…::sequential_message_id_is_not_time_derived` |
+| `IdStrategy::StableHash` references are `B3:<hex>` / `SHA256:<hex>`, which do not match the ERN reference pattern (`X[\d\-_a-zA-Z]+`), so a build that leaves a resource or release reference to it fails; its deal references (`DEAL_<model>_<territories>`) repeat for deals with the same terms (D6, D7) | `it::determinism_0_6::id_strategy_stable_hash_is_byte_identical` |
+| Not deterministic (0.6.0; D8): an omitted `MessageCreatedDateTime` is filled with the current time (`generator/ern4.rs`, `generator/ern38.rs`, `message_header`) instead of failing with an error that names the field | `it::determinism_0_6::omitted_message_created_date_time_is_an_error` |
+| Not deterministic (0.6.0; D10, D11): update messages (`create_update*`, `serialize_update`) always carry the current time (`MessageCreatedDateTime`, `UpdateCreatedDateTime`), and every operation's entity ID is `unknown_` plus random hex: `extract_entity_id` looks for `Id=` in the diff path, which `DiffPath` never writes | `it::determinism_0_6::update_message_is_byte_identical` |
+| Not deterministic (0.6.0; D12, D13): the streaming writer (`streaming::StreamingBuilder`) fills an omitted `MessageId` with a random UUID and an omitted `MessageCreatedDateTime` with the current time (`write_message_header`) | `it::determinism_0_6::streaming_writer_omitted_header_values_are_byte_identical` |
 | `PathValidator`: allows `settings.json`, empty paths, malformed paths, Unicode homographs and `malware.exe`; rejects valid relative paths, paths within the depth limit and valid paths under concurrency; mishandles a bare `\` | `it::security_fixes::*` (5), `it::security::path_validator_tests::*` (4) |
 | `InputValidator::validate_xml_content` is regex-only: accepts empty input, doesn't enforce `max_xml_depth`, accepts malformed CDATA and `]]>` in text, and ignores `allow_dtd` (with `false` it accepts an empty DTD or a mixed-case `<!Entity … System` declaration; with `true` it still rejects every internal entity declaration) | `it::security::integration_tests::test_security_edge_cases`, `test_memory_safety_under_attack`, `it::security::malicious_payload_tests::test_cdata_section_abuse`, `test_xml_injection_in_ddex_fields`, `it::security::xxe_prevention_tests::test_xxe_edge_cases`, `it::security::parameter_entity_tests::test_parameter_entity_evasions`, `it::security::entity_expansion_tests::test_reasonable_entities_allowed` |
 | `InputValidator::validate_string` / `validate_json_content` reject legitimate metadata text. A keyword blocklist (`select`, `update`, `delete`, `drop`, `union`, `insert`, `exec`, `script`, `javascript`, `onload`, `onerror`, …) flags SQL- and script-looking text, encoded or not, and Unicode lookalikes such as `＜script＞`; a title like "Delete Me" is rejected too. `validate_string` also rejects entity-like `&name;` text and path-like fragments (`/etc/`, `../`) | `it::security::malicious_payload_tests::test_sql_injection_in_metadata`, `test_script_injection_attempts`, `test_encoding_manipulation`, `test_legitimate_unicode_metadata_accepted`, `test_command_like_metadata_text_accepted`, `test_xml_injection_in_ddex_fields`, `it::security::builder_security_tests::test_build_time_xxe_prevention` |
@@ -90,26 +96,15 @@ reason, until the upgrade lands.
   `chunkSize`, the fidelity options, `collectStatistics`, `validationLevel`, ...).
   `ParsedMessage.statistics` (all zeros) and `fidelityInfo` (an echo of the options) were
   removed.
-- ddex-builder output is not deterministic (planned for 0.6.0). Values the request leaves
-  out are generated from randomness or the clock:
-  - `DDEXBuilder::build`, default `IdStrategy::UUID` (and `UUIDv7`, which falls back to
-    it): `MessageId` `MSG_<uuid v4>`, release references `R<uuid>`, resource references
-    `A<uuid>` (`builder.rs`, `generate_uuid_ids`).
-  - `IdStrategy::Sequential`: `MessageId` is `MSG_` plus the current Unix time
-    (`generate_sequential_ids`). `IdStrategy::StableHash`: the `MessageId` hash includes
-    today's date (`generate_stable_hash_ids`; the pinned golden-file entry above).
-  - `MessageCreatedDateTime` falls back to the current time (`generator/ern4.rs` and
-    `generator/ern38.rs`, `message_header`).
-  - Update messages (`create_update*`, `serialize_update`): `MessageCreatedDateTime` and
-    `UpdateCreatedDateTime` are always the current time (`messages/update_release.rs`,
-    `create_update_metadata`), and an entity ID that cannot be read from the diff path
-    becomes `unknown_` plus random hex (`extract_entity_id`).
-  - Streaming writer (`streaming::StreamingBuilder`): a missing `MessageId` becomes a random
-    UUID and a missing `MessageCreatedDateTime` the current time (`write_message_header`).
-
-  Giving `message_id`, `message_created_date_time`, `release_reference` and each track's
-  `resource_reference` makes `DDEXBuilder::build` output repeatable; update messages always
-  carry the current time.
+- ddex-builder output is not deterministic (planned for 0.6.0). The cases above (the
+  "Not deterministic" rows) are now pinned by `it::determinism_0_6`; the full inventory is
+  `dev-docs/DETERMINISM_AUDIT_0.6.0.md`. Giving `message_id`, `message_created_date_time`,
+  `release_reference` and each track's `resource_reference` makes `DDEXBuilder::build`
+  output repeatable; update messages always carry the current time. Not pinned by a test:
+  `DiffFormatter::generate_update_message` writes a random `MessageId` when none is given
+  and the changeset's creation time as `MessageCreatedDateTime` (D15, D16); the streaming
+  writer's references are SHA-256 of the caller's IDs cut to 8 hex digits, so a large
+  catalog can fail with a reference collision (D14).
 - Python parser binding: no `ParseOptions` field changes the result. `include_raw_extensions`
   and `include_comments` reach the Rust `ParseOptions`, which nothing reads;
   `validate_references` (Rust `resolve_references`) only controls `tracing` warnings for
