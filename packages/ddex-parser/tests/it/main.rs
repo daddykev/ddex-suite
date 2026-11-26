@@ -5,6 +5,7 @@
 
 mod common;
 
+mod attribute_flood;
 mod community_prs_regression;
 mod depth_limit;
 mod ern38_details;

@@ -21,7 +21,6 @@ napi-derive = "2.16"
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { version = "1.35", features = ["rt", "rt-multi-thread", "sync"] }
-chrono = { workspace = true }
 indexmap = "2.11"
 
 [build-dependencies]

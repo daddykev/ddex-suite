@@ -73,6 +73,14 @@ impl XmlValidator {
                     self.validate_text_content(text)?;
                 }
             }
+            Event::GeneralRef(ref reference) => {
+                // A reference in character data (its own event since quick-xml 0.38): the
+                // same check as when it was part of the text.
+                if self.extended_validation {
+                    let raw = format!("&{};", String::from_utf8_lossy(reference));
+                    utf8_utils::handle_escaped_text(raw.as_bytes(), self.current_position)?;
+                }
+            }
             Event::CData(ref cdata) => {
                 if self.extended_validation {
                     self.validate_cdata_content(cdata)?;

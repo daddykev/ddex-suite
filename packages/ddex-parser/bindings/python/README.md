@@ -59,8 +59,9 @@ print(tracks[["track_index", "track_title", "isrc", "duration", "disc_number", "
 - `ParseOptions` (`include_raw_extensions`, `include_comments`, `validate_references`,
   `streaming`, `timeout`) is accepted for forward compatibility; none of its fields
   currently changes the result.
-- `sanity_check(xml)` is a placeholder that reports any input as valid ERN 4.3; use
-  `parse` to check that a message can be read.
+- `sanity_check(xml)` detects the ERN version (`None` when there is no ERN namespace)
+  and checks that the XML is well-formed, listing each problem in `errors`. It is not XSD
+  validation, and `parse` can still fail on a document that passes.
 - The `ddex-parser` command prints a JSON summary (`ddex-parser parse release.xml`),
   the detected version (`version`), or whether the file parses (`check`; this is not XSD
   validation).

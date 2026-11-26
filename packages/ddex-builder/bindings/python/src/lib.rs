@@ -10,7 +10,7 @@ use pyo3::types::{PyAny, PyDict, PyList};
 use std::collections::HashMap;
 use std::io::Cursor;
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
 pub struct Release {
     #[pyo3(get, set)]
@@ -86,7 +86,7 @@ impl Release {
     }
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
 pub struct Resource {
     #[pyo3(get, set)]
@@ -156,7 +156,7 @@ impl Resource {
     }
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
 pub struct ValidationResult {
     #[pyo3(get, set)]
@@ -188,7 +188,7 @@ impl ValidationResult {
     }
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
 pub struct BuilderStats {
     #[pyo3(get, set)]
@@ -234,7 +234,7 @@ impl BuilderStats {
     }
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
 pub struct PresetInfo {
     #[pyo3(get, set)]
@@ -280,7 +280,7 @@ impl PresetInfo {
     }
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
 pub struct ValidationRulePy {
     #[pyo3(get, set)]
@@ -318,7 +318,7 @@ impl ValidationRulePy {
     }
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
 pub struct FidelityOptions {
     #[pyo3(get, set)]
@@ -397,7 +397,7 @@ impl FidelityOptions {
     }
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
 pub struct BuildStatistics {
     #[pyo3(get, set)]
@@ -455,7 +455,7 @@ impl BuildStatistics {
     }
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
 pub struct VerificationResult {
     #[pyo3(get, set)]
@@ -501,7 +501,7 @@ impl VerificationResult {
     }
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
 pub struct BuildResult {
     #[pyo3(get, set)]
@@ -959,7 +959,7 @@ impl DdexBuilder {
         // with the core builder; `request` supplies the header, version and the other
         // message-level values.
         let records = df.call_method1("to_dict", ("records",))?;
-        let records = records.downcast::<PyList>()?;
+        let records = records.cast::<PyList>()?;
         let releases = match detected_schema {
             "flat" => releases_from_rows(records, true)?,
             "releases" => releases_from_rows(records, false)?,
@@ -1479,7 +1479,7 @@ fn release_from_row(record: &Bound<'_, PyDict>, prefix: &str) -> PyResult<Releas
 fn releases_from_rows(records: &Bound<'_, PyList>, flat: bool) -> PyResult<Vec<ReleaseRequest>> {
     let mut releases = Vec::new();
     for item in records.iter() {
-        let record = item.downcast::<PyDict>()?;
+        let record = item.cast::<PyDict>()?;
         if flat && cell(record, "type")?.as_deref() != Some("release") {
             continue;
         }
@@ -1495,7 +1495,7 @@ fn releases_from_rows(records: &Bound<'_, PyList>, flat: bool) -> PyResult<Vec<R
 fn releases_from_track_rows(records: &Bound<'_, PyList>) -> PyResult<Vec<ReleaseRequest>> {
     let mut releases: Vec<ReleaseRequest> = Vec::new();
     for item in records.iter() {
-        let record = item.downcast::<PyDict>()?;
+        let record = item.cast::<PyDict>()?;
         let release_id = cell(record, "release_id")?
             .ok_or_else(|| PyValueError::new_err("column release_id is required"))?;
         let index = match releases.iter().position(|r| r.release_id == release_id) {
@@ -1537,7 +1537,9 @@ fn releases_from_track_rows(records: &Bound<'_, PyList>) -> PyResult<Vec<Release
     Ok(releases)
 }
 
-#[pymodule]
+// gil_used = true keeps the pyo3 0.24 behaviour (0.28 changed the default to declaring
+// free-threaded support, which these bindings have not been tested for).
+#[pymodule(gil_used = true)]
 fn _internal(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Release>()?;
     m.add_class::<Resource>()?;

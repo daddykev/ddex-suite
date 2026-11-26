@@ -192,7 +192,11 @@ impl ExtensionCaptureContext {
             return;
         }
 
-        let text = event.unescape().unwrap_or_default();
+        // `BytesText::unescape` (removed in quick-xml 0.38): invalid text becomes "", as before.
+        let text = std::str::from_utf8(event)
+            .ok()
+            .and_then(|raw| quick_xml::escape::unescape(raw).ok())
+            .unwrap_or_default();
         self.extension_buffer.push_str(&text);
 
         // If this is simple text content, store it in the fragment
@@ -312,8 +316,27 @@ impl ExtensionAwareParser {
 
         let mut buf = Vec::new();
 
+        let mut text_run = crate::xml_text::TextRun::default();
         loop {
-            match reader.read_event_into(&mut buf) {
+            let event = reader.read_event_into(&mut buf);
+            // One text value per run of Text / GeneralRef events (one Text event before
+            // quick-xml 0.38), handled before the event that ends the run, as before.
+            if let Ok(ref ev) = event {
+                if text_run.push(ev) {
+                    buf.clear();
+                    continue;
+                }
+            }
+            if let Some(raw) = text_run.take() {
+                if self.context.in_extension {
+                    self.context.process_extension_text(
+                        &quick_xml::events::BytesText::from_escaped(
+                            String::from_utf8_lossy(&raw).into_owned(),
+                        ),
+                    );
+                }
+            }
+            match event {
                 Ok(Event::Start(ref e)) => {
                     let element_name_bytes = e.name();
                     let element_name =
@@ -358,11 +381,6 @@ impl ExtensionAwareParser {
                         self.context.process_extension_end_tag(e);
                     } else {
                         self.context.exit_element();
-                    }
-                }
-                Ok(Event::Text(ref e)) => {
-                    if self.context.in_extension {
-                        self.context.process_extension_text(e);
                     }
                 }
                 Ok(Event::Comment(ref e)) => {

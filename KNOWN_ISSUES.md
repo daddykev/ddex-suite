@@ -60,15 +60,12 @@ reason, until the upgrade lands.
 
 | Advisory | Crate | Status |
 |---|---|---|
-| RUSTSEC-2026-0194 (vulnerability) | quick-xml 0.31, 0.36 | Quadratic run time for the duplicate-attribute check on a start tag with many attributes (`BytesStart::attributes()`, used by the parser on untrusted input). Needs quick-xml >= 0.41; `ParseError` / `BuildError` implement `From<quick_xml::Error>`, so the upgrade is its own PR. |
-| RUSTSEC-2026-0195 (vulnerability) | quick-xml 0.31, 0.36 | Unbounded namespace-declaration allocation in `NsReader`, which the workspace does not use. Same upgrade. |
-| RUSTSEC-2026-0176, RUSTSEC-2026-0177 (vulnerabilities) | pyo3 0.24 | Out-of-bounds read in `PyList`/`PyTuple` iterator `nth`/`nth_back`; missing `Sync` bound on `PyCFunction::new_closure`. The bindings call neither directly. Needs pyo3 >= 0.29 with numpy, pythonize and pyo3-async-runtimes; its own PR. |
 | RUSTSEC-2026-0543 (unmaintained) | chrono | Direct dependency of every crate; no replacement chosen. |
 | RUSTSEC-2026-0249 (unmaintained) | smartstring | ddex-builder; to be replaced. |
 | RUSTSEC-2025-0119 (unmaintained) | number_prefix | Via indicatif 0.17 (parser CLI); indicatif 0.18 drops it. |
 | RUSTSEC-2024-0436 (unmaintained) | paste | Via rmp / rmp-serde (parser CLI MessagePack output). |
 | RUSTSEC-2024-0449 (unmaintained) | unsafe-libyaml | Via serde_yaml (deprecated; CLI YAML support). |
-| RUSTSEC-2026-0441 (unmaintained) | pin-utils | Via futures-util (pyo3-async-runtimes, tokio-test). |
+| RUSTSEC-2026-0441 (unmaintained) | pin-utils | Via futures-util (pyo3-async-runtimes). |
 
 ## Not pinned by a test (seen during the cleanup)
 
@@ -111,10 +108,6 @@ reason, until the upgrade lands.
   Giving `message_id`, `message_created_date_time`, `release_reference` and each track's
   `resource_reference` makes `DDEXBuilder::build` output repeatable; update messages always
   carry the current time.
-- ddex-parser `DDEXParser::sanity_check` is a placeholder (`lib.rs`): it returns
-  `is_valid: true`, version 4.3 and no errors without reading its input. The Python
-  `sanity_check` and Node `sanityCheck` call it (Node first rejects empty input and input
-  that does not start with `<`). The Python CLI's `check` command does a full parse instead.
 - Python parser binding: no `ParseOptions` field changes the result. `include_raw_extensions`
   and `include_comments` reach the Rust `ParseOptions`, which nothing reads;
   `validate_references` (Rust `resolve_references`) only controls `tracing` warnings for

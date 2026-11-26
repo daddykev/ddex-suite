@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing here changes a public Rust, Node or Python API, feature flag or CLI.
+No Node or Python signature, feature flag or CLI changes (`sanity_check` now returns real
+results; see "Fixed"). One Rust API change comes with the quick-xml security update; see
+"Changed (Rust API)".
 
 ### Fixed
 - Python `ddex-parser` command: `parse` failed on every file (it read `message_id`,
@@ -16,29 +18,81 @@ Nothing here changes a public Rust, Node or Python API, feature flag or CLI.
   control type, release count and the first three releases. `check` did no checking (it
   used the placeholder `sanity_check`); it now does a full parse. Errors go to stderr with
   exit code 1. An end-to-end test runs the installed command on official samples in CI.
+- `sanity_check` (Rust), Python `sanity_check` and Node `sanityCheck` reported every input
+  as valid ERN 4.3. They now detect the version (the parser's version detection) and check
+  XML well-formedness (syntax and matching end tags, attributes, entity references, one
+  root element, no DTD), with a real error for each problem; not XSD validation. The
+  result shape is unchanged. With no ERN namespace, the Rust function returns an `Err`
+  (`version` cannot express an unknown version), Python returns `version: None` instead
+  of raising, and Node returns `version: "Unknown"` as it already did for empty input.
+  Tests in both languages run it on the official ERN 3.8.2, 4.2 and 4.3 samples and on
+  malformed and non-DDEX input.
+- Python: `DDEXParser.parse`, `parse_async` and `ddex_parser.parse` were annotated as
+  returning `ParseResult`; they return the native `ParsedERNMessage`, which the
+  annotations now name and the package now exports. `ParseResult` stays exported (unused,
+  kept for compatibility).
 
 ### Removed
 - Unused dependencies. ddex-parser: ahash, bytes, crossbeam-channel, csv, futures,
   parking_lot, tokio, toml, uuid. ddex-builder: futures, is-terminal, mime, smallstr,
   tokio (the dev-dependency stays), xmltree. The `async`, `tokio` and `futures` features
   remain as empty features, so existing feature lists keep working.
+- Unused dependencies of the (unpublished) binding crates: builder Node binding tokio,
+  uuid, chrono, indexmap; builder Python binding serde, pythonize, uuid, indexmap; parser
+  Node binding chrono; parser Python binding serde, serde_json, chrono; parser WASM
+  binding js-sys.
 
 ### Changed
+- `scripts/check_versions.py` no longer reads the deleted `website/static/wasm/package.json`
+  (it failed on 0.5.0), reports a missing file instead of crashing, and runs in CI.
 - CI runs `cargo-deny` (advisories, bans, licenses, sources). `deny.toml` uses the current
   cargo-deny format, and its license allow-list matches the dependency graph.
 
+### Changed (Rust API)
+- quick-xml 0.36 -> 0.41 (security fix below). Public items that name quick-xml types now
+  use the 0.41 types: `impl From<quick_xml::Error>` and `impl From<AttrError>` for
+  `ddex_parser::error::ParseError`; `impl From<quick_xml::Error>` for
+  `ddex_builder::BuildError`; `ddex_builder::streaming::StreamingError::XmlError`;
+  `ddex_builder::security::SecureXmlReader::{read_event, into_inner}`;
+  `ddex_parser::utf8_utils::handle_text_node`,
+  `parser::attribute_extractor::AttributeExtractor::extract_attributes`,
+  `parser::extension_capture::ExtensionCaptureContext::process_extension_*` and
+  `parser::xml_validator::XmlValidator::validate_event`. Only code that passes its own
+  quick-xml values to these, or converts quick-xml 0.36 errors with `?` into
+  `ParseError` / `BuildError`, is affected: it must use quick-xml 0.41. Parse and build
+  results are unchanged (references in text, now separate events in quick-xml, are joined
+  as before; attribute values are not normalized).
+
 ### Security
+- quick-xml 0.41.0 (from 0.36.2 in the crates and 0.31.0 in the Node and Python builder
+  bindings): fixes RUSTSEC-2026-0194, quadratic run time checking a start tag with many
+  attributes for duplicates, which the parser does on untrusted input, and
+  RUSTSEC-2026-0195 (unbounded namespace declarations in `NsReader`, which the workspace
+  does not use). A regression test parses an official sample with 50,000 extra root
+  attributes (distinct and duplicate).
+- pyo3 0.29.3 (from 0.24.2) in the Python bindings, with pythonize, numpy and
+  pyo3-async-runtimes 0.29: fixes RUSTSEC-2026-0176 (out-of-bounds read in `PyList` /
+  `PyTuple` iterator `nth`) and RUSTSEC-2026-0177 (missing `Sync` bound on
+  `PyCFunction::new_closure`). The Python API is unchanged: the modules keep requiring the
+  GIL (`gil_used = true`, the 0.24 behaviour) and the classes keep accepting instances as
+  arguments (`from_py_object`). Building the Python bindings from source now needs Rust
+  1.83; the published crates stay at 1.82.
 - Cargo.lock: semver-compatible updates for advisories bytes 1.11.1 (RUSTSEC-2026-0007),
   rand 0.8.6 / 0.9.3 (RUSTSEC-2026-0097), anyhow 1.0.103 (RUSTSEC-2026-0190),
   crossbeam-epoch 0.9.20 (RUSTSEC-2026-0204), tokio 1.51.6 (RUSTSEC-2026-0386),
   rustix 1.1.6 (RUSTSEC-2026-0486) and url 2.5.9 (RUSTSEC-2026-0592).
-- Still open (KNOWN_ISSUES.md): quick-xml RUSTSEC-2026-0194 / -0195 and pyo3
-  RUSTSEC-2026-0176 / -0177, which need dependency upgrades, and seven unmaintained crates.
+- Still open (KNOWN_ISSUES.md): six unmaintained crates with no maintained release to move
+  to.
 
 ### Documentation
+- SECURITY.md rewritten to describe what is in place (parser defenses, cargo-deny in CI,
+  release smoke tests) and what is not (SBOMs, provenance, signing, fuzzing in CI). It no
+  longer claims `cargo audit`, SBOM generation, compliance certifications or a 1.x line.
+- Deleted `docs/MIGRATION-GUIDE.md`, `docs/API_DOCUMENTATION.md` and
+  `docs/PERFORMANCE-TUNING-GUIDE.md`: they described APIs that do not exist (`FidelityLevel`,
+  parse options that now throw, `toBuildRequest`) and unmeasured performance figures. The
+  current material is on the documentation site and in `dev-docs/PERFORMANCE.md`.
 - Python `ParseOptions`: documented that none of its fields currently changes the result.
-  `sanity_check` / `sanityCheck` (Rust, Node, Python): documented as a placeholder that
-  reports any input as valid ERN 4.3.
 - KNOWN_ISSUES.md, the READMEs and the docs list every source of builder non-determinism
   (added: the sequential ID strategy's timestamp, update messages and the streaming
   writer). `IdStrategy::UUIDv7` is documented as falling back to v4.

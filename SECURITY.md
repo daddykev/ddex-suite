@@ -1,336 +1,62 @@
-# Security Policy
-
-## Reporting Security Vulnerabilities
-
-The security of DDEX Suite is a top priority. If you discover a security vulnerability, please follow our responsible disclosure process:
-
-### How to Report
-
-1. **DO NOT** create a public GitHub issue for security vulnerabilities
-2. Send a detailed report to: [security@ddex-suite.org](mailto:security@ddex-suite.org)
-3. Include the following information:
-   - Description of the vulnerability
-   - Steps to reproduce the issue
-   - Potential impact assessment
-   - Suggested fix (if available)
-   - Your contact information
-
-### Response Timeline
-
-- **Initial Response**: Within 24 hours
-- **Triage**: Within 72 hours
-- **Fix Development**: Target 7-14 days depending on severity
-- **Release**: Coordinated disclosure after fix is ready
-
-## Security Measures
-
-### Built-in Security Features
-
-DDEX Suite implements comprehensive security measures at multiple levels:
-
-#### Input Validation & Sanitization
-- **XXE (XML External Entity) Attack Prevention**: All XML parsing prevents external entity resolution
-- **XML Bomb Protection**: Limits on entity expansion and nesting depth
-- **Input Size Limits**: Configurable maximum input sizes to prevent DoS attacks
-- **String Validation**: SQL injection, path traversal, and dangerous pattern detection
-- **File Path Sanitization**: Prevents directory traversal attacks
-- **URL Validation**: Blocks access to private IPs and localhost
-
-#### Memory Safety
-- **Rust Memory Safety**: All core logic written in memory-safe Rust
-- **Bounds Checking**: Array and buffer access bounds are enforced
-- **Integer Overflow Protection**: Safe arithmetic operations
-- **Memory Leak Prevention**: Automatic memory management
-
-#### API Security
-- **Rate Limiting**: Configurable request rate limits per client
-- **FFI Boundary Validation**: All foreign function interface inputs validated
-- **Secure Error Messages**: Production builds hide internal error details
-- **WASM Security Headers**: CSP, XSS protection, and frame options for web builds
-
-#### Output Safety
-- **XML Escaping**: Automatic escaping of potentially dangerous characters
-- **Sensitive Data Detection**: Prevents passwords, keys, and tokens in output
-- **Log Sanitization**: Sensitive information redacted from logs
-- **Schema Validation**: Generated XML validated against DDEX schemas
-
-#### Cryptographic Security
-- **Secure ID Generation**: UUIDs and cryptographically secure random IDs
-- **Hash-based Determinism**: SHA-256 based deterministic ordering
-- **Constant-time Comparisons**: Prevents timing attacks in security-critical code
-
-#### Dependency Security
-- **Automated Vulnerability Scanning**: `cargo audit` and `cargo-deny` integration
-- **Minimal Dependencies**: Curated dependency tree to reduce attack surface
-- **Supply Chain Protection**: Software Bill of Materials (SBOM) generation
-- **License Compliance**: Automated license validation
-
-### Security Configuration
-
-```rust
-use ddex_builder::{SecurityConfig, ApiSecurityConfig};
-
-// Configure security settings
-let security_config = SecurityConfig {
-    max_xml_size: 10_000_000,        // 10MB limit
-    max_json_depth: 32,              // Prevent deep nesting attacks
-    rate_limiting_enabled: true,
-    max_requests_per_minute: 100,
-    validate_urls: true,
-    block_private_ips: true,
-    // ... other settings
-};
-
-// API-specific security
-let api_config = ApiSecurityConfig {
-    max_concurrent_requests: 10,
-    request_timeout_seconds: 30,
-    detailed_errors: false,          // Hide internals in production
-    enable_cors: false,              // Strict CORS policy
-    allowed_origins: vec!["https://trusted-domain.com".to_string()],
-};
-```
-
-### Secure Usage Guidelines
-
-#### 1. Input Validation
-Always validate inputs before processing:
-
-```rust
-use ddex_builder::{InputValidator, SecurityConfig};
-
-let validator = InputValidator::new(SecurityConfig::default());
-
-// Validate XML content
-validator.validate_xml_content(&xml_input)?;
-
-// Validate file paths
-validator.validate_path(&file_path)?;
-
-// Validate URLs
-validator.validate_url(&url_input)?;
-```
-
-#### 2. Rate Limiting
-Implement rate limiting for public APIs:
-
-```rust
-use ddex_builder::RateLimiter;
-
-let mut limiter = RateLimiter::new(security_config);
-limiter.check_rate_limit("client_identifier")?;
-```
-
-#### 3. Secure Output Handling
-Sanitize outputs in sensitive environments:
-
-```rust
-use ddex_builder::OutputSanitizer;
-
-let sanitizer = OutputSanitizer::new(security_config);
-let safe_output = sanitizer.sanitize_xml_output(&xml_output)?;
-```
-
-#### 4. Error Handling
-Use secure error responses in production:
-
-```rust
-use ddex_builder::ApiSecurityManager;
-
-let security_manager = ApiSecurityManager::new(security_config);
-let secure_error = security_manager.create_secure_error_response(&error, "req-123");
-```
-
-## Security Testing
-
-### Automated Security Testing
-
-The project includes comprehensive security testing:
-
-1. **Vulnerability Scanning**
-   ```bash
-   cargo audit
-   cargo deny check
-   ```
-
-2. **Fuzzing** (requires nightly Rust)
-   ```bash
-   cargo fuzz run fuzz_xml_parsing
-   cargo fuzz run fuzz_json_parsing
-   cargo fuzz run fuzz_builder_api
-   ```
-
-3. **Memory Safety Testing**
-   ```bash
-   cargo +nightly miri test
-   ```
-
-4. **Security Unit Tests**
-   ```bash
-   cargo test security
-   cargo test api_security
-   ```
-
-### Manual Security Testing
-
-Regular manual security testing should include:
-
-- [ ] XML External Entity (XXE) attack attempts
-- [ ] XML bomb and billion laughs attacks
-- [ ] Path traversal attempts
-- [ ] SQL injection in string inputs
-- [ ] Buffer overflow attempts in FFI boundaries
-- [ ] Rate limiting bypass attempts
-- [ ] CORS policy validation
-- [ ] Error message information disclosure
-
-## Development Security Best Practices
-
-### Secure Development Lifecycle
-
-1. **Design Phase**
-   - Threat modeling for new features
-   - Security requirements specification
-   - Risk assessment documentation
-
-2. **Implementation Phase**
-   - Secure coding guidelines compliance
-   - Input validation for all external inputs
-   - Output encoding and sanitization
-   - Error handling without information disclosure
-
-3. **Testing Phase**
-   - Security unit tests for all features
-   - Integration tests with malicious inputs
-   - Penetration testing for major releases
-
-4. **Deployment Phase**
-   - Security configuration validation
-   - Dependency vulnerability scanning
-   - Production security monitoring
-
-### Code Review Security Checklist
-
-- [ ] All external inputs validated
-- [ ] No hardcoded secrets or credentials
-- [ ] Proper error handling without information leakage
-- [ ] Memory-safe operations (no unsafe blocks without justification)
-- [ ] Rate limiting on resource-intensive operations
-- [ ] Logging doesn't expose sensitive data
-- [ ] Dependencies are up-to-date and vulnerability-free
-
-## Security Monitoring
-
-### Production Monitoring
-
-For production deployments, monitor:
-
-- Rate limiting violations
-- Input validation failures
-- Unusual error patterns
-- Resource consumption anomalies
-- Failed authentication attempts
-
-### Logging Security Events
-
-Security events are logged with appropriate detail levels:
-
-```rust
-// Security event logging example
-let log_msg = sanitizer.create_secure_log_message(
-    "XML_PARSE", 
-    false, 
-    Some("XXE attempt detected")
-);
-// Logs: [2024-01-01 12:00:00 UTC] XML_PARSE - FAILED: XXE attempt detected
-```
-
-## Vulnerability Management
-
-### Dependency Management
-
-1. **Regular Updates**: Dependencies updated monthly or upon security advisories
-2. **Vulnerability Scanning**: Automated scanning in CI/CD pipeline
-3. **Risk Assessment**: Critical vulnerabilities addressed within 72 hours
-4. **Documentation**: All dependency changes documented with security impact
-
-### Supported Versions
-
-We provide security updates for:
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.x.x   | ✅ Yes            |
-| 0.1.x   | ⚠️ Limited support |
-
-### Security Advisories
-
-Security advisories are published via:
-- GitHub Security Advisories
-- Project documentation updates
-- Mailing list notifications (security@ddex-suite.com)
-
-## Compliance & Standards
-
-### Standards Compliance
-
-- **OWASP Top 10**: Protection against all OWASP Top 10 vulnerabilities
-- **NIST Cybersecurity Framework**: Aligned with NIST guidelines
-- **DDEX Standards**: Full compliance with DDEX security requirements
-
-### Audit Trail
-
-All security-relevant operations maintain audit trails:
-- Input validation results
-- Rate limiting decisions
-- Security configuration changes
-- Error events and responses
-
-## Contact Information
-
-- **Security Team**: security@ddex-suite.com
-- **General Support**: support@ddex-suite.com
-- **Bug Reports**: https://github.com/daddykev/ddex-suite/issues
-
-## Acknowledgments
-
-We appreciate the security research community and acknowledge contributors who help improve our security posture through responsible disclosure.
-
----
-
-## Current Security Status
-
-### Latest Security Verification (September 2025)
-
-**Vulnerability Scan Results**: ✅ PASSED
-- `cargo audit`: 0 vulnerabilities found
-- Only 1 warning for unmaintained dependency (`paste` crate) - non-security issue
-
-**Security Test Results**: ✅ PASSED  
-- Core security tests: All passing
-- XXE prevention: Verified
-- Entity expansion protection: Verified
-- Input sanitization: Verified
-- Path validation: Verified
-
-**Security Infrastructure**: ✅ VERIFIED
-- `#![forbid(unsafe_code)]` in place for ddex-builder
-- Comprehensive security module with XXE, entity expansion, and malicious payload protection
-- Error sanitization implemented
-- Security configuration available
-
-**Python Bindings**: ⚠️ DEVELOPMENT ISSUES
-- PyO3 0.24.2 compatibility issues in test environment
-- Core security features are implemented in Rust layer
-- Production functionality not affected
-
-**Recommendations**:
-- Continue monthly dependency updates
-- Monitor PyO3 compatibility for Python bindings
-- All core security measures are operational and effective
-
----
-
-**Last Updated**: September 2025  
-**Version**: 1.1  
-**Review Cycle**: Quarterly
+# Security policy
+
+## Reporting a vulnerability
+
+Please do not open a public GitHub issue for a security problem. Email
+[security@ddex-suite.org](mailto:security@ddex-suite.org) with a description, steps to
+reproduce (a minimal XML message or build request helps most), the affected package and
+version, and the impact you see. Fixes are released as patch versions and described in
+[CHANGELOG.md](CHANGELOG.md).
+
+## Supported versions
+
+DDEX Suite is pre-1.0. Security fixes go into the latest release line, currently 0.5.x
+(crates `ddex-core`, `ddex-parser`, `ddex-builder`; npm and PyPI packages `ddex-parser`,
+`ddex-builder`). Older lines are not patched.
+
+## What the libraries defend against
+
+DDEX messages come from partners, so the parser treats its input as untrusted and defends
+against XML-level threats. With the default configuration (`SecurityConfig::strict()`;
+the Node.js and Python bindings always use it):
+
+- DTDs are rejected, and with them internal entity declarations and external entities
+  (XXE). Nothing is ever fetched from files or the network.
+- Entity expansion, element depth, attribute and text sizes and input size are limited.
+- quick-xml is 0.41 or newer, which fixes the quadratic duplicate-attribute check
+  (RUSTSEC-2026-0194); a regression test parses a start tag with 50,000 attributes.
+
+Metadata that looks like SQL, HTML or script is legitimate text: the parser returns it
+unchanged and the builder writes it XML-escaped. Escaping it for a database, web page or
+shell is up to the caller. Neither package validates against the DDEX XSD or the AVS rules
+at runtime.
+
+The details, with the exact limits, are in the
+[security model](https://ddex-suite.org/docs/security) page of the documentation.
+
+## Known security issues
+
+Some helper APIs of `ddex-builder` that `build` does not use have open bugs:
+`PathValidator`, `InputValidator`, `OutputSanitizer` and the secure log messages. Each is
+pinned by an ignored test and listed in [KNOWN_ISSUES.md](KNOWN_ISSUES.md), with the
+dependency advisories that are still open (unmaintained crates).
+
+## How the code and its dependencies are checked
+
+What runs today (`.github/workflows/ci.yml` and `release-build.yml`):
+
+- `Cargo.lock` is committed.
+- `cargo-deny` runs in CI on the whole workspace (including the Node, Python and WASM
+  binding crates): RustSec advisories (vulnerabilities, unmaintained and unsound crates),
+  banned crates, the license allow-list and allowed sources, with the policy in
+  [`deny.toml`](deny.toml). An advisory may be ignored only with a written reason and a
+  KNOWN_ISSUES.md entry.
+- The test suite includes XML attack tests (XXE, entity expansion, deep nesting, malformed
+  XML, the attribute flood above).
+- `ddex-builder` is `#![forbid(unsafe_code)]`.
+- Every wheel and npm package built for a release is installed on its platform and
+  smoke-tested with an official sample before the (manual) publish.
+
+Not in place yet: SBOMs, build provenance or signed artifacts, and fuzzing in CI (fuzz
+targets exist in `packages/ddex-builder/fuzz` and run only by hand with `cargo fuzz`).
+SBOMs and signed artifacts are on the roadmap before 1.0.

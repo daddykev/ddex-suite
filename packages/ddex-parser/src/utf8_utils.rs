@@ -29,9 +29,18 @@ pub fn decode_utf8_at_position(bytes: &[u8], position: usize) -> Result<String, 
 /// Handle text node from XML event
 #[allow(dead_code)]
 pub fn handle_text_node(event: &BytesText, position: usize) -> Result<String, ParseError> {
-    let unescaped = event.unescape().map_err(|e| {
-        ParseError::SimpleXmlError(format!("Unescape error at {}: {}", position, e))
-    })?;
+    handle_escaped_text(event, position)
+}
+
+/// Unescape escaped character data (UTF-8 bytes, references as written): the text of a
+/// `BytesText` event, or of a [`crate::xml_text::TextRun`].
+pub(crate) fn handle_escaped_text(raw: &[u8], position: usize) -> Result<String, ParseError> {
+    let unescaped = std::str::from_utf8(raw)
+        .map_err(|e| e.to_string())
+        .and_then(|text| quick_xml::escape::unescape(text).map_err(|e| e.to_string()))
+        .map_err(|e| {
+            ParseError::SimpleXmlError(format!("Unescape error at {}: {}", position, e))
+        })?;
 
     process_text_content(unescaped.as_bytes())
 }

@@ -347,16 +347,24 @@ impl<R: BufRead> StreamingParser<R> {
     /// Helper to read text content of current element
     fn read_text_element(&mut self) -> Result<String, ParseError> {
         let mut text = String::new();
+        let mut run = crate::xml_text::TextRun::default();
         self.buffer.clear();
 
         loop {
             let event = self.reader.read_event_into(&mut self.buffer);
-            match event {
-                Ok(Event::Text(e)) => {
-                    // Use proper UTF-8 handling from utf8_utils
-                    let current_pos = self.reader.buffer_position() as usize;
-                    text = utf8_utils::handle_text_node(&e, current_pos)?;
+            // A run of Text / GeneralRef events is one text value (one Text event before
+            // quick-xml 0.38); the last run before the end tag wins, as before.
+            if let Ok(ref ev) = event {
+                if run.push(ev) {
+                    self.buffer.clear();
+                    continue;
                 }
+            }
+            if let Some(raw) = run.take() {
+                let current_pos = self.reader.buffer_position() as usize;
+                text = utf8_utils::handle_escaped_text(&raw, current_pos)?;
+            }
+            match event {
                 Ok(Event::End(_)) => {
                     break;
                 }

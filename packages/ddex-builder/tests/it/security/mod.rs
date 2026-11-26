@@ -412,7 +412,21 @@ mod metadata_helpers {
                 }
                 Ok(Event::Text(t)) => {
                     if let Some(buf) = current.as_mut() {
-                        buf.push_str(&t.unescape().expect("valid escapes in builder output"));
+                        let raw = std::str::from_utf8(&t).expect("UTF-8 builder output");
+                        buf.push_str(
+                            &quick_xml::escape::unescape(raw)
+                                .expect("valid escapes in builder output"),
+                        );
+                    }
+                }
+                // Each reference (`&lt;`, `&amp;`, ...) is its own event since quick-xml 0.38.
+                Ok(Event::GeneralRef(r)) => {
+                    if let Some(buf) = current.as_mut() {
+                        let raw = format!("&{};", String::from_utf8_lossy(&r));
+                        buf.push_str(
+                            &quick_xml::escape::unescape(&raw)
+                                .expect("valid escapes in builder output"),
+                        );
                     }
                 }
                 Ok(Event::End(_)) => {

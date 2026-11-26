@@ -189,8 +189,31 @@ impl MultiReleaseParser {
         let mut in_release_list = false;
         let mut release_list_count = 0;
 
+        let mut text_run = crate::xml_text::TextRun::default();
         loop {
-            match xml_reader.read_event_into(&mut buf) {
+            let event = xml_reader.read_event_into(&mut buf);
+            // One text value per run of Text / GeneralRef events (one Text event before
+            // quick-xml 0.38), handled before the event that ends the run, as before.
+            if let Ok(ref ev) = event {
+                if text_run.push(ev) {
+                    buf.clear();
+                    continue;
+                }
+            }
+            if let Some(raw) = text_run.take() {
+                if let Some(ref mut context) = current_context {
+                    // Use utf8_utils for proper UTF-8 handling
+                    let current_pos = xml_reader.buffer_position() as usize;
+                    let text = crate::utf8_utils::handle_escaped_text(&raw, current_pos)?
+                        .trim()
+                        .to_string();
+
+                    if !text.is_empty() {
+                        self.process_release_text_content(context, &text)?;
+                    }
+                }
+            }
+            match event {
                 Ok(Event::Start(ref e)) => {
                     elements_processed += 1;
                     depth += 1;
@@ -329,19 +352,6 @@ impl MultiReleaseParser {
 
                         if self.max_releases > 0 && releases.len() >= self.max_releases {
                             break;
-                        }
-                    }
-                }
-                Ok(Event::Text(ref e)) => {
-                    if let Some(ref mut context) = current_context {
-                        // Use utf8_utils for proper UTF-8 handling
-                        let current_pos = xml_reader.buffer_position() as usize;
-                        let text = crate::utf8_utils::handle_text_node(e, current_pos)?
-                            .trim()
-                            .to_string();
-
-                        if !text.is_empty() {
-                            self.process_release_text_content(context, &text)?;
                         }
                     }
                 }

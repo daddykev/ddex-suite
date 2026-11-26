@@ -2,9 +2,11 @@
 
 pub mod error;
 pub mod parser;
+mod sanity;
 pub mod streaming;
 pub mod transform;
 pub mod utf8_utils;
+mod xml_text;
 
 // Re-export commonly used types
 pub use ddex_core::models::versions::ERNVersion;
@@ -305,26 +307,40 @@ impl DDEXParser {
         parser::detector::VersionDetector::detect(reader)
     }
 
-    /// Placeholder: returns `is_valid: true`, version 4.3 and no errors for any input (the
-    /// reader is not read; see KNOWN_ISSUES.md). Use [`DDEXParser::parse`] to check that a
-    /// message can be read.
+    /// Quick check of a document: detects the ERN version (from the root element's
+    /// namespace, like [`DDEXParser::detect_version`]) and checks that the XML is
+    /// well-formed (syntax, matching end tags, attributes, entity references, one root
+    /// element, no DTD). It does not validate against the DDEX XSD or the AVS rules, and it
+    /// does not build the message model: [`DDEXParser::parse`] can still fail on a document
+    /// that passes.
+    ///
+    /// When a version is detected the result is `Ok`: `is_valid` is true when no problem
+    /// was found, and `errors` lists the problems otherwise. When no ERN version can be
+    /// detected (not XML, or not an ERN document) the result is an `Err` naming every
+    /// problem found, since [`SanityCheckResult::version`] cannot express an unknown version.
     pub fn sanity_check<R: std::io::BufRead>(
         &self,
-        _reader: R,
+        mut reader: R,
     ) -> Result<SanityCheckResult, error::ParseError> {
-        // Placeholder for sanity check
-        Ok(SanityCheckResult {
-            is_valid: true,
-            version: ddex_core::models::versions::ERNVersion::V4_3,
-            errors: Vec::new(),
-            warnings: Vec::new(),
-        })
+        let mut bytes = Vec::new();
+        reader.read_to_end(&mut bytes)?;
+        let report = sanity::check(&bytes);
+        match report.version {
+            Some(version) => Ok(SanityCheckResult {
+                is_valid: report.errors.is_empty(),
+                version,
+                errors: report.errors,
+                warnings: report.warnings,
+            }),
+            None => Err(error::ParseError::XmlError(report.errors.join("; "))),
+        }
     }
 }
 
 // Old StreamIterator removed - now using DDEXStreamIterator from streaming module
 
-/// Result of sanity check
+/// Result of [`DDEXParser::sanity_check`]: the detected ERN version and the
+/// well-formedness problems found (`is_valid` is true when there are none).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SanityCheckResult {
     pub is_valid: bool,

@@ -75,8 +75,8 @@ def main():
         elif command == "version":
             print(f"DDEX Version: {parser.detect_version(xml)}")
         elif command == "check":
-            # A full parse. (DDEXParser.sanity_check is a placeholder that reports any input
-            # as valid ERN 4.3, so it is not used here; see KNOWN_ISSUES.md.)
+            # A full parse: stricter than sanity_check, which checks only the version and
+            # well-formedness.
             result = parser.parse(xml)
             print(
                 f"OK: parsed as ERN {result.version()}, "

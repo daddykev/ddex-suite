@@ -19,7 +19,7 @@ env:
 
 jobs:
   fmt:
-    name: cargo fmt
+    name: cargo fmt, version references
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -27,6 +27,9 @@ jobs:
         with:
           components: rustfmt
       - run: cargo fmt --all -- --check
+      # Every released version reference (crates, npm incl. platform packages, PyPI,
+      # website) must equal [workspace.package] version.
+      - run: python3 scripts/check_versions.py
 
   clippy:
     name: cargo clippy
@@ -93,6 +96,8 @@ jobs:
           sh scripts/fetch_ern382_samples.sh
       - name: cargo test --workspace
         run: cargo test --workspace
+      - name: Attribute-flood timings (RUSTSEC-2026-0194 regression test, printed)
+        run: cargo test -p ddex-parser --test it attribute_flood -- --nocapture
       - name: Build all targets with --features perf-tests
         run: cargo build --workspace --all-targets --features ddex-builder/perf-tests,ddex-parser/perf-tests
 
