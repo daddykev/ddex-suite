@@ -14,6 +14,7 @@ const sidebars: SidebarsConfig = {
     'python-dataframes',
     'security',
     'performance',
+    'migration-0.6',
     'migration',
     'known-issues',
     'playground',

@@ -12,10 +12,12 @@ path (enforced by clippy lints). The same request and options produce byte-ident
 with the same crate version; repeated builds are tested to be byte-identical.
 `message_id` and `message_created_date_time` are required in the request header.
 
-> **0.5.0 has breaking changes.** `build(request)` and `from_dataframe(df, schema,
-> request)` run the core builder (nothing is filled in), and importing without the native
-> extension raises `ImportError`. See the
-> [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md).
+> **0.6.0 has breaking changes.** `build_with_fidelity`, `test_round_trip_fidelity` and
+> `FidelityOptions` are now `build_with_statistics`, `check_round_trip` and
+> `BuildOptions`, the preset methods were removed, `message_id` and
+> `message_created_date_time` are required, absent request values are `None` (an empty
+> string fails), and Python 3.11 or newer is required. See the [0.6.0 migration
+> guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md).
 
 ## Installation
 
@@ -175,6 +177,7 @@ print(len(bridge["unmapped"]), "values the request cannot hold")
 
 - Documentation: [ddex-suite.org](https://ddex-suite.org/docs/builder)
 - [Changelog](https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md)
+- [0.6.0 migration guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md)
 - [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md)
 - [Known issues](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md)
 - [Report an issue](https://github.com/daddykev/ddex-suite/issues)

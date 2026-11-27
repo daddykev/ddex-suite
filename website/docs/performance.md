@@ -79,7 +79,7 @@ model, so they are not comparable with `parse`. On the 10 MB catalog:
 | `ParallelStreamingIterator`, 4 threads | 16.1 ms | 622 MiB/s |
 
 The parallel iterator does not scale with the thread count (1, 2 and 4 threads all take
-16.1 ms; the runner has 4 vCPUs); making it scale is planned for 0.6.0.
+16.1 ms; the runner has 4 vCPUs).
 
 ## Regression limits
 

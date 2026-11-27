@@ -5,10 +5,11 @@ DDEX ERN XML parser for Node.js, a native addon over the Rust
 [DDEX Suite](https://github.com/daddykev/ddex-suite). It reads ERN 3.8.1, 3.8.2, 4.2 and
 4.3 messages; TypeScript types are included (`index.d.ts`).
 
-> **0.5.0 has breaking changes.** Every `ParseOptions` field now throws (none had an
-> effect), `statistics`, `fidelityInfo` and `stream()` were removed, and
-> `resources` values use camelCase keys. See the
-> [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md).
+> **0.6.0 has breaking changes.** `ParseOptions` and the second argument of `parse` /
+> `parseSync` were removed, `sanityCheck` returns `version: null` for an unrecognised
+> version and has no `warnings`, and Node.js 22 or newer is required. See the [0.6.0
+> migration
+> guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md).
 
 ## Installation
 
@@ -81,14 +82,16 @@ resource reference, and `deals`. See `index.d.ts` for every field.
 
 ## Security
 
-The parser rejects DTDs and external entities (XXE), limits entity expansion, element
-depth and input size, and never fetches from the network. It does not validate against
+The parser rejects DTDs and external entities (XXE) and references to undefined entities
+(so no entity is expanded), limits element depth and input size, and never fetches from
+the network. It does not validate against
 the DDEX XSD or the AVS business rules.
 
 ## Links
 
 - Documentation: [ddex-suite.org](https://ddex-suite.org/docs/parser)
 - [Changelog](https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md)
+- [0.6.0 migration guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md)
 - [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md)
 - [Known issues](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md)
 - [Report an issue](https://github.com/daddykev/ddex-suite/issues)

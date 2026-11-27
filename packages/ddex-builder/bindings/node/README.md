@@ -12,10 +12,12 @@ path (enforced by clippy lints). The same request and options produce byte-ident
 with the same crate version; repeated builds are tested to be byte-identical.
 `message_id` and `message_created_date_time` are required in the request header.
 
-> **0.5.0 has breaking changes.** `build(request)` takes the core build request (`header`
-> and `version` are required, nothing is filled in), ERN 3.8.2 output is schema-valid,
-> and `batchBuild` was removed. See the
-> [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md).
+> **0.6.0 has breaking changes.** `buildWithFidelity`, `testRoundTripFidelity` and
+> `FidelityOptions` are now `buildWithStatistics`, `checkRoundTrip` and `BuildOptions`,
+> the preset methods were removed, `message_id` and `message_created_date_time` are
+> required, absent request values are `null` (an empty string fails), and Node.js 22 or
+> newer is required. See the [0.6.0 migration
+> guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md).
 
 ## Installation
 
@@ -166,6 +168,7 @@ new DdexBuilder().build(request).then((xml) => {
 
 - Documentation: [ddex-suite.org](https://ddex-suite.org/docs/builder)
 - [Changelog](https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md)
+- [0.6.0 migration guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md)
 - [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md)
 - [Known issues](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md)
 - [Report an issue](https://github.com/daddykev/ddex-suite/issues)

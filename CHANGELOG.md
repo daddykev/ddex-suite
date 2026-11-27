@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 effect. Real features can come back later as additions. The inventory is
 `dev-docs/REMOVALS_0.6.0.md`.
 
+What to change, per audience (Rust builder, Rust parser, Node.js, Python, WASM, CLI): the
+[0.6.0 migration guide](website/docs/migration-0.6.md).
+
 ### Breaking
 
 - **Update messages removed** (Rust):
