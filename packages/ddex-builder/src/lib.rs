@@ -5,17 +5,12 @@
 pub mod api_security;
 pub mod ast;
 pub mod builder;
-pub mod caching;
 pub mod canonical;
 pub mod determinism;
 pub mod error;
 pub mod generator;
 pub mod id_generator;
 pub mod linker;
-pub mod memory_optimization;
-pub mod namespace_minimizer;
-pub mod optimized_strings;
-pub mod parallel_processing;
 pub mod preflight;
 pub mod round_trip;
 pub mod schema;
@@ -39,7 +34,7 @@ pub use versions::{
 };
 
 // Security module exports
-pub use api_security::{ApiSecurityConfig, ApiSecurityManager, BatchStats, FfiDataType};
+pub use api_security::{ApiSecurityManager, BatchStats, FfiDataType};
 pub use security::{InputValidator, OutputSanitizer, RateLimiter, SecureTempFile, SecurityConfig};
 
 // Round trips
@@ -327,9 +322,7 @@ impl Builder {
     pub fn canonicalize(&self, xml_content: &str) -> Result<String, error::BuildError> {
         match self.fidelity_options.canonicalization {
             CanonicalizationAlgorithm::None => Ok(xml_content.to_string()),
-            CanonicalizationAlgorithm::DbC14N => {
-                DB_C14N::new(determinism::DeterminismConfig::default()).canonicalize(xml_content)
-            }
+            CanonicalizationAlgorithm::DbC14N => DB_C14N::new().canonicalize(xml_content),
         }
     }
 }

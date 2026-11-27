@@ -21,13 +21,6 @@ the whole message in memory, with a progress callback and final statistics:
 cargo run --example streaming_catalog_example -- 5000   # number of releases
 ```
 
-### 🔒 [Error Sanitization Demo](error_sanitization_demo.rs)
-**How build errors are sanitized for production vs development**
-
-```bash
-cargo run --example error_sanitization_demo
-```
-
 ## 🚀 Running Examples
 
 ### Prerequisites
@@ -267,7 +260,7 @@ We welcome contributions to improve these examples:
 
 If you have questions about these examples:
 
-- **Documentation**: [User Guide](../docs/user-guide.md)
+- **Documentation**: [ddex-suite.org](https://ddex-suite.org)
 - **API Reference**: [docs.rs/ddex-builder](https://docs.rs/ddex-builder)
 - **Issues**: [GitHub Issues](https://github.com/daddykev/ddex-suite/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/daddykev/ddex-suite/discussions)

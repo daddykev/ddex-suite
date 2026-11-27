@@ -1,14 +1,11 @@
-//! Cost of the security helpers (formerly the `security_fixes` overhead test): path
-//! validation, entity classification and error sanitization, each next to a trivial
-//! baseline. Reports numbers only.
+//! Cost of path validation (formerly the `security_fixes` overhead test), next to a trivial
+//! baseline. Reports numbers only. (The entity-classification and error-sanitization groups
+//! were removed with those helpers in 0.6.0.)
 //!
 //!     cargo bench -p ddex-builder --bench security
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use ddex_builder::security::{
-    create_entity, EntityClassifier, ErrorContext, ErrorSanitizer, PathValidator,
-};
-use std::io::{Error, ErrorKind};
+use ddex_builder::security::PathValidator;
 
 const PATHS: [&str; 4] = [
     "valid/path.xml",
@@ -37,58 +34,5 @@ fn path_validation(c: &mut Criterion) {
     group.finish();
 }
 
-fn entity_classification(c: &mut Criterion) {
-    let entities = vec![
-        create_entity("title", "Song Title"),
-        create_entity("artist", "Artist Name"),
-        create_entity("isrc", "USRC17607839"),
-    ];
-    let mut group = c.benchmark_group("entity_classification_3_entities");
-    group.bench_function("baseline_lengths", |b| {
-        b.iter(|| {
-            for e in &entities {
-                black_box(e.name.len() + e.value.len());
-            }
-        })
-    });
-    let mut classifier = EntityClassifier::new();
-    group.bench_function("validate_entity_chain", |b| {
-        b.iter(|| black_box(classifier.validate_entity_chain(black_box(&entities))))
-    });
-    group.finish();
-}
-
-fn error_sanitization(c: &mut Criterion) {
-    let errors = [
-        (ErrorKind::NotFound, "File not found"),
-        (ErrorKind::PermissionDenied, "Permission denied"),
-        (ErrorKind::InvalidData, "Invalid data"),
-    ];
-    let mut group = c.benchmark_group("error_sanitization_3_errors");
-    group.bench_function("baseline_format", |b| {
-        b.iter(|| {
-            for (kind, msg) in errors {
-                black_box(format!("Error: {}", Error::new(kind, msg)));
-            }
-        })
-    });
-    let mut sanitizer = ErrorSanitizer::new();
-    group.bench_function("sanitize_io_error", |b| {
-        b.iter(|| {
-            for (kind, msg) in errors {
-                black_box(
-                    sanitizer.sanitize_io_error(Error::new(kind, msg), ErrorContext::FileRead),
-                );
-            }
-        })
-    });
-    group.finish();
-}
-
-criterion_group!(
-    benches,
-    path_validation,
-    entity_classification,
-    error_sanitization
-);
+criterion_group!(benches, path_validation);
 criterion_main!(benches);

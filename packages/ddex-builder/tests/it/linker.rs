@@ -155,7 +155,6 @@ fn test_auto_linking_complete_request() {
     // Verify report
     assert!(report.generated_refs > 0);
     assert!(report.linked_resources > 0);
-    assert!(report.validation_passed);
 
     // Verify references were added to the request
     let release = &request.releases[0];
@@ -225,9 +224,6 @@ fn test_custom_reference_style() {
         reference_style: ReferenceStyle::Prefixed {
             separator: "_".to_string(),
         },
-        auto_link: true,
-        validate_on_build: true,
-        strict: false,
     };
 
     let mut linker = ReferenceLinker::with_config(config);

@@ -14,9 +14,6 @@ pub struct AutoLinker {
 /// Configuration for auto-linking
 #[derive(Debug, Clone)]
 pub struct AutoLinkerConfig {
-    /// Automatically generate missing references
-    pub generate_missing_refs: bool,
-
     /// Automatically link releases to all their tracks
     pub auto_link_tracks: bool,
 
@@ -30,7 +27,6 @@ pub struct AutoLinkerConfig {
 impl Default for AutoLinkerConfig {
     fn default() -> Self {
         Self {
-            generate_missing_refs: true,
             auto_link_tracks: true,
             auto_link_deals: true,
             validate_references: true,
@@ -152,15 +148,10 @@ impl AutoLinker {
 
         // Phase 5: Validate if configured
         if self.config.validate_references {
-            match relationships.validate() {
-                Ok(()) => report.validation_passed = true,
-                Err(errors) => {
-                    // Convert validation errors to warnings
-                    for error in errors {
-                        report.warnings.push(format!("Validation: {}", error));
-                    }
-                    // Still mark as passed if we only have warnings
-                    report.validation_passed = true;
+            if let Err(errors) = relationships.validate() {
+                // Validation errors are reported as warnings
+                for error in errors {
+                    report.warnings.push(format!("Validation: {}", error));
                 }
             }
         }

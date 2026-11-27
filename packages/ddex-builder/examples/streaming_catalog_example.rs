@@ -121,9 +121,5 @@ fn main() -> Result<(), Box<dyn Error>> {
         "  throughput:        {:.0} releases/s",
         stats.releases_written as f64 / elapsed.as_secs_f64()
     );
-    for warning in &stats.warnings {
-        println!("  warning: {:?}", warning);
-    }
-
     Ok(())
 }

@@ -11,12 +11,6 @@ static ISRC_PATTERN: Lazy<Regex> =
 
 static UPC_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\d{12,14}$").unwrap());
 
-#[allow(dead_code)]
-static ISWC_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^T\d{10}$").unwrap());
-
-#[allow(dead_code)]
-static ISNI_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\d{15}[\dX]$").unwrap());
-
 /// Preflight validator for DDEX messages
 pub struct PreflightValidator {
     config: ValidationConfig,
@@ -28,17 +22,11 @@ pub struct ValidationConfig {
     /// Validation level
     pub level: PreflightLevel,
 
-    /// Validate identifier formats
+    /// Validate identifier formats (including the UPC check digit)
     pub validate_identifiers: bool,
-
-    /// Validate checksums
-    pub validate_checksums: bool,
 
     /// Check for required fields
     pub check_required_fields: bool,
-
-    /// Validate dates
-    pub validate_dates: bool,
 
     /// Check references
     pub validate_references: bool,
@@ -52,9 +40,7 @@ impl Default for ValidationConfig {
         Self {
             level: PreflightLevel::Warn,
             validate_identifiers: true,
-            validate_checksums: true,
             check_required_fields: true,
-            validate_dates: true,
             validate_references: true,
             profile: None,
         }

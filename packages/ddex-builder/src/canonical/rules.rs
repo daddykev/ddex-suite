@@ -1,10 +1,8 @@
 //! # Canonical XML Rules for DB-C14N/1.0
 //!
 //! This module defines the canonical XML transformation rules for DDEX Builder,
-//! including comprehensive namespace prefix locking, element ordering, and
-//! support for all DDEX standards (ERN, AVS, MEAD, PIE, etc.).
+//! including namespace prefix locking and support for the DDEX standards (ERN, AVS, MEAD, PIE, etc.).
 
-use ddex_core::namespace::NamespaceRegistry;
 use indexmap::IndexMap;
 #[allow(
     clippy::disallowed_types,
@@ -17,9 +15,6 @@ pub const XML_DECLARATION: &str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 
 /// Comprehensive namespace prefix lock tables for all ERN versions
 pub struct NamespacePrefixLock {
-    /// Registry for namespace management
-    #[allow(dead_code)]
-    registry: NamespaceRegistry,
     /// Locked prefixes for specific versions
     version_locks: IndexMap<String, IndexMap<String, String>>, // version -> (uri -> prefix)
     /// Reserved prefixes that cannot be used
@@ -38,7 +33,6 @@ impl NamespacePrefixLock {
     )]
     pub fn new() -> Self {
         let mut lock = Self {
-            registry: NamespaceRegistry::new(),
             version_locks: IndexMap::new(),
             reserved_prefixes: HashSet::new(),
         };
@@ -216,227 +210,6 @@ impl NamespacePrefixLock {
     }
 }
 
-/// Comprehensive element ordering for all ERN versions
-pub struct ElementOrder {
-    /// Element ordering rules by version
-    version_orders: IndexMap<String, IndexMap<String, Vec<String>>>, // version -> (parent -> children)
-}
-
-impl ElementOrder {
-    /// Create new element order manager
-    pub fn new() -> Self {
-        let mut order = Self {
-            version_orders: IndexMap::new(),
-        };
-
-        order.initialize_element_orders();
-        order
-    }
-
-    /// Initialize element orders for all ERN versions
-    fn initialize_element_orders(&mut self) {
-        // ERN 3.8.2 element orders
-        let mut ern_382_order = IndexMap::new();
-        self.add_common_orders(&mut ern_382_order);
-        self.add_ern_382_specific_orders(&mut ern_382_order);
-        // ERN 3.8.1 shares the 3.8.2 element structure
-        self.version_orders
-            .insert("3.8.1".to_string(), ern_382_order.clone());
-        self.version_orders
-            .insert("381".to_string(), ern_382_order.clone());
-        self.version_orders
-            .insert("3.8.2".to_string(), ern_382_order.clone());
-        self.version_orders.insert("382".to_string(), ern_382_order);
-
-        // ERN 4.2 element orders
-        let mut ern_42_order = IndexMap::new();
-        self.add_common_orders(&mut ern_42_order);
-        self.add_ern_42_specific_orders(&mut ern_42_order);
-        self.version_orders
-            .insert("4.2".to_string(), ern_42_order.clone());
-        self.version_orders.insert("42".to_string(), ern_42_order);
-
-        // ERN 4.3 element orders
-        let mut ern_43_order = IndexMap::new();
-        self.add_common_orders(&mut ern_43_order);
-        self.add_ern_43_specific_orders(&mut ern_43_order);
-        self.version_orders
-            .insert("4.3".to_string(), ern_43_order.clone());
-        self.version_orders.insert("43".to_string(), ern_43_order);
-    }
-
-    /// Add common element orders across all versions
-    fn add_common_orders(&self, order: &mut IndexMap<String, Vec<String>>) {
-        // Message header - common to all versions
-        order.insert(
-            "MessageHeader".to_string(),
-            vec![
-                "MessageId".to_string(),
-                "MessageType".to_string(),
-                "MessageCreatedDateTime".to_string(),
-                "MessageSender".to_string(),
-                "MessageRecipient".to_string(),
-                "MessageControlType".to_string(),
-            ],
-        );
-
-        // Party - common structure
-        order.insert(
-            "Party".to_string(),
-            vec![
-                "PartyReference".to_string(),
-                "PartyId".to_string(),
-                "PartyName".to_string(),
-                "PartyType".to_string(),
-            ],
-        );
-
-        // Release - base structure
-        order.insert(
-            "Release".to_string(),
-            vec![
-                "ReleaseReference".to_string(),
-                "ReleaseId".to_string(),
-                "ReferenceTitle".to_string(),
-                "ReleaseType".to_string(),
-                "ReleaseResourceReferenceList".to_string(),
-                "ReleaseDetailsByTerritory".to_string(),
-            ],
-        );
-
-        // Deal - base structure
-        order.insert(
-            "Deal".to_string(),
-            vec![
-                "DealReference".to_string(),
-                "DealTerms".to_string(),
-                "DealReleaseReference".to_string(),
-            ],
-        );
-    }
-
-    /// Add ERN 3.8.2 specific orders
-    fn add_ern_382_specific_orders(&self, order: &mut IndexMap<String, Vec<String>>) {
-        // SoundRecording for 3.8.2
-        order.insert(
-            "SoundRecording".to_string(),
-            vec![
-                "SoundRecordingType".to_string(),
-                "SoundRecordingId".to_string(),
-                "ReferenceTitle".to_string(),
-                "Duration".to_string(),
-                "CreationDate".to_string(),
-                "SoundRecordingDetailsByTerritory".to_string(),
-            ],
-        );
-    }
-
-    /// Add ERN 4.2 specific orders
-    fn add_ern_42_specific_orders(&self, order: &mut IndexMap<String, Vec<String>>) {
-        // MessageHeader with audit trail for 4.2
-        order.insert(
-            "MessageHeader".to_string(),
-            vec![
-                "MessageId".to_string(),
-                "MessageType".to_string(),
-                "MessageCreatedDateTime".to_string(),
-                "MessageSender".to_string(),
-                "MessageRecipient".to_string(),
-                "MessageControlType".to_string(),
-                "MessageAuditTrail".to_string(),
-            ],
-        );
-
-        // Enhanced SoundRecording for 4.2
-        order.insert(
-            "SoundRecording".to_string(),
-            vec![
-                "SoundRecordingType".to_string(),
-                "SoundRecordingId".to_string(),
-                "ReferenceTitle".to_string(),
-                "DisplayTitle".to_string(),
-                "Duration".to_string(),
-                "CreationDate".to_string(),
-                "MasteredDate".to_string(),
-                "SoundRecordingDetailsByTerritory".to_string(),
-            ],
-        );
-    }
-
-    /// Add ERN 4.3 specific orders
-    fn add_ern_43_specific_orders(&self, order: &mut IndexMap<String, Vec<String>>) {
-        // MessageHeader with audit trail for 4.3
-        order.insert(
-            "MessageHeader".to_string(),
-            vec![
-                "MessageId".to_string(),
-                "MessageType".to_string(),
-                "MessageCreatedDateTime".to_string(),
-                "MessageSender".to_string(),
-                "MessageRecipient".to_string(),
-                "MessageControlType".to_string(),
-                "MessageAuditTrail".to_string(),
-            ],
-        );
-
-        // Enhanced SoundRecording for 4.3
-        order.insert(
-            "SoundRecording".to_string(),
-            vec![
-                "SoundRecordingType".to_string(),
-                "SoundRecordingId".to_string(),
-                "ReferenceTitle".to_string(),
-                "DisplayTitle".to_string(),
-                "DisplayTitleText".to_string(),
-                "Duration".to_string(),
-                "CreationDate".to_string(),
-                "MasteredDate".to_string(),
-                "OriginalResourceReleaseDate".to_string(),
-                "SoundRecordingDetailsByTerritory".to_string(),
-            ],
-        );
-
-        // Video for 4.3
-        order.insert(
-            "Video".to_string(),
-            vec![
-                "VideoType".to_string(),
-                "VideoId".to_string(),
-                "ReferenceTitle".to_string(),
-                "DisplayTitle".to_string(),
-                "Duration".to_string(),
-                "CreationDate".to_string(),
-                "VideoDetailsByTerritory".to_string(),
-            ],
-        );
-
-        // Image for 4.3
-        order.insert(
-            "Image".to_string(),
-            vec![
-                "ImageType".to_string(),
-                "ImageId".to_string(),
-                "ReferenceTitle".to_string(),
-                "DisplayTitle".to_string(),
-                "CreationDate".to_string(),
-                "ImageDetailsByTerritory".to_string(),
-            ],
-        );
-    }
-
-    /// Get element order for a parent element in a specific version
-    pub fn get_element_order(&self, parent_element: &str, version: &str) -> Option<&Vec<String>> {
-        self.version_orders
-            .get(version)
-            .and_then(|orders| orders.get(parent_element))
-    }
-
-    /// Get all element orders for a version
-    pub fn get_version_orders(&self, version: &str) -> Option<&IndexMap<String, Vec<String>>> {
-        self.version_orders.get(version)
-    }
-}
-
 /// AVS namespace handling
 pub struct AVSNamespaceHandler {
     /// AVS-specific namespaces
@@ -476,8 +249,6 @@ impl AVSNamespaceHandler {
 pub struct CanonicalNamespaceManager {
     /// Namespace prefix lock
     prefix_lock: NamespacePrefixLock,
-    /// Element order manager
-    element_order: ElementOrder,
     /// AVS namespace handler
     avs_handler: AVSNamespaceHandler,
 }
@@ -487,7 +258,6 @@ impl CanonicalNamespaceManager {
     pub fn new() -> Self {
         Self {
             prefix_lock: NamespacePrefixLock::new(),
-            element_order: ElementOrder::new(),
             avs_handler: AVSNamespaceHandler::new(),
         }
     }
@@ -508,11 +278,6 @@ impl CanonicalNamespaceManager {
         sorted_declarations.into_iter().collect()
     }
 
-    /// Get element order for canonicalization
-    pub fn get_canonical_element_order(&self, parent: &str, version: &str) -> Option<&Vec<String>> {
-        self.element_order.get_element_order(parent, version)
-    }
-
     /// Check if namespace requires special AVS handling
     pub fn requires_avs_handling(&self, uri: &str) -> bool {
         self.avs_handler.is_avs_namespace(uri)
@@ -520,12 +285,6 @@ impl CanonicalNamespaceManager {
 }
 
 impl Default for NamespacePrefixLock {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Default for ElementOrder {
     fn default() -> Self {
         Self::new()
     }
@@ -549,15 +308,6 @@ impl Default for CanonicalNamespaceManager {
 pub fn get_namespace_prefixes(version: &str) -> IndexMap<String, String> {
     let lock = NamespacePrefixLock::new();
     lock.get_version_prefixes(version)
-        .cloned()
-        .unwrap_or_default()
-}
-
-/// Get element order for a specific ERN version
-pub fn get_element_order(version: &str) -> IndexMap<String, Vec<String>> {
-    let order = ElementOrder::new();
-    order
-        .get_version_orders(version)
         .cloned()
         .unwrap_or_default()
 }
@@ -602,18 +352,6 @@ mod tests {
             deduplicated.get("avs"),
             Some(&"http://ddex.net/xml/avs".to_string())
         );
-    }
-
-    #[test]
-    fn test_element_order() {
-        let order = ElementOrder::new();
-
-        let message_order = order.get_element_order("MessageHeader", "4.3");
-        assert!(message_order.is_some());
-
-        let order_vec = message_order.unwrap();
-        assert_eq!(order_vec[0], "MessageId");
-        assert_eq!(order_vec[1], "MessageType");
     }
 
     #[test]

@@ -8,8 +8,7 @@ pub mod buffer_manager;
 pub mod reference_manager;
 
 use crate::builder::MessageHeaderRequest;
-use crate::determinism::DeterminismConfig;
-use crate::error::{BuildError, BuildWarning};
+use crate::error::BuildError;
 use buffer_manager::BufferManager;
 use reference_manager::StreamingReferenceManager;
 use std::io::Write as IoWrite;
@@ -17,19 +16,16 @@ use uuid::Uuid;
 
 /// Configuration for streaming builder
 ///
-/// Controls the behavior of the streaming DDEX XML builder including
-/// buffer management, deterministic ordering, validation, and progress reporting.
+/// Controls the streaming DDEX XML builder's buffer management and progress reporting.
+/// (Before 0.6.0 it also had `deterministic`, `determinism_config` and
+/// `validate_during_stream`, which nothing read.)
 ///
 /// # Example
 /// ```
 /// use ddex_builder::streaming::StreamingConfig;
-/// use ddex_builder::determinism::DeterminismConfig;
 ///
 /// let config = StreamingConfig {
 ///     max_buffer_size: 5 * 1024 * 1024, // 5MB buffer
-///     deterministic: true,
-///     determinism_config: DeterminismConfig::default(),
-///     validate_during_stream: true,
 ///     progress_callback_frequency: 50, // Report every 50 items
 /// };
 /// ```
@@ -37,12 +33,6 @@ use uuid::Uuid;
 pub struct StreamingConfig {
     /// Maximum buffer size in bytes before automatic flush (default: 10MB)
     pub max_buffer_size: usize,
-    /// Whether to use deterministic ordering for consistent output
-    pub deterministic: bool,
-    /// Detailed configuration for deterministic behavior
-    pub determinism_config: DeterminismConfig,
-    /// Whether to validate data while streaming (slower but safer)
-    pub validate_during_stream: bool,
     /// Progress callback frequency - report progress every N items processed
     pub progress_callback_frequency: usize,
 }
@@ -51,9 +41,6 @@ impl Default for StreamingConfig {
     fn default() -> Self {
         Self {
             max_buffer_size: 10 * 1024 * 1024, // 10MB
-            deterministic: true,
-            determinism_config: DeterminismConfig::default(),
-            validate_during_stream: true,
             progress_callback_frequency: 100,
         }
     }
@@ -107,8 +94,6 @@ pub struct StreamingBuilder<W: IoWrite> {
     message_finished: bool,
     releases_written: usize,
     resources_written: usize,
-    deals_written: usize,
-    warnings: Vec<BuildWarning>,
 
     // Progress tracking
     progress_callback: Option<ProgressCallback>,
@@ -146,8 +131,6 @@ impl<W: IoWrite> StreamingBuilder<W> {
             message_finished: false,
             releases_written: 0,
             resources_written: 0,
-            deals_written: 0,
-            warnings: Vec::new(),
             progress_callback: None,
             estimated_total_items: None,
         })
@@ -437,9 +420,7 @@ impl<W: IoWrite> StreamingBuilder<W> {
         Ok(StreamingStats {
             releases_written: self.releases_written,
             resources_written: self.resources_written,
-            deals_written: self.deals_written,
             bytes_written: self.buffer_manager.total_bytes_written(),
-            warnings: self.warnings.clone(),
             peak_memory_usage: self.buffer_manager.peak_buffer_size(),
         })
     }
@@ -538,51 +519,10 @@ impl<W: IoWrite> StreamingBuilder<W> {
     }
 }
 
-/// Result of streaming build operation
-///
-/// Contains comprehensive statistics and metadata about a completed
-/// streaming DDEX XML build operation, including performance metrics
-/// and any warnings that were generated during the process.
-///
-/// # Example
-///
-/// Illustrative fragment (not compiled): assumes a `streaming_builder` that has
-/// already written a complete message.
-///
-/// ```ignore
-/// use ddex_builder::streaming::StreamingResult;
-///
-/// // After completing a streaming build
-/// let result = streaming_builder.finish_message()?;
-/// println!("Built {} releases with {} resources",
-///          result.releases_written, result.resources_written);
-/// println!("Generated {} bytes using {} peak memory",
-///          result.bytes_written, result.peak_memory_usage);
-///
-/// if !result.warnings.is_empty() {
-///     println!("Warnings: {:?}", result.warnings);
-/// }
-/// ```
-#[derive(Debug)]
-pub struct StreamingResult {
-    /// Total number of releases written to the stream
-    pub releases_written: usize,
-    /// Total number of resources (tracks/recordings) written to the stream
-    pub resources_written: usize,
-    /// Total number of deals written to the stream
-    pub deals_written: usize,
-    /// Total bytes written to the output stream
-    pub bytes_written: usize,
-    /// Any warnings generated during the streaming operation
-    pub warnings: Vec<BuildWarning>,
-    /// Peak memory usage in bytes during the streaming process
-    pub peak_memory_usage: usize,
-}
-
 /// Statistics from a completed streaming operation
 ///
-/// Internal statistics structure used during streaming operations.
-/// Similar to StreamingResult but used for internal tracking.
+/// Returned by `StreamingBuilder::finish_message`. (Before 0.6.0 it also had
+/// `deals_written` and `warnings`, which were always 0 and empty.)
 ///
 /// # Example
 /// ```
@@ -592,9 +532,7 @@ pub struct StreamingResult {
 /// let stats = StreamingStats {
 ///     releases_written: 1000,
 ///     resources_written: 15000,
-///     deals_written: 50,
 ///     bytes_written: 25 * 1024 * 1024, // 25MB
-///     warnings: vec![],
 ///     peak_memory_usage: 8 * 1024 * 1024, // 8MB peak
 /// };
 /// ```
@@ -604,70 +542,10 @@ pub struct StreamingStats {
     pub releases_written: usize,
     /// Number of resources successfully written
     pub resources_written: usize,
-    /// Number of deals successfully written
-    pub deals_written: usize,
     /// Total bytes written to the output
     pub bytes_written: usize,
-    /// List of warnings generated during streaming
-    pub warnings: Vec<BuildWarning>,
     /// Peak memory usage observed during streaming
     pub peak_memory_usage: usize,
-}
-
-/// Errors that can occur during streaming operations
-///
-/// Comprehensive error types for streaming DDEX XML generation,
-/// including state management errors, I/O issues, and XML formatting problems.
-///
-/// # Example
-///
-/// Illustrative fragment (not compiled): assumes an existing `streaming_builder`.
-///
-/// ```ignore
-/// use ddex_builder::streaming::{StreamingBuilder, StreamingError};
-///
-/// match streaming_builder.write_resource(/*...*/) {
-///     Ok(resource_ref) => println!("Resource written: {}", resource_ref),
-///     Err(StreamingError::InvalidState { message }) => {
-///         eprintln!("Invalid state: {}", message);
-///     }
-///     Err(StreamingError::IoError(io_err)) => {
-///         eprintln!("I/O error: {}", io_err);
-///     }
-///     Err(other_err) => eprintln!("Other error: {}", other_err),
-/// }
-/// ```
-#[derive(Debug, thiserror::Error)]
-pub enum StreamingError {
-    /// Invalid state transition (e.g., writing resources after finishing message)
-    #[error("Invalid state: {message}")]
-    InvalidState {
-        /// Description of the invalid state and what operation was attempted
-        message: String,
-    },
-
-    /// I/O error during streaming operations (writing to output, flushing buffers)
-    #[error("I/O error: {0}")]
-    IoError(#[from] std::io::Error),
-
-    /// XML writing or formatting error
-    #[error("XML writing error: {0}")]
-    XmlError(#[from] quick_xml::Error),
-
-    /// General build error from the underlying builder system
-    #[error("Build error: {0}")]
-    BuildError(#[from] BuildError),
-}
-
-impl From<StreamingError> for BuildError {
-    fn from(err: StreamingError) -> Self {
-        match err {
-            StreamingError::InvalidState { message } => BuildError::XmlGeneration(message),
-            StreamingError::IoError(e) => BuildError::XmlGeneration(format!("I/O error: {}", e)),
-            StreamingError::XmlError(e) => BuildError::XmlGeneration(format!("XML error: {}", e)),
-            StreamingError::BuildError(e) => e,
-        }
-    }
 }
 
 /// Escape XML special characters

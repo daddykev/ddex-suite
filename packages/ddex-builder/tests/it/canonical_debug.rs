@@ -1,12 +1,10 @@
 //! Debug test for canonical implementation
 
 use ddex_builder::canonical::*;
-use ddex_builder::determinism::DeterminismConfig;
 
 #[test]
 fn debug_simple_canonicalization() {
-    let config = DeterminismConfig::default();
-    let canonicalizer = DB_C14N::new(config);
+    let canonicalizer = DB_C14N::new();
 
     let input = r#"<root z="z" a="a">
   <child>content</child>

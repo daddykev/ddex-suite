@@ -52,10 +52,6 @@ pub enum BuildError {
     #[error("Validation error: {0}")]
     Validation(String),
 
-    /// Parallel processing error
-    #[error("Parallel processing error: {0}")]
-    Parallel(String),
-
     /// Security violation
     #[error("Security violation: {0}")]
     Security(String),

@@ -128,6 +128,72 @@ effect. Real features can come back later as additions. The inventory is
     `with_custom_canonicalization`.
   - Why: they were not implemented (each returned an error).
   - Migration: `CanonicalizationAlgorithm` is `DbC14N` (the default) or `None`.
+- **Unused internal modules removed** (Rust):
+  - What went: `caching`, `memory_optimization`, `optimized_strings`,
+    `parallel_processing`, `namespace_minimizer` and `generator::optimized_xml_writer`, and
+    `BuildError::Parallel`.
+  - Why: none was used by any build; some returned simulated results (the "parallel build"
+    wrote no XML, the arena "simulated" allocation, cache statistics were never counted).
+  - Migration: no replacement; use `DDEXBuilder::build`.
+- **Entity classifier and error sanitizer removed** (Rust):
+  - What went:
+    - `security::EntityClassifier`, `ClassifierConfig`, `Entity`, `EntityClass`,
+      `EntityMetrics`, `AttackType`, `ValidationResult` and `create_entity` /
+      `create_external_entity` / `create_parameter_entity`.
+    - `InputValidator::validate_entities`, `classify_entity` and `get_entity_metrics`.
+    - `security::ErrorSanitizer`, `SanitizedError`, `SanitizerConfig`, `RedactionRule`,
+      `ErrorMode`, `ErrorContext`, `ErrorLevel`, `SecureError`, `SanitizerStatistics` and the
+      `sanitize_*` / `init_global_sanitizer` / `with_global_sanitizer` functions.
+    - The `SecurityConfig` fields that only configured the classifier:
+      `allow_external_entities`, `enable_entity_classification`,
+      `max_entity_expansion_ratio` and `max_entity_depth`.
+  - Why: unused by the builder; they gave incorrect results under some configurations.
+  - Migration: no replacement. The parser and the builder's canonicalizer reject references
+    to undefined entities themselves; the parser rejects a DTD by default.
+- **Other no-op and fake security items removed** (Rust):
+  - What went: `SecurityConfig::max_attributes_per_element` (never read),
+    `ApiSecurityConfig` (never read), `ApiSecurityManager::get_wasm_security_headers` (a
+    hard-coded header map), and `api_security::RateLimitInfo` and `ContentType` (never used).
+  - Migration: drop them.
+- **Streaming writer options and statistics reduced** (Rust, Node):
+  - Rust:
+    - `StreamingConfig::deterministic`, `determinism_config` and `validate_during_stream`
+      (never read).
+    - `StreamingStats::deals_written` (always 0) and `warnings` (always empty).
+    - `BufferConfig::enable_compression` (both settings wrote the same bytes).
+    - `StreamingResult` and `StreamingError` (never produced).
+  - Node: `StreamingConfig.deterministic` and `validateDuringStream`, and
+    `StreamingStats.dealsWritten` and `warnings`.
+  - Migration: drop the fields.
+- **Linker no-ops and fakes removed** (Rust):
+  - What went:
+    - `LinkerConfig::auto_link`, `validate_on_build` and `strict` (never read).
+    - `LinkingReport::validation_passed`: it was true even when validation failed. The
+      validation problems are still reported in `LinkingReport::warnings`.
+    - `LinkingStats` and `ResourceLink` (never used).
+    - The `LinkingError` variants that were never produced: `UnknownRelease`,
+      `DuplicateReference`, `CircularReference`, `InvalidEntityType` and
+      `ValidationFailed`.
+  - Migration: read `LinkingReport::warnings` instead of `validation_passed`.
+- **Preflight options removed** (Rust):
+  - What went: `preflight::ValidationConfig::validate_checksums` and `validate_dates`.
+  - Why: never read. The UPC check digit is checked under `validate_identifiers`, and there
+    is no date validation.
+  - Migration: drop the fields.
+- **`DB_C14N` constructors** (Rust):
+  - `DB_C14N::new()` and `DB_C14N::with_version(version)` no longer take a
+    `DeterminismConfig`; they never read it.
+  - `canonical::rules::ElementOrder` and `get_element_order` were removed: tables that did
+    not follow the XSD sequences and were never applied.
+  - Migration: drop the argument.
+
+### Dependencies
+
+- ddex-builder no longer depends on:
+  - `rayon`, `string_cache` and `smartstring`, which only the removed modules used;
+  - `log` and `dhat`, which were already unused. The `dhat-heap` feature goes with `dhat`.
+- ddex-builder dev-dependencies removed (already unused): `similar`, `pretty_assertions`,
+  `rand` and `tokio-test`.
 
 ## [0.5.1] - 2026-11-26
 

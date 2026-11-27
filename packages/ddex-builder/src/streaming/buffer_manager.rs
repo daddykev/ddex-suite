@@ -16,8 +16,6 @@ pub struct BufferConfig {
     pub max_buffer_size: usize,
     /// Number of buffers to keep in memory
     pub buffer_count: usize,
-    /// Whether to enable compression
-    pub enable_compression: bool,
 }
 
 impl Default for BufferConfig {
@@ -25,7 +23,6 @@ impl Default for BufferConfig {
         Self {
             max_buffer_size: 1024 * 1024, // 1MB per buffer
             buffer_count: 10,             // Up to 10MB total
-            enable_compression: false,    // Disabled by default for simplicity
         }
     }
 }
@@ -180,12 +177,7 @@ impl<W: IoWrite> BufferManager<W> {
 
     /// Write a buffer to the underlying writer
     fn write_buffer(&mut self, buffer: &[u8]) -> IoResult<()> {
-        if self.config.enable_compression {
-            // TODO: Implement compression if needed
-            self.writer.write_all(buffer)?;
-        } else {
-            self.writer.write_all(buffer)?;
-        }
+        self.writer.write_all(buffer)?;
 
         self.total_bytes_written += buffer.len();
         self.total_flushes += 1;

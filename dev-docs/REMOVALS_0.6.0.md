@@ -6,7 +6,13 @@ bindings (Node, Python, WASM), on `main` after PR 2 (`d89fdff`). This document i
 inventory. The full removal touches about 100 files, so the work is split (see
 [Proposed split](#proposed-split)).
 
-**Status:** PR 3b is done too: the guarantees, the determinism verifier, verification, the
+**Status:** PR 3c is done: the dead modules, the entity classifier and the error
+sanitizer, the fakes and no-ops in streaming, linker, security, preflight and
+`canonical::rules`, and the `DB_C14N` config argument. Those rows are marked "removed in 3c";
+rows that proved wrong are marked "row was wrong, kept". The streaming-reference and
+`id_generator` rows are left for PR 6.
+
+PR 3b is done too: the guarantees, the determinism verifier, verification, the
 fidelity module and the other fidelity / canonicalization / round-trip fakes, and the twelve
 unread `DeterminismConfig` fields; those rows are marked "removed in 3b". The `DB_C14N`
 config argument (NO-OP) is left for 3c.
@@ -182,7 +188,7 @@ Dependencies: no ddex-builder dependency becomes unused because of the decided r
 | `BuildResult.errors` | FAKE | always `Vec::new()` (`:815`); errors are returned as `Err` | Rust |
 | `BuildStatistics` (builder) | REAL | `:816-822` | — |
 | `DDEXBuilder._inner: Builder` | NO-OP | private; never read (`:709,716`) | — (before 3a it also loaded every preset each time `DDEXBuilder::new` ran) |
-| private `preflight` (legacy) | DEAD | `#[allow(dead_code)]` (`:1070`); no callers | — |
+| private `preflight` (legacy) | DEAD (**removed in 3c**) | `#[allow(dead_code)]` (`:1070`); no callers | — |
 | private `parse_duration_to_seconds` | REAL | used at `:1002` | — |
 | update / diff methods | decided | see [Decided removals](#decided-removals) | — |
 
@@ -267,56 +273,56 @@ guarantees are not checked as named.
 | item | class | evidence | affected |
 |---|---|---|---|
 | `DB_C14N::new`, `canonicalize` | REAL | `builder.rs:790` | all builds; tests; benches |
-| `DB_C14N.config` (the `new(config)` argument) | NO-OP | `#[allow(dead_code)]` field (`mod.rs:103-104`), never read | every `DB_C14N::new(DeterminismConfig::default())` call (builder, lib, round_trip, about 6 test files, `benches/canonicalization.rs`) |
+| `DB_C14N.config` (the `new(config)` argument) | NO-OP (**removed in 3c** (`new()` / `with_version(version)` take no config)) | `#[allow(dead_code)]` field (`mod.rs:103-104`), never read | every `DB_C14N::new(DeterminismConfig::default())` call (builder, lib, round_trip, about 6 test files, `benches/canonicalization.rs`) |
 | `DB_C14N::with_version` | REAL | the version is used only when the XML has no ERN namespace (`:126-137`) | `canonical/tests.rs` |
 | `DB_C14N::canonical_hash` | REAL | SHA-256 of the given bytes | `builder.rs:792`; tests: `golden_files.rs` |
-| private `sort_child_elements`, the code after its early return | DEAD | the early return (`mod.rs:405-411`) covers every version key in `ElementOrder` | — |
-| `#[cfg(test)] pub create_test_canonicalizer`, `create_test_canonicalizer_with_version` | DEAD | shadowed by local helpers in `canonical/tests.rs:10-18` | — |
+| private `sort_child_elements`, the code after its early return | DEAD (**removed in 3c** (the whole function: it never reordered anything)) | the early return (`mod.rs:405-411`) covers every version key in `ElementOrder` | — |
+| `#[cfg(test)] pub create_test_canonicalizer`, `create_test_canonicalizer_with_version` | DEAD (**row was wrong, kept**: `tests.rs`'s `integration_tests` module uses them; updated to the new `DB_C14N::new()`) | shadowed by local helpers in `canonical/tests.rs:10-18` | — |
 | `rules::XML_DECLARATION`, `CanonicalNamespaceManager::{new, canonicalize_namespaces}`, `NamespacePrefixLock::{new, get_version_prefixes, deduplicate_prefixes}` | REAL | build path (`mod.rs:353,372,446`) | — |
-| `NamespacePrefixLock.registry` | DEAD | `#[allow(dead_code)]` (`rules.rs:21-22`) | — |
-| `NamespacePrefixLock::get_locked_prefix` | DEAD | unit tests only | — |
-| `ElementOrder` (`new`, `get_element_order`, `get_version_orders`), `get_canonical_element_order`, the `CanonicalNamespaceManager.element_order` field | DEAD | reached only from the dead tail of `sort_child_elements` | `rules.rs` unit tests |
-| `AVSNamespaceHandler` (`is_avs_namespace`, `get_avs_prefix`), `requires_avs_handling` | DEAD | no caller | `rules.rs` unit tests |
-| free functions `get_namespace_prefixes`, `get_element_order` | DEAD | no callers ("backward compatibility") | — |
+| `NamespacePrefixLock.registry` | DEAD (**removed in 3c**) | `#[allow(dead_code)]` (`rules.rs:21-22`) | — |
+| `NamespacePrefixLock::get_locked_prefix` | DEAD (**row was wrong, kept**: REAL; it is `pub` in the `pub` module `canonical::rules` and works) | unit tests only | — |
+| `ElementOrder` (`new`, `get_element_order`, `get_version_orders`), `get_canonical_element_order`, the `CanonicalNamespaceManager.element_order` field | DEAD (**reclassified FAKE** (its tables do not follow the XSD sequences) and **removed in 3c**, with `get_canonical_element_order` and the manager's `element_order` field) | reached only from the dead tail of `sort_child_elements` | `rules.rs` unit tests |
+| `AVSNamespaceHandler` (`is_avs_namespace`, `get_avs_prefix`), `requires_avs_handling` | DEAD (**row was wrong, kept**: REAL; `pub` and correct, only unused) | no caller | `rules.rs` unit tests |
+| free functions `get_namespace_prefixes`, `get_element_order` | DEAD (`get_element_order` **removed in 3c** (with `ElementOrder`); `get_namespace_prefixes` **row was wrong, kept** (REAL, `pub`)) | no callers ("backward compatibility") | — |
 
 ### `generator/*`, `ast.rs`, `xml_escape.rs`
 
 | item | class | evidence | affected |
 |---|---|---|---|
 | `ASTGenerator::{new, generate}`, `XmlWriter::{new, write}`, the ERN 3.8 / ERN 4 generators | REAL | build path | all |
-| `generator::optimized_xml_writer` (`OptimizedXmlWriter`, `vectorized::write_elements_parallel`) | DEAD | no users outside its unit tests; its escaping differs from `xml_escape`, so its output would differ from `XmlWriter`'s | — |
+| `generator::optimized_xml_writer` (`OptimizedXmlWriter`, `vectorized::write_elements_parallel`) | DEAD (**removed in 3c**) | no users outside its unit tests; its escaping differs from `xml_escape`, so its output would differ from `XmlWriter`'s | — |
 | `ast::{AST, Element, Node}` and their builders | REAL | generators, writer; WASM `diff_viewer` (decided removal) | — |
 | `Node::Comment`, `SimpleComment`, `add_comment`, `add_simple_comment`, `with_comment`, `with_namespace` | REAL (no build-path producer) | the writer emits them; no generator creates them | doctests |
 | `xml_escape::*` (`pub(crate)`) | REAL | build path | — |
 
-### `namespace_minimizer.rs`
+### `namespace_minimizer.rs` (removed in 3c)
 
 | item | class | evidence | affected |
 |---|---|---|---|
-| `NamespaceMinimizer::{new, minimize, hoist_namespaces}`, `MinimizationResult`, `NamespaceUsage`, `NamespaceAnalysis` (+ 6 PR 2 allows, H8, D22) | DEAD | no user in `src/`, tests, benches, examples, bindings or the CLI; only `lib.rs:20` declares it | Rust |
-| `with_conflict_resolution` / the `conflict_resolution` field | NO-OP | set (`:65,71`), never read | — |
-| `AdvancedNamespaceMinimizer`, `OptimizationStrategy` | DEAD | no users; `Conservative` is `Minimal` plus a warning string (`:427-431`) | — |
+| `NamespaceMinimizer::{new, minimize, hoist_namespaces}`, `MinimizationResult`, `NamespaceUsage`, `NamespaceAnalysis` (+ 6 PR 2 allows, H8, D22) | DEAD (**removed in 3c**) | no user in `src/`, tests, benches, examples, bindings or the CLI; only `lib.rs:20` declares it | Rust |
+| `with_conflict_resolution` / the `conflict_resolution` field | NO-OP (**removed in 3c**) | set (`:65,71`), never read | — |
+| `AdvancedNamespaceMinimizer`, `OptimizationStrategy` | DEAD (**removed in 3c**) | no users; `Conservative` is `Minimal` plus a warning string (`:427-431`) | — |
 
 ### Files not compiled
 
 | item | class | evidence | affected |
 |---|---|---|---|
-| `src/attribute_normalizer.rs` (whole file; H2) | DEAD | no `mod attribute_normalizer` in `lib.rs` | none |
-| `src/extension_restoration.rs` (whole file) | DEAD | no `mod extension_restoration` in `lib.rs` | none (`docs/integration_test_extensions.md`, `dev-docs/TEST_TRIAGE.md` mention it) |
+| `src/attribute_normalizer.rs` (whole file; H2) | DEAD (**removed in 3c**) | no `mod attribute_normalizer` in `lib.rs` | none |
+| `src/extension_restoration.rs` (whole file) | DEAD (**removed in 3c**) | no `mod extension_restoration` in `lib.rs` | none (`docs/integration_test_extensions.md`, `dev-docs/TEST_TRIAGE.md` mention it) |
 | `src/presets/custom_template.rs`, `src/messages/test_data.rs` | DEAD | not declared | go with the decided removals |
 
-### `caching.rs`
+### `caching.rs` (removed in 3c)
 
 Nothing on the build path uses it. The only external user is `tests/it/honest_results.rs:252-263`.
 
 | item | class | evidence | affected |
 |---|---|---|---|
-| `CacheManager::fast_hash`, `stats` (+ PR 2 allow D23) | REAL (no build-path user) | — | tests: `honest_results.rs:254-262` |
-| `CacheManager::get_schema`, `clear_all`, `prune_expired`; `GlobalCache`, `SchemaCache`, `HashCache` | DEAD | no users; there are no schemas to cache | Rust |
-| `CacheStats` `validation_*` / `template_*` fields, `overall_hit_rate`, `summary` | FAKE | the validation and template counters are never incremented, so they average in as 0 | — |
-| `ValidationCache` | DEAD | no `CacheManager` accessor | — |
-| `ValidationCache::hit_rate` | FAKE | `entries / total_accesses` is not a hit rate (`:328-342`) | — |
-| `CompiledSchema`, `ValidationRule`, `RuleType`, `ElementConstraint`, `caching::ValidationResult`, `TemplateCache`, `TemplateKey`, `CompiledTemplate`, `TemplatePart` | DEAD | nothing produces or consumes them (there is no schema or template compiler) | — |
+| `CacheManager::fast_hash`, `stats` (+ PR 2 allow D23) | REAL (no build-path user) (**removed in 3c** (with the module)) | — | tests: `honest_results.rs:254-262` |
+| `CacheManager::get_schema`, `clear_all`, `prune_expired`; `GlobalCache`, `SchemaCache`, `HashCache` | DEAD (**removed in 3c**) | no users; there are no schemas to cache | Rust |
+| `CacheStats` `validation_*` / `template_*` fields, `overall_hit_rate`, `summary` | FAKE (**removed in 3c**) | the validation and template counters are never incremented, so they average in as 0 | — |
+| `ValidationCache` | DEAD (**removed in 3c**) | no `CacheManager` accessor | — |
+| `ValidationCache::hit_rate` | FAKE (**removed in 3c**) | `entries / total_accesses` is not a hit rate (`:328-342`) | — |
+| `CompiledSchema`, `ValidationRule`, `RuleType`, `ElementConstraint`, `caching::ValidationResult`, `TemplateCache`, `TemplateKey`, `CompiledTemplate`, `TemplatePart` | DEAD (**removed in 3c**) | nothing produces or consumes them (there is no schema or template compiler) | — |
 
 ### `memory_optimization.rs`, `optimized_strings.rs`, `parallel_processing.rs`
 
@@ -325,20 +331,20 @@ are each other, `benches/performance.rs` and `tests/it/honest_results.rs`.
 
 | item | class | evidence | affected |
 |---|---|---|---|
-| `memory_optimization::Arena::{alloc, allocated_bytes, capacity_bytes, reset, clear}` | FAKE | `Box::new(value)` plus zero-filling a byte `Vec` to "simulate allocation" (`:31-57`) | via `BuildMemoryManager` |
-| `BuildMemoryManager` (+ `memory_usage`, `reset_for_next_build`, `full_reset`) | NO-OP | its only consumer ignores it (`_memory_manager`, `parallel_processing.rs:99,117`) | benches: `performance.rs:121,134` |
-| `MemoryStats::total_bytes` | FAKE | hard-coded 64 B / 8192 B per pooled object | — |
-| `ObjectPool`, `PooledObject`, `LazyField` | DEAD | no users | — |
-| `CompactAST` (`from_ast`, `intern_string`, `get_string`, `add_element`, `memory_footprint`), `CompactAttributes`, `CompactNodeRef`, `CompactElement` | DEAD | write-only (private fields, no getters for the tree); nothing reads a `CompactAST` back | tests: `honest_results.rs:312-330` |
-| `NodeType` | DEAD | never used | — |
-| `optimized_strings::{BuildContext, BuildStats, MemoryUsage, StringInterner, OptimizedString, FastString, BufferPool, buffer_sizes}` | DEAD | used only by `caching`, `optimized_xml_writer`, `parallel_processing` (DEAD / FAKE) and the bench | benches: `performance.rs:122` |
-| `BufferPool::memory_usage` | FAKE | `current_size` is never decremented (`:285-311`) | — |
-| `intern_atom`, `CowString`, `OptimizedLocalizedString` | DEAD | no users | — |
-| `ParallelProcessor::process_build_parallel`, `ParallelBuildResult` | FAKE | writes no AST and no XML ("Simulate track processing work", `:188-189`); returns names and timings | benches: `performance.rs:119-145` |
-| `ParallelBuildResult::meets_performance_target` | FAKE | hard-coded 5 / 10 / 50 ms targets applied to that non-build | — |
-| `ParallelProcessor::{new, validate_items_parallel, generate_xml_sections_parallel}`, `ParallelConfig`, `WorkloadAnalyzer`, `WorkloadAnalysis`, `ProcessedElement`, `parallel_processing::ValidationResult` | DEAD | no users besides the bench; `generate_xml_sections_parallel` writes unescaped text | benches |
-| `ThreadMetrics` | DEAD | never constructed | — |
-| `BuildError::Parallel` (`error.rs:73`) | follows the module | constructed only here | — |
+| `memory_optimization::Arena::{alloc, allocated_bytes, capacity_bytes, reset, clear}` | FAKE (**removed in 3c**) | `Box::new(value)` plus zero-filling a byte `Vec` to "simulate allocation" (`:31-57`) | via `BuildMemoryManager` |
+| `BuildMemoryManager` (+ `memory_usage`, `reset_for_next_build`, `full_reset`) | NO-OP (**removed in 3c**) | its only consumer ignores it (`_memory_manager`, `parallel_processing.rs:99,117`) | benches: `performance.rs:121,134` |
+| `MemoryStats::total_bytes` | FAKE (**removed in 3c**) | hard-coded 64 B / 8192 B per pooled object | — |
+| `ObjectPool`, `PooledObject`, `LazyField` | DEAD (**removed in 3c**) | no users | — |
+| `CompactAST` (`from_ast`, `intern_string`, `get_string`, `add_element`, `memory_footprint`), `CompactAttributes`, `CompactNodeRef`, `CompactElement` | DEAD (**removed in 3c**) | write-only (private fields, no getters for the tree); nothing reads a `CompactAST` back | tests: `honest_results.rs:312-330` |
+| `NodeType` | DEAD (**removed in 3c**) | never used | — |
+| `optimized_strings::{BuildContext, BuildStats, MemoryUsage, StringInterner, OptimizedString, FastString, BufferPool, buffer_sizes}` | DEAD (**removed in 3c**) | used only by `caching`, `optimized_xml_writer`, `parallel_processing` (DEAD / FAKE) and the bench | benches: `performance.rs:122` |
+| `BufferPool::memory_usage` | FAKE (**removed in 3c**) | `current_size` is never decremented (`:285-311`) | — |
+| `intern_atom`, `CowString`, `OptimizedLocalizedString` | DEAD (**removed in 3c**) | no users | — |
+| `ParallelProcessor::process_build_parallel`, `ParallelBuildResult` | FAKE (**removed in 3c**) | writes no AST and no XML ("Simulate track processing work", `:188-189`); returns names and timings | benches: `performance.rs:119-145` |
+| `ParallelBuildResult::meets_performance_target` | FAKE (**removed in 3c**) | hard-coded 5 / 10 / 50 ms targets applied to that non-build | — |
+| `ParallelProcessor::{new, validate_items_parallel, generate_xml_sections_parallel}`, `ParallelConfig`, `WorkloadAnalyzer`, `WorkloadAnalysis`, `ProcessedElement`, `parallel_processing::ValidationResult` | DEAD (**removed in 3c**) | no users besides the bench; `generate_xml_sections_parallel` writes unescaped text | benches |
+| `ThreadMetrics` | DEAD (**removed in 3c**) | never constructed | — |
+| `BuildError::Parallel` (`error.rs:73`) | follows the module (**removed in 3c**) | constructed only here | — |
 
 ### `versions/*`
 
@@ -401,29 +407,29 @@ subcommand and `tests/it/honest_results.rs:272-300` (`SchemaValidator`).
 |---|---|---|---|
 | `StreamingBuilder::{new, new_with_config, set_progress_callback, set_estimated_total, into_inner, start_message, write_resource, finish_resources_start_releases, write_release, finish_message}`, `StreamingProgress`, `ProgressCallback` | REAL (known issues: ERN 3.8-style tree only, D12/D13/D14) | — | Node `StreamingDdexBuilder`; tests: `target_version.rs`, `determinism_0_6.rs`; `examples/streaming_catalog_example.rs` |
 | `StreamingConfig.max_buffer_size`, `progress_callback_frequency` | REAL | `:137,545`, `:287,398` | Node |
-| `StreamingConfig.deterministic`, `determinism_config`, `validate_during_stream` | NO-OP | never read: it always uses `StreamingReferenceManager::new()` (`:141`) and no validation runs | Node `startMessage` (`bindings/node/src/lib.rs:676-681`) |
+| `StreamingConfig.deterministic`, `determinism_config`, `validate_during_stream` | NO-OP (**removed in 3c** (also the Node `StreamingConfig.deterministic` / `validateDuringStream`)) | never read: it always uses `StreamingReferenceManager::new()` (`:141`) and no validation runs | Node `startMessage` (`bindings/node/src/lib.rs:676-681`) |
 | `StreamingStats.releases_written`, `resources_written`, `bytes_written` | REAL | — | Node `finishMessage` |
-| `StreamingStats.deals_written` | FAKE | always 0: there is no `write_deal`, and the field is never incremented | Node `StreamingStats` |
-| `StreamingStats.warnings` | FAKE | always empty: nothing pushes to `self.warnings` | Node |
-| `StreamingResult` | DEAD | never constructed; duplicates `StreamingStats` | — |
-| `StreamingError` and `From<StreamingError> for BuildError` | DEAD | no variant is ever constructed | — |
+| `StreamingStats.deals_written` | FAKE (**removed in 3c** (also Node `dealsWritten`)) | always 0: there is no `write_deal`, and the field is never incremented | Node `StreamingStats` |
+| `StreamingStats.warnings` | FAKE (**removed in 3c** (also Node `warnings`)) | always empty: nothing pushes to `self.warnings` | Node |
+| `StreamingResult` | DEAD (**removed in 3c**) | never constructed; duplicates `StreamingStats` | — |
+| `StreamingError` and `From<StreamingError> for BuildError` | DEAD (**removed in 3c**) | no variant is ever constructed | — |
 | `BufferConfig.max_buffer_size`, `buffer_count`; `BufferManager` and all its methods; `BufferStats` | REAL | — | — |
-| `BufferConfig.enable_compression` | NO-OP | both branches of `write_buffer` write the buffer unchanged (TODO) | — |
+| `BufferConfig.enable_compression` | NO-OP (**removed in 3c**) | both branches of `write_buffer` write the buffer unchanged (TODO) | — |
 | `ReferenceConfig` (all fields), `StreamingReferenceManager::generate_*_reference`, `store_*_metadata`, `get_stats`, `ReferenceStats`, `get_resource_reference`, `get_release_reference` | REAL | — | — |
-| `StreamingReferenceManager.hash_generator` | DEAD | `#[allow(dead_code)]`; SHA-256 is used directly | — |
-| `StreamingReferenceManager::validate_references`, `ReferenceValidationResult.errors` / `is_valid` | FAKE (errors) | every insert and eviction updates both maps, so `errors` is always empty and `is_valid` always true (`:399-416`); the warnings are real | — |
-| `ReferenceValidation` | DEAD | never constructed | — |
+| `StreamingReferenceManager.hash_generator` | DEAD (left for PR 6 (streaming references)) | `#[allow(dead_code)]`; SHA-256 is used directly | — |
+| `StreamingReferenceManager::validate_references`, `ReferenceValidationResult.errors` / `is_valid` | FAKE (errors) (left for PR 6 (streaming references)) | every insert and eviction updates both maps, so `errors` is always empty and `is_valid` always true (`:399-416`); the warnings are real | — |
+| `ReferenceValidation` | DEAD (left for PR 6 (streaming references)) | never constructed | — |
 
 ### `preflight.rs`, `id_generator.rs`, `error.rs`
 
 | item | class | evidence | affected |
 |---|---|---|---|
 | `PreflightValidator::{new, validate}`, `PreflightLevel`, `ValidationResult`, `ValidationError`, `ValidationWarning`, `ValidationInfo`; `ValidationConfig.level`, `profile`, `validate_identifiers`, `check_required_fields`, `validate_references` | REAL | `builder.rs:738-770` | all |
-| `ValidationConfig.validate_checksums` | NO-OP | never read (the UPC check digit is always checked under `validate_identifiers`) | `builder.rs:743`; tests: `golden_files.rs:186` |
-| `ValidationConfig.validate_dates` | NO-OP | never read (there is no date validation) | `builder.rs:745`; tests: `golden_files.rs:188` |
-| private statics `ISWC_PATTERN`, `ISNI_PATTERN` | DEAD | unused | — |
+| `ValidationConfig.validate_checksums` | NO-OP (**removed in 3c**) | never read (the UPC check digit is always checked under `validate_identifiers`) | `builder.rs:743`; tests: `golden_files.rs:186` |
+| `ValidationConfig.validate_dates` | NO-OP (**removed in 3c**) | never read (there is no date validation) | `builder.rs:745`; tests: `golden_files.rs:188` |
+| private statics `ISWC_PATTERN`, `ISNI_PATTERN` | DEAD (**removed in 3c**) | unused | — |
 | `StableHashGenerator`, `StableHashConfig`, `HashAlgorithm` | REAL | `IdStrategy::StableHash`; **out of scope (PR 6)** | — |
-| `HashRecipe`, `NormalizeOptions`, `UnicodeForm`, `CaseNormalization` | DEAD | pub, but no public API takes or returns them | — |
+| `HashRecipe`, `NormalizeOptions`, `UnicodeForm`, `CaseNormalization` | DEAD (left for PR 6 (ID generation)) | pub, but no public API takes or returns them | — |
 | `BuildError` variants except the next two | REAL | constructed in `src/` | all |
 | `BuildError::DeterminismFailed` | DEAD (**removed in 3b**) | never constructed | `DETERMINISM.md:391` |
 | `error::BuildWarning` (exported at the root as `ddex_builder::BuildWarning`) | REAL (confusing duplicate) | used by `streaming`; `DDEXBuilder::build` returns the different `builder::BuildWarning` | — |
@@ -436,11 +442,11 @@ Not used by the build path, the CLI or the bindings; used only by `tests/it/link
 | item | class | evidence | affected |
 |---|---|---|---|
 | `ReferenceLinker`, `ReferenceGenerator`, `RelationshipManager` (all methods), `EntityType`, `ReferenceStyle`, `ReleaseResourceReference`, `LinkingReport` counts, `LinkerConfig.reference_style` | REAL | standalone | tests |
-| `LinkerConfig.auto_link`, `validate_on_build`, `strict` | NO-OP | the `config` field is `#[allow(dead_code)]` (`mod.rs:31`); only `reference_style` is read, at construction | tests: `linker.rs:228-230` |
-| `LinkingReport.validation_passed` | FAKE | `true` even when validation fails (`auto_linker.rs:156-163`) | tests: `linker.rs:158`, `linker_xml_integration.rs:82`, `xml_generation.rs:82` |
-| `AutoLinker::with_config`, `AutoLinkerConfig` (incl. the NO-OP `generate_missing_refs`) | DEAD | private module, not re-exported (`mod.rs:11`) | — |
-| `LinkingStats`, `ResourceLink` | DEAD | never used | — |
-| `LinkingError::{UnknownRelease, DuplicateReference, CircularReference, InvalidEntityType, ValidationFailed}` | DEAD | never constructed | — |
+| `LinkerConfig.auto_link`, `validate_on_build`, `strict` | NO-OP (**removed in 3c** (and the stored `config` field)) | the `config` field is `#[allow(dead_code)]` (`mod.rs:31`); only `reference_style` is read, at construction | tests: `linker.rs:228-230` |
+| `LinkingReport.validation_passed` | FAKE (**removed in 3c**) | `true` even when validation fails (`auto_linker.rs:156-163`) | tests: `linker.rs:158`, `linker_xml_integration.rs:82`, `xml_generation.rs:82` |
+| `AutoLinker::with_config`, `AutoLinkerConfig` (incl. the NO-OP `generate_missing_refs`) | DEAD (`generate_missing_refs` **removed in 3c**; **row partly wrong**: `with_config` can be called with `Default::default()`, and the other fields are read, so the rest stays) | private module, not re-exported (`mod.rs:11`) | — |
+| `LinkingStats`, `ResourceLink` | DEAD (**removed in 3c**) | never used | — |
+| `LinkingError::{UnknownRelease, DuplicateReference, CircularReference, InvalidEntityType, ValidationFailed}` | DEAD (**removed in 3c**) | never constructed | — |
 | `RelationshipStatistics` | REAL (not nameable) | returned by `get_statistics`, not re-exported | — |
 
 ### `security.rs`, `security/*`, `api_security.rs`
@@ -454,18 +460,18 @@ Most of it is REAL; many REAL items are buggy (see
 | item | class | evidence | affected |
 |---|---|---|---|
 | `SecurityConfig` fields other than the next row, `SecureXmlReader`, `InputValidator` (all methods), `RateLimiter`, `OutputSanitizer::{new, sanitize_xml_output, create_secure_log_message}`, `SecureTempFile`, `utils::*` | REAL | — | tests, benches |
-| `SecurityConfig.max_attributes_per_element` (+ const `:54`) | NO-OP | never read; set only in `Default` (`:141`) | tests: `security/mod.rs:106,123` |
-| `OutputSanitizer.config` | NO-OP | `#[allow(dead_code)]` (`:625`); the `SecurityConfig` passed to `new` is never read (the argument can stay) | — |
-| private `DANGEROUS_PATH_REGEX` | DEAD | `#[allow(dead_code)]` (`:90`) | — |
+| `SecurityConfig.max_attributes_per_element` (+ const `:54`) | NO-OP (**removed in 3c**) | never read; set only in `Default` (`:141`) | tests: `security/mod.rs:106,123` |
+| `OutputSanitizer.config` | NO-OP (field **removed in 3c** (the `new(config)` argument stays)) | `#[allow(dead_code)]` (`:625`); the `SecurityConfig` passed to `new` is never read (the argument can stay) | — |
+| private `DANGEROUS_PATH_REGEX` | DEAD (**removed in 3c**) | `#[allow(dead_code)]` (`:90`) | — |
 | `ApiSecurityManager::{new, validate_request, sanitize_response, validate_ffi_input, create_secure_error_response}`, `BatchOperationMonitor`, `BatchStats`, `FfiValidator`, `FfiDataType` | REAL | — | unit tests |
-| `ApiSecurityManager::get_wasm_security_headers` | FAKE | returns a hard-coded header map and reads no config; the WASM binding does not use it (`api_security.rs:72-103`) | unit test `:454-470` |
-| `ApiSecurityConfig` (all fields) | NO-OP | no field is read and no function takes it | root re-export `lib.rs:56` |
-| `RateLimitInfo`, `ContentType`, private `OperationRecord.resource_usage` | DEAD | never constructed / referenced (`:201,212`; `resource_usage` is always 1, `:136,171`) | — |
-| `EntityClassifier` (all methods), `ClassifierConfig` (all fields read), `Entity`, `EntityClass`, `ValidationResult`, `EntityMetrics`, `create_*_entity`, `AttackType::{ExternalEntity, NetworkRequest, EntityBomb}` | REAL (heuristic) | — | tests, bench |
-| private `load_ddex_whitelist` (what makes `EntityClass::SafeDdex` for DDEX element names) | FAKE | hard-coded element names "would typically be loaded from DDEX schema files"; DDEX defines no XML entities. It runs before the external-reference check, so `classify_entity("ddex", "SYSTEM 'file:///etc/passwd'")` is `SafeDdex` (`entity_classifier.rs:275,285,527-583`) | tests: `entity_classification.rs:44-66`, unit test `:681-689` |
-| `AttackType::{ExponentialExpansion, RecursiveEntity, FileAccess, ParameterEntity}`, `ClassificationResult` | DEAD | never constructed / referenced | — |
-| `ErrorSanitizer` (all methods), `SanitizerConfig` (all fields read), `SanitizedError`, `RedactionRule`, `ErrorMode`, `ErrorContext`, `SanitizerStatistics`, the `sanitize_*` free functions, `init_global_sanitizer`, `with_global_sanitizer` | REAL | — | tests, example, bench |
-| `SecureError` trait, `ErrorLevel` | DEAD | no implementor outside a unit test; nothing takes a `SecureError` | unit test `error_sanitizer.rs:698-753`; re-exports `security.rs:26-27` |
+| `ApiSecurityManager::get_wasm_security_headers` | FAKE (**removed in 3c**) | returns a hard-coded header map and reads no config; the WASM binding does not use it (`api_security.rs:72-103`) | unit test `:454-470` |
+| `ApiSecurityConfig` (all fields) | NO-OP (**removed in 3c**) | no field is read and no function takes it | root re-export `lib.rs:56` |
+| `RateLimitInfo`, `ContentType`, private `OperationRecord.resource_usage` | DEAD (**removed in 3c**) | never constructed / referenced (`:201,212`; `resource_usage` is always 1, `:136,171`) | — |
+| `EntityClassifier` (all methods), `ClassifierConfig` (all fields read), `Entity`, `EntityClass`, `ValidationResult`, `EntityMetrics`, `create_*_entity`, `AttackType::{ExternalEntity, NetworkRequest, EntityBomb}` | REAL (heuristic) (**removed in 3c** (decided: unused by any build, wrong answers in some configurations), with `InputValidator::validate_entities` / `classify_entity` / `get_entity_metrics` and the classifier-only `SecurityConfig` fields) | — | tests, bench |
+| private `load_ddex_whitelist` (what makes `EntityClass::SafeDdex` for DDEX element names) | FAKE (**removed in 3c**) | hard-coded element names "would typically be loaded from DDEX schema files"; DDEX defines no XML entities. It runs before the external-reference check, so `classify_entity("ddex", "SYSTEM 'file:///etc/passwd'")` is `SafeDdex` (`entity_classifier.rs:275,285,527-583`) | tests: `entity_classification.rs:44-66`, unit test `:681-689` |
+| `AttackType::{ExponentialExpansion, RecursiveEntity, FileAccess, ParameterEntity}`, `ClassificationResult` | DEAD (**removed in 3c**) | never constructed / referenced | — |
+| `ErrorSanitizer` (all methods), `SanitizerConfig` (all fields read), `SanitizedError`, `RedactionRule`, `ErrorMode`, `ErrorContext`, `SanitizerStatistics`, the `sanitize_*` free functions, `init_global_sanitizer`, `with_global_sanitizer` | REAL (**removed in 3c** (decided)) | — | tests, example, bench |
+| `SecureError` trait, `ErrorLevel` | DEAD (**removed in 3c**) | no implementor outside a unit test; nothing takes a `SecureError` | unit test `error_sanitizer.rs:698-753`; re-exports `security.rs:26-27` |
 | `PathValidator` (all methods), `PathValidationConfig` (all fields read), `ValidatedPath` | REAL (buggy) | — | tests |
 
 ### CLI (`bin/ddex-builder.rs`)
@@ -601,7 +607,7 @@ Each part is under about 60 files and can land on its own.
    - the `DB_C14N` config argument.
 
    Needs your answer on UNSURE 4.
-3. **PR 3c: dead and fake internals.** About 25 files:
+3. **PR 3c: dead and fake internals (done).** About 25 files:
    - `attribute_normalizer.rs`, `extension_restoration.rs`, `namespace_minimizer.rs`;
    - `caching.rs`, `memory_optimization.rs`, `optimized_strings.rs`, `parallel_processing.rs`,
      `optimized_xml_writer.rs` and `benches/performance.rs`'s parallel bench;

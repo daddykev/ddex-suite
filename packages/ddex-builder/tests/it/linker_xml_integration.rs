@@ -79,7 +79,6 @@ fn test_linker_with_xml_generation() {
     println!("Linking Report:");
     println!("  Generated refs: {}", link_report.generated_refs);
     println!("  Linked resources: {}", link_report.linked_resources);
-    println!("  Validation passed: {}", link_report.validation_passed);
 
     // Now build XML with linked references (plus the values ERN 4.x requires)
     let request = crate::ern4_support::ern4_test_data(request);
