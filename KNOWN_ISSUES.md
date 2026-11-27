@@ -126,3 +126,6 @@ They now fail, or report the value as not measured, instead:
 - ddex-builder canonicalizer (`src/canonical/mod.rs`, `rules.rs`): the locked-prefix table rewrites the prefix of a DDEX namespace declaration but not the element and attribute names that use it, so input with other prefixes (e.g. `ernm:`) comes out not namespace-well-formed.
 - `packages/ddex-parser/bindings/node/package.json` keeps the `typescript` and `@types/node` devDependencies, which only the removed `build:ts` (tsc) used.
 - Root `Cargo.toml` `[workspace.dependencies]`: cargo 1.100 warns `unused workspace dependency` for getrandom, hex, napi, napi-derive, pyo3, sha2, similar, walkdir and wasm-bindgen on `cargo check -p <crate>`; manifest noise that hides real warnings (not rustc warnings).
+- Playground JSON editor accepts duplicate keys silently (last one wins); consider flagging them.
+- Parse throughput change in 0.6.0 unconfirmed: the 0.5.1 and 0.6.0 benchmarks ran on different runner CPUs. Compare on one CPU (or a self-hosted runner), and profile the per-reader checks if it's slower.
+- scripts/verify_release_artifacts.sh doesn't check the signer ref, commit or run itself; PUBLISH_0.6.0_COMMANDS.md does it by hand. Move those checks into the script.
