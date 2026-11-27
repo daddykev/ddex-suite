@@ -80,17 +80,17 @@ What you get:
 
 ## Security
 
-The default configuration (`SecurityConfig::strict()`) rejects DTDs and external
-entities (XXE), limits entity expansion, element depth (100), text and attribute sizes,
-and input size (1 GB), and never fetches from the network. The parser does not validate
+Every reader rejects a DOCTYPE (and with it any DTD or external entity, XXE) and
+references to undefined entities, so no entity is ever expanded. The default configuration
+(`SecurityConfig::strict()`) also limits element depth (100) and the number of references
+in text (100), and the parser never fetches from the network. It sets no input-size limit. The parser does not validate
 against the DDEX XSD or the AVS business rules.
 
 ## Streaming
 
-`parse` reads the whole document. The streaming APIs (`ParseMode::Stream`, the
-`stream*` iterators, `FastStreamingParser`) are experimental and opt-in: they read a
-subset of the fields, and the fast path behind `SecurityConfig::relaxed()` is not
-implemented (`parse` returns an error with that setting). The parallel iterator does not currently scale with the thread count.
+`parse` reads the whole document. The streaming APIs (`ParseMode::Stream` and the
+`stream*` iterators) are experimental and opt-in: they read a subset of the fields. The
+parallel iterator does not currently scale with the thread count.
 
 ## Performance
 

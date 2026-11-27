@@ -75,10 +75,9 @@ pub fn test_parser_consistency() -> Result<(), ParseError> {
             }
         }
 
-        return Err(ParseError::ConversionError {
-            from: "parser1".to_string(),
-            to: "parser2".to_string(),
-            message: "Element count mismatch between parsers".to_string(),
+        return Err(ParseError::InvalidValue {
+            field: "element count".to_string(),
+            value: "differs between the working and parallel parsers".to_string(),
         });
     }
 

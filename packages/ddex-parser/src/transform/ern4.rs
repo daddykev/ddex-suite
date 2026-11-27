@@ -140,7 +140,7 @@ pub(crate) fn read_subtree<R: BufRead>(
     loop {
         let event = reader
             .read_event_into(&mut buf)
-            .map_err(|e| ParseError::XmlError(format!("XML parsing error: {}", e)))?;
+            .map_err(crate::xml_text::read_error)?;
         validator.validate_event(&event, reader)?;
         if validator.get_depth() > 100 {
             return Err(ParseError::DepthLimitExceeded {

@@ -36,14 +36,11 @@ uuid = { version = "1.5", features = ["v4", "serde", "js"] }
 
 # Optional/feature-gated dependencies
 tokio = { version = "1.35", features = ["full"] }
-ts-rs = "7.1"
 
 # Development dependencies
 criterion = "0.5"
 tempfile = "3.8"
-pretty_assertions = "1.4"
 proptest = "1.4"
-test-case = "3.1"
 insta = "1.34"
 walkdir = "2.4"
 sha2 = "0.10"

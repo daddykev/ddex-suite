@@ -34,8 +34,8 @@ plus `ddex-core` on crates.io. All of them are released together at the same ver
 - **Builds schema-valid XML.** Nothing is filled in for you: when the target ERN version
   requires a value the request does not carry, the build fails with an error naming the
   field. See the [build request reference](./build-request.mdx).
-- **Hardens XML parsing.** DTDs and external entities are rejected, entity expansion,
-  depth and size are limited, and nothing is fetched from the network. See the
+- **Hardens XML parsing.** DTDs and external entities are rejected, no entity is expanded,
+  nesting depth is limited, and nothing is fetched from the network. See the
   [security model](./security.md).
 - **Exports to pandas.** The Python parser returns DataFrames and the Python builder
   builds from one. See [Python and DataFrames](./python-dataframes.md).

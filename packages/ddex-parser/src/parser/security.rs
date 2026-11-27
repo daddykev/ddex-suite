@@ -1,30 +1,22 @@
-use std::time::Duration;
+// core/src/parser/security.rs
+//! Security configuration for the parser.
+//!
+//! Every reader rejects a DOCTYPE and references to undefined entities (there is no setting
+//! for either; see `ddex_core::xml_refs`). Before 0.6.0 this type also had `relaxed()`, which
+//! made every `parse` fail, and eleven fields that no reader read or that only routed to
+//! that failure (`disable_dtd`,
+//! `disable_external_entities`, `max_entity_depth`, `max_attribute_size`, `max_text_size`,
+//! `max_file_size`, `parse_timeout`, `stream_timeout`, `allow_network`, `allowed_schemas`,
+//! `enable_fast_streaming`).
 
-/// Security configuration for XML parsing
+/// Limits applied while parsing
 #[derive(Debug, Clone)]
 pub struct SecurityConfig {
-    // Entity expansion protection
-    pub disable_dtd: bool,
-    pub disable_external_entities: bool,
+    /// Maximum number of entity and character references (`&amp;`, `&#233;`, ...) in
+    /// character data, checked by the default parse
     pub max_entity_expansions: usize,
-    pub max_entity_depth: usize,
-
-    // Size limits
+    /// Maximum element nesting depth
     pub max_element_depth: usize,
-    pub max_attribute_size: usize,
-    pub max_text_size: usize,
-    pub max_file_size: usize,
-
-    // Time limits
-    pub parse_timeout: Duration,
-    pub stream_timeout: Duration,
-
-    // Network protection
-    pub allow_network: bool,
-    pub allowed_schemas: Vec<String>,
-
-    // Performance options
-    pub enable_fast_streaming: bool,
 }
 
 impl Default for SecurityConfig {
@@ -37,35 +29,8 @@ impl SecurityConfig {
     /// Strict security configuration (default)
     pub fn strict() -> Self {
         Self {
-            disable_dtd: true,
-            disable_external_entities: true,
             max_entity_expansions: 100, // Reduced from 1000 to protect against XML bombs
-            max_entity_depth: 10,       // Reduced from 20 for better protection
             max_element_depth: 100,     // Keep at 100, this will block deep nesting attacks
-            max_attribute_size: 100 * 1024, // 100KB
-            max_text_size: 1024 * 1024, // 1MB
-            max_file_size: 1024 * 1024 * 1024, // 1GB
-            parse_timeout: Duration::from_secs(30),
-            stream_timeout: Duration::from_secs(300),
-            allow_network: false,
-            allowed_schemas: vec!["file".to_string()],
-            enable_fast_streaming: false, // Disabled by default for strict mode
-        }
-    }
-
-    /// Relaxed configuration for trusted sources
-    pub fn relaxed() -> Self {
-        Self {
-            max_element_depth: 200,
-            max_file_size: if cfg!(target_arch = "wasm32") {
-                100 * 1024 * 1024 // 100MB for WASM
-            } else {
-                5 * 1024 * 1024 * 1024 // 5GB for native
-            },
-            parse_timeout: Duration::from_secs(120),
-            stream_timeout: Duration::from_secs(600),
-            enable_fast_streaming: true, // Enable fast streaming in relaxed mode
-            ..Self::strict()
         }
     }
 }

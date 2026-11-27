@@ -227,6 +227,80 @@ effect. Real features can come back later as additions. The inventory is
   - Path change: `schema::MessageProfile` is now also exported at the crate root as
     `ddex_builder::MessageProfile`.
 
+- **Every parser reader rejects a DOCTYPE** (Rust):
+  - Previously only `DDEXParser::parse` did; `ParseMode::Stream`, `DDEXParser::stream*`,
+    the selective, xpath, multi-release and extension-capture readers, and the zero-copy and
+    parallel scanners skipped it.
+  - Every reader now fails with the error `parse` has always returned:
+    `ParseError::SecurityViolation`, "DTD declarations are disabled for security".
+  - This affects Rust users of the streaming, selective and xpath readers; `parse` and the
+    Node / Python / WASM bindings behave as before.
+  - The check lives in `ddex_core::xml_refs`: the new `Doctype` error,
+    `ReferenceScanner::rejecting_doctype`, `CheckedRead::rejecting_doctype` and
+    `find_doctype`. `check_document` and the default scanner still skip a DOCTYPE.
+- **`GraphBuilder` and `VersionDetector` reject undefined entities** (Rust):
+  - `transform::graph::GraphBuilder::build_from_xml` and
+    `VersionDetector::detect` / `DDEXParser::detect_version` now fail on a reference to an
+    undefined entity and on a DOCTYPE, like the other readers. Inside `parse` this was
+    already caught by its first pass.
+  - `GraphBuilder::build_from_xml_with_security_config`, `build_from_xml_with_context` and
+    `build_from_xml_with_context_and_security` were removed. Their extra arguments were never
+    read; use `build_from_xml`.
+- **`SecurityConfig::relaxed()` and the fast streaming parse removed** (Rust):
+  - What went: `SecurityConfig::relaxed()`, `SecurityConfig::enable_fast_streaming` and
+    `DDEXParser::parse_fast_streaming`.
+  - Why: with `relaxed()` (or `enable_fast_streaming`), every `parse` failed with "not
+    implemented".
+  - Migration: use the default configuration (`SecurityConfig::strict()`).
+- **`SecurityConfig` fields removed** (Rust):
+  - What went: `disable_dtd`, `disable_external_entities`, `max_entity_depth`,
+    `max_attribute_size`, `max_text_size`, `max_file_size`, `parse_timeout`,
+    `stream_timeout`, `allow_network` and `allowed_schemas`.
+  - Why: none was read. `disable_dtd` is gone because every reader now rejects a DOCTYPE,
+    with no setting.
+  - Kept: `max_entity_expansions` and `max_element_depth`.
+  - Migration: drop the fields (`..SecurityConfig::default()` keeps working). There is no
+    input-size limit in Rust; the Node.js binding keeps its 100 MB limit.
+- **`FastStreamingParser` removed** (Rust):
+  - What went: `streaming::FastStreamingParser`, `FastStreamingIterator`,
+    `FastStreamingElement`, `FastElementType`, `FastParsingStats` and `create_fast_parser`.
+    `streaming::StreamingConfig` (never read) and `StreamingProgress` (never produced) go too.
+  - Why: its byte-pattern counts were wrong by construction. `<Release` also matched
+    `<ReleaseList>` and `<ReleaseId>`, and `ern:`-prefixed elements were never matched.
+  - Migration: no replacement; use `parse`, or `DDEXParser::stream*` for raw elements.
+- **Other parser stubs and fakes removed** (Rust):
+  - `StreamingParser::stream_resources` / `stream_parties` and their iterators: they
+    returned "not implemented".
+  - `transform::version_adapter::VersionAdapter`: its methods returned "not implemented".
+  - `streaming::parallel_parser::ParallelBenchmark`, `ThreadResult` and
+    `ParallelBenchmarkResult`: "not implemented" / never built.
+  - `streaming::ParsedElement` and `HeaderBuilder`: never produced.
+  - `WorkingStreamingParser::feed_chunk`: it counted the chunk's bytes without parsing them.
+  - `MultiReleaseResult::message_header` (always `None`), `MultiReleaseParser::detailed_parsing`,
+    and the version argument of `MultiReleaseParser::new` / `with_security_config` (never
+    used): `new()` and `with_security_config(config)` now take no version.
+  - `ExtensionCaptureContext::current_line` / `current_column` (always 1:1), and the
+    element-name argument of `should_capture_element` (never read).
+  - XPath index filters (`[n]`), which were ignored and matched every occurrence: they are
+    now an error. `PathComponent::IndexFilter` is gone.
+  - `ParseError::StreamError`, `StreamError` and `ParseError::ConversionError`: never
+    constructed.
+  - The `bench_report` module, the `bench` feature and the `generate-bench-report` binary:
+    they reported a hard-coded machine and no results.
+  - The `wasm` and `simd` features: nothing read them.
+  - Migration: no replacement for any of these; they returned no real results.
+
+### Documentation
+
+- Removed the `FastStreamingParser` figures (about 790–990 MiB/s on generated inputs) from
+  `dev-docs/PERFORMANCE.md`, and the `fast_streaming_benchmark` bench they came from. They
+  measured a byte-pattern scan with wrong counts, not a parse.
+- Removed the unsourced "Performance Characteristics" table from
+  `packages/ddex-parser/ENTRY_POINTS.md` (DOM parse ~65 MiB/s, a "stub" stream parse ~294
+  MiB/s). The measured figures are in `dev-docs/PERFORMANCE.md`.
+- The parser README, the root README and the website no longer claim text, attribute or
+  input-size limits for Rust and Python: those settings were never read.
+
 ### Dependencies
 
 - ddex-builder no longer depends on:
@@ -234,6 +308,12 @@ effect. Real features can come back later as additions. The inventory is
   - `log` and `dhat`, which were already unused. The `dhat-heap` feature goes with `dhat`.
 - ddex-builder dev-dependencies removed (already unused): `similar`, `pretty_assertions`,
   `rand` and `tokio-test`.
+- ddex-parser no longer depends on `thiserror` or (directly) `ts-rs`, both unused. Its
+  `typescript` feature still enables `ddex-core/ts-rs`.
+- ddex-parser dev-dependencies removed (unused): `tempfile`, `pretty_assertions`,
+  `proptest`, `test-case` and `insta`.
+- The workspace manifest drops `pretty_assertions`, `test-case` and `ts-rs`, which no
+  crate uses any more.
 
 ## [0.5.1] - 2026-11-26
 

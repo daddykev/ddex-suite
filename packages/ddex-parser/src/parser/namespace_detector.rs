@@ -82,14 +82,10 @@ impl NamespaceDetector {
         reader: R,
         security_config: &crate::parser::security::SecurityConfig,
     ) -> Result<NamespaceDetectionResult, ParseError> {
-        let mut xml_reader = Reader::from_reader(crate::xml_text::Checked::new(reader));
+        let mut xml_reader = Reader::from_reader(crate::xml_text::checked(reader));
         xml_reader.config_mut().trim_text(true);
 
-        // Configure security settings
         xml_reader.config_mut().expand_empty_elements = false;
-        if security_config.disable_dtd {
-            // Note: quick_xml doesn't have a direct DTD disable, but we check for DTDs manually
-        }
 
         let mut buf = Vec::new();
         let mut depth = 0;
@@ -164,11 +160,7 @@ impl NamespaceDetector {
                         });
                     }
                 }
-                Ok(Event::DocType(_)) if security_config.disable_dtd => {
-                    return Err(ParseError::SecurityViolation {
-                        message: "DTD declarations are disabled for security".to_string(),
-                    });
-                }
+                // A DOCTYPE fails `check` above (the input rejects it).
                 Ok(Event::Eof) => break,
                 Ok(_) => {} // Ignore other events for namespace detection
                 Err(e) => {

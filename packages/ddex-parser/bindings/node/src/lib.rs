@@ -52,17 +52,6 @@ fn parse_error_to_detailed(err: ParseError) -> DetailedError {
                 "Ensure proper XML encoding (UTF-8)".to_string(),
             ],
         },
-        ParseError::StreamError(stream_err) => DetailedError {
-            error_type: "STREAM_ERROR".to_string(),
-            message: format!("Streaming error: {:?}", stream_err),
-            field: None,
-            value: None,
-            context: Some("Streaming parser".to_string()),
-            suggestions: vec![
-                "Check for corrupted or incomplete data".to_string(),
-                "Try parsing the full document instead of streaming".to_string(),
-            ],
-        },
         _ => DetailedError {
             error_type: "GENERAL_ERROR".to_string(),
             message: format!("{}", err),
@@ -95,12 +84,6 @@ fn parse_error_to_napi(err: ParseError) -> napi::Error {
                 format!("XML parsing failed: {}. Please ensure the input is valid XML and follows DDEX schema.", msg),
             )
         }
-        ParseError::StreamError(stream_err) => {
-            napi::Error::new(
-                napi::Status::GenericFailure,
-                format!("Streaming error: {:?}. This may indicate a corrupted or incomplete DDEX message.", stream_err),
-            )
-        }
         ParseError::InvalidUtf8 { message } => {
             napi::Error::new(
                 napi::Status::InvalidArg,
@@ -111,12 +94,6 @@ fn parse_error_to_napi(err: ParseError) -> napi::Error {
             napi::Error::new(
                 napi::Status::InvalidArg,
                 format!("XML structure error: {}. Please check for malformed XML elements.", msg),
-            )
-        }
-        ParseError::ConversionError { from, to, message } => {
-            napi::Error::new(
-                napi::Status::GenericFailure,
-                format!("Data conversion error from {} to {}: {}. This may indicate incompatible data types in the DDEX message.", from, to, message),
             )
         }
         ParseError::IoError(msg) => {

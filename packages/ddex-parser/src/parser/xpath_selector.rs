@@ -19,9 +19,6 @@ pub struct XPathSelector {
     max_results: usize,
     /// Skip validation for better performance
     fast_mode: bool,
-    /// Pre-compiled element name cache for performance
-    #[allow(dead_code)] // Future optimization feature
-    element_cache: std::collections::HashMap<String, String>,
 }
 
 /// Component of an XPath expression
@@ -39,8 +36,6 @@ pub enum PathComponent {
         attribute: String,
         value: Option<String>,
     },
-    /// Index selector (`[1]`, `[2]`, etc.)
-    IndexFilter { element: String, index: usize },
 }
 
 /// Result of XPath selection
@@ -76,7 +71,6 @@ impl XPathSelector {
             case_sensitive: false,
             max_results: 0,
             fast_mode: false,
-            element_cache: HashMap::new(),
         })
     }
 
@@ -122,7 +116,7 @@ impl XPathSelector {
     /// Select elements matching the XPath expression
     pub fn select<R: BufRead>(&self, reader: R) -> Result<XPathResult, ParseError> {
         let start_time = std::time::Instant::now();
-        let mut xml_reader = Reader::from_reader(crate::xml_text::Checked::new(reader));
+        let mut xml_reader = Reader::from_reader(crate::xml_text::checked(reader));
         xml_reader.config_mut().trim_text(true);
 
         // Performance optimizations
@@ -332,9 +326,13 @@ impl XPathSelector {
                             value: None,
                         });
                     }
-                } else if let Ok(index) = filter.parse::<usize>() {
-                    // Index filter [1], [2], etc.
-                    components.push(PathComponent::IndexFilter { element, index });
+                } else if filter.parse::<usize>().is_ok() {
+                    // Before 0.6.0 an index filter was accepted and ignored (every
+                    // occurrence matched).
+                    return Err(ParseError::XmlError(format!(
+                        "Index filters are not supported: [{}]",
+                        filter
+                    )));
                 } else {
                     return Err(ParseError::XmlError(format!(
                         "Invalid filter expression: [{}]",
@@ -464,32 +462,6 @@ impl XPathSelector {
                     false
                 }
             }
-            PathComponent::IndexFilter { element, index } => {
-                if self.element_matches(element, &current[path_idx]) {
-                    // For index filtering, we'd need to count elements at this level
-                    // For now, just match the first occurrence (index 1)
-                    if *index == 1 {
-                        self.match_components(
-                            components,
-                            current,
-                            comp_idx + 1,
-                            path_idx + 1,
-                            attributes,
-                        )
-                    } else {
-                        // More sophisticated index tracking would be needed
-                        self.match_components(
-                            components,
-                            current,
-                            comp_idx + 1,
-                            path_idx + 1,
-                            attributes,
-                        )
-                    }
-                } else {
-                    false
-                }
-            }
         }
     }
 
@@ -576,7 +548,7 @@ impl XPathSelector {
             selectors.push(Self::new(xpath)?.fast_mode(true));
         }
 
-        let mut xml_reader = Reader::from_reader(crate::xml_text::Checked::new(reader));
+        let mut xml_reader = Reader::from_reader(crate::xml_text::checked(reader));
         xml_reader.config_mut().trim_text(true);
         xml_reader.config_mut().check_end_names = false;
         xml_reader.config_mut().check_comments = false;

@@ -2,7 +2,7 @@
 //! DOM-based parser for smaller DDEX files
 
 use crate::error::ParseError;
-use crate::parser::namespace_detector::{NamespaceContext, NamespaceDetector};
+use crate::parser::namespace_detector::NamespaceDetector;
 use crate::parser::ParseOptions;
 use crate::transform::{flatten::Flattener, graph::GraphBuilder};
 use ddex_core::models::flat::ParsedERNMessage;
@@ -27,20 +27,14 @@ pub fn parse_dom<R: BufRead + Seek>(
 
     // First pass: detect namespaces with security enforcement
     let mut namespace_detector = NamespaceDetector::new();
-    let namespace_result =
-        namespace_detector.detect_from_xml_with_security(&mut reader, security_config)?;
-    let namespace_context = NamespaceContext::from_detection_result(namespace_result);
+    namespace_detector.detect_from_xml_with_security(&mut reader, security_config)?;
 
     // Reset reader for second pass
     reader.seek(SeekFrom::Start(0))?;
 
-    // Build graph model from XML with namespace context
+    // Second pass: build the graph model
     let graph_builder = GraphBuilder::new(version);
-    let graph = graph_builder.build_from_xml_with_context_and_security(
-        reader,
-        namespace_context,
-        security_config,
-    )?;
+    let graph = graph_builder.build_from_xml(reader)?;
 
     // Optionally resolve references
     let graph = if options.resolve_references {

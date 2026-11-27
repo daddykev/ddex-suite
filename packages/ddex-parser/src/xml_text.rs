@@ -7,13 +7,14 @@
 //! keeps its behaviour. [`attr_value`] resolves references in an attribute value without the
 //! attribute-value normalization that quick-xml 0.40 added to `unescape_value`, as before.
 //!
-//! References to undefined entities (`&foo;` with no DTD) are errors in every reader:
-//! readers over a `BufRead` read through [`Checked`] and call [`check`] after each event,
-//! and readers that have the whole document call [`check_document`] first. Both report
-//! [`undefined_entity`], which names the entity and gives its line and column.
+//! References to undefined entities (`&foo;` with no DTD) and a DOCTYPE are errors in every
+//! reader: readers over a `BufRead` read through [`checked`] and call [`check`] after each
+//! event, and readers that have the whole document call [`check_document`] first. They
+//! report [`undefined_entity`] (which names the entity and gives its line and column) and
+//! [`doctype_error`].
 
 use crate::error::ParseError;
-use ddex_core::xml_refs::{CheckedRead, UndefinedEntity};
+use ddex_core::xml_refs::{CheckedRead, Doctype, ReferenceScanner, UndefinedEntity};
 use quick_xml::escape::{unescape, EscapeError};
 use quick_xml::events::attributes::Attribute;
 use quick_xml::events::{BytesRef, Event};
@@ -73,8 +74,36 @@ pub(crate) fn attr_value(attr: &Attribute) -> Result<String, String> {
         .map_err(|e: EscapeError| e.to_string())
 }
 
-/// An input that is scanned for references to undefined entities as it is read.
+/// An input that is scanned for references to undefined entities and for a DOCTYPE as it
+/// is read.
 pub(crate) type Checked<R> = CheckedRead<R>;
+
+/// `inner` read through a [`Checked`] input that rejects a DOCTYPE.
+pub(crate) fn checked<R>(inner: R) -> Checked<R> {
+    CheckedRead::rejecting_doctype(inner)
+}
+
+/// The error for a DOCTYPE, on every reader: the `SecurityViolation` that
+/// `DDEXParser::parse` has always returned for one.
+pub(crate) fn doctype_error(_doctype: &Doctype) -> ParseError {
+    ParseError::SecurityViolation {
+        message: "DTD declarations are disabled for security".to_string(),
+    }
+}
+
+/// A quick-xml read error, with the errors of a [`Checked`] input (an undefined entity, a
+/// DOCTYPE) reported as such.
+pub(crate) fn read_error(error: quick_xml::Error) -> ParseError {
+    if let quick_xml::Error::Io(io) = &error {
+        if let Some(entity) = UndefinedEntity::from_io_error(io) {
+            return undefined_entity(entity);
+        }
+        if let Some(doctype) = Doctype::from_io_error(io) {
+            return doctype_error(doctype);
+        }
+    }
+    ParseError::XmlError(format!("XML parsing error: {}", error))
+}
 
 /// The error for a reference to an undefined entity: `MalformedXml` at the byte offset of
 /// the `&`, with a message such as `undefined entity '&foo;' at line 74, column 30`.
@@ -85,16 +114,27 @@ pub(crate) fn undefined_entity(entity: &UndefinedEntity) -> ParseError {
     }
 }
 
-/// Fails if the input has consumed a reference to an undefined entity. Called after each
-/// event, it fails on the event that holds the reference.
+/// Fails if the input has consumed a reference to an undefined entity or a DOCTYPE. Called
+/// after each event, it fails on the event that holds it.
 pub(crate) fn check<R>(input: &Checked<R>) -> Result<(), ParseError> {
-    match input.error() {
-        Some(entity) => Err(undefined_entity(entity)),
+    if let Some(entity) = input.error() {
+        return Err(undefined_entity(entity));
+    }
+    match input.doctype() {
+        Some(doctype) => Err(doctype_error(doctype)),
         None => Ok(()),
     }
 }
 
-/// Fails on the first reference to an undefined entity in a whole document.
+/// Fails on the first reference to an undefined entity or DOCTYPE in a whole document,
+/// whichever comes first.
 pub(crate) fn check_document(xml: &[u8]) -> Result<(), ParseError> {
-    ddex_core::xml_refs::check_document(xml).map_err(|entity| undefined_entity(&entity))
+    let mut scanner = ReferenceScanner::rejecting_doctype();
+    scanner
+        .feed(xml)
+        .map_err(|entity| undefined_entity(&entity))?;
+    match scanner.doctype() {
+        Some(doctype) => Err(doctype_error(doctype)),
+        None => Ok(()),
+    }
 }

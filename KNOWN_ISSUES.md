@@ -12,7 +12,6 @@ Classification and history: `dev-docs/TEST_TRIAGE.md`.
 
 | Bug | Test(s) |
 |---|---|
-| `parse_fast_streaming` (used by `parse` when `SecurityConfig::relaxed()` / `enable_fast_streaming` is set) is not implemented: since 0.5.1 it returns an error (before, an empty message with an invented header) | `it::fast_streaming::test_fast_streaming_connection_basic`, `…_explicitly` |
 | `StreamingParser::stream_releases` skips the message root element (only `stream_deals` descends into it), so it yields nothing for a full document | `it::utf8_handling::streaming_parser_handles_utf8` |
 | quick-xml's own end-tag/attribute checks fire first and come back as a generic `XmlError`, pre-empting the typed `MismatchedTags` / `UnexpectedClosingTag` / `InvalidAttribute` variants from `parser::xml_validator` | `it::malformed_xml::test_mismatched_opening_closing_tags`, `test_unexpected_closing_tag`, `test_duplicate_attributes`, `test_complex_malformed_structure` |
 | `]]>` in character data is accepted (not well-formed XML) and the surrounding text is mangled | `it::malformed_xml::test_cdata_terminator_in_text_is_rejected` |
@@ -77,8 +76,8 @@ reason, until the upgrade lands.
 - ddex-parser `ParseMode::Stream` (experimental, opt-in since 0.5.0; `parse()` never selects
   it): `parser/stream.rs` reads a subset of the fields (no resources or parties, no
   territory details, dates, P/C lines, genres, labels, track layout, ...) and still trims
-  text. `StreamingParser::stream_resources` / `stream_parties` are not implemented: each
-  yields one "not implemented in 0.5.x" error (before 0.5.1, nothing).
+  text. (`StreamingParser::stream_resources` / `stream_parties`, which were not
+  implemented, were removed in 0.6.0.)
 - ddex-parser ERN 3.8.x release display artists: each `DisplayArtist/PartyName/FullName`
   becomes an artist with the role `MainArtist` regardless of its `ArtistRole` (kept as
   before 0.5.0 so no existing value changed; 3.8.x track artists use the real role).
@@ -114,7 +113,6 @@ reason, until the upgrade lands.
 - The ERN 3.8.2 XSD is fetched from the Internet Archive's capture of its official URL
   (DDEX removed the ERN 3.x schemas from service.ddex.net in 2026), pinned by hash.
 - ddex-builder streaming writer (`streaming::StreamingBuilder`, Node `StreamingDdexBuilder`): ERN 4.2/4.3 targets are rejected with "not yet supported by the streaming writer" (it only writes the 3.8-style tree; use `DDEXBuilder::build` for 4.x). Its 3.8 output still declares the `ern/43` namespace whatever version is requested, and is the old 3.8-style tree, not the schema-valid 3.8.2 that `DDEXBuilder::build` writes.
-- ddex-parser `FastStreamingParser::new(StreamingConfig)` ignores the config: buffer size, `max_memory` and the `SecurityConfig` limits are not applied on the fast path (`SecurityConfig::relaxed()` / `enable_fast_streaming`).
 - ddex-builder CLI: `validate`, `watch` and `server` are not implemented and exit
   with an error (before 0.5.1 they passed every file, simulated watching and printed
   endpoints without a server). `build` runs `DDEXBuilder::build` since 0.5.1. (The no-op
@@ -137,9 +135,6 @@ They now fail, or report the value as not measured, instead:
   `canonicalization` other than `db_c14n` or `none`, and apply none of the other fidelity
   options (comments, extensions, attribute order, ...). Memory, extension count and
   canonicalization time are not measured (null).
-- ddex-parser: `transform::version_adapter::VersionAdapter` methods return an error;
-  `ParallelBenchmark::measure_parallel_speedup` returns an error (the parallel parser runs
-  on one thread); `MultiReleaseParser`'s `message_header` is always `None`.
 - Python parser binding: the native `DDEXParser.from_dataframe` raises
   `NotImplementedError` (use `ddex_builder.DDEXBuilder().from_dataframe`).
 - WASM parser binding: `parse_stream` rejects with an error (it panicked).

@@ -38,15 +38,7 @@ mod tests {
     #[test]
     fn test_security_config_defaults() {
         let config = SecurityConfig::default();
-        assert!(config.disable_dtd);
-        assert!(config.disable_external_entities);
         assert_eq!(config.max_element_depth, 100);
-    }
-
-    #[test]
-    fn test_security_config_relaxed() {
-        let config = SecurityConfig::relaxed();
-        assert!(config.disable_dtd); // Still secure
-        assert_eq!(config.max_element_depth, 200); // But more permissive
+        assert_eq!(config.max_entity_expansions, 100);
     }
 }

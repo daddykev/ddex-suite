@@ -9,7 +9,7 @@ use ddex_parser::parser::multi_release_parser::MultiReleaseParser;
 use ddex_parser::parser::selective_parser::SelectiveParser;
 use ddex_parser::parser::xpath_selector::XPathSelector;
 use ddex_parser::parser::ParseOptions;
-use ddex_parser::{DDEXParser, ERNVersion};
+use ddex_parser::DDEXParser;
 use std::io::Cursor;
 
 const TITLE: &str = "<TitleText>Yume no Lullaby</TitleText>";
@@ -166,14 +166,14 @@ fn selective_readers_fail() {
             ),
             (
                 "MultiReleaseParser::parse_releases",
-                MultiReleaseParser::new(ERNVersion::V4_3)
+                MultiReleaseParser::new()
                     .parse_releases(Cursor::new(bytes))
                     .map(drop)
                     .map_err(|e| e.to_string()),
             ),
             (
                 "MultiReleaseParser::count_releases",
-                MultiReleaseParser::new(ERNVersion::V4_3)
+                MultiReleaseParser::new()
                     .count_releases(Cursor::new(bytes))
                     .map(drop)
                     .map_err(|e| e.to_string()),

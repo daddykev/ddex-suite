@@ -22,7 +22,7 @@ full results are in
 - **Date**: 2026-11-26, ddex-suite 0.5.1
 
 ```bash
-cargo bench -p ddex-parser --bench throughput --bench fast_streaming_benchmark
+cargo bench -p ddex-parser --bench throughput
 cargo bench -p ddex-builder --bench performance --bench security --bench canonicalization --bench determinism
 ```
 

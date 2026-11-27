@@ -32,7 +32,7 @@ impl FastZeroCopyParser {
         Self {
             read_buffer: vec![0; 64 * 1024], // 64KB buffer
             leftover: Vec::new(),
-            references: ddex_core::xml_refs::ReferenceScanner::new(),
+            references: ddex_core::xml_refs::ReferenceScanner::rejecting_doctype(),
             string_cache: HashMap::with_capacity(512),
             bytes_processed: 0,
             elements_found: 0,
@@ -59,6 +59,9 @@ impl FastZeroCopyParser {
         self.references
             .feed(chunk)
             .map_err(|entity| crate::xml_text::undefined_entity(&entity))?;
+        if let Some(doctype) = self.references.doctype() {
+            return Err(crate::xml_text::doctype_error(doctype));
+        }
         self.bytes_processed += chunk.len() as u64;
         let mut results = Vec::new();
 

@@ -105,7 +105,7 @@ impl SelectiveParser {
     /// Extract all targeted fields from XML
     pub fn extract_fields<R: BufRead>(&mut self, reader: R) -> Result<SelectiveResult, ParseError> {
         let start_time = std::time::Instant::now();
-        let mut xml_reader = Reader::from_reader(crate::xml_text::Checked::new(reader));
+        let mut xml_reader = Reader::from_reader(crate::xml_text::checked(reader));
         xml_reader.config_mut().trim_text(true);
 
         let mut values: std::collections::HashMap<String, Vec<String>> =

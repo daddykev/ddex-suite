@@ -3,8 +3,7 @@
 
 use crate::error::ParseError;
 use crate::parser::security::SecurityConfig;
-use ddex_core::models::graph::{MessageHeader, Release, ReleaseType};
-use ddex_core::models::versions::ERNVersion;
+use ddex_core::models::graph::{Release, ReleaseType};
 use ddex_core::models::{Identifier, IdentifierType, LocalizedString};
 use quick_xml::{events::Event, Reader};
 use std::collections::HashMap;
@@ -41,9 +40,6 @@ pub struct MultiReleaseResult {
     pub releases: Vec<Release>,
     /// Parsing statistics
     pub stats: MultiReleaseStats,
-    /// Not read in 0.5.x: always `None` (before 0.5.1, an invented header with the message
-    /// ID `MSG_<version>` and the current time). `DDEXParser::parse` reads the header.
-    pub message_header: Option<MessageHeader>,
     /// Raw release count (fast counting)
     pub release_count: usize,
     /// Release references found
@@ -62,9 +58,16 @@ struct ReleaseContext {
     position: usize,
 }
 
+impl Default for MultiReleaseParser {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MultiReleaseParser {
-    /// Create a new multi-release parser (the version is not used in 0.5.x)
-    pub fn new(_version: ERNVersion) -> Self {
+    /// Create a new multi-release parser. (Before 0.6.0 it took an ERN version, which it
+    /// never used.)
+    pub fn new() -> Self {
         Self {
             security_config: SecurityConfig::default(),
             max_releases: 0,
@@ -73,18 +76,12 @@ impl MultiReleaseParser {
     }
 
     /// Create parser with custom security configuration
-    pub fn with_security_config(_version: ERNVersion, security_config: SecurityConfig) -> Self {
+    pub fn with_security_config(security_config: SecurityConfig) -> Self {
         Self {
             security_config,
             max_releases: 0,
             stats: MultiReleaseStats::default(),
         }
-    }
-
-    /// No effect in 0.5.x (it only controlled the invented header removed in 0.5.1); kept
-    /// for compatibility.
-    pub fn detailed_parsing(self, _enabled: bool) -> Self {
-        self
     }
 
     /// Set maximum number of releases to parse
@@ -96,7 +93,7 @@ impl MultiReleaseParser {
     /// Fast count of releases in the document without full parsing
     pub fn count_releases<R: BufRead>(&mut self, reader: R) -> Result<usize, ParseError> {
         let start_time = std::time::Instant::now();
-        let mut xml_reader = Reader::from_reader(crate::xml_text::Checked::new(reader));
+        let mut xml_reader = Reader::from_reader(crate::xml_text::checked(reader));
         xml_reader.config_mut().trim_text(false); // Faster for counting
 
         let mut buf = Vec::new();
@@ -168,7 +165,7 @@ impl MultiReleaseParser {
         reader: R,
     ) -> Result<MultiReleaseResult, ParseError> {
         let start_time = std::time::Instant::now();
-        let mut xml_reader = Reader::from_reader(crate::xml_text::Checked::new(reader));
+        let mut xml_reader = Reader::from_reader(crate::xml_text::checked(reader));
         xml_reader.config_mut().trim_text(true);
         xml_reader.config_mut().check_end_names = true;
 
@@ -178,7 +175,6 @@ impl MultiReleaseParser {
         let mut depth = 0;
         let mut elements_processed = 0;
         let mut release_references = Vec::new();
-        let message_header: Option<MessageHeader> = None;
         let mut in_release_list = false;
         let mut release_list_count = 0;
 
@@ -361,7 +357,6 @@ impl MultiReleaseParser {
         Ok(MultiReleaseResult {
             releases,
             stats: self.stats.clone(),
-            message_header,
             release_count: self.stats.releases_parsed,
             release_references,
         })
@@ -537,7 +532,7 @@ mod tests {
         </ern:NewReleaseMessage>"#;
 
         let cursor = Cursor::new(xml.as_bytes());
-        let mut parser = MultiReleaseParser::new(ERNVersion::V4_3);
+        let mut parser = MultiReleaseParser::new();
 
         let count = parser
             .count_releases(cursor)
@@ -584,7 +579,7 @@ mod tests {
         </ern:NewReleaseMessage>"#;
 
         let cursor = Cursor::new(xml.as_bytes());
-        let mut parser = MultiReleaseParser::new(ERNVersion::V4_3).detailed_parsing(true);
+        let mut parser = MultiReleaseParser::new();
 
         let result = parser
             .parse_releases(cursor)
@@ -638,7 +633,7 @@ mod tests {
         </ern:NewReleaseMessage>"#;
 
         let cursor = Cursor::new(xml.as_bytes());
-        let mut parser = MultiReleaseParser::new(ERNVersion::V4_3).max_releases(3);
+        let mut parser = MultiReleaseParser::new().max_releases(3);
 
         let result = parser
             .parse_releases(cursor)
@@ -663,7 +658,7 @@ mod tests {
         </ern:NewReleaseMessage>"#;
 
         let cursor = Cursor::new(xml.as_bytes());
-        let mut parser = MultiReleaseParser::new(ERNVersion::V4_3);
+        let mut parser = MultiReleaseParser::new();
 
         let result = parser
             .parse_releases(cursor)
@@ -700,7 +695,7 @@ mod tests {
         xml.push_str("</ern:ReleaseList></ern:NewReleaseMessage>");
 
         let cursor = Cursor::new(xml.as_bytes());
-        let mut parser = MultiReleaseParser::new(ERNVersion::V4_3);
+        let mut parser = MultiReleaseParser::new();
 
         let start = std::time::Instant::now();
         let count = parser
@@ -712,9 +707,7 @@ mod tests {
 
         // Test parsing performance
         let cursor2 = Cursor::new(xml.as_bytes());
-        let mut parser2 = MultiReleaseParser::new(ERNVersion::V4_3)
-            .detailed_parsing(true)
-            .max_releases(100); // Limit for performance test
+        let mut parser2 = MultiReleaseParser::new().max_releases(100); // Limit for performance test
 
         let start2 = std::time::Instant::now();
         let result = parser2
