@@ -279,8 +279,10 @@ console.log(`Generated ${results.length} XML documents`);
 xml = builder.from_dataframe(tracks_df, schema='tracks', request={
     'version': '4.3', 'language_and_script_code': 'en', 'avs_version_id': '12',
     'header': {
+        'message_id': 'MSG-001',
         'message_sender': {'party_name': [{'text': 'My Label'}], 'party_id': 'PADPIDA0000000001'},
         'message_recipient': {'party_name': [{'text': 'My DSP'}], 'party_id': 'PADPIDA0000000002'},
+        'message_created_date_time': '2024-01-01T00:00:00Z',
     },
 })
 
