@@ -51,7 +51,7 @@
     "test": "node smoke-ern43.js && node smoke-ern382.js && node test-validate-structure.js && node test-honest-results.js && node test-request-from-xml.js"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22"
   },
   "devDependencies": {
     "@napi-rs/cli": "^2.18.4",

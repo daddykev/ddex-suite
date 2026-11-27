@@ -100,10 +100,10 @@ jobs:
           - { name: windows-x64, runner: windows-latest, target: x86_64-pc-windows-msvc }
     steps:
       - uses: actions/checkout@v7
-      # abi3-py310 (the pyo3 feature): one cp310-abi3 wheel per platform for Python 3.10+.
+      # abi3-py311 (the pyo3 feature): one cp311-abi3 wheel per platform for Python 3.11+.
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.10"
+          python-version: "3.11"
       - name: Build abi3 wheel
         uses: PyO3/maturin-action@v1
         with:
@@ -153,10 +153,10 @@ jobs:
           path: packages/${{ matrix.package }}/bindings/python/dist/*.tar.gz
           if-no-files-found: error
 
-  # Install each wheel on a matching runner with the oldest supported Python (3.10): import
+  # Install each wheel on a matching runner with the oldest supported Python (3.11): import
   # it and parse (or build) with an official sample. The musllinux wheel is tested in an
   # Alpine container. The macOS x86_64 wheel is tested on macos-latest (Apple Silicon) with
-  # python.org's universal2 Python 3.10 running as x86_64 under Rosetta 2.
+  # python.org's universal2 Python 3.11 running as x86_64 under Rosetta 2.
   wheel-install-test:
     name: install-test wheel ${{ matrix.platform.name }}
     needs: wheels
@@ -167,14 +167,14 @@ jobs:
         platform:
           - { name: manylinux-x86_64, runner: ubuntu-latest }
           - { name: manylinux-aarch64, runner: ubuntu-24.04-arm }
-          - { name: musllinux-x86_64, runner: ubuntu-latest, container: "python:3.10-alpine" }
+          - { name: musllinux-x86_64, runner: ubuntu-latest, container: "python:3.11-alpine" }
           - { name: macos-x86_64, runner: macos-latest, arch: x64, machine: x86_64 }
           - { name: macos-arm64, runner: macos-latest, machine: arm64 }
           - { name: windows-x64, runner: windows-latest }
     container: ${{ matrix.platform.container || '' }}
     steps:
       - uses: actions/checkout@v7
-      # python:3.10-alpine has no bash, which the steps below use.
+      # python:3.11-alpine has no bash, which the steps below use.
       - name: Install bash (Alpine)
         if: ${{ matrix.platform.container }}
         shell: sh
@@ -182,19 +182,19 @@ jobs:
       - uses: actions/setup-python@v7
         if: ${{ !matrix.platform.container && !matrix.platform.arch }}
         with:
-          python-version: "3.10"
+          python-version: "3.11"
       # macOS x86_64 on Apple Silicon: setup-python's darwin-x64 Python links Intel Homebrew
       # libraries (/usr/local/opt/gettext) that the runner does not have. python.org's
       # universal2 installer is self-contained; a venv of it, run through `arch -x86_64`,
       # is the x86_64 `python` for the steps below.
-      - name: x86_64 Python 3.10 under Rosetta 2 (python.org universal2)
+      - name: x86_64 Python 3.11 under Rosetta 2 (python.org universal2)
         if: ${{ matrix.platform.arch == 'x64' }}
         run: |
           set -euo pipefail
           arch -x86_64 /usr/bin/true 2>/dev/null || sudo softwareupdate --install-rosetta --agree-to-license
-          curl -fsSLo "$RUNNER_TEMP/python.pkg" https://www.python.org/ftp/python/3.10.11/python-3.10.11-macos11.pkg
+          curl -fsSLo "$RUNNER_TEMP/python.pkg" https://www.python.org/ftp/python/3.11.9/python-3.11.9-macos11.pkg
           sudo installer -pkg "$RUNNER_TEMP/python.pkg" -target /
-          arch -x86_64 /Library/Frameworks/Python.framework/Versions/3.10/bin/python3.10 -m venv "$RUNNER_TEMP/venv-x86_64"
+          arch -x86_64 /Library/Frameworks/Python.framework/Versions/3.11/bin/python3.11 -m venv "$RUNNER_TEMP/venv-x86_64"
           mkdir -p "$RUNNER_TEMP/bin-x86_64"
           printf '#!/bin/sh\nexec arch -x86_64 "%s/venv-x86_64/bin/python" "$@"\n' "$RUNNER_TEMP" > "$RUNNER_TEMP/bin-x86_64/python"
           chmod +x "$RUNNER_TEMP/bin-x86_64/python"
@@ -260,7 +260,7 @@ jobs:
         run: |
           set -euo pipefail
           for f in dist/*.whl; do
-            case "$f" in *-cp310-abi3-*) ;; *) echo "$f is not a cp310-abi3 wheel"; exit 1;; esac
+            case "$f" in *-cp311-abi3-*) ;; *) echo "$f is not a cp311-abi3 wheel"; exit 1;; esac
             echo "== $f"; python -m zipfile -l "$f" | awk 'NR>1 {print $1}' | tee files.txt
             if grep -E '__pycache__|\.pyc$' files.txt; then echo "build leftovers in $f"; exit 1; fi
             grep -E '^ddex_(parser|builder)/_internal\.' files.txt >/dev/null || { echo "no native extension in $f"; exit 1; }

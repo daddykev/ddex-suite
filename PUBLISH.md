@@ -24,7 +24,7 @@ attested `.crate` files (step 3).
 - [ ] `CHANGELOG.md` has a dated section for the version; release notes in
       `dev-docs/RELEASE_NOTES_<version>.md`.
 - [ ] CI is green on the release branch (`.github/workflows/ci.yml`: fmt, clippy, tests,
-      XSD, Node, Python 3.10–3.14, ERN 4 oracle).
+      XSD, Node, Python 3.11–3.14, ERN 4 oracle).
 
 ## 2. Build, download and verify the artifacts
 
@@ -62,7 +62,7 @@ darwin-x64 Node binaries are cross-compiled there (`--target x86_64-apple-darwin
 GitHub's last Intel image, `macos-15-intel`, is retired in August 2027. The build jobs
 check each macOS native file with `file` and `lipo -archs` (x86_64 or arm64 only, not
 universal). The x86_64 artifacts are then install-tested on the same Apple Silicon
-runner under Rosetta 2, with python.org's universal2 Python 3.10 run as x86_64 and an
+runner under Rosetta 2, with python.org's universal2 Python 3.11 run as x86_64 and an
 x64 Node 22 (the jobs check `platform.machine()` / `process.arch`). They are never run
 on Intel hardware.
 

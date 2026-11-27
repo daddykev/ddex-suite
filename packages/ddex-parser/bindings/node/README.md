@@ -17,7 +17,7 @@ npm install ddex-parser
 ```
 
 Prebuilt binaries are installed for macOS (arm64, x64), Linux x64 (glibc) and Windows
-x64, through the platform packages `ddex-parser-<platform>`. Node.js 18 or newer.
+x64, through the platform packages `ddex-parser-<platform>`. Node.js 22 or newer.
 
 ## Example
 

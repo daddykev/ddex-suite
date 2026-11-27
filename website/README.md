@@ -5,7 +5,7 @@ The documentation site, [ddex-suite.org](https://ddex-suite.org), built with
 Functions for Firebase).
 
 ```bash
-npm ci          # Node.js 20 or newer
+npm ci          # Node.js 22 or newer
 npm start       # development server
 npm run build   # production build in build/ (fails on any broken link or anchor)
 ```

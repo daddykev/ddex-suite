@@ -23,7 +23,7 @@ doc = false
 ddex-core = { path = "../../../core" }
 ddex-parser = { path = "../.." }
 
-pyo3 = { version = "0.29", features = ["extension-module", "abi3-py310"] }
+pyo3 = { version = "0.29", features = ["extension-module", "abi3-py311"] }
 pyo3-async-runtimes = { version = "0.29", features = ["tokio-runtime"] }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread"] }
 pythonize = "0.29"
