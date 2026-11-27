@@ -712,16 +712,21 @@ A blank owner means 4a.
 
 ## Counts (4a inventory rows)
 
+Counted per row of the tables under [Decided removals (4a)](#decided-removals-4a) and
+[Inventory](#inventory-1), mixed rows under their first class; the two unused-dependency rows
+are counted as DEAD.
+
 | class | rows |
 |---|---:|
-| FAKE | 34 |
-| NO-OP | 27 |
-| DEAD | 22 |
-| REAL | 41 |
-| UNSURE | 3 |
-| **total** | **127** |
+| FAKE | 21 |
+| NO-OP | 15 |
+| DEAD | 15 |
+| REAL | 39 |
+| UNSURE | 2 |
+| **total** | **92** |
 
-Of these, 29 rows are owned by other PRs (4b: 11, 5: 2, 7: 6, 9: 2, perf: 3, bugs list: 5).
+Of these, 16 rows are owned by other PRs: 4b 5, 5 1, 7 4, 9 2, perf 2, bugs list 2. The
+[UNSURE](#unsure-4a) list has 3 entries; the third is `FastStreamingParser`, counted as FAKE.
 
 ## Entry points
 
