@@ -159,3 +159,31 @@ fn named_cases() {
         assert!(message.contains(code), "{message}");
     }
 }
+
+/// Tab, LF and CR survive build -> parse: in an attribute value they are written as
+/// `&#9;`, `&#10;`, `&#13;` (XML 1.0 attribute-value normalization would turn literal ones
+/// into spaces), and in text a CR is written as `&#13;` (a literal one would become a LF).
+#[test]
+fn tab_lf_and_cr_survive_a_round_trip_in_attributes_and_text() {
+    let text = "a\tb\nc\rd\r\ne";
+    let language = "x\ty\nz\rw";
+    for version in ["4.3", "4.2"] {
+        let mut request = minimal_single(version);
+        request.releases[0].title[0].text = text.to_string();
+        request.releases[0].title[0].language_code = Some(language.to_string());
+        let xml = DDEXBuilder::new()
+            .build(request, BuildOptions::default())
+            .unwrap_or_else(|e| panic!("{version}: {e}"))
+            .xml;
+        assert!(xml.contains("x&#9;y&#10;z&#13;w"), "{version}: {xml}");
+        assert!(xml.contains("c&#13;d&#13;\ne"), "{version}: {xml}");
+        let parsed = parse(&xml);
+        let title = &parsed.graph.releases[0].display_title_text[0];
+        assert_eq!(title.text, text, "{version}");
+        assert_eq!(
+            title.language_and_script_code.as_deref(),
+            Some(language),
+            "{version}"
+        );
+    }
+}

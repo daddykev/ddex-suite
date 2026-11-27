@@ -170,8 +170,8 @@ impl SelectiveParser {
                     if self.is_target_field(&element_name) {
                         if let Ok(attributes) = e.attributes().collect::<Result<Vec<_>, _>>() {
                             for attr in attributes {
-                                let attr_value = String::from_utf8_lossy(&attr.value);
-                                self.add_value(&mut values, &element_name, attr_value.to_string());
+                                let attr_value = crate::xml_text::raw_attr_value(&attr.value);
+                                self.add_value(&mut values, &element_name, attr_value);
                             }
                         }
                     }

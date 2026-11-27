@@ -59,8 +59,9 @@ pub fn decode_attribute_value(bytes: &[u8], position: usize) -> Result<String, P
         message: format!("UTF-8 decoding error at position {}: {}", position, e),
     })?;
 
-    // Then unescape XML entities
-    quick_xml::escape::unescape(utf8_str)
+    // Then normalize (XML 1.0 §3.3.3) and unescape XML entities
+    let normalized = ddex_core::xml_refs::normalize_attribute_value(utf8_str);
+    quick_xml::escape::unescape(&normalized)
         .map(|cow| cow.into_owned())
         .map_err(|e| ParseError::SimpleXmlError(format!("Attribute unescape error: {}", e)))
 }

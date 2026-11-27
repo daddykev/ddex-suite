@@ -89,7 +89,6 @@ impl NamespaceDetector {
 
         let mut buf = Vec::new();
         let mut depth = 0;
-        let mut entity_expansions = 0;
 
         loop {
             let read = xml_reader.read_event_into(&mut buf);
@@ -132,34 +131,11 @@ impl NamespaceDetector {
                 Ok(Event::Text(ref e)) => {
                     // Use proper UTF-8 decoding for text content
                     let current_pos = xml_reader.buffer_position() as usize;
-                    let text = utf8_utils::decode_utf8_at_position(e, current_pos)?;
-
-                    // Check for potential entity expansions (simple heuristic)
-                    if text.contains("&") {
-                        entity_expansions += text.matches("&").count();
-                        if entity_expansions > security_config.max_entity_expansions {
-                            return Err(ParseError::SecurityViolation {
-                                message: format!(
-                                    "Entity expansions {} exceed maximum allowed {}",
-                                    entity_expansions, security_config.max_entity_expansions
-                                ),
-                            });
-                        }
-                    }
+                    utf8_utils::decode_utf8_at_position(e, current_pos)?;
                 }
-                // Each reference is its own event since quick-xml 0.38 (it used to be counted
-                // as a `&` in the text above).
-                Ok(Event::GeneralRef(_)) => {
-                    entity_expansions += 1;
-                    if entity_expansions > security_config.max_entity_expansions {
-                        return Err(ParseError::SecurityViolation {
-                            message: format!(
-                                "Entity expansions {} exceed maximum allowed {}",
-                                entity_expansions, security_config.max_entity_expansions
-                            ),
-                        });
-                    }
-                }
+                // References are not counted (before 0.6.0 more than 100 of them, `&amp;` and
+                // character references included, failed the parse). An undefined one is an
+                // error on every reader, so nothing can expand.
                 // A DOCTYPE fails `check` above (the input rejects it).
                 Ok(Event::Eof) => break,
                 Ok(_) => {} // Ignore other events for namespace detection

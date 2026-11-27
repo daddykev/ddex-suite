@@ -70,10 +70,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```rust
 use ddex_parser::{DDEXParser, parser::security::SecurityConfig};
 
-// A DOCTYPE and undefined entities are always rejected; these are the two limits.
+// A DOCTYPE and undefined entities are always rejected; the nesting depth is the limit.
 let config = SecurityConfig {
-    max_entity_expansions: 50,    // references in text
-    max_element_depth: 50,        // nesting depth
+    max_element_depth: 50,
 };
 
 let parser = DDEXParser::with_config(config);
@@ -118,7 +117,7 @@ for release in &graph_releases {
 ### XML Attack Protection
 ```rust
 // These attacks are automatically blocked:
-parser.parse("billion-laughs.xml");  // ❌ Blocked: Entity expansion limit
+parser.parse("billion-laughs.xml");  // ❌ Blocked: DOCTYPE / undefined entity rejected
 parser.parse("deep-nesting.xml");    // ❌ Blocked: Nesting depth limit
 parser.parse("not-xml");             // ❌ Blocked: Invalid XML
 parser.parse("<unclosed>");          // ❌ Blocked: Malformed XML

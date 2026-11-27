@@ -143,7 +143,7 @@ impl ExtensionCaptureContext {
         for attr in event.attributes().flatten() {
             self.extension_buffer.push(' ');
             let key = utf8_utils::process_text_content_lossy(attr.key.as_ref());
-            let value = utf8_utils::process_text_content_lossy(&attr.value);
+            let value = crate::xml_text::raw_attr_value(&attr.value);
 
             self.extension_buffer.push_str(&key);
             self.extension_buffer.push_str("=\"");
@@ -347,7 +347,7 @@ impl ExtensionAwareParser {
                             } else {
                                 key.strip_prefix("xmlns:").unwrap_or("").to_string()
                             };
-                            let uri = String::from_utf8_lossy(&attr.value).to_string();
+                            let uri = crate::xml_text::raw_attr_value(&attr.value);
                             self.context.add_namespace_declaration(prefix, uri);
                         }
                     }

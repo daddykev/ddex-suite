@@ -175,7 +175,7 @@ impl XPathSelector {
                     let mut attr_map = HashMap::new();
                     for attr in e.attributes().flatten() {
                         let key = String::from_utf8_lossy(attr.key.as_ref()).to_string();
-                        let value = String::from_utf8_lossy(&attr.value).to_string();
+                        let value = crate::xml_text::raw_attr_value(&attr.value);
                         attr_map.insert(key, value);
                     }
 
@@ -206,7 +206,7 @@ impl XPathSelector {
                         let mut attr_map = HashMap::new();
                         for attr in e.attributes().flatten() {
                             let key = String::from_utf8_lossy(attr.key.as_ref()).to_string();
-                            let value = String::from_utf8_lossy(&attr.value).to_string();
+                            let value = crate::xml_text::raw_attr_value(&attr.value);
                             attr_map.insert(key, value);
                         }
 
@@ -594,7 +594,7 @@ impl XPathSelector {
                     let mut attr_map = HashMap::new();
                     for attr in e.attributes().flatten() {
                         let key = String::from_utf8_lossy(attr.key.as_ref()).to_string();
-                        let value = String::from_utf8_lossy(&attr.value).to_string();
+                        let value = crate::xml_text::raw_attr_value(&attr.value);
                         attr_map.insert(key, value);
                     }
 

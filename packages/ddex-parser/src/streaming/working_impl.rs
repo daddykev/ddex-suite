@@ -150,7 +150,8 @@ impl<R: BufRead> WorkingStreamingParser<R> {
                         let attr = attr_result.map_err(crate::error::attr_error)?;
                         let key = std::str::from_utf8(attr.key.as_ref())?;
                         let value = std::str::from_utf8(&attr.value)?;
-                        attributes.insert(key.to_string(), value.to_string());
+                        let value = ddex_core::xml_refs::normalize_attribute_value(value);
+                        attributes.insert(key.to_string(), value.into_owned());
                     }
 
                     self.handle_start_element_with_attrs(&name, attributes)?;

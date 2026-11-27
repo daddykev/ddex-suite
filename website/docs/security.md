@@ -18,7 +18,7 @@ bindings always use it) applies these rules before any value is read:
 |---|---|
 | DTDs (`<!DOCTYPE ...>`) | Rejected by every reader (`parse` and the Rust streaming and selective readers). This also stops internal entity declarations |
 | External entities (XXE) | Rejected; nothing is read from files or URLs |
-| Entity expansion ("billion laughs") | No entity is ever expanded (a reference to anything but the five predefined entities and character references is an error); `parse` also allows at most 100 references in text |
+| Entity expansion ("billion laughs") | No entity is ever expanded (a reference to anything but the five predefined entities and character references is an error), so there is no reference limit |
 | Deep nesting | Limited to 100 levels of elements |
 | Oversized input | The Node.js binding takes up to 100 MB of XML; Rust and Python set no size limit |
 | Network access | None: no schema, DTD or entity is ever fetched |

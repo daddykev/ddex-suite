@@ -191,7 +191,8 @@ impl FastZeroCopyParser {
             let reference = if let Some(attr) =
                 self.extract_attribute_fast(release_data, b"ReleaseReference")
             {
-                self.intern_string(attr)
+                let attr = crate::xml_text::raw_attr_value(attr);
+                self.intern_string(attr.as_bytes())
             } else {
                 String::new()
             };
@@ -229,7 +230,8 @@ impl FastZeroCopyParser {
             let reference = if let Some(attr) =
                 self.extract_attribute_fast(recording_data, b"ResourceReference")
             {
-                self.intern_string(attr)
+                let attr = crate::xml_text::raw_attr_value(attr);
+                self.intern_string(attr.as_bytes())
             } else {
                 String::new()
             };

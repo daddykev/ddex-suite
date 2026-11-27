@@ -7,14 +7,12 @@
 //! that failure (`disable_dtd`,
 //! `disable_external_entities`, `max_entity_depth`, `max_attribute_size`, `max_text_size`,
 //! `max_file_size`, `parse_timeout`, `stream_timeout`, `allow_network`, `allowed_schemas`,
-//! `enable_fast_streaming`).
+//! `enable_fast_streaming`); `max_entity_expansions` was removed in 0.6.0 too (it counted
+//! every reference, so valid documents with more than 100 failed).
 
 /// Limits applied while parsing
 #[derive(Debug, Clone)]
 pub struct SecurityConfig {
-    /// Maximum number of entity and character references (`&amp;`, `&#233;`, ...) in
-    /// character data, checked by the default parse
-    pub max_entity_expansions: usize,
     /// Maximum element nesting depth
     pub max_element_depth: usize,
 }
@@ -29,8 +27,7 @@ impl SecurityConfig {
     /// Strict security configuration (default)
     pub fn strict() -> Self {
         Self {
-            max_entity_expansions: 100, // Reduced from 1000 to protect against XML bombs
-            max_element_depth: 100,     // Keep at 100, this will block deep nesting attacks
+            max_element_depth: 100, // Keep at 100, this will block deep nesting attacks
         }
     }
 }

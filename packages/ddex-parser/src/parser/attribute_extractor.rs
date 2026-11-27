@@ -268,7 +268,7 @@ impl AttributeExtractor {
         namespace_context: &NamespaceContext,
     ) -> Result<(QName, AttributeValue), ParseError> {
         let attr_name = String::from_utf8_lossy(attr.key.as_ref());
-        let attr_value = String::from_utf8_lossy(&attr.value);
+        let attr_value = crate::xml_text::raw_attr_value(&attr.value);
 
         debug!("Processing attribute: {}={}", attr_name, attr_value);
 
