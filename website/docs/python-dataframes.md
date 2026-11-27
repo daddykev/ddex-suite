@@ -163,7 +163,7 @@ release. The columns read are:
 
 | Column | Build request field |
 |---|---|
-| `release_id` | **Required.** `release_id` (written as GRid unless empty) and the grouping key |
+| `release_id` | `release_id` (written as GRid) and the grouping key; leave the column out, or set it to `None`, for no GRid |
 | `release_reference` | `release_reference` |
 | `release_title`, `release_artist`, `release_label` | `title`, `artist`, `label` |
 | `release_date` | `release_date` (an RFC 3339 date-time is cut to its date) |
@@ -199,7 +199,7 @@ release = message.to_dataframe("releases").iloc[0]
 tracks = message.to_dataframe("tracks")
 
 frame = tracks.rename(columns={"parental_warning": "parental_warning_type"}).assign(
-    release_id="",  # no GRid: the release is identified by its ICPN (release_upc)
+    release_id=None,  # no GRid: the release is identified by its ICPN (release_upc)
     release_upc=release["icpn"],
     release_title=f"{release['title']} (Remastered)",
     release_artist=release["artist"],
@@ -227,8 +227,9 @@ assert list(rebuilt["duration"]) == list(tracks["duration"])
 print(rebuilt[["track_index", "track_title", "isrc", "duration"]])
 ```
 
-A failed build raises `RuntimeError` with the same message as `build`; a missing
-`release_id` column raises `ValueError`.
+A failed build raises `RuntimeError` with the same message as `build`. An empty string in
+an optional column (`release_id`, `isrc`, `artist`, ...) fails the build: leave the value
+out (`None`) instead.
 
 ## Other Python APIs
 

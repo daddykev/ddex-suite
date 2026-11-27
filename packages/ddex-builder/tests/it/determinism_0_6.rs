@@ -267,8 +267,8 @@ fn stream(header: &MessageHeaderRequest) -> Vec<u8> {
                 .write_resource(
                     &track.track_id,
                     &track.title,
-                    &track.artist,
-                    Some(&track.isrc),
+                    track.artist.as_deref().unwrap_or_default(),
+                    track.isrc.as_deref(),
                     Some(&track.duration),
                     None,
                 )
@@ -280,9 +280,9 @@ fn stream(header: &MessageHeaderRequest) -> Vec<u8> {
         .expect("finish_resources_start_releases");
     writer
         .write_release(
-            &release.release_id,
+            release.release_id.as_deref().unwrap_or_default(),
             &release.title[0].text,
-            &release.artist,
+            release.artist.as_deref().unwrap_or_default(),
             release.label.as_deref(),
             release.upc.as_deref(),
             release.release_date.as_deref(),
@@ -326,7 +326,7 @@ fn large_ern43() -> BuildRequest {
             let mut track = template_track.clone();
             track.track_id = format!("TRK{n:03}");
             track.resource_reference = Some(format!("A{n}"));
-            track.isrc = format!("USRT1240{n:04}");
+            track.isrc = Some(format!("USRT1240{n:04}"));
             track.title = format!("Track {n}");
             track.sequence_number = Some(n);
             if let Some(track_release) = &mut track.track_release {
@@ -364,7 +364,7 @@ fn large_ern382() -> BuildRequest {
             let n = track.sequence_number.expect("fixture tracks are numbered");
             track.track_id = format!("TRK{k:03}{n:03}");
             track.resource_reference = Some(format!("A{k}T{n}"));
-            track.isrc = format!("USRT1{k:03}{n:04}");
+            track.isrc = Some(format!("USRT1{k:03}{n:04}"));
             if let Some(track_release) = &mut track.track_release {
                 track_release.release_reference = format!("R{k}T{n}");
             }

@@ -35,13 +35,13 @@ fn test_linker_with_xml_generation() {
         version: "4.3".to_string(),
         profile: Some("AudioAlbum".to_string()),
         releases: vec![ReleaseRequest {
-            release_id: "ALBUM_001".to_string(),
+            release_id: Some("ALBUM_001".to_string()),
             release_reference: None, // Will be auto-generated
             title: vec![LocalizedStringRequest {
                 text: "Linked Album".to_string(),
                 language_code: Some("en".to_string()),
             }],
-            artist: "Linked Artist".to_string(),
+            artist: Some("Linked Artist".to_string()),
             label: None,        // Add this
             release_date: None, // Add this
             upc: None,          // Add this
@@ -49,19 +49,19 @@ fn test_linker_with_xml_generation() {
                 TrackRequest {
                     track_id: "TRK_001".to_string(),
                     resource_reference: None, // Will be auto-generated
-                    isrc: "USRC11111111".to_string(),
+                    isrc: Some("USRC11111111".to_string()),
                     title: "First Linked Track".to_string(),
                     duration: "PT3M00S".to_string(),
-                    artist: "Linked Artist".to_string(),
+                    artist: Some("Linked Artist".to_string()),
                     ..Default::default()
                 },
                 TrackRequest {
                     track_id: "TRK_002".to_string(),
                     resource_reference: None, // Will be auto-generated
-                    isrc: "USRC22222222".to_string(),
+                    isrc: Some("USRC22222222".to_string()),
                     title: "Second Linked Track".to_string(),
                     duration: "PT4M00S".to_string(),
-                    artist: "Linked Artist".to_string(),
+                    artist: Some("Linked Artist".to_string()),
                     ..Default::default()
                 },
             ],
@@ -149,20 +149,20 @@ fn create_simple_request_base() -> BuildRequest {
         version: "4.3".to_string(),
         profile: None,
         releases: vec![ReleaseRequest {
-            release_id: "REL1".to_string(),
+            release_id: Some("REL1".to_string()),
             release_reference: None,
             title: vec![],
-            artist: "Artist".to_string(),
+            artist: Some("Artist".to_string()),
             label: None,        // Add this
             release_date: None, // Add this
             upc: None,          // Add this
             tracks: vec![TrackRequest {
                 track_id: "TRK1".to_string(),
                 resource_reference: None,
-                isrc: "US123".to_string(),
+                isrc: Some("US123".to_string()),
                 title: "Track".to_string(),
                 duration: "PT3M".to_string(),
-                artist: "Artist".to_string(),
+                artist: Some("Artist".to_string()),
                 ..Default::default()
             }],
             resource_references: None,

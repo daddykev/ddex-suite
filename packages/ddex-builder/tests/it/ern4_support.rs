@@ -50,10 +50,10 @@ pub fn track(n: u32, title: &str) -> TrackRequest {
     TrackRequest {
         track_id: format!("TRK{n:03}"),
         resource_reference: Some(format!("A{n}")),
-        isrc: format!("USRT1240{n:04}"),
+        isrc: Some(format!("USRT1240{n:04}")),
         title: title.to_string(),
         duration: "PT3M42S".to_string(),
-        artist: "Example Artist".to_string(),
+        artist: Some("Example Artist".to_string()),
         resource_type: Some("MusicalWorkSoundRecording".into()),
         parental_warning_type: Some("NotExplicit".to_string()),
         ..Default::default()
@@ -73,10 +73,10 @@ pub fn video(n: u32, title: &str) -> TrackRequest {
 /// A complete release around `tracks`.
 pub fn release(title: &str, release_type: &str, tracks: Vec<TrackRequest>) -> ReleaseRequest {
     ReleaseRequest {
-        release_id: "A1-ABCDE-0000000001-M".to_string(),
+        release_id: Some("A1-ABCDE-0000000001-M".to_string()),
         release_reference: Some("R0".to_string()),
         title: text(title),
-        artist: "Example Artist".to_string(),
+        artist: Some("Example Artist".to_string()),
         label: Some("Example Records".to_string()),
         upc: Some("123456789012".to_string()),
         tracks,
@@ -91,7 +91,7 @@ pub fn deal(release_refs: &[&str], model: &str, use_type: &str) -> DealRequest {
     DealRequest {
         deal_reference: None,
         deal_terms: DealTerms {
-            commercial_model_type: model.to_string(),
+            commercial_model_type: Some(model.to_string()),
             territory_code: vec!["Worldwide".to_string()],
             start_date: Some("2024-01-01".to_string()),
             use_types: vec![use_type.to_string()],

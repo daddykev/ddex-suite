@@ -31,23 +31,23 @@ fn request(version: &str) -> BuildRequest {
         version: version.to_string(),
         profile: Some("AudioSingle".to_string()),
         releases: vec![ReleaseRequest {
-            release_id: "REL001".to_string(),
+            release_id: Some("REL001".to_string()),
             release_reference: Some("R1".to_string()),
             title: vec![LocalizedStringRequest {
                 text: "Version Test".to_string(),
                 language_code: None,
             }],
-            artist: "Example Artist".to_string(),
+            artist: Some("Example Artist".to_string()),
             label: None,
             release_date: None,
             upc: None,
             tracks: vec![TrackRequest {
                 track_id: "TRK001".to_string(),
                 resource_reference: Some("A1".to_string()),
-                isrc: "ZZ0000000001".to_string(),
+                isrc: Some("ZZ0000000001".to_string()),
                 title: "Version Test Track".to_string(),
                 duration: "PT3M0S".to_string(),
-                artist: "Example Artist".to_string(),
+                artist: Some("Example Artist".to_string()),
                 ..Default::default()
             }],
             resource_references: None,

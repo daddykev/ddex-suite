@@ -262,13 +262,13 @@ fn create_test_build_request() -> BuildRequest {
         version: "4.3".to_string(),
         profile: Some("AudioAlbum".to_string()),
         releases: vec![ReleaseRequest {
-            release_id: "REL_001".to_string(),
+            release_id: Some("REL_001".to_string()),
             release_reference: None,
             title: vec![LocalizedStringRequest {
                 text: "Test Album".to_string(),
                 language_code: Some("en".to_string()),
             }],
-            artist: "Test Artist".to_string(),
+            artist: Some("Test Artist".to_string()),
             label: None,        // Add this
             release_date: None, // Add this
             upc: None,          // Add this
@@ -276,19 +276,19 @@ fn create_test_build_request() -> BuildRequest {
                 TrackRequest {
                     track_id: "TRACK_001".to_string(),
                     resource_reference: None,
-                    isrc: "USRC12345678".to_string(),
+                    isrc: Some("USRC12345678".to_string()),
                     title: "Track 1".to_string(),
                     duration: "PT3M30S".to_string(),
-                    artist: "Test Artist".to_string(),
+                    artist: Some("Test Artist".to_string()),
                     ..Default::default()
                 },
                 TrackRequest {
                     track_id: "TRACK_002".to_string(),
                     resource_reference: None,
-                    isrc: "USRC12345679".to_string(),
+                    isrc: Some("USRC12345679".to_string()),
                     title: "Track 2".to_string(),
                     duration: "PT4M15S".to_string(),
-                    artist: "Test Artist".to_string(),
+                    artist: Some("Test Artist".to_string()),
                     ..Default::default()
                 },
             ],

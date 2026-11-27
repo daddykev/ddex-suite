@@ -52,13 +52,13 @@ fn create_platform_agnostic_request_base() -> BuildRequest {
         version: "ern/43".to_string(),
         profile: Some("PlatformTestProfile".to_string()),
         releases: vec![ReleaseRequest {
-            release_id: "R_PLAT001".to_string(),
+            release_id: Some("R_PLAT001".to_string()),
             release_reference: Some("R_PLAT001".to_string()),
             title: vec![LocalizedStringRequest {
                 text: "Cross-Platform Test Album".to_string(),
                 language_code: Some("en".to_string()),
             }],
-            artist: "Platform Test Artist".to_string(),
+            artist: Some("Platform Test Artist".to_string()),
             label: Some("Platform Records".to_string()),
             release_date: Some("2024-01-01".to_string()),
             upc: Some("123456789012".to_string()),
@@ -69,7 +69,7 @@ fn create_platform_agnostic_request_base() -> BuildRequest {
         deals: vec![DealRequest {
             deal_reference: Some("PLAT_DEAL001".to_string()),
             deal_terms: ddex_builder::builder::DealTerms {
-                commercial_model_type: "FreeOfChargeModel".to_string(),
+                commercial_model_type: Some("FreeOfChargeModel".to_string()),
                 territory_code: vec!["Worldwide".to_string()],
                 start_date: Some("2024-01-01".to_string()),
                 ..Default::default()
@@ -268,7 +268,7 @@ fn test_unicode_cross_platform_determinism() {
 
     // Add Unicode text that might be normalized differently across platforms
     request.releases[0].title[0].text = "Café Münchën — Naïve Résumé".to_string();
-    request.releases[0].artist = "Björk & Sigur Rós".to_string();
+    request.releases[0].artist = Some("Björk & Sigur Rós".to_string());
 
     if let Some(ref mut extensions) = request.extensions {
         extensions.insert(

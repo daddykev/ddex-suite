@@ -216,13 +216,13 @@ pub fn request_from_parsed(
             Ok(TrackRequest {
                 track_id: t.track_id.clone(),
                 resource_reference: Some(t.track_id.clone()),
-                isrc: t.isrc.clone().unwrap_or_default(),
+                isrc: t.isrc.clone().filter(|s| !s.is_empty()),
                 title: t.title.clone().unwrap_or_default(),
                 duration: t
                     .duration
                     .map(|d| iso_duration(d.as_secs()))
                     .unwrap_or_default(),
-                artist: t.display_artist.clone().unwrap_or_default(),
+                artist: t.display_artist.clone().filter(|s| !s.is_empty()),
                 resource_kind: match resource.resource_type {
                     ResourceType::Video => ResourceKind::Video,
                     _ => ResourceKind::SoundRecording,
@@ -270,7 +270,7 @@ pub fn request_from_parsed(
                     .commercial_model_type
                     .first()
                     .map(commercial_model_name)
-                    .unwrap_or_default(),
+                    .filter(|s| !s.is_empty()),
                 territory_code: d.deal_terms.territory_code.clone(),
                 start_date: d
                     .deal_terms
@@ -308,10 +308,13 @@ pub fn request_from_parsed(
         version: version.to_string(),
         profile: None,
         releases: vec![ReleaseRequest {
-            release_id: String::new(),
+            release_id: None,
             release_reference: Some(release.release_reference.clone()),
             title: titles(&release.display_title_text),
-            artist: flat_release.display_artist.clone().unwrap_or_default(),
+            artist: flat_release
+                .display_artist
+                .clone()
+                .filter(|s| !s.is_empty()),
             label: release
                 .release_label_reference
                 .first()

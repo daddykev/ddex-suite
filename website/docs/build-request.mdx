@@ -81,12 +81,12 @@ In Rust the type is `AvsValueRequest`, which converts from `&str` and `String` (
 
 | Field | Type | Description |
 |---|---|---|
-| `release_id` | string | **Required** (may be `""`). Written as `ReleaseId/GRid` unless `release_ids` is set |
+| `release_id` | string | Written as `ReleaseId/GRid` unless `release_ids` is set; leave it out for no GRid |
 | `upc` | string | Written as `ReleaseId/ICPN` unless `release_ids` is set |
 | `release_ids` | [ReleaseIds](#releaseids) | All the release's identifiers; replaces `release_id` and `upc` |
 | `release_reference` | string | `ReleaseReference`, matching `R[\d\-_a-zA-Z]+`. Generated when omitted |
 | `title` | [LocalizedString](#localizedstring)[] | **Required** (the list). 4.x `DisplayTitleText`, 3.8.x `ReferenceTitle` |
-| `artist` | string | **Required.** The display artist (4.x: `DisplayArtistName` and a `MainArtist` `DisplayArtist`) |
+| `artist` | string | The display artist (4.x: required, `DisplayArtistName` and a `MainArtist` `DisplayArtist`; 3.8.x: optional) |
 | `artist_role` | AvsValue | The display artist's role (default `MainArtist`) |
 | `label` | string | The label name. ERN 4.x writes it as a party referenced by `ReleaseLabelReference` |
 | `release_type` | AvsValue | `ReleaseType`, e.g. `Album`, `Single` |
@@ -120,11 +120,11 @@ In Rust the type is `AvsValueRequest`, which converts from `&str` and `String` (
 |---|---|---|
 | `track_id` | string | **Required.** An ID for the track within the request |
 | `resource_reference` | string | `ResourceReference`, matching `A[\d\-_a-zA-Z]+`. Generated when omitted |
-| `isrc` | string | **Required** (may be `""` when `proprietary_ids` is given). The resource's ISRC |
+| `isrc` | string | The resource's ISRC; leave it out when `proprietary_ids` identify the resource |
 | `proprietary_ids` | `{ namespace, value }[]` | The resource's `ProprietaryId`s |
 | `title` | string | **Required.** 4.x `DisplayTitleText`, 3.8.x `ReferenceTitle` |
 | `duration` | string | **Required.** An `xs:duration` such as `PT3M42S` |
-| `artist` | string | **Required.** The display artist |
+| `artist` | string | The display artist (4.x: required; 3.8.x: optional) |
 | `artist_role` | AvsValue | The display artist's role (default `MainArtist`) |
 | `resource_kind` | `"SoundRecording"` or `"Video"` | Default `SoundRecording`. Videos are written for ERN 4.x only |
 | `resource_type` | AvsValue | The resource's DDEX `Type`, e.g. `MusicalWorkSoundRecording` |
@@ -155,7 +155,7 @@ In Rust the type is `AvsValueRequest`, which converts from `&str` and `String` (
 
 | Field | Type | Description |
 |---|---|---|
-| `commercial_model_type` | string | **Required** (may be `""`; ERN 4.x omits it when empty), e.g. `SubscriptionModel` |
+| `commercial_model_type` | string | `CommercialModelType`, e.g. `SubscriptionModel`; leave it out to write none |
 | `territory_code` | string[] | **Required** (the list). `TerritoryCode`s, e.g. `Worldwide` |
 | `start_date`, `end_date` | string | `ValidityPeriod` dates, `YYYY-MM-DD` |
 | `use_types` | string[] | `UseType`s, e.g. `Stream` |

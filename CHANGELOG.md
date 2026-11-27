@@ -408,6 +408,36 @@ effect. Real features can come back later as additions. The inventory is
   - Migration: drop the fields (`..Default::default()` keeps working); use `ParseMode::Dom`
     (the default) instead of `Auto`.
 
+- **Build requests: `Option` instead of `""` for absent values** (Rust, Node.js, Python):
+  - Who: Rust code that builds these request structs, and requests (JSON, Node.js, Python)
+    that pass `""` to mean "absent".
+  - What changed: the fields below are `Option<String>`. `None` (or, from JSON / Node.js /
+    Python, a missing key or `null`) writes nothing; a string is written as given. An empty
+    string (`Some("")`) now fails the build with an error naming the field ("is empty;
+    leave it out (None / null) when there is no value"), where `""` used to mean "absent".
+    Output for a request that sets the same values is unchanged.
+  - Required in ERN 4.x, optional in ERN 3.8.x: release and track `artist`. A 4.x build
+    without one fails as before ("ERN 4.3 requires Release/DisplayArtistName
+    (releases[0].artist)").
+  - Python `from_dataframe`: the `release_id` column is no longer required; a missing,
+    `None` or NaN cell writes no GRid (rows without one form one release).
+
+    | Field | Before | Now |
+    |---|---|---|
+    | `ReleaseRequest::release_id` (GRid) | `String`, `""` = no GRid | `Option<String>` |
+    | `ReleaseRequest::artist` | `String`, `""` = none (3.8.x) | `Option<String>` |
+    | `TrackRequest::isrc` | `String`, `""` = no ISRC | `Option<String>` |
+    | `TrackRequest::artist` | `String`, `""` = none (3.8.x) | `Option<String>` |
+    | `DealTerms::commercial_model_type` | `String`, `""` = none | `Option<String>` |
+
+  - Required fields that now fail when empty: a release title's `text`
+    (`releases[i].title[j].text`: "is empty"). An empty title used to be skipped when
+    another title was given. `duration`, track `title`, AVS values and `ProprietaryId`
+    namespaces already failed when empty.
+  - Migration: Rust: wrap the values in `Some(...)` and replace `String::new()` / `""`
+    with `None`. JSON / Node.js / Python: drop keys set to `""` (or set them to `null` /
+    `None`).
+
 Old → new names (0.6.0 PR 5a):
 
 | Old | New |

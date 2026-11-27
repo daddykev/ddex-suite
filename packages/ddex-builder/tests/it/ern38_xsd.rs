@@ -73,8 +73,8 @@ fn ern382_specific_input_is_schema_valid() {
     r.language_and_script_code = None;
     let mut second = release("Second", "Single", vec![track(1, "Example Track")]);
     second.release_reference = Some("R9".to_string());
-    second.release_id = "A1-ABCDE-0000000009-M".to_string();
-    second.artist = String::new();
+    second.release_id = Some("A1-ABCDE-0000000009-M".to_string());
+    second.artist = None;
     second.label = None;
     second.genre = None;
     second.parental_warning_type = None;
@@ -173,7 +173,7 @@ fn missing_required_values_are_named() {
     let mut r = multi_track_album("3.8.2");
     r.header.message_recipient.party_id = None;
     r.releases[0].tracks[0].duration = String::new();
-    r.releases[0].tracks[1].isrc = String::new();
+    r.releases[0].tracks[1].isrc = None;
     r.releases[0].tracks[3] = video(4, "Video");
     r.deals[0].deal_terms.use_types.clear();
     r.deals[1].deal_terms.territory_code.clear();
@@ -196,7 +196,7 @@ fn missing_required_values_are_named() {
 
     let mut r = minimal_single("3.8.1");
     r.releases[0].title.clear();
-    r.releases[0].release_id = String::new();
+    r.releases[0].release_id = None;
     r.releases[0].upc = None;
     r.releases[0].tracks.clear();
     r.deals[0].deal_reference = None;
@@ -286,7 +286,7 @@ fn values_the_schema_cannot_express_are_rejected() {
 fn escaping_and_illegal_characters() {
     let mut r = minimal_single("3.8.2");
     r.releases[0].title = text("<script>alert('x')</script> & \"q\" 🎵 مرحبا");
-    r.releases[0].artist = "A & B <C>".to_string();
+    r.releases[0].artist = Some("A & B <C>".to_string());
     r.releases[0].tracks[0].title = "]]> it's".to_string();
     let xml = build(r);
     assert_xsd_valid(&xml, "3.8.2", "escaped text");

@@ -103,14 +103,16 @@ class TrackRelease(_TrackReleaseRequired, total=False):
 
 class _TrackRequired(TypedDict):
     track_id: str
-    isrc: str
     title: str
     #: ISO 8601 duration, e.g. ``PT3M45S``
     duration: str
-    artist: str
 
 
 class Track(_TrackRequired, total=False):
+    #: Left out (or None): no ISRC; the track then needs ``proprietary_ids``
+    isrc: Optional[str]
+    #: ERN 4.x: required; ERN 3.8.x: left out (or None) writes no display artist
+    artist: Optional[str]
     resource_reference: Optional[str]
     #: ERN 4.x: ``"SoundRecording"`` (default) or ``"Video"``
     resource_kind: str
@@ -127,15 +129,17 @@ class Track(_TrackRequired, total=False):
 
 
 class _ReleaseRequired(TypedDict):
-    #: Written as ``ReleaseId/GRid`` unless ``release_ids`` is set (ERN 4.x)
-    release_id: str
     title: List[LocalizedString]
-    #: Main artist (ERN 4.x: ``DisplayArtistName`` and a ``MainArtist`` ``DisplayArtist``)
-    artist: str
     tracks: List[Track]
 
 
 class Release(_ReleaseRequired, total=False):
+    #: Written as ``ReleaseId/GRid`` unless ``release_ids`` is set (ERN 4.x); left out (or
+    #: None): no GRid
+    release_id: Optional[str]
+    #: Main artist (ERN 4.x: required, ``DisplayArtistName`` and a ``MainArtist``
+    #: ``DisplayArtist``; ERN 3.8.x: optional)
+    artist: Optional[str]
     release_reference: Optional[str]
     #: ERN 4.x (required): label name, referenced by ``ReleaseLabelReference``
     label: Optional[str]
@@ -155,12 +159,12 @@ class Release(_ReleaseRequired, total=False):
 
 
 class _DealTermsRequired(TypedDict):
-    #: ERN 4.x: omitted when empty
-    commercial_model_type: str
     territory_code: List[str]
 
 
 class DealTerms(_DealTermsRequired, total=False):
+    #: Left out (or None): no ``CommercialModelType``
+    commercial_model_type: Optional[str]
     #: YYYY-MM-DD (ERN 4.x: required)
     start_date: Optional[str]
     end_date: Optional[str]

@@ -57,10 +57,10 @@
 //! #     version: "4.3".to_string(),
 //! #     profile: None,
 //! #     releases: vec![ddex_builder::builder::ReleaseRequest {
-//! #         release_id: "A1-ABCDE-0000000001-M".to_string(),
+//! #         release_id: Some("A1-ABCDE-0000000001-M".to_string()),
 //! #         release_reference: Some("R1".to_string()),
 //! #         title: vec![LocalizedStringRequest { text: "Album".to_string(), language_code: None }],
-//! #         artist: "Artist".to_string(),
+//! #         artist: Some("Artist".to_string()),
 //! #         label: Some("Label".to_string()),
 //! #         release_type: Some("Album".into()),
 //! #         genre: Some("Pop".to_string()),

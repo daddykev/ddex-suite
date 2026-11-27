@@ -66,6 +66,38 @@ impl Problems {
         }
     }
 
+    /// A required text that the request type leaves optional (it is optional in another
+    /// ERN version): `None` or `""` is missing.
+    pub(super) fn require_some_text(&mut self, value: &Option<String>, element: &str, field: &str) {
+        if value.as_deref().unwrap_or_default().is_empty() {
+            self.missing(element, field);
+        }
+    }
+
+    /// An optional text: `None` leaves the element out; `Some("")` is an error (before
+    /// 0.6.0 an empty string meant "absent").
+    pub(super) fn optional_text(&mut self, value: &Option<String>, field: &str) {
+        if value.as_deref() == Some("") {
+            self.invalid(
+                field,
+                "is empty; leave it out (None / null) when there is no value",
+            );
+        }
+    }
+
+    /// Every title needs its text (an empty title used to be skipped).
+    pub(super) fn title_texts(
+        &mut self,
+        titles: &[crate::builder::LocalizedStringRequest],
+        at: &str,
+    ) {
+        for (i, title) in titles.iter().enumerate() {
+            if title.text.is_empty() {
+                self.invalid(&format!("{at}.title[{i}].text"), "is empty");
+            }
+        }
+    }
+
     pub(super) fn require_some<T>(&mut self, value: &Option<T>, element: &str, field: &str) {
         if value.is_none() {
             self.missing(element, field);
@@ -146,7 +178,8 @@ impl Problems {
             ),
             Some(ids) => self.proprietary_ids(ids, &format!("{at}.release_ids")),
             None => {
-                if release.release_id.is_empty() && release.upc.is_none() {
+                self.optional_text(&release.release_id, &format!("{at}.release_id"));
+                if release.release_id.is_none() && release.upc.is_none() {
                     self.missing(
                         "an identifier in Release/ReleaseId",
                         &format!("{at}.release_id, {at}.upc or {at}.release_ids"),
@@ -382,7 +415,7 @@ pub(super) fn release_identifiers(release: &ReleaseRequest) -> ReleaseIdRequest 
         .release_ids
         .clone()
         .unwrap_or_else(|| ReleaseIdRequest {
-            grid: Some(release.release_id.clone()).filter(|id| !id.is_empty()),
+            grid: release.release_id.clone(),
             icpn: release.upc.clone(),
             proprietary_ids: Vec::new(),
         })

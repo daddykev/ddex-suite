@@ -25,19 +25,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         avs_version_id: Some("12".into()),
         language_and_script_code: Some("en".into()),
         releases: vec![ReleaseRequest {
-            release_id: "A1-ABCDE-0000000001-M".into(),
+            release_id: Some("A1-ABCDE-0000000001-M".into()),
             title: text("Example Single"),
-            artist: "Example Artist".into(),
+            artist: Some("Example Artist".into()),
             label: Some("Example Label".into()),
             release_type: Some("Single".into()),
             genre: Some("Pop".into()),
             parental_warning_type: Some("NotExplicit".into()),
             tracks: vec![TrackRequest {
                 track_id: "T1".into(),
-                isrc: "ZZ0000000001".into(),
+                isrc: Some("ZZ0000000001".into()),
                 title: "Example Track".into(),
                 duration: "PT3M42S".into(),
-                artist: "Example Artist".into(),
+                artist: Some("Example Artist".into()),
                 resource_type: Some("MusicalWorkSoundRecording".into()),
                 parental_warning_type: Some("NotExplicit".into()),
                 ..Default::default()
