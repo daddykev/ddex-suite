@@ -68,6 +68,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+The data models live in [`ddex-core`](https://crates.io/crates/ddex-core).
+
 What you get:
 
 - `message.flat`: releases with their tracks (position, disc and track numbers, the
@@ -104,6 +106,7 @@ whatever the size
 ## Links
 
 - Documentation: [docs.rs/ddex-parser](https://docs.rs/ddex-parser) and [ddex-suite.org](https://ddex-suite.org)
+- Data models: [ddex-core](https://crates.io/crates/ddex-core)
 - [Changelog](https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md)
 - [0.6.0 migration guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md)
 - [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md)

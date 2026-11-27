@@ -4,10 +4,16 @@ Shared DDEX data models for [`ddex-parser`](https://crates.io/crates/ddex-parser
 [`ddex-builder`](https://crates.io/crates/ddex-builder), part of
 [DDEX Suite](https://github.com/daddykev/ddex-suite).
 
-> **0.5.0 has breaking changes.** The flat and graph models gained fields (dates, P/C
-> lines, genres, parental warnings, labels, track groups), so struct literals need the new
-> fields. See the
-> [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md).
+> **0.6.0 has no breaking changes in ddex-core.** `xml_refs` gains DOCTYPE detection, which
+> every ddex-parser reader now uses: the `Doctype` error, `find_doctype`,
+> `ReferenceScanner::rejecting_doctype` and `CheckedRead::rejecting_doctype`
+> (`check_document` and the default scanner still skip a DOCTYPE), and
+> `normalize_attribute_value` (XML 1.0 attribute-value normalization). The data models are
+> unchanged. ddex-parser and ddex-builder do have breaking changes: see the [0.6.0 migration
+> guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md).
+
+0.5.0 changed the flat and graph models (see the
+[0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md)).
 
 You normally use this crate through `ddex-parser`, whose `DDEXParser::parse` returns a
 `ddex_core::models::flat::ParsedERNMessage`:
@@ -50,6 +56,7 @@ assert_eq!(ERNVersion::V4_3.namespace(), "http://ddex.net/xml/ern/43");
 
 - Documentation: [docs.rs/ddex-core](https://docs.rs/ddex-core) and [ddex-suite.org](https://ddex-suite.org)
 - [Changelog](https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md)
+- [0.6.0 migration guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md)
 - [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md)
 - [Known issues](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md)
 - [Report an issue](https://github.com/daddykev/ddex-suite/issues)
