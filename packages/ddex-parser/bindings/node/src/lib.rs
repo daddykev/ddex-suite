@@ -718,7 +718,7 @@ impl DdexParser {
         if xml.is_empty() {
             return Ok(SanityCheckResult {
                 is_valid: false,
-                version: None,
+                version: serde_json::Value::Null,
                 errors: vec!["XML input cannot be empty for sanity check".to_string()],
             });
         }
@@ -727,7 +727,7 @@ impl DdexParser {
         if !xml.trim_start().starts_with("<?xml") && !xml.trim_start().starts_with('<') {
             return Ok(SanityCheckResult {
                 is_valid: false,
-                version: None,
+                version: serde_json::Value::Null,
                 errors: vec!["Input does not appear to be valid XML".to_string()],
             });
         }
@@ -738,7 +738,10 @@ impl DdexParser {
         match self.inner.sanity_check(cursor) {
             Ok(result) => Ok(SanityCheckResult {
                 is_valid: result.is_valid,
-                version: result.version.map(version_to_string),
+                version: result
+                    .version
+                    .map(|v| serde_json::Value::String(version_to_string(v)))
+                    .unwrap_or(serde_json::Value::Null),
                 errors: result.errors,
             }),
             Err(err) => {
@@ -758,7 +761,7 @@ impl DdexParser {
 
                 Ok(SanityCheckResult {
                     is_valid: false,
-                    version: None,
+                    version: serde_json::Value::Null,
                     errors: vec![detailed_error],
                 })
             }
@@ -815,7 +818,8 @@ pub struct ParsedMessage {
 pub struct SanityCheckResult {
     pub is_valid: bool,
     /// The detected version (`"V4_3"`); null when none is recognised.
-    pub version: Option<String>,
+    #[napi(ts_type = "string | null")]
+    pub version: serde_json::Value,
     pub errors: Vec<String>,
 }
 

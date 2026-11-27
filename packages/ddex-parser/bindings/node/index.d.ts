@@ -174,7 +174,7 @@ export interface ParsedMessage {
 export interface SanityCheckResult {
   isValid: boolean
   /** The detected version (`"V4_3"`); null when none is recognised. */
-  version?: string
+  version: string | null
   errors: Array<string>
 }
 export interface DetailedError {

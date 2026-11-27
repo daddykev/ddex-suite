@@ -112,7 +112,8 @@ fn create_test_request_base() -> BuildRequest {
             artist: Some("Test Artist".to_string()),
             label: Some("Test Label".to_string()),
             release_date: Some("2024-01-01".to_string()),
-            upc: Some("123456789014".to_string()),
+            // A valid GS1 check digit (the old checksum also accepted ...014, which is wrong)
+            upc: Some("123456789012".to_string()),
             tracks: vec![
                 TrackRequest {
                     track_id: "TRK001".to_string(),

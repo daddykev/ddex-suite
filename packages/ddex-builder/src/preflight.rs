@@ -403,7 +403,7 @@ impl PreflightValidator {
 
     /// The GS1 mod-10 check digit: the digits before the check digit are weighted 3, 1, 3,
     /// 1, ... from the right, so it is right for 8-, 12-, 13- and 14-digit codes. (Before
-    /// 0.6.0 the weights started from the left, which is wrong for 13-digit codes.)
+    /// 0.6.0 the weights started from the left, which is wrong for 12- and 14-digit codes.)
     fn validate_upc_checksum(&self, upc: &str) -> bool {
         let digits: Vec<u32> = upc.chars().filter_map(|c| c.to_digit(10)).collect();
         if digits.len() != upc.len() || !matches!(digits.len(), 8 | 12 | 13 | 14) {

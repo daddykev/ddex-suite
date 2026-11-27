@@ -539,8 +539,9 @@ Old → new names (0.6.0 PR 5a):
 - Node / Python builder `validate()` returns the preflight errors (`CODE: message`) as well
   as the warnings, and is valid only when there are none (it returned only the warnings).
 - The UPC / EAN check digit is the GS1 mod-10 check, weighted 3, 1, 3, ... from the right,
-  for 8-, 12-, 13- and 14-digit codes. It was weighted from the left, which rejected valid
-  EAN-13 codes and accepted some wrong ones, and 8-digit codes were rejected.
+  for 8-, 12-, 13- and 14-digit codes. It was weighted from the left, which is wrong for
+  12- and 14-digit codes (valid UPC-A / GTIN-14 codes were rejected and wrong ones
+  accepted), and 8-digit codes were rejected.
 - `StreamingStats::peak_memory_usage` (streaming writer) counts chunks larger than the
   buffer, which are written directly; that path skipped the peak update and under-reported
   it.
