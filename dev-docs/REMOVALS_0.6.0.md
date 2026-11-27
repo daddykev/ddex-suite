@@ -6,7 +6,12 @@ bindings (Node, Python, WASM), on `main` after PR 2 (`d89fdff`). This document i
 inventory. The full removal touches about 100 files, so the work is split (see
 [Proposed split](#proposed-split)).
 
-**Status:** PR 3a is done. It removed the [Decided removals](#decided-removals) and the
+**Status:** PR 3b is done too: the guarantees, the determinism verifier, verification, the
+fidelity module and the other fidelity / canonicalization / round-trip fakes, and the twelve
+unread `DeterminismConfig` fields; those rows are marked "removed in 3b". The `DB_C14N`
+config argument (NO-OP) is left for 3c.
+
+PR 3a is done. It removed the [Decided removals](#decided-removals) and the
 no-op CLI flags `--config`, `build --profile`, `build --strict`, `schema --profile` and
 `schema --with-docs`; those rows are marked "removed in 3a". The rest is for 3b–3d. Line
 numbers are as of `d89fdff`, before 3a.
@@ -129,42 +134,42 @@ Dependencies: no ddex-builder dependency becomes unused because of the decided r
 | item | class | evidence | affected |
 |---|---|---|---|
 | `Builder::new`, `Default` | REAL | constructor | Rust, CLI (`bin:490,548,876`), tests |
-| `Builder.config`, `Builder::with_config`, `config()` | NO-OP | stored (`:398,449`) and returned (`:611`); `build_with_fidelity` / `build_internal` use `BuildOptions::default()` (`:775,969`) | Rust |
+| `Builder.config`, `Builder::with_config`, `config()` | NO-OP (**removed in 3b**) | stored (`:398,449`) and returned (`:611`); `build_with_fidelity` / `build_internal` use `BuildOptions::default()` (`:775,969`) | Rust |
 | `Builder.version_manager` | REAL (container) | read by `detect_version`, `is_version_compatible` | — |
 | `with_version`, `target_version` | REAL (CLI only) | no `Builder` method reads it; the CLI reads it at `bin:1028` to set `request.version` | CLI `build --ddex-version`, `preset apply --version-override` |
 | `detect_version` | REAL (heuristic, often wrong) | wraps `VersionManager::detect_version` (see `versions`) | tests: `honest_results.rs:220-227`; fuzz |
 | `convert_version` | FAKE | wraps `VersionConverter::convert` (see `versions`); always `Ok` | CLI `convert`; doctest `lib.rs:358-385`; fuzz |
 | `is_version_compatible` | REAL (hard-coded table) | `VersionManager::is_conversion_supported` | doctest; fuzz |
 | `supported_versions` | REAL | `versions::utils::supported_versions` (omits 3.8.1) | — |
-| `FidelityOptions.enable_perfect_fidelity` | NO-OP | read only by the getter `is_perfect_fidelity_enabled` (`:698`) | Rust |
-| `FidelityOptions.preserve_comments`, `preserve_processing_instructions`, `preserve_namespace_prefixes`, `enable_deterministic_ordering` | NO-OP | read only to echo into `db_c14n_config` (`:950-955`) | Rust |
-| `FidelityOptions.preserve_extensions`, `custom_canonicalization_rules`, `verification_config` | NO-OP | never read (`Builder` uses its own `self.verification_config`) | Rust |
-| `FidelityOptions.preserve_attribute_order` | NO-OP for builds | read only by `verification.rs:351` (gates a regex heuristic) | Rust |
+| `FidelityOptions.enable_perfect_fidelity` | NO-OP (**removed in 3b**) | read only by the getter `is_perfect_fidelity_enabled` (`:698`) | Rust |
+| `FidelityOptions.preserve_comments`, `preserve_processing_instructions`, `preserve_namespace_prefixes`, `enable_deterministic_ordering` | NO-OP (**removed in 3b**) | read only to echo into `db_c14n_config` (`:950-955`) | Rust |
+| `FidelityOptions.preserve_extensions`, `custom_canonicalization_rules`, `verification_config` | NO-OP (**removed in 3b**) | never read (`Builder` uses its own `self.verification_config`) | Rust |
+| `FidelityOptions.preserve_attribute_order` | NO-OP for builds (**removed in 3b**) | read only by `verification.rs:351` (gates a regex heuristic) | Rust |
 | `FidelityOptions.canonicalization` | REAL (`None`, `DbC14N`) | read by `canonicalize_with` (`:1084`) and the guard in `build_with_fidelity` (`:765`) | tests: `honest_results.rs:120-168` |
-| `FidelityOptions.collect_statistics`, `enable_verification` | REAL | `:786`, `:840` | tests: `honest_results.rs:142-143` |
+| `FidelityOptions.collect_statistics`, `enable_verification` | REAL (`enable_verification` **removed in 3b**; `collect_statistics` kept) | `:786`, `:840` | tests: `honest_results.rs:142-143` |
 | `CanonicalizationAlgorithm::None`, `DbC14N` | REAL | `canonicalize_with` | tests |
-| `CanonicalizationAlgorithm::C14N`, `C14N11`, `Custom` | FAKE | always `Err(not_implemented)` (`:1093-1103`) | tests: `honest_results.rs:126-127,168` |
-| `CustomCanonicalizationRules` (all fields), its `UnorderedMap` alias and the `HashMap` import | NO-OP | never read (PR 2 allows H4, `:66-78,165`) | Rust |
+| `CanonicalizationAlgorithm::C14N`, `C14N11`, `Custom` | FAKE (**removed in 3b**) | always `Err(not_implemented)` (`:1093-1103`) | tests: `honest_results.rs:126-127,168` |
+| `CustomCanonicalizationRules` (all fields), its `UnorderedMap` alias and the `HashMap` import | NO-OP (**removed in 3b**) | never read (PR 2 allows H4, `:66-78,165`) | Rust |
 | `with_canonicalization`, `with_db_c14n` | REAL (setters) | set a field that is read | — |
-| `with_c14n`, `with_c14n11`, `with_custom_canonicalization` | FAKE | select algorithms that always error | — |
-| `with_perfect_fidelity`, `for_round_trip`, `with_fidelity_options`, `set_fidelity_options`, `enable_perfect_fidelity`, `disable_perfect_fidelity`, `fidelity_options`, `is_perfect_fidelity_enabled`, `canonicalization_algorithm` | NO-OP (apart from the real fields they set) | they mostly set NO-OP fields; their only real effect is `enable_verification` / `collect_statistics` / `canonicalization` | tests: `honest_results.rs:114,147,167` (`with_fidelity_options`) |
-| `with_verification`, `with_statistics` | REAL (setters) | set `enable_verification` / `collect_statistics` | — |
-| `VerificationConfig` (lib copy) | duplicate | field-for-field copy of `verification::VerificationConfig`, converted at `:788-801,855-866` | goes with `verification` |
-| `VerificationResult`, `VerificationIssue`, `VerificationSeverity` (lib copies) | duplicate | converted from the `verification` types (`:807-833,872-896`) | goes with `verification` |
-| `Builder::build_with_fidelity` | REAL (build + statistics) / FAKE (verification branch) | builds with `DDEXBuilder::build`; its `verification_result` comes from `BuildVerifier::verify` (FAKE, see `verification`); `canonicalization_applied` / `db_c14n_version` are constants but accurate | tests: `honest_results.rs:140-172` |
+| `with_c14n`, `with_c14n11`, `with_custom_canonicalization` | FAKE (**removed in 3b**) | select algorithms that always error | — |
+| `with_perfect_fidelity`, `for_round_trip`, `with_fidelity_options`, `set_fidelity_options`, `enable_perfect_fidelity`, `disable_perfect_fidelity`, `fidelity_options`, `is_perfect_fidelity_enabled`, `canonicalization_algorithm` | NO-OP (apart from the real fields they set) (`with_perfect_fidelity`, `for_round_trip`, `enable_perfect_fidelity`, `disable_perfect_fidelity`, `is_perfect_fidelity_enabled` **removed in 3b**; the others kept) | they mostly set NO-OP fields; their only real effect is `enable_verification` / `collect_statistics` / `canonicalization` | tests: `honest_results.rs:114,147,167` (`with_fidelity_options`) |
+| `with_verification`, `with_statistics` | REAL (setters) (`with_verification` **removed in 3b**; `with_statistics` kept) | set `enable_verification` / `collect_statistics` | — |
+| `VerificationConfig` (lib copy) | duplicate (**removed in 3b**) | field-for-field copy of `verification::VerificationConfig`, converted at `:788-801,855-866` | goes with `verification` |
+| `VerificationResult`, `VerificationIssue`, `VerificationSeverity` (lib copies) | duplicate (**removed in 3b**) | converted from the `verification` types (`:807-833,872-896`) | goes with `verification` |
+| `Builder::build_with_fidelity` | REAL (build + statistics) / FAKE (verification branch) (verification branch **removed in 3b**; build + statistics kept) | builds with `DDEXBuilder::build`; its `verification_result` comes from `BuildVerifier::verify` (FAKE, see `verification`); `canonicalization_applied` / `db_c14n_version` are constants but accurate | tests: `honest_results.rs:140-172` |
 | `FidelityBuildResult` | REAL (data) | — | — |
-| `BuildStatistics` (lib): `build_time`, `verification_time`, `output_size_bytes`, `element_count`, `attribute_count`, `namespace_count`, `comment_count`, `processing_instruction_count` | REAL | `count_xml` (`:1058`) | tests |
-| `BuildStatistics` (lib): `canonicalization_time`, `validation_time`, `peak_memory_bytes`, `input_size_bytes` | FAKE | always 0 | — |
-| `Builder::verify_build` | FAKE | `BuildVerifier::verify` | — |
-| `Builder::test_round_trip_fidelity` | FAKE | always errors (`:899-909`) | tests: `honest_results.rs:85-88` |
+| `BuildStatistics` (lib): `build_time`, `verification_time`, `output_size_bytes`, `element_count`, `attribute_count`, `namespace_count`, `comment_count`, `processing_instruction_count` | REAL (`verification_time` **removed in 3b**; the others kept) | `count_xml` (`:1058`) | tests |
+| `BuildStatistics` (lib): `canonicalization_time`, `validation_time`, `peak_memory_bytes`, `input_size_bytes` | FAKE (**removed in 3b**) | always 0 | — |
+| `Builder::verify_build` | FAKE (**removed in 3b**) | `BuildVerifier::verify` | — |
+| `Builder::test_round_trip_fidelity` | FAKE (**removed in 3b**) | always errors (`:899-909`) | tests: `honest_results.rs:85-88` |
 | `Builder::test_round_trip_fidelity_with`, lib `RoundTripResult` | REAL | `RoundTripTester::test_round_trip_with` | tests: `honest_results.rs:96-99` |
 | `Builder::canonicalize` | REAL (`None`, `DbC14N`) | `canonicalize_with`; the other algorithms are the FAKE variants above | tests: `honest_results.rs:107-135` |
-| `Builder::db_c14n_config`, `DbC14NConfig` | FAKE | echoes options that are never applied | — |
-| `NamespaceHandling` | FAKE / DEAD | only built by the echo; `Normalize` is never constructed | — |
+| `Builder::db_c14n_config`, `DbC14NConfig` | FAKE (**removed in 3b**) | echoes options that are never applied | — |
+| `NamespaceHandling` | FAKE / DEAD (**removed in 3b**) | only built by the echo; `Normalize` is never constructed | — |
 | `DB_C14N_VERSION`, `version_info` | REAL | `builder.rs:803` | tests |
-| `fidelity_engine_info` | REAL | static, accurate text | tests: `honest_results.rs:179` |
-| `pub(crate) build_internal` | REAL | used by `DeterminismVerifier` | — |
-| root re-exports of `fidelity`, `round_trip::FidelityAnalysis`, `verification` | follow their items | `lib.rs:59-62` | — |
+| `fidelity_engine_info` | REAL (**removed in 3b** (decided: "fidelity engine" claim)) | static, accurate text | tests: `honest_results.rs:179` |
+| `pub(crate) build_internal` | REAL (**removed in 3b** (no caller left)) | used by `DeterminismVerifier` | — |
+| root re-exports of `fidelity`, `round_trip::FidelityAnalysis`, `verification` | follow their items (**removed in 3b**) | `lib.rs:59-62` | — |
 
 ### `builder.rs`
 
@@ -191,19 +196,19 @@ binding crates; the only other hits are a local variable in `canonical/rules.rs:
 | item | class | evidence | affected |
 |---|---|---|---|
 | `DeterminismConfig.canon_mode`, `CanonMode::DbC14n`, `CanonMode::Pretty` | REAL | `builder.rs:789` (DbC14n vs. anything else) | tests: `ern4_xsd.rs`, `ern38_xsd.rs`, `ern382_output.rs`, `golden_files.rs`, `basic.rs` |
-| `CanonMode::Compact` | NO-OP | same output as `Pretty`; nothing compacts | — |
+| `CanonMode::Compact` | NO-OP (**removed in 3b**) | same output as `Pretty`; nothing compacts | — |
 | `.indent_char` / `IndentChar`, `.indent_width` | REAL (only when `canon_mode` ≠ `DbC14n`) | `xml_writer.rs:133,137`; DB-C14N re-indents with a fixed two spaces | tests: `basic.rs:12` |
 | `.emit_reproducibility_banner` | REAL | `builder.rs:799` | — |
-| `.sort_strategy` / `SortStrategy`, `.custom_sort_order`, `.namespace_strategy` / `NamespaceStrategy`, `.locked_prefixes` (+ private `default_namespace_prefixes`), `.output_mode` / `OutputMode`, `.line_ending` / `LineEnding`, `.unicode_normalization` / `UnicodeNormalization`, `.xml_character_policy` / `XmlCharacterPolicy`, `.quote_style` / `QuoteStyle`, `.time_zone_policy` / `TimeZonePolicy`, `.date_time_format` / `DateTimeFormat`, `.verify_determinism` | NO-OP | only set in `Default` (`:193-208`) and in the module doc (`:60-75`) | Rust; tests: `golden_files.rs:102-103` (sets `sort_strategy`, `output_mode`), `basic.rs:15` (asserts `locked_prefixes` is non-empty) |
-| `DeterminismVerifier::verify`, `quick_check`, `verify_legacy`, `with_context_chars`, `with_outputs_retained` | REAL | builds N times through `Builder::build_internal` and compares the bytes and hashes (`:481-501`) | benches: `determinism.rs`; tests: `honest_results.rs:234-238` |
-| `DeterminismVerifier::verify_with_threading_stress` | REAL | N threads build, and their hashes are compared with a sequential run (`:578-625`) | tests: `honest_results.rs:238` |
-| `DeterminismVerifier.config` / the `new(config)` argument | NO-OP | passed to `Builder::with_config`, which no build reads (`:481,592`) | CLI, benches, tests |
-| `DeterminismVerifier::verify_with_hashmap_stress` | FAKE | calls `self.verify`; there is no stress (`:569-575`) | via `thorough_check` |
-| `DeterminismVerifier::thorough_check` | FAKE | its "multiple stress tests" are `verify` twice (`:735-756`) | CLI `guarantees --thorough` (result discarded, `bin:662`); benches: `determinism.rs:59-60` |
-| `DeterminismStats.overhead_percentage` | FAKE | `(total − min) / min` over N builds comes out at about (N−1)×100%; it is not an overhead (`:521-525`) | — |
-| `DeterminismResult`, `DeterminismDifference`, `HashDifference`, `LengthDifference`, `DifferenceContext`, other `DeterminismStats` fields | REAL (data) | filled from real builds | — |
+| `.sort_strategy` / `SortStrategy`, `.custom_sort_order`, `.namespace_strategy` / `NamespaceStrategy`, `.locked_prefixes` (+ private `default_namespace_prefixes`), `.output_mode` / `OutputMode`, `.line_ending` / `LineEnding`, `.unicode_normalization` / `UnicodeNormalization`, `.xml_character_policy` / `XmlCharacterPolicy`, `.quote_style` / `QuoteStyle`, `.time_zone_policy` / `TimeZonePolicy`, `.date_time_format` / `DateTimeFormat`, `.verify_determinism` | NO-OP (**removed in 3b**) | only set in `Default` (`:193-208`) and in the module doc (`:60-75`) | Rust; tests: `golden_files.rs:102-103` (sets `sort_strategy`, `output_mode`), `basic.rs:15` (asserts `locked_prefixes` is non-empty) |
+| `DeterminismVerifier::verify`, `quick_check`, `verify_legacy`, `with_context_chars`, `with_outputs_retained` | REAL (**removed in 3b** (decided)) | builds N times through `Builder::build_internal` and compares the bytes and hashes (`:481-501`) | benches: `determinism.rs`; tests: `honest_results.rs:234-238` |
+| `DeterminismVerifier::verify_with_threading_stress` | REAL (**removed in 3b** (decided)) | N threads build, and their hashes are compared with a sequential run (`:578-625`) | tests: `honest_results.rs:238` |
+| `DeterminismVerifier.config` / the `new(config)` argument | NO-OP (**removed in 3b**) | passed to `Builder::with_config`, which no build reads (`:481,592`) | CLI, benches, tests |
+| `DeterminismVerifier::verify_with_hashmap_stress` | FAKE (**removed in 3b**) | calls `self.verify`; there is no stress (`:569-575`) | via `thorough_check` |
+| `DeterminismVerifier::thorough_check` | FAKE (**removed in 3b**) | its "multiple stress tests" are `verify` twice (`:735-756`) | CLI `guarantees --thorough` (result discarded, `bin:662`); benches: `determinism.rs:59-60` |
+| `DeterminismStats.overhead_percentage` | FAKE (**removed in 3b**) | `(total − min) / min` over N builds comes out at about (N−1)×100%; it is not an overhead (`:521-525`) | — |
+| `DeterminismResult`, `DeterminismDifference`, `HashDifference`, `LengthDifference`, `DifferenceContext`, other `DeterminismStats` fields | REAL (data) (**removed in 3b** (with the verifier)) | filled from real builds | — |
 
-### `guarantees.rs`
+### `guarantees.rs` (removed in 3b)
 
 `generate_guarantee_report` is the CLI `guarantees` subcommand. Ten of its twelve
 guarantees are not checked as named.
@@ -222,14 +227,14 @@ guarantees are not checked as named.
 | `priority`, `validator`, `GuaranteeValidator`, `GuaranteePriority`, `GuaranteeValidationResult` | REAL (data) | — | CLI |
 | `BuildError::DeterminismGuaranteeViolated` (`error.rs:60`) | follows the module | constructed only here | — |
 
-### `fidelity.rs`
+### `fidelity.rs` (removed in 3b)
 
 | item | class | evidence | affected |
 |---|---|---|---|
 | `FidelityConfig` and its whole tree (`PreservationLevel`, `CommentPreservationConfig`, `ExtensionPreservationConfig`, `UnknownExtensionHandling`, `ExtensionValidationConfig`, `AttributePreservationConfig`, `AttributeNormalizationConfig`, `AttributeValidationConfig`, `AttributeValidationRule`, `NamespacePreservationConfig`, `NamespaceMinimizationStrategy`, `NamespaceMinimizationRules`, `DefaultNamespaceHandling`, `WhitespacePreservationConfig`, `LineEndingStyle`, `IndentationStyle`) | NO-OP | nothing in `src/`, the tests or the bindings reads any of it; `FidelityConfig` is not even a field of `FidelityOptions` | Rust; root re-export `lib.rs:60`; `examples/perfect-fidelity/` at the repo root (not a workspace member, never built) |
 | `FidelityStatistics`, `FidelityResult`, `FidelityIssue`, `FidelitySeverity` | DEAD | never constructed (only `Default`) | root re-export `lib.rs:60` |
 
-### `verification.rs`
+### `verification.rs` (removed in 3b)
 
 | item | class | evidence | affected |
 |---|---|---|---|
@@ -250,12 +255,12 @@ guarantees are not checked as named.
 |---|---|---|---|
 | `verify_round_trip`, `RoundTripVerification` | REAL | parse → `request_from_parsed` → build ×2 → parse → `compare_flat` (`:67-108`) | Node, Python (`testRoundTripFidelity`, `buildWithFidelity`), tests |
 | `parsed::request_from_parsed`, `compare_flat`, `iso_duration`, `release_ids`, `release_type_name`, `commercial_model_name`, `use_type_name` | REAL | used by `verify_round_trip` | tests: `ern4_support.rs`, `ern4_samples.rs`, `ern38_round_trip.rs`, `round_trip.rs` |
-| `pub(crate) not_implemented` | REAL (helper) | used by FAKE items in `guarantees`, `messages`, `lib.rs`, `verification`; it goes once they do | — |
+| `pub(crate) not_implemented` | REAL (helper) (**removed in 3b** (no caller left)) | used by FAKE items in `guarantees`, `messages`, `lib.rs`, `verification`; it goes once they do | — |
 | `RoundTripTester::new`, `test_round_trip_with`, `RoundTripResult` | REAL | `verify_round_trip` plus a C14N comparison (`:141-168`) | `Builder::test_round_trip_fidelity_with`; tests |
-| `RoundTripTester.fidelity_options` / `fidelity_options()` | NO-OP | the options are never applied | — |
-| `RoundTripTester::test_round_trip` | FAKE | always `Err(not_implemented)` (`:130`) | `Builder::test_round_trip_fidelity`; tests: `honest_results.rs:83`, unit test `:289-295` |
-| `RoundTripTester::analyze_fidelity` | FAKE | always `Err` (`:171`) | tests: `honest_results.rs:84` |
-| `FidelityAnalysis`, `ElementAnalysis`, `AttributeAnalysis`, `CommentAnalysis`, `ExtensionAnalysis`, `NamespaceAnalysis` (+ `UnorderedMap`, PR 2 allow H7) | DEAD | never constructed; only the return type of `analyze_fidelity` | root re-export `lib.rs:61` |
+| `RoundTripTester.fidelity_options` / `fidelity_options()` | NO-OP (**removed in 3b** (`RoundTripTester::new()` takes no argument)) | the options are never applied | — |
+| `RoundTripTester::test_round_trip` | FAKE (**removed in 3b**) | always `Err(not_implemented)` (`:130`) | `Builder::test_round_trip_fidelity`; tests: `honest_results.rs:83`, unit test `:289-295` |
+| `RoundTripTester::analyze_fidelity` | FAKE (**removed in 3b**) | always `Err` (`:171`) | tests: `honest_results.rs:84` |
+| `FidelityAnalysis`, `ElementAnalysis`, `AttributeAnalysis`, `CommentAnalysis`, `ExtensionAnalysis`, `NamespaceAnalysis` (+ `UnorderedMap`, PR 2 allow H7) | DEAD (**removed in 3b**) | never constructed; only the return type of `analyze_fidelity` | root re-export `lib.rs:61` |
 
 ### `canonical/*`
 
@@ -420,7 +425,7 @@ subcommand and `tests/it/honest_results.rs:272-300` (`SchemaValidator`).
 | `StableHashGenerator`, `StableHashConfig`, `HashAlgorithm` | REAL | `IdStrategy::StableHash`; **out of scope (PR 6)** | — |
 | `HashRecipe`, `NormalizeOptions`, `UnicodeForm`, `CaseNormalization` | DEAD | pub, but no public API takes or returns them | — |
 | `BuildError` variants except the next two | REAL | constructed in `src/` | all |
-| `BuildError::DeterminismFailed` | DEAD | never constructed | `DETERMINISM.md:391` |
+| `BuildError::DeterminismFailed` | DEAD (**removed in 3b**) | never constructed | `DETERMINISM.md:391` |
 | `error::BuildWarning` (exported at the root as `ddex_builder::BuildWarning`) | REAL (confusing duplicate) | used by `streaming`; `DDEXBuilder::build` returns the different `builder::BuildWarning` | — |
 
 ### `linker/*`
@@ -476,7 +481,7 @@ Most of it is REAL; many REAL items are buggy (see
 | `diff` | decided (FAKE: "not implemented") | — | — |
 | `validate`, `watch`, `server` | FAKE ("not implemented") | **PR 4**; only their `--preset` flag went (3a). `validate`'s own `--profile` / `--strict` stay with the command | CLI |
 | `schema` | FAKE | `generate_complete_schema`; `--profile` is ignored (hard-coded `MessageProfile::AudioAlbum`, `:614`) and `--with-docs` is NO-OP (both flags **removed in 3a**) | CLI |
-| `guarantees` | FAKE | `generate_guarantee_report`; `--thorough` discards its result (`:661-662`) | CLI |
+| `guarantees` | FAKE (**removed in 3b**) | `generate_guarantee_report`; `--thorough` discards its result (`:661-662`) | CLI |
 | `preset list/show/apply` | decided | — | — |
 | `completions` | REAL | clap | CLI |
 | global `--config` (`load_config`, `ConfigFile`) | NO-OP (**removed in 3a**) | `load_config` returns an empty default (`:473-481`, `TODO`) | CLI |
@@ -506,8 +511,8 @@ For reference:
    whether any build path reads them. PR 4.
 4. **`guarantees::ThreadSafety`**: it is a real check, but it is one row of a report whose
    other ten guarantees are FAKE. `DeterminismVerifier::verify_with_threading_stress` does
-   the same check. Deleting `guarantees.rs` removes only a duplicate of a real API. Your
-   call: delete the module and its CLI command, or keep the report with only ThreadSafety.
+   the same check. **Decided and removed in 3b**: the module, ThreadSafety and the verifier
+   went (the `determinism_0_6` fresh-thread tests cover threading in CI).
 
 ## What a full removal touches
 
@@ -587,7 +592,7 @@ Each part is under about 60 files and can land on its own.
    - the CHANGELOG / KNOWN_ISSUES / audit records.
 
    Mechanical, with no open questions.
-2. **PR 3b: fidelity, verification and determinism fakes.** About 35 files:
+2. **PR 3b: fidelity, verification and determinism fakes (done).** About 35 files:
    - `fidelity.rs`, `verification.rs`, `guarantees.rs` and the CLI `guarantees` command;
    - the FAKE / NO-OP `Builder` fidelity methods and options;
    - the 12 NO-OP `DeterminismConfig` fields and their enums, plus `CanonMode::Compact`;

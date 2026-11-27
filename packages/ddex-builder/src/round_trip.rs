@@ -4,7 +4,7 @@
 //! ([`request_from_parsed`]), builds it, parses the result again and compares the two
 //! parsed messages on the fields the request carries ([`compare_flat`]). The builder does
 //! not depend on the parser, so the caller passes the parse function (for example
-//! `ddex_parser::DDEXParser::parse`). Round trips are not lossless in 0.5.x: data the build
+//! `ddex_parser::DDEXParser::parse`). Round trips do not carry everything: data the build
 //! request cannot carry yet (contributors, P and C lines, images, ...) is not rebuilt and not
 //! compared.
 
@@ -13,24 +13,11 @@ pub mod parsed;
 pub use parsed::{compare_flat, request_from_parsed};
 
 use crate::builder::{BuildOptions, DDEXBuilder};
-use crate::{error::BuildError, FidelityOptions};
+use crate::error::BuildError;
 use ddex_core::models::flat::ParsedERNMessage;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::time::{Duration, Instant};
-
-/// `HashMap` for the serde-derived structs below, which a field-level allow cannot cover
-/// (the derived impls are separate items). Same type as `HashMap<K, V>`.
-#[allow(
-    clippy::disallowed_types,
-    reason = "H7: round-trip statistics; not build output"
-)]
-type UnorderedMap<K, V> = std::collections::HashMap<K, V>;
-
-/// The error of an API that 0.5.x does not implement (it used to return a made-up result).
-pub(crate) fn not_implemented(api: &str, detail: &str) -> BuildError {
-    BuildError::Other(format!("{api} is not implemented in 0.5.x: {detail}"))
-}
 
 /// The outcome of [`verify_round_trip`]. Every field is computed; there is no score.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -108,31 +95,15 @@ where
     })
 }
 
-/// Round-trip tester for the fidelity options
-pub struct RoundTripTester {
-    fidelity_options: FidelityOptions,
-}
+/// Round-trip tester: [`verify_round_trip`] plus a DB-C14N comparison of the original and
+/// rebuilt XML. (Before 0.6.0 it took fidelity options, which it never applied.)
+#[derive(Debug, Clone, Default)]
+pub struct RoundTripTester;
 
 impl RoundTripTester {
-    /// Create a new round-trip tester with the specified fidelity options
-    pub fn new(fidelity_options: FidelityOptions) -> Self {
-        Self { fidelity_options }
-    }
-
-    /// The fidelity options (not applied by the build in 0.5.x).
-    pub fn fidelity_options(&self) -> &FidelityOptions {
-        &self.fidelity_options
-    }
-
-    /// Not implemented in 0.5.x: the builder has no parser. Use
-    /// [`RoundTripTester::test_round_trip_with`] (or [`verify_round_trip`]) with the
-    /// parser's parse function. Before 0.5.1 this returned success without building.
-    pub fn test_round_trip(&self, _original_xml: &str) -> Result<RoundTripResult, BuildError> {
-        Err(not_implemented(
-            "RoundTripTester::test_round_trip",
-            "the builder has no parser; call test_round_trip_with(xml, parse) or \
-             ddex_builder::round_trip::verify_round_trip with ddex_parser's parse",
-        ))
+    /// Create a new round-trip tester
+    pub fn new() -> Self {
+        Self
     }
 
     /// XML → Parse → Build → Parse → compare ([`verify_round_trip`]). `success` means no
@@ -165,15 +136,6 @@ impl RoundTripTester {
             test_time: start_time.elapsed(),
         })
     }
-
-    /// Not implemented in 0.5.x. Before 0.5.1 its "preserved" counts were copies of the
-    /// totals and its score depended only on the options, not on any output.
-    pub fn analyze_fidelity(&self, _original_xml: &str) -> Result<FidelityAnalysis, BuildError> {
-        Err(not_implemented(
-            "RoundTripTester::analyze_fidelity",
-            "preservation is not measured; use verify_round_trip for the differences",
-        ))
-    }
 }
 
 /// Round-trip test result
@@ -193,106 +155,9 @@ pub struct RoundTripResult {
     pub test_time: Duration,
 }
 
-/// Comprehensive fidelity analysis result
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FidelityAnalysis {
-    /// Element analysis
-    pub element_analysis: ElementAnalysis,
-    /// Attribute analysis  
-    pub attribute_analysis: AttributeAnalysis,
-    /// Comment analysis
-    pub comment_analysis: CommentAnalysis,
-    /// Extension analysis
-    pub extension_analysis: ExtensionAnalysis,
-    /// Namespace analysis
-    pub namespace_analysis: NamespaceAnalysis,
-    /// Time taken for analysis
-    pub analysis_time: Duration,
-    /// Overall fidelity score (0.0 - 1.0)
-    pub overall_score: f64,
-}
-
-/// Element preservation analysis
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ElementAnalysis {
-    /// Total number of elements
-    pub total_elements: usize,
-    /// Elements by type/name
-    pub elements_by_type: UnorderedMap<String, usize>,
-    /// Unknown elements (not in schema)
-    pub unknown_elements: usize,
-    /// Elements preserved after round-trip
-    pub preserved_elements: usize,
-}
-
-/// Attribute preservation analysis
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AttributeAnalysis {
-    /// Total number of attributes
-    pub total_attributes: usize,
-    /// Attributes by element type
-    pub attributes_by_element: UnorderedMap<String, usize>,
-    /// Unknown attributes (not in schema)
-    pub unknown_attributes: usize,
-    /// Attributes preserved after round-trip
-    pub preserved_attributes: usize,
-}
-
-/// Comment preservation analysis
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CommentAnalysis {
-    /// Total number of comments
-    pub total_comments: usize,
-    /// Document-level comments
-    pub document_level_comments: usize,
-    /// Element-level comments
-    pub element_level_comments: usize,
-    /// Inline comments
-    pub inline_comments: usize,
-    /// Comments preserved after round-trip
-    pub preserved_comments: usize,
-}
-
-/// Extension preservation analysis
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ExtensionAnalysis {
-    /// Total number of extensions
-    pub total_extensions: usize,
-    /// Extension namespaces found
-    pub extension_namespaces: UnorderedMap<String, String>,
-    /// Known extensions (recognized patterns)
-    pub known_extensions: usize,
-    /// Unknown extensions
-    pub unknown_extensions: usize,
-    /// Extensions preserved after round-trip
-    pub preserved_extensions: usize,
-}
-
-/// Namespace preservation analysis
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NamespaceAnalysis {
-    /// Total number of namespaces
-    pub total_namespaces: usize,
-    /// Prefixed namespaces
-    pub prefixed_namespaces: UnorderedMap<String, String>,
-    /// Default namespace (if any)
-    pub default_namespace: Option<String>,
-    /// Namespaces preserved after round-trip
-    pub preserved_namespaces: usize,
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn apis_without_a_parser_are_not_implemented() {
-        let tester = RoundTripTester::new(FidelityOptions::default());
-        let error = tester.test_round_trip("<a/>").unwrap_err().to_string();
-        assert!(error.contains("not implemented in 0.5.x"), "{error}");
-        let error = tester.analyze_fidelity("<a/>").unwrap_err().to_string();
-        assert!(error.contains("not implemented in 0.5.x"), "{error}");
-    }
 
     #[test]
     fn a_parse_error_is_reported() {

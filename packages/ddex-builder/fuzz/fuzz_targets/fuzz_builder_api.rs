@@ -1,7 +1,7 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use ddex_builder::{Builder, DeterminismConfig};
+use ddex_builder::DDEXBuilder;
 use ddex_builder::builder::{BuildRequest, BuildOptions};
 use ddex_builder::security::{InputValidator, SecurityConfig};
 use arbitrary::Arbitrary;
@@ -13,7 +13,7 @@ struct FuzzInput {
 
 fuzz_target!(|input: FuzzInput| {
     // Test Builder API with fuzzed inputs
-    let builder = Builder::new();
+    let builder = DDEXBuilder::new();
     
     // Test input validation
     let config = SecurityConfig::default();
@@ -30,6 +30,6 @@ fuzz_target!(|input: FuzzInput| {
         };
         
         let options = BuildOptions::default();
-        let _ = builder.build_internal(&request);
+        let _ = builder.build(request, options);
     }
 });

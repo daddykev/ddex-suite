@@ -8,7 +8,6 @@ This guide provides in-depth information for developers who want to contribute t
 - [Core Components](#core-components)
 - [Development Setup](#development-setup)
 - [Contributing Guidelines](#contributing-guidelines)
-- [Adding New Presets](#adding-new-presets)
 - [Extending the Builder](#extending-the-builder)
 - [Performance Optimization](#performance-optimization)
 - [Testing Strategy](#testing-strategy)
@@ -23,8 +22,7 @@ DDEX Builder is designed as a modular, high-performance library with clear separ
 graph TB
     A[Client Input] --> B[Security Layer]
     B --> C[Input Validation]
-    C --> D[Preset System]
-    D --> E[AST Builder]
+    C --> E[AST Builder]
     E --> F[Processing Layer]
     F --> G[Output Generation]
     G --> H[Canonicalization]
@@ -53,10 +51,11 @@ graph TB
 ### Design Principles
 
 1. **Security First**: All inputs are validated and sanitized
-2. **Deterministic Output**: Same input always produces identical output
+2. **Deterministic Output** (being implemented for 0.6.0; see `KNOWN_ISSUES.md`): the same
+   request should always produce identical output
 3. **Performance**: Sub-millisecond generation for typical use cases
 4. **Memory Safety**: Built in Rust with explicit memory management
-5. **Extensibility**: Plugin architecture for presets and processors
+5. **Extensibility**: Plugin architecture for processors
 6. **Type Safety**: Comprehensive type system prevents runtime errors
 
 ### Data Flow
@@ -65,15 +64,13 @@ graph TB
 sequenceDiagram
     participant C as Client
     participant V as Validator
-    participant P as Preset
     participant A as AST Builder
     participant G as Generator
     participant O as Output
     
     C->>V: Input XML/JSON
     V->>V: Security validation
-    V->>P: Apply preset config
-    P->>A: Build AST
+    V->>A: Build AST
     A->>A: Reference linking
     A->>G: Generate XML
     G->>G: Canonicalization
@@ -89,17 +86,14 @@ The main entry point providing a high-level API:
 
 ```rust
 pub struct Builder {
-    config: DeterminismConfig,
-    presets: IndexMap<String, PartnerPreset>,
-    locked_preset: Option<String>,
     version_manager: VersionManager,
     target_version: Option<DdexVersion>,
+    fidelity_options: FidelityOptions,
 }
 ```
 
 **Key Responsibilities:**
 - Configuration management
-- Preset application
 - Version detection and conversion
 - Build orchestration
 
@@ -149,22 +143,7 @@ pub struct Element {
 }
 ```
 
-### 4. Preset System (`src/presets/`)
-
-Partner-specific configurations and validation rules:
-
-```rust
-pub struct PartnerPreset {
-    pub name: String,
-    pub description: String,
-    pub source: PresetSource,
-    pub version: String,
-    pub determinism: DeterminismConfig,
-    pub defaults: PresetDefaults,
-}
-```
-
-### 5. Version Management (`src/versions/`)
+### 4. Version Management (`src/versions/`)
 
 Multi-version DDEX support with automatic conversion:
 
@@ -175,16 +154,17 @@ pub struct VersionManager {
 }
 ```
 
-### 6. Determinism Engine (`src/determinism.rs`)
+### 5. Output configuration (`src/determinism.rs`)
 
-Ensures byte-perfect reproducible output:
+Selects DB-C14N/1.0 canonical output (the default) or the generator's indented output.
+Byte-for-byte determinism is being implemented for 0.6.0 (see `KNOWN_ISSUES.md`):
 
 ```rust
 pub struct DeterminismConfig {
-    pub line_ending: LineEnding,
+    pub canon_mode: CanonMode,
     pub indent_char: IndentChar,
     pub indent_width: usize,
-    pub verify_determinism: Option<usize>,
+    pub emit_reproducibility_banner: bool,
 }
 ```
 
@@ -250,13 +230,8 @@ ddex-builder/
 │   ├── ast.rs              # Abstract Syntax Tree
 │   ├── builder.rs          # Core building logic
 │   ├── security.rs         # Security layer
-│   ├── determinism.rs      # Determinism engine
+│   ├── determinism.rs      # Output configuration
 │   ├── error.rs            # Error types
-│   ├── presets/            # Partner presets
-│   │   ├── mod.rs
-│   │   ├── spotify.rs
-│   │   ├── youtube.rs
-│   │   └── ...
 │   ├── versions/           # Version management
 │   │   ├── mod.rs
 │   │   ├── ern_382.rs
@@ -368,177 +343,6 @@ it when a change should move them. Full determinism is planned for 0.6.0.
 4. **Document**: Update documentation as needed
 5. **Security**: Run security checks (`cargo audit`, `cargo deny check`)
 6. **Submit**: Create pull request with detailed description
-
-## Adding New Presets
-
-### Preset Structure
-
-Create a new preset by implementing the `PartnerPreset` structure:
-
-```rust
-// src/presets/my_platform.rs
-use super::*;
-
-pub fn my_platform_audio_43() -> PartnerPreset {
-    PartnerPreset {
-        name: "my_platform_audio_43".to_string(),
-        description: "My Platform audio releases (ERN 4.3)".to_string(),
-        source: PresetSource::Partner {
-            name: "My Platform".to_string(),
-            contact: "dev@myplatform.com".to_string(),
-            url: Some("https://developer.myplatform.com/ddex".to_string()),
-        },
-        version: "1.0.0".to_string(),
-        locked: false,
-        disclaimer: "Optimized for My Platform's audio distribution requirements".to_string(),
-        
-        determinism: DeterminismConfig {
-            line_ending: LineEnding::Unix,
-            indent_char: IndentChar::Space,
-            indent_width: 2,
-            verify_determinism: Some(3),
-            ..Default::default()
-        },
-        
-        defaults: PresetDefaults {
-            version: DdexVersion::Ern43,
-            profile: MessageProfile::AudioAlbum,
-            
-            required_fields: vec![
-                "SoundRecordingId.ISRC".to_string(),
-                "ReferenceTitle.TitleText".to_string(),
-                "Duration".to_string(),
-                "DisplayArtist.PartyName.FullName".to_string(),
-            ],
-            
-            validation_rules: create_validation_rules(),
-            default_values: create_default_values(),
-            territory_codes: vec!["Worldwide".to_string()],
-            distribution_channels: vec!["DigitalDownload".to_string(), "Streaming".to_string()],
-            release_types: vec!["Album".to_string(), "Single".to_string()],
-            
-            ..Default::default()
-        },
-    }
-}
-
-fn create_validation_rules() -> IndexMap<String, ValidationRule> {
-    let mut rules = IndexMap::new();
-    
-    // ISRC validation
-    rules.insert(
-        "SoundRecordingId.ISRC".to_string(),
-        ValidationRule::Pattern("^[A-Z]{2}[A-Z0-9]{3}[0-9]{7}$".to_string())
-    );
-    
-    // Title validation
-    rules.insert(
-        "ReferenceTitle.TitleText".to_string(),
-        ValidationRule::MinLength(1)
-    );
-    
-    // Duration validation (ISO 8601)
-    rules.insert(
-        "Duration".to_string(),
-        ValidationRule::Pattern("^PT([0-9]+H)?([0-9]+M)?([0-9]+(\\.[0-9]+)?S)?$".to_string())
-    );
-    
-    // Audio quality requirements
-    rules.insert(
-        "TechnicalSoundRecordingDetails".to_string(),
-        ValidationRule::AudioQuality {
-            min_bit_depth: 16,
-            min_sample_rate: 44100,
-        }
-    );
-    
-    rules
-}
-
-fn create_default_values() -> IndexMap<String, String> {
-    let mut defaults = IndexMap::new();
-    
-    defaults.insert(
-        "MessageHeader.MessageControlType".to_string(),
-        "LiveMessage".to_string()
-    );
-    
-    defaults.insert(
-        "ResourceList.SoundRecording.SoundRecordingType".to_string(),
-        "MusicalWorkSoundRecording".to_string()
-    );
-    
-    defaults
-}
-```
-
-### Register the Preset
-
-Add to `src/presets/mod.rs`:
-
-```rust
-mod my_platform;
-pub use my_platform::*;
-
-pub fn all_presets() -> IndexMap<String, PartnerPreset> {
-    let mut presets = IndexMap::new();
-    
-    // Existing presets...
-    
-    // Add new preset
-    let preset = my_platform_audio_43();
-    presets.insert(preset.name.clone(), preset);
-    
-    presets
-}
-```
-
-### Test the Preset
-
-Create comprehensive tests in `tests/presets/`:
-
-```rust
-// tests/presets/test_my_platform.rs
-use ddex_builder::*;
-
-#[test]
-fn test_my_platform_preset() {
-    let mut builder = Builder::new();
-    builder.preset("my_platform_audio_43").unwrap();
-    
-    let request = BuildRequest {
-        source_xml: create_valid_my_platform_xml(),
-        output_format: OutputFormat::Xml,
-        preset: Some("my_platform_audio_43".to_string()),
-        validate_schema: true,
-    };
-    
-    let result = builder.build_internal(&request).unwrap();
-    
-    // Verify My Platform-specific requirements
-    assert!(result.xml.contains("MusicalWorkSoundRecording"));
-    assert!(result.xml.contains("LiveMessage"));
-    
-    // Performance check
-    assert!(result.stats.generation_time_ms < 20);
-}
-
-#[test]
-fn test_my_platform_validation() {
-    let mut builder = Builder::new();
-    builder.preset("my_platform_audio_43").unwrap();
-    
-    let invalid_request = BuildRequest {
-        source_xml: create_invalid_isrc_xml(),
-        output_format: OutputFormat::Xml,
-        preset: Some("my_platform_audio_43".to_string()),
-        validate_schema: true,
-    };
-    
-    let result = builder.build_internal(&invalid_request);
-    assert!(result.is_err());
-}
-```
 
 ## Extending the Builder
 
@@ -767,8 +571,7 @@ mod tests {
 // Test complete workflows
 #[test]
 fn test_end_to_end_build() {
-    let mut builder = Builder::new();
-    builder.preset("spotify_audio_43").unwrap();
+    let builder = Builder::new();
     
     let request = create_complete_release_request();
     let result = builder.build_internal(&request).unwrap();
@@ -997,18 +800,10 @@ impl DDEXBuilder {
     }
     
     #[napi]
-    pub async fn apply_preset(&mut self, preset_name: String) -> Result<()> {
-        self.inner.preset(&preset_name)
-            .map_err(|e| Error::from_reason(e.to_string()))?;
-        Ok(())
-    }
-    
-    #[napi]
     pub async fn build(&self, request: JsBuildRequest) -> Result<JsBuildResult> {
         let rust_request = BuildRequest {
             source_xml: request.source_xml,
             output_format: OutputFormat::Xml,
-            preset: request.preset,
             validate_schema: request.validate_schema.unwrap_or(true),
         };
         
@@ -1031,7 +826,6 @@ impl DDEXBuilder {
 #[napi(object)]
 pub struct JsBuildRequest {
     pub source_xml: String,
-    pub preset: Option<String>,
     pub validate_schema: Option<bool>,
 }
 
@@ -1074,17 +868,10 @@ impl Builder {
         }
     }
     
-    fn preset(&mut self, preset_name: &str) -> PyResult<()> {
-        self.inner.preset(preset_name)
-            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
-        Ok(())
-    }
-    
     fn build_internal(&self, request: PyBuildRequest) -> PyResult<PyBuildResult> {
         let rust_request = BuildRequest {
             source_xml: request.source_xml,
             output_format: OutputFormat::Xml,
-            preset: request.preset,
             validate_schema: request.validate_schema.unwrap_or(true),
         };
         
@@ -1104,8 +891,6 @@ impl Builder {
 pub struct PyBuildRequest {
     #[pyo3(get, set)]
     pub source_xml: String,
-    #[pyo3(get, set)]
-    pub preset: Option<String>,
     #[pyo3(get, set)]
     pub validate_schema: Option<bool>,
 }
@@ -1154,19 +939,11 @@ impl DDEXBuilder {
         }
     }
     
-    #[wasm_bindgen(js_name = applyPreset)]
-    pub fn apply_preset(&mut self, preset_name: &str) -> Result<(), JsValue> {
-        self.inner.preset(preset_name)
-            .map_err(|e| JsValue::from_str(&e.to_string()))?;
-        Ok(())
-    }
-    
     #[wasm_bindgen]
-    pub fn build(&self, source_xml: &str, preset: Option<String>) -> Result<WasmBuildResult, JsValue> {
+    pub fn build(&self, source_xml: &str) -> Result<WasmBuildResult, JsValue> {
         let request = BuildRequest {
             source_xml: source_xml.to_string(),
             output_format: OutputFormat::Xml,
-            preset,
             validate_schema: true,
         };
         

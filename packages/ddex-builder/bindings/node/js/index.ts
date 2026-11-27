@@ -36,8 +36,6 @@ export interface BuildOptions {
   version?: '3.8.2' | '4.2' | '4.3';
   /** Enable deterministic element and attribute ordering */
   enableDeterministicOrdering?: boolean;
-  /** Enable perfect round-trip fidelity preservation */
-  enablePerfectFidelity?: boolean;
   /** Canonicalization algorithm to use for XML normalization */
   canonicalization?: 'db-c14n-1.0' | 'exclusive' | 'none';
   /** Validate structure during build process */
@@ -190,9 +188,7 @@ export class DDEXBuilder {
    * @example
    * ```typescript
    * const result = await builder.buildWithFidelity(null, {
-   *   enablePerfectFidelity: true,
-   *   canonicalization: 'db-c14n-1.0',
-   *   preserveComments: true,
+   *   canonicalization: 'db_c14n',
    *   enableVerification: true,
    *   collectStatistics: true
    * });
@@ -217,10 +213,7 @@ export class DDEXBuilder {
    *
    * @example
    * ```typescript
-   * const verification = await builder.testRoundTripFidelity(originalXml, {
-   *   enablePerfectFidelity: true,
-   *   canonicalization: 'db-c14n-1.0'
-   * });
+   * const verification = await builder.testRoundTripFidelity(originalXml);
    *
    * if (!verification.roundTripSuccess) {
    *   console.log('Differences:', verification.issues);

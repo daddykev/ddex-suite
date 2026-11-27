@@ -7,7 +7,6 @@ Welcome to DDEX Builder, the fastest and most secure way to generate determinist
 - [Quick Start](#quick-start)
 - [Installation](#installation)
 - [Basic Usage](#basic-usage)
-- [Partner Presets](#partner-presets)
 - [Security Features](#security-features)
 - [Version Management](#version-management)
 - [Advanced Features](#advanced-features)
@@ -39,9 +38,8 @@ use ddex_builder::{Builder, DdexVersion};
 use ddex_builder::builder::{BuildRequest, OutputFormat};
 
 fn main() -> Result<(), ddex_builder::BuildError> {
-    // Create builder with Spotify preset
-    let mut builder = Builder::new();
-    builder.preset("spotify_audio_43")?;
+    // Create builder
+    let builder = Builder::new();
     
     // Build DDEX XML from minimal input
     let request = BuildRequest {
@@ -57,7 +55,6 @@ fn main() -> Result<(), ddex_builder::BuildError> {
             </SoundRecording>
         "#.to_string(),
         output_format: OutputFormat::Xml,
-        preset: Some("spotify_audio_43".to_string()),
         validate_schema: true,
     };
     
@@ -100,7 +97,6 @@ const { DDEXBuilder } = require('ddex-builder');
 
 // Create builder
 const builder = new DDEXBuilder();
-await builder.applyPreset('spotify_audio_43');
 
 // Build XML
 const result = await builder.build({
@@ -123,7 +119,6 @@ from ddex_builder import Builder, BuildRequest, OutputFormat
 
 # Create builder
 builder = Builder()
-builder.preset('spotify_audio_43')
 
 # Build XML
 request = BuildRequest(
@@ -149,7 +144,6 @@ async function buildDDEX() {
     await init();
     
     const builder = new DDEXBuilder();
-    await builder.applyPreset('spotify_audio_43');
     
     const result = await builder.build({
         sourceXml: '<SoundRecording>...</SoundRecording>',
@@ -169,10 +163,6 @@ use ddex_builder::Builder;
 
 // Default configuration
 let builder = Builder::new();
-
-// With custom configuration  
-let mut builder = Builder::new();
-builder.preset("universal_basic")?;
 ```
 
 ### Building XML
@@ -183,7 +173,6 @@ use ddex_builder::builder::{BuildRequest, OutputFormat};
 let request = BuildRequest {
     source_xml: your_xml_content,
     output_format: OutputFormat::Xml,
-    preset: Some("spotify_audio_43".to_string()),
     validate_schema: true,
 };
 
@@ -220,129 +209,6 @@ match builder.build_internal(&request) {
         eprintln!("Other error: {}", e);
     }
 }
-```
-
-## Partner Presets
-
-DDEX Builder includes optimized presets for major music platforms and distributors.
-
-### Available Presets
-
-| Preset | Platform | DDEX Version | Content Type | Description |
-|--------|----------|--------------|--------------|-------------|
-| `spotify_audio_43` | Spotify | ERN 4.3 | Audio | Spotify audio releases |
-| `youtube_video_43` | YouTube | ERN 4.3 | Video | YouTube video content |
-| `apple_music_43` | Apple Music | ERN 4.3 | Audio | Apple Music releases |
-| `universal_basic` | Universal Music | ERN 4.3 | Mixed | Universal Music basic |
-| `sony_enhanced` | Sony Music | ERN 4.3 | Mixed | Sony Music enhanced |
-| `warner_standard` | Warner Music | ERN 4.3 | Mixed | Warner Music standard |
-| `independent_basic` | Independent | ERN 4.2 | Mixed | Independent labels |
-| `classical_enhanced` | Classical | ERN 4.3 | Audio | Classical music |
-
-### Using Presets
-
-```rust
-use ddex_builder::Builder;
-
-let mut builder = Builder::new();
-
-// Apply preset (unlocked)
-builder.preset("spotify_audio_43")?;
-
-// Apply and lock preset
-builder.apply_preset("spotify_audio_43", true)?;
-
-// Check available presets
-let presets = builder.available_presets();
-println!("Available: {:?}", presets);
-
-// Get preset details
-if let Some(preset) = builder.get_preset("spotify_audio_43") {
-    println!("Description: {}", preset.description);
-    println!("Version: {}", preset.version);
-}
-```
-
-### Spotify Audio Preset
-
-Optimized for Spotify's audio delivery requirements:
-
-```rust
-builder.preset("spotify_audio_43")?;
-
-// Configured with:
-// - ERN 4.3 compliance
-// - Audio-focused validation
-// - Spotify territory mappings
-// - Required metadata fields
-// - Optimized for streaming
-```
-
-**Required Fields:**
-- ISRC (mandatory)
-- Title (min 1 character)
-- Artist name
-- Duration (ISO 8601 format)
-- Audio quality metadata
-
-**Territory Support:**
-- Worldwide territory codes
-- Regional restrictions support
-- Spotify-specific territory mappings
-
-### YouTube Video Preset
-
-Optimized for YouTube's video content requirements:
-
-```rust
-builder.preset("youtube_video_43")?;
-
-// Configured with:
-// - Video resource support
-// - YouTube Content ID integration
-// - Enhanced metadata requirements
-// - Rights management features
-```
-
-**Additional Features:**
-- Video resource references
-- Content ID fingerprinting support
-- Monetization metadata
-- Regional availability settings
-
-### Apple Music Preset
-
-Optimized for Apple Music distribution:
-
-```rust
-builder.preset("apple_music_43")?;
-
-// Configured with:
-// - Apple Music metadata standards
-// - iTunes Store compatibility
-// - Enhanced audio quality requirements
-// - Apple-specific identifiers
-```
-
-### Custom Presets
-
-Create custom presets for your organization:
-
-```rust
-use ddex_builder::presets::{PartnerPreset, PresetDefaults};
-use ddex_builder::DeterminismConfig;
-
-let custom_preset = PartnerPreset {
-    name: "my_label_custom".to_string(),
-    description: "Custom preset for My Label".to_string(),
-    version: "1.0.0".to_string(),
-    determinism: DeterminismConfig::default(),
-    defaults: PresetDefaults {
-        version: DdexVersion::Ern43,
-        // ... other settings
-    },
-    // ... other configuration
-};
 ```
 
 ## Security Features
@@ -552,18 +418,9 @@ let result = builder.convert_version(
 
 ### Deterministic Output
 
-DDEX Builder guarantees byte-perfect reproducible output using DB-C14N/1.0.
-
-```rust
-use ddex_builder::DeterminismConfig;
-
-let config = DeterminismConfig {
-    verify_determinism: Some(5), // Verify with 5 iterations
-    ..Default::default()
-};
-
-let mut builder = Builder::with_config(config);
-```
+Output is canonicalized with DB-C14N/1.0. Byte-for-byte determinism is being implemented
+for 0.6.0: values the request leaves out (message ID, references, creation time) are still
+generated, so two builds of such a request can differ. See `KNOWN_ISSUES.md`.
 
 ### Custom ID Generation
 
@@ -622,11 +479,10 @@ let optimized_builder = memory_manager.optimize_builder(builder);
 
 ### General Guidelines
 
-1. **Use appropriate presets** for your content type
-2. **Enable parallel processing** for batch operations
-3. **Use streaming mode** for large files
-4. **Configure memory limits** appropriately
-5. **Cache builders** when possible
+1. **Enable parallel processing** for batch operations
+2. **Use streaming mode** for large files
+3. **Configure memory limits** appropriately
+4. **Cache builders** when possible
 
 ### Configuration Examples
 
@@ -695,7 +551,6 @@ Solution: Check validation errors and ensure your data meets DDEX requirements.
 **Issue**: Slow build times
 ```
 Solution: 
-- Use appropriate presets
 - Enable parallel processing for batch operations
 - Consider streaming mode for large files
 ```
@@ -762,8 +617,7 @@ let ddex = XMLDdex::new();
 let result = ddex.build(data);
 
 // New (ddex-builder)
-let mut builder = Builder::new();
-builder.preset("universal_basic")?;
+let builder = Builder::new();
 let result = builder.build_internal(&request)?;
 ```
 
@@ -777,7 +631,6 @@ let xml_output = generate_custom_ddex(data);
 let request = BuildRequest {
     source_xml: your_data_as_xml,
     output_format: OutputFormat::Xml,
-    preset: Some("appropriate_preset".to_string()),
     validate_schema: true,
 };
 
@@ -786,14 +639,12 @@ let result = builder.build_internal(&request)?;
 
 ### Breaking Changes in v1.0
 
-1. **Preset names updated** - Check available_presets() for current names
-2. **Security enabled by default** - Configure SecurityConfig if needed
-3. **Stricter validation** - Some previously accepted XML may now be rejected
-4. **API changes** - Some method signatures updated for better type safety
+1. **Security enabled by default** - Configure SecurityConfig if needed
+2. **Stricter validation** - Some previously accepted XML may now be rejected
+3. **API changes** - Some method signatures updated for better type safety
 
 ### Migration Checklist
 
-- [ ] Update preset names to new format
 - [ ] Configure security settings for your environment
 - [ ] Test with strict validation enabled
 - [ ] Update error handling for new error types

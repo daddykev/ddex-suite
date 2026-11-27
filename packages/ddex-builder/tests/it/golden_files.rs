@@ -99,8 +99,6 @@ fn test_deterministic_generation() {
     let options = BuildOptions {
         determinism: Some(ddex_builder::DeterminismConfig {
             canon_mode: ddex_builder::determinism::CanonMode::DbC14n,
-            sort_strategy: ddex_builder::determinism::SortStrategy::Canonical,
-            output_mode: ddex_builder::determinism::OutputMode::DbC14n,
             ..Default::default()
         }),
         preflight_level: ddex_builder::preflight::PreflightLevel::Strict,

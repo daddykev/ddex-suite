@@ -9,9 +9,7 @@ pub mod caching;
 pub mod canonical;
 pub mod determinism;
 pub mod error;
-pub mod fidelity;
 pub mod generator;
-pub mod guarantees;
 pub mod id_generator;
 pub mod linker;
 pub mod memory_optimization;
@@ -23,7 +21,6 @@ pub mod round_trip;
 pub mod schema;
 pub mod security;
 pub mod streaming;
-pub mod verification;
 pub mod versions;
 pub(crate) mod xml_escape;
 
@@ -32,7 +29,6 @@ pub use builder::{BuildOptions, BuildRequest, BuildResult, DDEXBuilder};
 pub use canonical::DB_C14N;
 pub use determinism::DeterminismConfig;
 pub use error::{BuildError, BuildWarning};
-pub use guarantees::{DeterminismGuarantee, DeterminismGuaranteeValidator, GuaranteeReport};
 pub use id_generator::{HashAlgorithm, StableHashConfig, StableHashGenerator};
 pub use linker::{EntityType, LinkerConfig, LinkingError, ReferenceLinker};
 pub use preflight::{PreflightLevel, PreflightValidator, ValidationConfig, ValidationResult};
@@ -46,251 +42,57 @@ pub use versions::{
 pub use api_security::{ApiSecurityConfig, ApiSecurityManager, BatchStats, FfiDataType};
 pub use security::{InputValidator, OutputSanitizer, RateLimiter, SecureTempFile, SecurityConfig};
 
-// Perfect Fidelity Engine exports
-pub use fidelity::{FidelityConfig, FidelityStatistics, PreservationLevel};
-pub use round_trip::{FidelityAnalysis, RoundTripTester};
-pub use verification::{BuildVerifier, VerificationStatistics};
+// Round trips
+pub use round_trip::RoundTripTester;
 
 use serde::{Deserialize, Serialize};
-#[allow(
-    clippy::disallowed_types,
-    reason = "H4: custom canonicalization is not implemented (returns an error), so this map is never read"
-)]
-use std::collections::HashMap;
-
-/// `HashMap` for the serde-derived structs below, which a field-level allow cannot cover
-/// (the derived impls are separate items). Same type as `HashMap<K, V>`.
-#[allow(
-    clippy::disallowed_types,
-    reason = "H4: custom canonicalization is not implemented (returns an error), so this map is never read"
-)]
-type UnorderedMap<K, V> = HashMap<K, V>;
 use std::time::Duration;
 
 /// Version of the DB-C14N specification
 pub const DB_C14N_VERSION: &str = "1.0";
 
-/// Fidelity preservation options (comments, processing instructions, extensions, ...)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Options for [`Builder::build_with_fidelity`] and [`Builder::canonicalize`]. (Before 0.6.0
+/// it also had preservation and verification options, which nothing applied.)
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct FidelityOptions {
-    /// Enable fidelity preservation (the flag behind `Builder::enable_perfect_fidelity`)
-    pub enable_perfect_fidelity: bool,
-    /// Preserve all XML comments in their original positions
-    pub preserve_comments: bool,
-    /// Preserve processing instructions
-    pub preserve_processing_instructions: bool,
-    /// Preserve unknown/extension elements and attributes
-    pub preserve_extensions: bool,
-    /// Preserve original attribute ordering when possible
-    pub preserve_attribute_order: bool,
-    /// Preserve namespace prefixes from input
-    pub preserve_namespace_prefixes: bool,
-    /// Canonicalization algorithm to use
+    /// Algorithm used by [`Builder::canonicalize`]. `build_with_fidelity` always writes
+    /// DB-C14N/1.0 output, as `DDEXBuilder::build` does.
     pub canonicalization: CanonicalizationAlgorithm,
-    /// Custom canonicalization rules (used with Custom algorithm)
-    pub custom_canonicalization_rules: Option<CustomCanonicalizationRules>,
-    /// Enable deterministic element ordering
-    pub enable_deterministic_ordering: bool,
-    /// Collect detailed building statistics
+    /// Return [`BuildStatistics`] from `build_with_fidelity`
     pub collect_statistics: bool,
-    /// Enable build verification (double-check output)
-    pub enable_verification: bool,
-    /// Verification configuration
-    pub verification_config: VerificationConfig,
 }
 
-impl Default for FidelityOptions {
-    fn default() -> Self {
-        Self {
-            enable_perfect_fidelity: false,
-            preserve_comments: false,
-            preserve_processing_instructions: false,
-            preserve_extensions: true,
-            preserve_attribute_order: false,
-            preserve_namespace_prefixes: false,
-            canonicalization: CanonicalizationAlgorithm::DbC14N,
-            custom_canonicalization_rules: None,
-            enable_deterministic_ordering: true,
-            collect_statistics: false,
-            enable_verification: false,
-            verification_config: VerificationConfig::default(),
-        }
-    }
-}
-
-/// Canonicalization algorithms supported by the fidelity options
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+/// Canonicalization algorithms
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CanonicalizationAlgorithm {
-    /// No canonicalization (preserves exact formatting)
+    /// No canonicalization (the input is returned unchanged)
     None,
-    /// XML Canonicalization Version 1.0 (W3C C14N)
-    C14N,
-    /// XML Canonicalization Version 1.1 (W3C C14N11)
-    C14N11,
     /// DDEX-specific DB-C14N/1.0 algorithm (default)
+    #[default]
     DbC14N,
-    /// Custom canonicalization with user-defined rules
-    Custom(CustomCanonicalizationRules),
 }
 
-/// Custom canonicalization rules for specialized use cases
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct CustomCanonicalizationRules {
-    /// Preserve whitespace between elements
-    pub preserve_whitespace: bool,
-    /// Sort attributes alphabetically
-    pub sort_attributes: bool,
-    /// Normalize line endings to LF
-    pub normalize_line_endings: bool,
-    /// Remove redundant namespace declarations
-    pub minimize_namespaces: bool,
-    /// Custom attribute ordering rules
-    pub attribute_ordering: Vec<String>,
-    /// Custom element ordering rules
-    pub element_ordering: UnorderedMap<String, Vec<String>>,
-}
-
-impl Default for CustomCanonicalizationRules {
-    #[allow(
-        clippy::disallowed_types,
-        reason = "H4: custom canonicalization is not implemented (returns an error), so this map is never read"
-    )]
-    fn default() -> Self {
-        Self {
-            preserve_whitespace: false,
-            sort_attributes: true,
-            normalize_line_endings: true,
-            minimize_namespaces: true,
-            attribute_ordering: Vec::new(),
-            element_ordering: HashMap::new(),
-        }
-    }
-}
-
-/// Build verification configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct VerificationConfig {
-    /// Enable round-trip verification (build -> parse -> build)
-    pub enable_round_trip_verification: bool,
-    /// Enable canonicalization verification
-    pub enable_canonicalization_verification: bool,
-    /// Enable schema validation after build
-    pub enable_schema_validation: bool,
-    /// Enable determinism verification (multiple builds identical)
-    pub enable_determinism_verification: bool,
-    /// Number of builds for determinism verification
-    pub determinism_test_iterations: usize,
-    /// Timeout for verification operations
-    pub verification_timeout: Duration,
-}
-
-impl Default for VerificationConfig {
-    fn default() -> Self {
-        Self {
-            enable_round_trip_verification: true,
-            enable_canonicalization_verification: true,
-            enable_schema_validation: false,
-            enable_determinism_verification: true,
-            determinism_test_iterations: 3,
-            verification_timeout: Duration::from_secs(30),
-        }
-    }
-}
-
-/// Build verification result
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct VerificationResult {
-    /// Overall verification success
-    pub success: bool,
-    /// Round-trip verification result
-    pub round_trip_success: bool,
-    /// Canonicalization verification result
-    pub canonicalization_success: bool,
-    /// Schema validation result
-    pub schema_validation_success: bool,
-    /// Determinism verification result
-    pub determinism_success: bool,
-    /// Verification errors and warnings
-    pub issues: Vec<VerificationIssue>,
-    /// Time taken for verification
-    pub verification_time: Duration,
-}
-
-/// Verification issue (error or warning)
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct VerificationIssue {
-    /// Issue severity
-    pub severity: VerificationSeverity,
-    /// Issue category
-    pub category: String,
-    /// Human-readable message
-    pub message: String,
-    /// Optional path to the problematic element
-    pub path: Option<String>,
-    /// Optional suggestion for fixing
-    pub suggestion: Option<String>,
-}
-
-/// Verification issue severity
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum VerificationSeverity {
-    /// Error that prevents successful verification
-    Error,
-    /// Warning that may indicate a problem
-    Warning,
-    /// Informational message
-    Info,
-}
-
-/// Building statistics collected during the build process
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Statistics counted from the output of [`Builder::build_with_fidelity`]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BuildStatistics {
     /// Total build time
     pub build_time: Duration,
-    /// Time spent on canonicalization (not measured in 0.5.x: 0)
-    pub canonicalization_time: Duration,
-    /// Time spent on validation (not measured in 0.5.x: 0)
-    pub validation_time: Duration,
-    /// Time spent on verification
-    pub verification_time: Duration,
-    /// Peak memory usage during build (not measured in 0.5.x: 0)
-    pub peak_memory_bytes: usize,
-    /// Number of elements processed
+    /// Number of elements
     pub element_count: usize,
-    /// Number of attributes processed
+    /// Number of attributes (namespace declarations excluded)
     pub attribute_count: usize,
-    /// Size of input data (not measured in 0.5.x: 0)
-    pub input_size_bytes: usize,
-    /// Size of output data
+    /// Size of the output in bytes
     pub output_size_bytes: usize,
-    /// Number of namespaces processed
+    /// Number of namespace declarations
     pub namespace_count: usize,
-    /// Number of comments preserved
+    /// Number of comments
     pub comment_count: usize,
-    /// Number of processing instructions preserved
+    /// Number of processing instructions
     pub processing_instruction_count: usize,
 }
 
-impl Default for BuildStatistics {
-    fn default() -> Self {
-        Self {
-            build_time: Duration::ZERO,
-            canonicalization_time: Duration::ZERO,
-            validation_time: Duration::ZERO,
-            verification_time: Duration::ZERO,
-            peak_memory_bytes: 0,
-            element_count: 0,
-            attribute_count: 0,
-            input_size_bytes: 0,
-            output_size_bytes: 0,
-            namespace_count: 0,
-            comment_count: 0,
-            processing_instruction_count: 0,
-        }
-    }
-}
-
-/// Builder configuration: determinism settings, target version and fidelity options.
+/// Builder facade: target version, version detection and conversion, statistics and
+/// round trips.
 ///
 /// To generate XML, use [`DDEXBuilder::build`]. The target version set here does not
 /// affect `DDEXBuilder::build` output (KNOWN_ISSUES.md).
@@ -355,11 +157,9 @@ impl Default for BuildStatistics {
 /// Memory use has not been measured. Build times are in `dev-docs/PERFORMANCE.md`.
 #[derive(Debug, Clone)]
 pub struct Builder {
-    config: DeterminismConfig,
     version_manager: versions::VersionManager,
     target_version: Option<DdexVersion>,
     fidelity_options: FidelityOptions,
-    verification_config: VerificationConfig,
 }
 
 impl Default for Builder {
@@ -369,11 +169,7 @@ impl Default for Builder {
 }
 
 impl Builder {
-    /// Creates a new DDEX Builder with default configuration.
-    ///
-    /// The builder is initialized with:
-    /// - Default determinism configuration (canonical ordering and formatting)
-    /// - No target version
+    /// Creates a new DDEX Builder with default options and no target version.
     ///
     /// # Examples
     ///
@@ -384,161 +180,38 @@ impl Builder {
     /// assert!(builder.target_version().is_none());
     /// ```
     pub fn new() -> Self {
-        Self {
-            config: DeterminismConfig::default(),
-            version_manager: versions::VersionManager::new(),
-            target_version: None,
-            fidelity_options: FidelityOptions::default(),
-            verification_config: VerificationConfig::default(),
-        }
+        Self::with_fidelity_options(FidelityOptions::default())
     }
 
-    /// Create builder with custom configuration
-    pub fn with_config(config: DeterminismConfig) -> Self {
-        Self {
-            config,
-            version_manager: versions::VersionManager::new(),
-            target_version: None,
-            fidelity_options: FidelityOptions::default(),
-            verification_config: VerificationConfig::default(),
-        }
-    }
-
-    /// Create a builder with every fidelity option enabled
-    pub fn with_perfect_fidelity() -> Self {
-        let mut fidelity_options = FidelityOptions::default();
-        fidelity_options.enable_perfect_fidelity = true;
-        fidelity_options.preserve_comments = true;
-        fidelity_options.preserve_processing_instructions = true;
-        fidelity_options.preserve_extensions = true;
-        fidelity_options.preserve_attribute_order = true;
-        fidelity_options.preserve_namespace_prefixes = true;
-        fidelity_options.enable_verification = true;
-
-        Self {
-            config: DeterminismConfig::default(),
-            version_manager: versions::VersionManager::new(),
-            target_version: None,
-            fidelity_options,
-            verification_config: VerificationConfig::default(),
-        }
-    }
-
-    /// Create builder with custom fidelity options
+    /// Create builder with the given options
     pub fn with_fidelity_options(fidelity_options: FidelityOptions) -> Self {
         Self {
-            config: DeterminismConfig::default(),
             version_manager: versions::VersionManager::new(),
             target_version: None,
             fidelity_options,
-            verification_config: VerificationConfig::default(),
         }
     }
 
-    /// Create builder optimized for round-trip operations
-    pub fn for_round_trip() -> Self {
-        let mut fidelity_options = FidelityOptions::default();
-        fidelity_options.enable_perfect_fidelity = true;
-        fidelity_options.preserve_comments = true;
-        fidelity_options.preserve_processing_instructions = true;
-        fidelity_options.preserve_extensions = true;
-        fidelity_options.preserve_attribute_order = true;
-        fidelity_options.preserve_namespace_prefixes = true;
-        fidelity_options.canonicalization = CanonicalizationAlgorithm::DbC14N;
-        fidelity_options.enable_verification = true;
-        fidelity_options.collect_statistics = true;
-
-        let mut verification_config = VerificationConfig::default();
-        verification_config.enable_round_trip_verification = true;
-        verification_config.enable_canonicalization_verification = true;
-        verification_config.enable_determinism_verification = true;
-
-        Self {
-            config: DeterminismConfig::default(),
-            version_manager: versions::VersionManager::new(),
-            target_version: None,
-            fidelity_options,
-            verification_config,
-        }
-    }
-
-    /// Get the current configuration
-    pub fn config(&self) -> &DeterminismConfig {
-        &self.config
-    }
-
-    /// Get the current fidelity options
+    /// Get the current options
     pub fn fidelity_options(&self) -> &FidelityOptions {
         &self.fidelity_options
     }
 
-    /// Set fidelity options
+    /// Set the options
     pub fn set_fidelity_options(&mut self, options: FidelityOptions) -> &mut Self {
         self.fidelity_options = options;
         self
     }
 
-    /// Enable every fidelity option
-    pub fn enable_perfect_fidelity(&mut self) -> &mut Self {
-        self.fidelity_options.enable_perfect_fidelity = true;
-        self.fidelity_options.preserve_comments = true;
-        self.fidelity_options.preserve_processing_instructions = true;
-        self.fidelity_options.preserve_extensions = true;
-        self.fidelity_options.preserve_attribute_order = true;
-        self.fidelity_options.preserve_namespace_prefixes = true;
-        self.fidelity_options.enable_verification = true;
-        self
-    }
-
-    /// Disable every fidelity option
-    pub fn disable_perfect_fidelity(&mut self) -> &mut Self {
-        self.fidelity_options.enable_perfect_fidelity = false;
-        self.fidelity_options.preserve_comments = false;
-        self.fidelity_options.preserve_processing_instructions = false;
-        self.fidelity_options.preserve_attribute_order = false;
-        self.fidelity_options.preserve_namespace_prefixes = false;
-        self.fidelity_options.enable_verification = false;
-        self
-    }
-
-    /// Set canonicalization algorithm
+    /// Set the canonicalization algorithm used by [`Builder::canonicalize`]
     pub fn with_canonicalization(&mut self, algorithm: CanonicalizationAlgorithm) -> &mut Self {
         self.fidelity_options.canonicalization = algorithm;
         self
     }
 
-    /// Enable DB-C14N/1.0 canonicalization (default for DDEX)
+    /// Use DB-C14N/1.0 canonicalization (the default)
     pub fn with_db_c14n(&mut self) -> &mut Self {
         self.fidelity_options.canonicalization = CanonicalizationAlgorithm::DbC14N;
-        self
-    }
-
-    /// Enable standard XML C14N canonicalization
-    pub fn with_c14n(&mut self) -> &mut Self {
-        self.fidelity_options.canonicalization = CanonicalizationAlgorithm::C14N;
-        self
-    }
-
-    /// Enable XML C14N 1.1 canonicalization
-    pub fn with_c14n11(&mut self) -> &mut Self {
-        self.fidelity_options.canonicalization = CanonicalizationAlgorithm::C14N11;
-        self
-    }
-
-    /// Set custom canonicalization rules
-    pub fn with_custom_canonicalization(
-        &mut self,
-        rules: CustomCanonicalizationRules,
-    ) -> &mut Self {
-        self.fidelity_options.canonicalization = CanonicalizationAlgorithm::Custom(rules.clone());
-        self.fidelity_options.custom_canonicalization_rules = Some(rules);
-        self
-    }
-
-    /// Enable build verification
-    pub fn with_verification(&mut self, config: VerificationConfig) -> &mut Self {
-        self.fidelity_options.enable_verification = true;
-        self.verification_config = config;
         self
     }
 
@@ -546,11 +219,6 @@ impl Builder {
     pub fn with_statistics(&mut self) -> &mut Self {
         self.fidelity_options.collect_statistics = true;
         self
-    }
-
-    /// Check whether fidelity preservation is enabled
-    pub fn is_perfect_fidelity_enabled(&self) -> bool {
-        self.fidelity_options.enable_perfect_fidelity
     }
 
     /// Get current canonicalization algorithm
@@ -602,161 +270,34 @@ impl Builder {
         versions::utils::supported_versions()
     }
 
-    /// Build DDEX XML (DB-C14N/1.0 canonical output, as `DDEXBuilder::build`) with optional
-    /// statistics and verification. The other fidelity options are not applied in 0.5.x;
-    /// a canonicalization algorithm other than `DbC14N` or `None` is an error (it is not
-    /// implemented). The statistics count the output's elements, attributes, namespace
-    /// declarations, comments and processing instructions; the times other than
-    /// `build_time` / `verification_time`, `peak_memory_bytes` and `input_size_bytes` are
-    /// not measured and stay 0.
+    /// Build DDEX XML (DB-C14N/1.0 canonical output, as `DDEXBuilder::build`) and, with
+    /// `collect_statistics`, count the output's elements, attributes, namespace declarations,
+    /// comments and processing instructions.
     pub fn build_with_fidelity(
         &self,
         request: &builder::BuildRequest,
     ) -> Result<FidelityBuildResult, error::BuildError> {
-        if !matches!(
-            self.fidelity_options.canonicalization,
-            CanonicalizationAlgorithm::DbC14N | CanonicalizationAlgorithm::None
-        ) {
-            canonicalize_with("", &self.fidelity_options.canonicalization)?;
-        }
         let start_time = std::time::Instant::now();
-        let mut statistics = BuildStatistics::default();
+        let build_result =
+            builder::DDEXBuilder::new().build(request.clone(), builder::BuildOptions::default())?;
 
-        // Use the existing build options structure
-        let build_options = builder::BuildOptions::default();
-
-        // Build the XML using existing builder
-        let ddex_builder = builder::DDEXBuilder::new();
-        let build_result = ddex_builder.build(request.clone(), build_options)?;
-
-        statistics.build_time = start_time.elapsed();
-        statistics.output_size_bytes = build_result.xml.len();
-        count_xml(&build_result.xml, &mut statistics);
-
-        // Perform verification if enabled
-        let verification_result = if self.fidelity_options.enable_verification {
-            // Convert lib VerificationConfig to verification VerificationConfig
-            let verification_config = verification::VerificationConfig {
-                enable_round_trip_verification: self
-                    .verification_config
-                    .enable_round_trip_verification,
-                enable_canonicalization_verification: self
-                    .verification_config
-                    .enable_canonicalization_verification,
-                enable_schema_validation: self.verification_config.enable_schema_validation,
-                enable_determinism_verification: self
-                    .verification_config
-                    .enable_determinism_verification,
-                determinism_test_iterations: self.verification_config.determinism_test_iterations,
-                verification_timeout: self.verification_config.verification_timeout,
+        let statistics = self.fidelity_options.collect_statistics.then(|| {
+            let mut statistics = BuildStatistics {
+                build_time: start_time.elapsed(),
+                output_size_bytes: build_result.xml.len(),
+                ..Default::default()
             };
-            let verifier = verification::BuildVerifier::new(verification_config);
-            let result = verifier.verify(&build_result.xml, &self.fidelity_options)?;
-            statistics.verification_time = result.verification_time;
-
-            // Convert verification::VerificationResult to VerificationResult
-            Some(VerificationResult {
-                success: result.success,
-                round_trip_success: result.round_trip_success,
-                canonicalization_success: result.canonicalization_success,
-                determinism_success: result.determinism_success,
-                schema_validation_success: result.schema_validation_success,
-                issues: result
-                    .issues
-                    .into_iter()
-                    .map(|issue| VerificationIssue {
-                        category: issue.category,
-                        severity: match issue.severity {
-                            verification::VerificationSeverity::Error => {
-                                VerificationSeverity::Error
-                            }
-                            verification::VerificationSeverity::Warning => {
-                                VerificationSeverity::Warning
-                            }
-                            verification::VerificationSeverity::Info => VerificationSeverity::Info,
-                        },
-                        message: issue.message,
-                        path: issue.path,
-                        suggestion: issue.suggestion,
-                    })
-                    .collect(),
-                verification_time: result.verification_time,
-            })
-        } else {
-            None
-        };
+            count_xml(&build_result.xml, &mut statistics);
+            statistics
+        });
 
         Ok(FidelityBuildResult {
             xml: build_result.xml,
-            statistics: if self.fidelity_options.collect_statistics {
-                Some(statistics)
-            } else {
-                None
-            },
-            verification_result,
+            statistics,
             // `DDEXBuilder::build` always writes DB-C14N/1.0 canonical output.
             canonicalization_applied: true,
             db_c14n_version: Some(DB_C14N_VERSION.to_string()),
         })
-    }
-
-    /// Verify build output meets fidelity requirements
-    pub fn verify_build(&self, xml_output: &str) -> Result<VerificationResult, error::BuildError> {
-        // Convert lib VerificationConfig to verification VerificationConfig
-        let verification_config = verification::VerificationConfig {
-            enable_round_trip_verification: self.verification_config.enable_round_trip_verification,
-            enable_canonicalization_verification: self
-                .verification_config
-                .enable_canonicalization_verification,
-            enable_schema_validation: self.verification_config.enable_schema_validation,
-            enable_determinism_verification: self
-                .verification_config
-                .enable_determinism_verification,
-            determinism_test_iterations: self.verification_config.determinism_test_iterations,
-            verification_timeout: self.verification_config.verification_timeout,
-        };
-
-        let verifier = verification::BuildVerifier::new(verification_config);
-        let result = verifier.verify(xml_output, &self.fidelity_options)?;
-
-        // Convert verification::VerificationResult to VerificationResult
-        Ok(VerificationResult {
-            success: result.success,
-            round_trip_success: result.round_trip_success,
-            canonicalization_success: result.canonicalization_success,
-            determinism_success: result.determinism_success,
-            schema_validation_success: result.schema_validation_success,
-            issues: result
-                .issues
-                .into_iter()
-                .map(|issue| VerificationIssue {
-                    category: issue.category,
-                    severity: match issue.severity {
-                        verification::VerificationSeverity::Error => VerificationSeverity::Error,
-                        verification::VerificationSeverity::Warning => {
-                            VerificationSeverity::Warning
-                        }
-                        verification::VerificationSeverity::Info => VerificationSeverity::Info,
-                    },
-                    message: issue.message,
-                    path: issue.path,
-                    suggestion: issue.suggestion,
-                })
-                .collect(),
-            verification_time: result.verification_time,
-        })
-    }
-
-    /// Not implemented in 0.5.x (the builder has no parser): returns an error. Use
-    /// [`Builder::test_round_trip_fidelity_with`] with the parser's parse function. Before
-    /// 0.5.1 this reported success without building anything.
-    pub fn test_round_trip_fidelity(
-        &self,
-        original_xml: &str,
-    ) -> Result<RoundTripResult, error::BuildError> {
-        let round_trip = round_trip::RoundTripTester::new(self.fidelity_options.clone());
-        let result = round_trip.test_round_trip(original_xml)?;
-        Ok(Self::round_trip_result(result))
     }
 
     /// Round trip XML → Parse → Build → Parse → compare, with `parse` the parser's parse
@@ -769,57 +310,27 @@ impl Builder {
     where
         F: Fn(&str) -> Result<ddex_core::models::flat::ParsedERNMessage, String>,
     {
-        let round_trip = round_trip::RoundTripTester::new(self.fidelity_options.clone());
-        let result = round_trip.test_round_trip_with(original_xml, parse)?;
-        Ok(Self::round_trip_result(result))
-    }
-
-    fn round_trip_result(result: round_trip::RoundTripResult) -> RoundTripResult {
-        RoundTripResult {
+        let result =
+            round_trip::RoundTripTester::new().test_round_trip_with(original_xml, parse)?;
+        Ok(RoundTripResult {
             success: result.success,
             original_xml: result.original_xml,
             rebuilt_xml: result.rebuilt_xml,
             byte_identical: result.byte_identical,
             differences: result.differences,
             test_time: result.test_time,
-        }
+        })
     }
 
     /// Canonicalize XML using the configured algorithm: DB-C14N/1.0 (`DbC14N`, with
-    /// [`DB_C14N`]) or nothing (`None`). C14N, C14N 1.1 and custom rules are not
-    /// implemented in 0.5.x and return an error (before 0.5.1 every algorithm returned the
-    /// input unchanged).
+    /// [`DB_C14N`]) or nothing (`None`).
     pub fn canonicalize(&self, xml_content: &str) -> Result<String, error::BuildError> {
-        canonicalize_with(xml_content, &self.fidelity_options.canonicalization)
-    }
-
-    /// Get DB-C14N/1.0 configuration details
-    pub fn db_c14n_config(&self) -> DbC14NConfig {
-        DbC14NConfig {
-            version: DB_C14N_VERSION.to_string(),
-            algorithm: self.fidelity_options.canonicalization.clone(),
-            deterministic_ordering: self.fidelity_options.enable_deterministic_ordering,
-            preserve_comments: self.fidelity_options.preserve_comments,
-            preserve_processing_instructions: self
-                .fidelity_options
-                .preserve_processing_instructions,
-            namespace_handling: if self.fidelity_options.preserve_namespace_prefixes {
-                NamespaceHandling::Preserve
-            } else {
-                NamespaceHandling::Minimize
-            },
+        match self.fidelity_options.canonicalization {
+            CanonicalizationAlgorithm::None => Ok(xml_content.to_string()),
+            CanonicalizationAlgorithm::DbC14N => {
+                DB_C14N::new(determinism::DeterminismConfig::default()).canonicalize(xml_content)
+            }
         }
-    }
-
-    /// Internal build method used by determinism verifier
-    pub(crate) fn build_internal(
-        &self,
-        request: &builder::BuildRequest,
-    ) -> Result<builder::BuildResult, error::BuildError> {
-        let ddex_builder = builder::DDEXBuilder::new();
-        let build_options = builder::BuildOptions::default();
-
-        ddex_builder.build(request.clone(), build_options)
     }
 }
 
@@ -830,11 +341,9 @@ pub struct FidelityBuildResult {
     pub xml: String,
     /// Build statistics (if enabled)
     pub statistics: Option<BuildStatistics>,
-    /// Verification result (if enabled)
-    pub verification_result: Option<VerificationResult>,
-    /// Whether canonicalization was applied
+    /// Whether canonicalization was applied (always true: the output is DB-C14N/1.0)
     pub canonicalization_applied: bool,
-    /// DB-C14N version used (if applicable)
+    /// DB-C14N version used
     pub db_c14n_version: Option<String>,
 }
 
@@ -855,34 +364,6 @@ pub struct RoundTripResult {
     pub test_time: Duration,
 }
 
-/// DB-C14N/1.0 configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DbC14NConfig {
-    /// DB-C14N specification version
-    pub version: String,
-    /// Canonicalization algorithm in use
-    pub algorithm: CanonicalizationAlgorithm,
-    /// Whether deterministic ordering is enabled
-    pub deterministic_ordering: bool,
-    /// Whether comments are preserved
-    pub preserve_comments: bool,
-    /// Whether processing instructions are preserved
-    pub preserve_processing_instructions: bool,
-    /// Namespace handling strategy
-    pub namespace_handling: NamespaceHandling,
-}
-
-/// Namespace handling strategies
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum NamespaceHandling {
-    /// Preserve original namespace prefixes
-    Preserve,
-    /// Minimize namespace declarations
-    Minimize,
-    /// Normalize namespace prefixes
-    Normalize,
-}
-
 /// Version information for the builder
 pub fn version_info() -> String {
     format!(
@@ -890,17 +371,6 @@ pub fn version_info() -> String {
         env!("CARGO_PKG_VERSION"),
         DB_C14N_VERSION,
         env!("CARGO_PKG_RUST_VERSION", "unknown")
-    )
-}
-
-/// A one-line description of the fidelity features as they are in this version (before
-/// 0.5.1 it claimed round-trip and extension support).
-pub fn fidelity_engine_info() -> String {
-    format!(
-        "Fidelity features v{} • DB-C14N/{} output • Round-trip: verify_round_trip compares \
-         the fields the build request carries (not lossless) • Extensions: not rebuilt",
-        env!("CARGO_PKG_VERSION"),
-        DB_C14N_VERSION
     )
 }
 
@@ -927,32 +397,6 @@ fn count_xml(xml: &str, stats: &mut BuildStatistics) {
             Ok(Event::Eof) | Err(_) => break,
             Ok(_) => {}
         }
-    }
-}
-
-/// `xml` canonicalized with `algorithm`: DB-C14N/1.0 or nothing; the other algorithms are
-/// not implemented in 0.5.x.
-pub(crate) fn canonicalize_with(
-    xml: &str,
-    algorithm: &CanonicalizationAlgorithm,
-) -> Result<String, error::BuildError> {
-    match algorithm {
-        CanonicalizationAlgorithm::None => Ok(xml.to_string()),
-        CanonicalizationAlgorithm::DbC14N => {
-            DB_C14N::new(determinism::DeterminismConfig::default()).canonicalize(xml)
-        }
-        CanonicalizationAlgorithm::C14N => Err(round_trip::not_implemented(
-            "C14N canonicalization",
-            "only DB-C14N/1.0 (CanonicalizationAlgorithm::DbC14N) is implemented",
-        )),
-        CanonicalizationAlgorithm::C14N11 => Err(round_trip::not_implemented(
-            "C14N 1.1 canonicalization",
-            "only DB-C14N/1.0 (CanonicalizationAlgorithm::DbC14N) is implemented",
-        )),
-        CanonicalizationAlgorithm::Custom(_) => Err(round_trip::not_implemented(
-            "custom canonicalization",
-            "only DB-C14N/1.0 (CanonicalizationAlgorithm::DbC14N) is implemented",
-        )),
     }
 }
 

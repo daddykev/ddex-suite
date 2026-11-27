@@ -238,8 +238,6 @@ impl BuilderStats {
 #[derive(Debug, Clone)]
 pub struct FidelityOptions {
     #[pyo3(get, set)]
-    pub enable_perfect_fidelity: bool,
-    #[pyo3(get, set)]
     pub canonicalization: String,
     #[pyo3(get, set)]
     pub preserve_comments: bool,
@@ -270,9 +268,8 @@ pub struct FidelityOptions {
 #[pymethods]
 impl FidelityOptions {
     #[new]
-    #[pyo3(signature = (enable_perfect_fidelity=true, canonicalization="db_c14n".to_string(), preserve_comments=false, preserve_processing_instructions=false, preserve_extensions=true, preserve_attribute_order=true, preserve_namespace_prefixes=true, enable_verification=false, collect_statistics=false, enable_deterministic_ordering=true, memory_optimization="balanced".to_string(), streaming_mode=false, chunk_size=65536, enable_checksums=false))]
+    #[pyo3(signature = (canonicalization="db_c14n".to_string(), preserve_comments=false, preserve_processing_instructions=false, preserve_extensions=true, preserve_attribute_order=true, preserve_namespace_prefixes=true, enable_verification=false, collect_statistics=false, enable_deterministic_ordering=true, memory_optimization="balanced".to_string(), streaming_mode=false, chunk_size=65536, enable_checksums=false))]
     pub fn new(
-        enable_perfect_fidelity: bool,
         canonicalization: String,
         preserve_comments: bool,
         preserve_processing_instructions: bool,
@@ -288,7 +285,6 @@ impl FidelityOptions {
         enable_checksums: bool,
     ) -> Self {
         FidelityOptions {
-            enable_perfect_fidelity,
             canonicalization,
             preserve_comments,
             preserve_processing_instructions,
@@ -307,8 +303,8 @@ impl FidelityOptions {
 
     fn __repr__(&self) -> String {
         format!(
-            "FidelityOptions(perfect_fidelity={}, canonicalization='{}')",
-            self.enable_perfect_fidelity, self.canonicalization
+            "FidelityOptions(canonicalization='{}', collect_statistics={})",
+            self.canonicalization, self.collect_statistics
         )
     }
 }

@@ -49,7 +49,6 @@ export interface BuilderStats {
   validationWarnings: number
 }
 export interface FidelityOptions {
-  enablePerfectFidelity?: boolean
   canonicalization?: string
   preserveComments?: boolean
   preserveProcessingInstructions?: boolean
@@ -104,7 +103,6 @@ export interface FidelityInfo {
   processingInstructionsPreserved: boolean
   attributeOrderPreserved: boolean
   namespacePrefixesPreserved: boolean
-  perfectFidelityEnabled: boolean
 }
 export interface StreamingConfig {
   maxBufferSize: number

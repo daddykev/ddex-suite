@@ -52,8 +52,6 @@ enum Commands {
     Validate(ValidateCommand),
     /// Generate schemas for validation
     Schema(SchemaCommand),
-    /// Validate determinism guarantees
-    Guarantees(GuaranteesCommand),
     /// Watch files for changes and rebuild
     Watch(WatchCommand),
     /// Run HTTP API server for builder operations
@@ -159,37 +157,6 @@ struct SchemaCommand {
     /// Output file path or '-' for stdout
     #[arg(short, long)]
     output: Option<PathBuf>,
-}
-
-#[derive(Args)]
-struct GuaranteesCommand {
-    /// Input file (JSON/YAML/TOML) for build request
-    #[arg(short, long)]
-    input: PathBuf,
-
-    /// Output format for guarantee report
-    #[arg(short, long, value_enum, default_value_t = GuaranteeFormat::Human)]
-    format: GuaranteeFormat,
-
-    /// Output file path (default: stdout)
-    #[arg(short, long)]
-    output: Option<PathBuf>,
-
-    /// Run comprehensive stress tests
-    #[arg(long)]
-    thorough: bool,
-
-    /// Number of determinism verification iterations
-    #[arg(long, default_value_t = 3)]
-    iterations: usize,
-
-    /// Only show failed guarantees
-    #[arg(long)]
-    failures_only: bool,
-
-    /// Include detailed evidence in report
-    #[arg(long)]
-    include_evidence: bool,
 }
 
 #[derive(Args)]
@@ -327,13 +294,6 @@ enum SchemaFormat {
     Python,
 }
 
-#[derive(ValueEnum, Clone, Debug)]
-enum GuaranteeFormat {
-    Human,
-    Json,
-    Yaml,
-}
-
 impl From<DdexVersionArg> for DdexVersion {
     fn from(version: DdexVersionArg) -> Self {
         match version {
@@ -360,7 +320,6 @@ fn main() {
         Commands::Convert(cmd) => handle_convert_command(cmd),
         Commands::Validate(cmd) => handle_validate_command(cmd),
         Commands::Schema(cmd) => handle_schema_command(cmd),
-        Commands::Guarantees(cmd) => handle_guarantees_command(cmd),
         Commands::Watch(cmd) => handle_watch_command(cmd),
         Commands::Server(cmd) => handle_server_command(cmd),
         Commands::Completions(cmd) => handle_completions_command(cmd),
@@ -516,162 +475,6 @@ fn handle_schema_command(cmd: SchemaCommand) -> Result<(), Box<dyn std::error::E
     }
 
     Ok(())
-}
-
-fn handle_guarantees_command(cmd: GuaranteesCommand) -> Result<(), Box<dyn std::error::Error>> {
-    use ddex_builder::builder::BuildRequest;
-    use ddex_builder::determinism::{DeterminismConfig, DeterminismVerifier};
-    use ddex_builder::guarantees::generate_guarantee_report;
-
-    // Read and parse input data
-    let input_data = read_input_data(&Some(cmd.input.clone()), None)?;
-
-    // Parse JSON data into BuildRequest structure
-    let request: BuildRequest = serde_json::from_value(input_data)?;
-
-    if !is_quiet() {
-        println!(
-            "🔍 Validating determinism guarantees for {}",
-            cmd.input.display()
-        );
-        if cmd.thorough {
-            println!("   Running comprehensive stress tests...");
-        }
-    }
-
-    // Generate guarantee report
-    let report = if cmd.thorough {
-        // Run thorough verification with stress tests
-        let _verifier = DeterminismVerifier::new(DeterminismConfig::default());
-        let _result = DeterminismVerifier::thorough_check(&request, cmd.iterations)?;
-
-        // Generate full report
-        generate_guarantee_report(&request, &DeterminismConfig::default())?
-    } else {
-        // Quick guarantee validation
-        generate_guarantee_report(&request, &DeterminismConfig::default())?
-    };
-
-    // Format output
-    let output_content = match cmd.format {
-        GuaranteeFormat::Human => {
-            format_guarantee_report_human(&report, cmd.failures_only, cmd.include_evidence)
-        }
-        GuaranteeFormat::Json => {
-            if cmd.failures_only {
-                let failed_results: Vec<_> =
-                    report.failed_guarantees().into_iter().cloned().collect();
-                serde_json::to_string_pretty(&failed_results)?
-            } else {
-                serde_json::to_string_pretty(&report)?
-            }
-        }
-        GuaranteeFormat::Yaml => {
-            if cmd.failures_only {
-                let failed_results: Vec<_> =
-                    report.failed_guarantees().into_iter().cloned().collect();
-                serde_yaml::to_string(&failed_results)?
-            } else {
-                serde_yaml::to_string(&report)?
-            }
-        }
-    };
-
-    // Write output
-    write_output(&output_content, &cmd.output)?;
-
-    // Print summary if not quiet and using human format
-    if !is_quiet() && matches!(cmd.format, GuaranteeFormat::Human) {
-        println!("\n{}", report.summary());
-
-        if !report.overall_pass {
-            let critical_failures = report.critical_failures();
-            if !critical_failures.is_empty() {
-                println!("\n{} Critical failures detected:", style("⚠").red().bold());
-                for failure in critical_failures {
-                    println!("  {} {:?}", style("✗").red(), failure.guarantee);
-                }
-                return Err("Critical determinism guarantees failed".into());
-            }
-        }
-    }
-
-    // Exit with error if guarantees failed and we're not just generating a report
-    if !report.overall_pass && cmd.output.is_none() {
-        std::process::exit(1);
-    }
-
-    Ok(())
-}
-
-fn format_guarantee_report_human(
-    report: &ddex_builder::guarantees::GuaranteeReport,
-    failures_only: bool,
-    include_evidence: bool,
-) -> String {
-    let mut output = String::new();
-
-    output.push_str(&format!("# Determinism Guarantee Report\n"));
-    output.push_str(&format!(
-        "Generated: {}\n\n",
-        report.timestamp.format("%Y-%m-%d %H:%M:%S UTC")
-    ));
-
-    if !failures_only {
-        output.push_str(&format!("## Summary\n"));
-        output.push_str(&format!(
-            "- Total guarantees: {}\n",
-            report.total_guarantees
-        ));
-        output.push_str(&format!(
-            "- Passed: {} ({:.1}%)\n",
-            report.passed_guarantees, report.success_rate
-        ));
-        output.push_str(&format!(
-            "- Failed: {}\n\n",
-            report.total_guarantees - report.passed_guarantees
-        ));
-    }
-
-    let results_to_show = if failures_only {
-        report.failed_guarantees()
-    } else {
-        report.results.iter().collect()
-    };
-
-    if !results_to_show.is_empty() {
-        output.push_str(&format!(
-            "## {}\n",
-            if failures_only {
-                "Failed Guarantees"
-            } else {
-                "Results"
-            }
-        ));
-
-        for result in results_to_show {
-            let status = if result.passed { "✅" } else { "❌" };
-            let priority = format!("{:?}", result.guarantee.priority()).to_uppercase();
-
-            output.push_str(&format!(
-                "\n### {} {:?} ({})\n",
-                status, result.guarantee, priority
-            ));
-            output.push_str(&format!(
-                "**Description:** {}\n\n",
-                result.guarantee.description()
-            ));
-            output.push_str(&format!("**Status:** {}\n\n", result.details));
-
-            if include_evidence {
-                if let Some(evidence) = &result.evidence {
-                    output.push_str(&format!("**Evidence:** {}\n\n", evidence));
-                }
-            }
-        }
-    }
-
-    output
 }
 
 fn handle_watch_command(_cmd: WatchCommand) -> Result<(), Box<dyn std::error::Error>> {
