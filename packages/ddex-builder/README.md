@@ -111,7 +111,8 @@ the element out, and an empty string (`Some("")`) fails the build.
 | ERN 3.8.2 | Validated against the official XSD in CI; video resources are not supported yet |
 | ERN 3.8.1 | The 3.8.2 document in the 3.8.1 namespace; not checked against an official XSD (none is available) |
 
-Output is read back by [`ddex-parser`](https://crates.io/crates/ddex-parser).
+Output is read back by [`ddex-parser`](https://crates.io/crates/ddex-parser). The data models
+live in [`ddex-core`](https://crates.io/crates/ddex-core).
 
 ## Parse, modify, build
 
@@ -162,6 +163,7 @@ in 24 ms, roughly 0.24 ms per track plus about 0.5 ms per message ([details](htt
 ## Links
 
 - Documentation: [docs.rs/ddex-builder](https://docs.rs/ddex-builder) and [ddex-suite.org](https://ddex-suite.org)
+- Data models: [ddex-core](https://crates.io/crates/ddex-core)
 - [Changelog](https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md)
 - [0.6.0 migration guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md)
 - [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md)
