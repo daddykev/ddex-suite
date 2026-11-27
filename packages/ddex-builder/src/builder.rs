@@ -22,7 +22,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// let request = BuildRequest {
 ///     header: MessageHeaderRequest {
-///         message_id: Some("MSG123".to_string()),
+///         message_id: "MSG123".to_string(),
 ///         message_sender: PartyRequest {
 ///             party_name: vec![LocalizedStringRequest {
 ///                 text: "My Label".to_string(),
@@ -40,7 +40,7 @@ use serde::{Deserialize, Serialize};
 ///         party_reference: None,
 ///     },
 ///         message_control_type: Some("LiveMessage".to_string()),
-///         message_created_date_time: None, // Will be auto-generated
+///         message_created_date_time: "2024-12-15T10:00:00Z".to_string(),
 ///     },
 ///     version: "4.3".to_string(),
 ///     profile: None,
@@ -93,7 +93,7 @@ pub struct BuildRequest {
 /// use ddex_builder::builder::{MessageHeaderRequest, PartyRequest, LocalizedStringRequest};
 ///
 /// let header = MessageHeaderRequest {
-///     message_id: Some("MSG_20241215_001".to_string()),
+///     message_id: "MSG_20241215_001".to_string(),
 ///     message_sender: PartyRequest {
 ///         party_name: vec![LocalizedStringRequest {
 ///             text: "Warner Music Group".to_string(),
@@ -111,21 +111,31 @@ pub struct BuildRequest {
 ///         party_reference: None,
 ///     },
 ///     message_control_type: Some("LiveMessage".to_string()),
-///     message_created_date_time: None, // Auto-generated if None
+///     message_created_date_time: "2024-12-15T10:00:00Z".to_string(),
 /// };
 /// ```
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct MessageHeaderRequest {
-    /// Unique message identifier (auto-generated if None)
-    pub message_id: Option<String>,
+    /// `MessageId` (required; the builder never generates it). An empty or missing value
+    /// fails the build.
+    #[serde(default, deserialize_with = "string_or_null")]
+    pub message_id: String,
     /// Party sending the message
     pub message_sender: PartyRequest,
     /// Party receiving the message
     pub message_recipient: PartyRequest,
     /// `MessageControlType` (AVS: `LiveMessage` or `TestMessage`)
     pub message_control_type: Option<String>,
-    /// Message creation timestamp in ISO 8601 format (auto-generated if None)
-    pub message_created_date_time: Option<String>,
+    /// `MessageCreatedDateTime`, an xs:dateTime such as `2024-12-15T10:00:00Z` (required; the
+    /// builder reads no clock). An empty or missing value fails the build.
+    #[serde(default, deserialize_with = "string_or_null")]
+    pub message_created_date_time: String,
+}
+
+/// A required string that may arrive as `null` (from JSON, Node.js or Python): `null` becomes
+/// `""`, which the build reports as missing, naming the field.
+fn string_or_null<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<String, D::Error> {
+    Ok(Option::<String>::deserialize(deserializer)?.unwrap_or_default())
 }
 
 /// Party information request
@@ -592,12 +602,6 @@ pub struct BuildOptions {
 
     /// Validation level
     pub preflight_level: super::preflight::PreflightLevel,
-
-    /// ID generation strategy
-    pub id_strategy: IdStrategy,
-
-    /// Stable hash configuration (when using StableHash strategy)
-    pub stable_hash_config: Option<super::id_generator::StableHashConfig>,
 }
 
 impl Default for BuildOptions {
@@ -607,24 +611,8 @@ impl Default for BuildOptions {
             canonicalization: super::CanonicalizationAlgorithm::default(),
             collect_statistics: false,
             preflight_level: super::preflight::PreflightLevel::Warn,
-            id_strategy: IdStrategy::UUID,
-            stable_hash_config: None,
         }
     }
-}
-
-/// ID generation strategy
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum IdStrategy {
-    /// Random UUID v4 message ID and release/resource references (the default).
-    UUID,
-    /// Currently the same as `UUID` (random v4): UUID v7 is not implemented.
-    UUIDv7,
-    /// Numbered references (`R1`, `A1`, ...); the message ID is `MSG_` plus the current Unix
-    /// time in seconds.
-    Sequential,
-    /// Hash-based IDs. The message ID hash includes the current UTC date.
-    StableHash,
 }
 
 /// Build result
@@ -849,8 +837,8 @@ impl DDEXBuilder {
             }
         }
 
-        // 2. Generate IDs based on strategy
-        self.generate_ids(&mut request, &options)?;
+        // 2. Number the references the request leaves out
+        generate_references(&mut request);
 
         // 3. Generate AST
         let mut generator = ASTGenerator::new(request.version.clone());
@@ -901,253 +889,88 @@ impl DDEXBuilder {
             generator_banner,
         })
     }
+}
 
-    /// Generate IDs based on the selected strategy
-    fn generate_ids(
-        &self,
-        request: &mut BuildRequest,
-        options: &BuildOptions,
-    ) -> Result<(), super::error::BuildError> {
-        match options.id_strategy {
-            IdStrategy::UUID => {
-                self.generate_uuid_ids(request)?;
-            }
-            IdStrategy::UUIDv7 => {
-                self.generate_uuidv7_ids(request)?;
-            }
-            IdStrategy::Sequential => {
-                self.generate_sequential_ids(request)?;
-            }
-            IdStrategy::StableHash => {
-                self.generate_stable_hash_ids(request, options)?;
+/// Numbers the references the request leaves out, in request order, one counter per kind:
+/// `R1`, `R2`, ... for releases, `A1`, `A2`, ... for resources (the `R[\d\-_a-zA-Z]+` and
+/// `A[\d\-_a-zA-Z]+` patterns of every ERN version's XSD), and `D1`, `D2`, ... for deals
+/// with terms (`DealReference` is an `xs:string`). A number the request already uses for a
+/// reference of that kind (for example a supplied `R2`) is skipped, so generated and
+/// supplied references never collide. Supplied references are never changed.
+fn generate_references(request: &mut BuildRequest) {
+    let mut releases = Counter::new(
+        'R',
+        request.releases.iter().flat_map(|r| {
+            r.release_reference.as_deref().into_iter().chain(
+                r.tracks
+                    .iter()
+                    .filter_map(|t| t.track_release.as_ref())
+                    .map(|tr| tr.release_reference.as_str()),
+            )
+        }),
+    );
+    let mut resources = Counter::new(
+        'A',
+        request
+            .releases
+            .iter()
+            .flat_map(|r| r.tracks.iter())
+            .filter_map(|t| t.resource_reference.as_deref()),
+    );
+    let mut deals = Counter::new(
+        'D',
+        request
+            .deals
+            .iter()
+            .filter_map(|d| d.deal_reference.as_deref()),
+    );
+    for release in &mut request.releases {
+        if release.release_reference.is_none() {
+            release.release_reference = Some(releases.next());
+        }
+        for track in &mut release.tracks {
+            if track.resource_reference.is_none() {
+                track.resource_reference = Some(resources.next());
             }
         }
-        Ok(())
+    }
+    for deal in &mut request.deals {
+        // A deal without terms is identified only by the caller's reference; one is not
+        // made up for it (the generator reports it as missing).
+        if deal.deal_reference.is_none() && !deal.deal_terms.is_empty() {
+            deal.deal_reference = Some(deals.next());
+        }
+    }
+}
+
+/// A sequential reference counter for one kind (`prefix` + 1, 2, ...) that skips the numbers
+/// the request already uses.
+struct Counter {
+    prefix: char,
+    last: u64,
+    used: std::collections::BTreeSet<u64>,
+}
+
+impl Counter {
+    fn new<'a>(prefix: char, supplied: impl Iterator<Item = &'a str>) -> Self {
+        let used = supplied
+            .filter_map(|r| r.strip_prefix(prefix))
+            .filter(|n| !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()))
+            .filter_map(|n| n.parse().ok())
+            .collect();
+        Self {
+            prefix,
+            last: 0,
+            used,
+        }
     }
 
-    /// Generate UUID v4 IDs
-    #[allow(
-        clippy::disallowed_methods,
-        reason = "known bug D1, D2: removed in 0.6.0 determinism PR"
-    )]
-    fn generate_uuid_ids(
-        &self,
-        request: &mut BuildRequest,
-    ) -> Result<(), super::error::BuildError> {
-        use uuid::Uuid;
-
-        // Generate message ID if missing
-        if request.header.message_id.is_none() {
-            request.header.message_id = Some(format!("MSG_{}", Uuid::new_v4()));
-        }
-
-        // Generate release references if missing
-        for release in &mut request.releases {
-            if release.release_reference.is_none() {
-                release.release_reference = Some(format!("R{}", Uuid::new_v4().simple()));
-            }
-
-            // Generate resource references for tracks
-            for track in &mut release.tracks {
-                if track.resource_reference.is_none() {
-                    track.resource_reference = Some(format!("A{}", Uuid::new_v4().simple()));
-                }
+    fn next(&mut self) -> String {
+        loop {
+            self.last += 1;
+            if !self.used.contains(&self.last) {
+                return format!("{}{}", self.prefix, self.last);
             }
         }
-
-        // Generate deal references if missing
-        for (idx, deal) in request.deals.iter_mut().enumerate() {
-            // A deal without terms is identified only by the caller's reference; one is not
-            // made up for it (the generator reports it as missing).
-            if deal.deal_reference.is_none() && !deal.deal_terms.is_empty() {
-                deal.deal_reference = Some(format!("D{}", idx + 1));
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Generate UUID v7 IDs (time-ordered)
-    fn generate_uuidv7_ids(
-        &self,
-        request: &mut BuildRequest,
-    ) -> Result<(), super::error::BuildError> {
-        // For now, fall back to UUID v4
-        // TODO: Implement proper UUID v7 generation
-        self.generate_uuid_ids(request)
-    }
-
-    /// Generate sequential IDs
-    #[allow(
-        clippy::disallowed_methods,
-        reason = "known bug D4: removed in 0.6.0 determinism PR"
-    )]
-    fn generate_sequential_ids(
-        &self,
-        request: &mut BuildRequest,
-    ) -> Result<(), super::error::BuildError> {
-        // Generate message ID if missing
-        if request.header.message_id.is_none() {
-            request.header.message_id = Some(format!("MSG_{}", chrono::Utc::now().timestamp()));
-        }
-
-        // Generate release references if missing
-        for (idx, release) in request.releases.iter_mut().enumerate() {
-            if release.release_reference.is_none() {
-                release.release_reference = Some(format!("R{}", idx + 1));
-            }
-
-            // Generate resource references for tracks
-            for (track_idx, track) in release.tracks.iter_mut().enumerate() {
-                if track.resource_reference.is_none() {
-                    track.resource_reference = Some(format!("A{}", (idx * 1000) + track_idx + 1));
-                }
-            }
-        }
-
-        // Generate deal references if missing
-        for (idx, deal) in request.deals.iter_mut().enumerate() {
-            // A deal without terms is identified only by the caller's reference; one is not
-            // made up for it (the generator reports it as missing).
-            if deal.deal_reference.is_none() && !deal.deal_terms.is_empty() {
-                deal.deal_reference = Some(format!("D{}", idx + 1));
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Generate stable hash-based IDs
-    #[allow(
-        clippy::disallowed_methods,
-        reason = "known bug D5: removed in 0.6.0 determinism PR"
-    )]
-    fn generate_stable_hash_ids(
-        &self,
-        request: &mut BuildRequest,
-        options: &BuildOptions,
-    ) -> Result<(), super::error::BuildError> {
-        let config = options.stable_hash_config.clone().unwrap_or_default();
-        let mut id_gen = super::id_generator::StableHashGenerator::new(config);
-
-        // Generate message ID if missing
-        if request.header.message_id.is_none() {
-            // Use sender/recipient info for stable message ID
-            let sender_name = request
-                .header
-                .message_sender
-                .party_name
-                .first()
-                .map(|s| s.text.clone())
-                .unwrap_or_default();
-            let recipient_name = request
-                .header
-                .message_recipient
-                .party_name
-                .first()
-                .map(|s| s.text.clone())
-                .unwrap_or_default();
-
-            let msg_id = id_gen.generate_party_id(
-                &format!("{}-{}", sender_name, recipient_name),
-                "MessageHeader",
-                &[chrono::Utc::now().format("%Y%m%d").to_string()],
-            )?;
-            request.header.message_id = Some(msg_id);
-        }
-
-        // Generate stable IDs for releases
-        for release in &mut request.releases {
-            if release.release_reference.is_none() {
-                let id = id_gen.generate_release_id(
-                    release
-                        .upc
-                        .as_deref()
-                        .unwrap_or(release.release_id.as_deref().unwrap_or_default()),
-                    "Album",
-                    &release
-                        .tracks
-                        .iter()
-                        .map(|t| t.isrc.clone().unwrap_or_default())
-                        .collect::<Vec<_>>(),
-                    &[], // Empty territory set for now
-                )?;
-                release.release_reference = Some(id);
-            }
-
-            // Generate stable IDs for tracks/resources
-            for track in &mut release.tracks {
-                if track.resource_reference.is_none() {
-                    // Parse duration to seconds for stable hash
-                    let duration_seconds =
-                        self.parse_duration_to_seconds(&track.duration).unwrap_or(0);
-
-                    let id = id_gen.generate_resource_id(
-                        track.isrc.as_deref().unwrap_or_default(),
-                        duration_seconds,
-                        None, // No file hash available
-                    )?;
-                    track.resource_reference = Some(id);
-                }
-            }
-        }
-
-        // Generate deal references if missing
-        for (_idx, deal) in request.deals.iter_mut().enumerate() {
-            // A deal without terms is identified only by the caller's reference; one is not
-            // made up for it (the generator reports it as missing).
-            if deal.deal_reference.is_none() && !deal.deal_terms.is_empty() {
-                // Create stable deal ID based on terms
-                let territories = deal.deal_terms.territory_code.join(",");
-                deal.deal_reference = Some(format!(
-                    "DEAL_{}_{}",
-                    deal.deal_terms
-                        .commercial_model_type
-                        .as_deref()
-                        .unwrap_or_default(),
-                    territories
-                ));
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Parse ISO 8601 duration to seconds
-    fn parse_duration_to_seconds(&self, duration: &str) -> Option<u32> {
-        // Simple parser for PT3M45S format
-        if !duration.starts_with("PT") {
-            return None;
-        }
-
-        let mut seconds = 0u32;
-        let mut current_num = String::new();
-
-        for ch in duration[2..].chars() {
-            match ch {
-                '0'..='9' => current_num.push(ch),
-                'H' => {
-                    if let Ok(hours) = current_num.parse::<u32>() {
-                        seconds += hours * 3600;
-                    }
-                    current_num.clear();
-                }
-                'M' => {
-                    if let Ok(minutes) = current_num.parse::<u32>() {
-                        seconds += minutes * 60;
-                    }
-                    current_num.clear();
-                }
-                'S' => {
-                    if let Ok(secs) = current_num.parse::<u32>() {
-                        seconds += secs;
-                    }
-                    current_num.clear();
-                }
-                _ => {}
-            }
-        }
-
-        Some(seconds)
     }
 }

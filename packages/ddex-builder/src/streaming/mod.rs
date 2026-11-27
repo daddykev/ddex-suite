@@ -12,7 +12,6 @@ use crate::error::BuildError;
 use buffer_manager::BufferManager;
 use reference_manager::StreamingReferenceManager;
 use std::io::Write as IoWrite;
-use uuid::Uuid;
 
 /// Configuration for streaming builder
 ///
@@ -161,10 +160,8 @@ impl<W: IoWrite> StreamingBuilder<W> {
         // The streaming writer only knows the 3.8-style tree; schema-valid ERN 4.x output
         // comes from DDEXBuilder::build.
         use ddex_core::models::versions::ERNVersion;
-        if matches!(
-            crate::builder::parse_target_version(version),
-            Ok(ERNVersion::V4_2 | ERNVersion::V4_3)
-        ) {
+        let target = crate::builder::parse_target_version(version);
+        if matches!(target, Ok(ERNVersion::V4_2 | ERNVersion::V4_3)) {
             return Err(BuildError::InvalidFormat {
                 field: "version".to_string(),
                 message: format!(
@@ -174,6 +171,14 @@ impl<W: IoWrite> StreamingBuilder<W> {
                 ),
             });
         }
+
+        // MessageId and MessageCreatedDateTime are required, as for DDEXBuilder::build (the
+        // writer generates neither).
+        let label = match target {
+            Ok(ERNVersion::V3_8_1) => "3.8.1",
+            _ => "3.8.2",
+        };
+        crate::generator::check_message_header(label, header)?;
 
         // Write XML declaration and start of message
         let xml_start = format!(
@@ -427,14 +432,9 @@ impl<W: IoWrite> StreamingBuilder<W> {
 
     // Private helper methods
 
-    #[allow(
-        clippy::disallowed_methods,
-        reason = "known bug D12, D13: removed in 0.6.0 determinism PR"
-    )]
     fn write_message_header(&mut self, header: &MessageHeaderRequest) -> Result<(), BuildError> {
-        // Generate message ID if not provided
-        let default_id = Uuid::new_v4().to_string();
-        let message_id = header.message_id.as_deref().unwrap_or(&default_id);
+        // `start_message` checked that both header fields are given.
+        let message_id = header.message_id.as_str();
 
         let mut header_xml = String::new();
         header_xml.push_str("  <MessageHeader>\n");
@@ -464,11 +464,7 @@ impl<W: IoWrite> StreamingBuilder<W> {
         header_xml.push_str("    </MessageRecipient>\n");
 
         // Write MessageCreatedDateTime
-        let default_time = chrono::Utc::now().to_rfc3339();
-        let created_time = header
-            .message_created_date_time
-            .as_deref()
-            .unwrap_or(&default_time);
+        let created_time = header.message_created_date_time.as_str();
         header_xml.push_str(&format!(
             "    <MessageCreatedDateTime>{}</MessageCreatedDateTime>\n",
             escape_xml(created_time)

@@ -7,10 +7,10 @@ DDEX ERN XML builder for Node.js, a native addon over the Rust
 prefixes, sorted attributes, consistent formatting, elements in XSD order). TypeScript
 types are included (`index.d.ts`, `build-request.d.ts`).
 
-Byte-for-byte determinism is not complete yet: a message ID, release and resource
-references and `message_created_date_time` that the request leaves out are generated
-(random UUIDs, the current time), so two builds of the same request can differ. Full
-determinism is planned for 0.6.0.
+The builder reads no clock or random source and uses no unordered iteration on the build
+path (enforced by clippy lints). The same request and options produce byte-identical output
+with the same crate version; repeated builds are tested to be byte-identical.
+`message_id` and `message_created_date_time` are required in the request header.
 
 > **0.5.0 has breaking changes.** `build(request)` takes the core build request (`header`
 > and `version` are required, nothing is filled in), ERN 3.8.2 output is schema-valid,

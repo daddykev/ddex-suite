@@ -34,14 +34,14 @@ export interface Party {
 }
 
 export interface MessageHeader {
-  /** Generated when omitted */
-  message_id?: string | null
+  /** Required: the builder never generates it */
+  message_id: string
   message_sender: Party
   message_recipient: Party
   /** `LiveMessage` or `TestMessage` */
   message_control_type?: string | null
-  /** ISO 8601 date-time; the current time when omitted */
-  message_created_date_time?: string | null
+  /** Required xs:dateTime, e.g. `2024-01-01T00:00:00Z` (the builder reads no clock) */
+  message_created_date_time: string
 }
 
 export interface ProprietaryId {

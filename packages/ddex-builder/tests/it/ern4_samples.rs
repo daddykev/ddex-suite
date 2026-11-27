@@ -46,6 +46,19 @@ fn official_samples_round_trip() {
         let original = parse(&std::fs::read_to_string(&path).unwrap());
         let request = request_from_parsed(&original, version);
         let xml = match DDEXBuilder::new().build(request, BuildOptions::default()) {
+            // Expected: the sample's `<MessageId/>` is empty (schema-valid xs:string, read as
+            // ""); the builder requires a MessageId (KNOWN_ISSUES.md).
+            Err(ddex_builder::BuildError::ValidationFailed { errors })
+                if original.graph.message_header.message_id.is_empty()
+                    && errors
+                        .iter()
+                        .all(|e| e.contains("requires MessageHeader/MessageId")) =>
+            {
+                table.push(format!(
+                    "| {name} | fails as expected | - | empty MessageId (`<MessageId/>` in the sample) is treated as missing |"
+                ));
+                continue;
+            }
             Ok(result) => result.xml,
             Err(e) => {
                 failures.push(format!("{name}: build failed: {e}"));

@@ -22,11 +22,11 @@ fn party(name: &str, id: &str) -> PartyRequest {
 fn request(version: &str) -> BuildRequest {
     BuildRequest {
         header: MessageHeaderRequest {
-            message_id: Some("MSG-VERSION-TEST".to_string()),
+            message_id: "MSG-VERSION-TEST".to_string(),
             message_sender: party("Example Sender", "PADPIDA0000000001"),
             message_recipient: party("Example Recipient", "PADPIDA0000000002"),
             message_control_type: Some("LiveMessage".to_string()),
-            message_created_date_time: Some("2026-01-01T00:00:00Z".to_string()),
+            message_created_date_time: "2026-01-01T00:00:00Z".to_string(),
         },
         version: version.to_string(),
         profile: Some("AudioSingle".to_string()),

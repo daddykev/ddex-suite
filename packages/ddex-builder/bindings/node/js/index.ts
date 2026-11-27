@@ -276,9 +276,11 @@ export class DDEXBuilder {
  *
  * // Start message
  * builder.startMessage({
+ *   messageId: 'MSG001',
  *   messageSenderName: 'My Label',
- *   messageRecipientName: 'Distribution Platform'
- * }, '4.3');
+ *   messageRecipientName: 'Distribution Platform',
+ *   messageCreatedDateTime: '2024-01-15T10:30:00Z'
+ * }, '3.8.2');
  *
  * // Stream resources and releases
  * const resId = builder.writeResource('RES001', 'Track 1', 'Artist', 'USRC17607839');

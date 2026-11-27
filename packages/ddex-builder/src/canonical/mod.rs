@@ -6,10 +6,12 @@
 //!
 //! ## Why Canonicalization?
 //!
-//! Canonicalizing the same document always gives the same bytes. (The builder's output
-//! as a whole is not fully deterministic yet: generated IDs and timestamps can differ
-//! between builds; see the [`output`](crate::output) module. Full determinism
-//! is planned for 0.6.0.) Reproducible output matters for:
+//! Canonicalizing the same document always gives the same bytes.
+//!
+//! The builder reads no clock or random source and uses no unordered iteration on the build
+//! path (enforced by clippy lints). The same request and options produce byte-identical
+//! output with the same crate version; repeated builds are tested to be byte-identical.
+//! Reproducible output matters for:
 //!
 //! - **Supply chain integrity**: Partners can verify XML hasn't changed
 //! - **Reproducible builds**: CI/CD systems produce identical artifacts

@@ -7,13 +7,11 @@ namespace prefixes, sorted attributes, consistent formatting, elements in XSD or
 Node.js and Python bindings use the same builder: `npm install ddex-builder`,
 `pip install ddex-builder`.
 
-Byte-for-byte determinism is not complete yet: with the default options, a message ID,
-release and resource references and `MessageCreatedDateTime` that the request leaves out
-are generated (random UUIDs, the current time), and the stable-hash ID strategy puts
-today's date into the `MessageId` (the sequential strategy uses the current Unix time), so
-two builds of the same request can differ. The streaming writer generates a random
-`MessageId` and the current time when they are missing. Full determinism is planned for 0.6.0; see
-[KNOWN_ISSUES.md](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md).
+The builder reads no clock or random source and uses no unordered iteration on the build
+path (enforced by clippy lints). The same request and options produce byte-identical output
+with the same crate version; repeated builds are tested to be byte-identical.
+`MessageId` and `MessageCreatedDateTime` are required inputs. References the request leaves
+out are numbered in request order (`R1`, `A1`, `D1`, ...).
 
 > **0.5.0 has breaking changes.** ERN 3.8.2 output is now schema-valid, the WASM binding
 > runs this builder, and the request types gained fields (use `..Default::default()`).
@@ -45,11 +43,11 @@ fn main() -> Result<(), ddex_builder::BuildError> {
 
     let request = BuildRequest {
         header: MessageHeaderRequest {
-            message_id: Some("MSG-001".to_string()),
+            message_id: "MSG-001".to_string(),
             message_sender: party("PADPIDA0000000001", "Example Label"),
             message_recipient: party("PADPIDA0000000002", "Example DSP"),
             message_control_type: Some("LiveMessage".to_string()),
-            message_created_date_time: Some("2024-01-01T00:00:00Z".to_string()),
+            message_created_date_time: "2024-01-01T00:00:00Z".to_string(),
         },
         version: "4.3".to_string(),
         profile: Some("AudioSingle".to_string()),

@@ -525,9 +525,14 @@ pub struct StreamingStats {
 #[napi(object)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MessageHeader {
+    /// Required (the writer never generates it); missing fails `startMessage` naming the field
+    #[napi(ts_type = "string")]
     pub message_id: Option<String>,
     pub message_sender_name: String,
     pub message_recipient_name: String,
+    /// Required xs:dateTime (the writer reads no clock); missing fails `startMessage` naming
+    /// the field
+    #[napi(ts_type = "string")]
     pub message_created_date_time: Option<String>,
 }
 
@@ -620,7 +625,8 @@ impl StreamingDdexBuilder {
 
         // Convert header to Rust type
         let rust_header = ddex_builder::builder::MessageHeaderRequest {
-            message_id: header.message_id,
+            // A missing value becomes "", which start_message reports, naming the field.
+            message_id: header.message_id.unwrap_or_default(),
             message_sender: ddex_builder::builder::PartyRequest {
                 party_name: vec![ddex_builder::builder::LocalizedStringRequest {
                     text: header.message_sender_name,
@@ -638,7 +644,7 @@ impl StreamingDdexBuilder {
                 party_reference: None,
             },
             message_control_type: None,
-            message_created_date_time: header.message_created_date_time,
+            message_created_date_time: header.message_created_date_time.unwrap_or_default(),
         };
 
         streaming_builder

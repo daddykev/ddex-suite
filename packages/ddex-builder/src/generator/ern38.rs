@@ -178,10 +178,7 @@ impl Checker {
 
     fn request(&mut self, request: &BuildRequest) {
         let header = &request.header;
-        if header.message_id.as_deref().unwrap_or_default().is_empty() {
-            self.p
-                .missing("MessageHeader/MessageId", "header.message_id");
-        }
+        self.p.message_header(header);
         for (party, element, field) in [
             (&header.message_sender, "MessageSender", "message_sender"),
             (
@@ -191,10 +188,6 @@ impl Checker {
             ),
         ] {
             self.party(party, element, field);
-        }
-        if let Some(created) = &header.message_created_date_time {
-            self.p
-                .date_time(created, "header.message_created_date_time");
         }
 
         if request.releases.is_empty() {
@@ -500,27 +493,19 @@ fn messaging_party(name: &str, party: &PartyRequest) -> Element {
     element
 }
 
-#[allow(
-    clippy::disallowed_methods,
-    reason = "known bug D8: removed in 0.6.0 determinism PR"
-)]
 fn message_header(request: &BuildRequest) -> Element {
     let header = &request.header;
     let mut element = Element::new("MessageHeader");
-    element.add_child(text_element(
-        "MessageId",
-        header.message_id.as_deref().unwrap_or_default(),
-    ));
+    element.add_child(text_element("MessageId", &header.message_id));
     element.add_child(messaging_party("MessageSender", &header.message_sender));
     element.add_child(messaging_party(
         "MessageRecipient",
         &header.message_recipient,
     ));
-    let created = header
-        .message_created_date_time
-        .clone()
-        .unwrap_or_else(|| chrono::Utc::now().to_rfc3339());
-    element.add_child(text_element("MessageCreatedDateTime", &created));
+    element.add_child(text_element(
+        "MessageCreatedDateTime",
+        &header.message_created_date_time,
+    ));
     if let Some(control) = &header.message_control_type {
         element.add_child(text_element("MessageControlType", control));
     }

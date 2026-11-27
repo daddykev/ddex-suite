@@ -4,7 +4,7 @@
 //! official 3.8.2 XSD as well (`ern38_xsd`).
 
 use ddex_builder::builder::{
-    DealRequest, DealTerms, IdStrategy, LocalizedStringRequest, MessageHeaderRequest, PartyRequest,
+    DealRequest, DealTerms, LocalizedStringRequest, MessageHeaderRequest, PartyRequest,
     ReleaseRequest, TrackRequest,
 };
 use ddex_builder::output::{CanonMode, OutputConfig};
@@ -40,11 +40,11 @@ fn track(n: u32, title: &str, artist: &str, with_reference: bool) -> TrackReques
 fn request() -> BuildRequest {
     BuildRequest {
         header: MessageHeaderRequest {
-            message_id: Some("MSG-382".to_string()),
+            message_id: "MSG-382".to_string(),
             message_sender: party("PADPIDA0000000001", "Example Label"),
             message_recipient: party("PADPIDA0000000002", "Example DSP"),
             message_control_type: Some("LiveMessage".to_string()),
-            message_created_date_time: Some("2024-09-13T12:00:00Z".to_string()),
+            message_created_date_time: "2024-09-13T12:00:00Z".to_string(),
         },
         version: "3.8.2".to_string(),
         profile: Some("AudioAlbum".to_string()),
@@ -98,7 +98,6 @@ fn build(canon_mode: CanonMode) -> String {
             request(),
             BuildOptions {
                 output,
-                id_strategy: IdStrategy::Sequential,
                 ..BuildOptions::default()
             },
         )

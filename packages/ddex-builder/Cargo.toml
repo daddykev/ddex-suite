@@ -35,10 +35,9 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 web-time = "1.1"
 
-# ID generation
+# Hashes (canonical hash, streaming references) and temp-file / request IDs (security)
 uuid = { workspace = true }
 sha2 = "0.10"
-blake3 = "1.5"
 hex = "0.4"
 
 # String operations

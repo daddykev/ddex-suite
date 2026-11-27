@@ -44,17 +44,17 @@ class Party(_PartyRequired, total=False):
 
 
 class _MessageHeaderRequired(TypedDict):
+    #: Required: the builder never generates it
+    message_id: str
     message_sender: Party
     message_recipient: Party
+    #: Required xs:dateTime, e.g. ``2024-01-01T00:00:00Z`` (the builder reads no clock)
+    message_created_date_time: str
 
 
 class MessageHeader(_MessageHeaderRequired, total=False):
-    #: Generated when omitted
-    message_id: Optional[str]
     #: ``LiveMessage`` or ``TestMessage``
     message_control_type: Optional[str]
-    #: ISO 8601 date-time; the current time when omitted
-    message_created_date_time: Optional[str]
 
 
 class ProprietaryId(TypedDict):

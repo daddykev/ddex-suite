@@ -268,7 +268,7 @@ fn request_from_parsed_38(parsed: &ParsedERNMessage, version: &str) -> BuildRequ
 
     BuildRequest {
         header: MessageHeaderRequest {
-            message_id: Some(header.message_id.clone()),
+            message_id: header.message_id.clone(),
             message_sender: party(
                 &header.message_sender.party_id,
                 &header.message_sender.party_name,
@@ -278,10 +278,9 @@ fn request_from_parsed_38(parsed: &ParsedERNMessage, version: &str) -> BuildRequ
                 &header.message_recipient.party_name,
             ),
             message_control_type: None,
-            message_created_date_time: Some(
-                flat.message_date
-                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
-            ),
+            message_created_date_time: flat
+                .message_date
+                .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
         },
         version: version.to_string(),
         releases,

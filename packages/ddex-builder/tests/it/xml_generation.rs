@@ -12,7 +12,7 @@ fn test_linker_with_xml_generation() {
     // Create request without references
     let mut request = BuildRequest {
         header: MessageHeaderRequest {
-            message_id: Some("LINK_TEST_001".to_string()),
+            message_id: "LINK_TEST_001".to_string(),
             message_sender: PartyRequest {
                 party_name: vec![LocalizedStringRequest {
                     text: "Auto Link Label".to_string(),
@@ -30,7 +30,7 @@ fn test_linker_with_xml_generation() {
                 party_reference: None,
             },
             message_control_type: Some("LiveMessage".to_string()),
-            message_created_date_time: None, // Add to existing MessageHeaderRequest structs
+            message_created_date_time: "2024-01-01T00:00:00Z".to_string(),
         },
         version: "4.3".to_string(),
         profile: Some("AudioAlbum".to_string()),
@@ -183,7 +183,7 @@ fn create_simple_request() -> BuildRequest {
 fn create_simple_request_base() -> BuildRequest {
     BuildRequest {
         header: MessageHeaderRequest {
-            message_id: Some("TEST".to_string()),
+            message_id: "TEST".to_string(),
             message_sender: PartyRequest {
                 party_name: vec![],
                 party_id: Some("S1".to_string()),
@@ -195,7 +195,7 @@ fn create_simple_request_base() -> BuildRequest {
                 party_reference: None,
             },
             message_control_type: None,
-            message_created_date_time: None, // Add to existing MessageHeaderRequest structs
+            message_created_date_time: "2024-01-01T00:00:00Z".to_string(),
         },
         version: "4.3".to_string(),
         profile: None,

@@ -8,9 +8,9 @@
 //! - [`CanonMode::Pretty`]: the generator's indented output, not canonicalized, indented
 //!   with [`OutputConfig::indent_char`] × [`OutputConfig::indent_width`].
 //!
-//! A message ID, references and `MessageCreatedDateTime` that the request leaves out are
-//! generated (random UUIDs, the current time), so two builds of such a request can differ.
-//! See `KNOWN_ISSUES.md`.
+//! The builder reads no clock or random source and uses no unordered iteration on the build
+//! path (enforced by clippy lints). The same request and options produce byte-identical
+//! output with the same crate version; repeated builds are tested to be byte-identical.
 //!
 //! Before 0.6.0 this was the `determinism` module and its `DeterminismConfig`.
 //!

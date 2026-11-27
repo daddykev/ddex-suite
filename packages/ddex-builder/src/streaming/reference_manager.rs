@@ -4,7 +4,6 @@
 //! to ensure proper linking between releases and resources.
 
 use crate::error::BuildError;
-use crate::id_generator::{StableHashConfig, StableHashGenerator};
 use indexmap::{IndexMap, IndexSet};
 
 /// Configuration for reference management during streaming
@@ -26,11 +25,14 @@ use indexmap::{IndexMap, IndexSet};
 /// ```
 #[derive(Debug, Clone)]
 pub struct ReferenceConfig {
-    /// Use deterministic reference generation based on content hashes
+    /// References derived from the caller's IDs: the prefix and the first 32 hex digits
+    /// (128 bits) of the SHA-256 of the ID. Otherwise numbered (`prefix` + 000001, ...).
     pub deterministic: bool,
-    /// Prefix for resource references (default: "R")
+    /// Prefix for resource references (default: "A", the ERN `ResourceReference` pattern
+    /// `A[\d\-_a-zA-Z]+`)
     pub resource_prefix: String,
-    /// Prefix for release references (default: "REL")
+    /// Prefix for release references (default: "REL", which matches the ERN
+    /// `ReleaseReference` pattern `R[\d\-_a-zA-Z]+`)
     pub release_prefix: String,
     /// Prefix for deal references (default: "D")
     pub deal_prefix: String,
@@ -42,7 +44,7 @@ impl Default for ReferenceConfig {
     fn default() -> Self {
         Self {
             deterministic: true,
-            resource_prefix: "R".to_string(),
+            resource_prefix: "A".to_string(),
             release_prefix: "REL".to_string(),
             deal_prefix: "D".to_string(),
             max_cache_size: 100_000, // Should handle large catalogs
@@ -121,8 +123,6 @@ pub struct ReleaseReference {
 /// Manages references during streaming operations
 pub struct StreamingReferenceManager {
     config: ReferenceConfig,
-    #[allow(dead_code)]
-    hash_generator: StableHashGenerator,
 
     // Resource tracking
     resource_references: IndexMap<String, String>, // resource_id -> reference_id
@@ -156,11 +156,8 @@ impl StreamingReferenceManager {
 
     /// Create a new streaming reference manager with custom configuration
     pub fn new_with_config(config: ReferenceConfig) -> Self {
-        let hash_config = StableHashConfig::default();
-
         StreamingReferenceManager {
             config,
-            hash_generator: StableHashGenerator::new(hash_config),
             resource_references: IndexMap::new(),
             resource_metadata: IndexMap::new(),
             resource_sequence: 1,
@@ -187,12 +184,10 @@ impl StreamingReferenceManager {
 
         // Generate stable reference
         let reference_id = if self.config.deterministic {
-            // Use a simplified hash approach for now
+            // 128 bits of the SHA-256 of the caller's ID
             use sha2::{Digest, Sha256};
-            let mut hasher = Sha256::new();
-            hasher.update(resource_id.as_bytes());
-            let hash = format!("{:x}", hasher.finalize());
-            format!("{}{}", self.config.resource_prefix, &hash[..8])
+            let hash = format!("{:x}", Sha256::digest(resource_id.as_bytes()));
+            format!("{}{}", self.config.resource_prefix, &hash[..32])
         } else {
             format!(
                 "{}{:06}",
@@ -230,12 +225,10 @@ impl StreamingReferenceManager {
 
         // Generate stable reference
         let reference_id = if self.config.deterministic {
-            // Use a simplified hash approach for now
+            // 128 bits of the SHA-256 of the caller's ID
             use sha2::{Digest, Sha256};
-            let mut hasher = Sha256::new();
-            hasher.update(release_id.as_bytes());
-            let hash = format!("{:x}", hasher.finalize());
-            format!("{}{}", self.config.release_prefix, &hash[..8])
+            let hash = format!("{:x}", Sha256::digest(release_id.as_bytes()));
+            format!("{}{}", self.config.release_prefix, &hash[..32])
         } else {
             format!("{}{:06}", self.config.release_prefix, self.release_sequence)
         };
@@ -269,12 +262,10 @@ impl StreamingReferenceManager {
 
         // Generate stable reference
         let reference_id = if self.config.deterministic {
-            // Use a simplified hash approach for now
+            // 128 bits of the SHA-256 of the caller's ID
             use sha2::{Digest, Sha256};
-            let mut hasher = Sha256::new();
-            hasher.update(deal_id.as_bytes());
-            let hash = format!("{:x}", hasher.finalize());
-            format!("{}{}", self.config.deal_prefix, &hash[..8])
+            let hash = format!("{:x}", Sha256::digest(deal_id.as_bytes()));
+            format!("{}{}", self.config.deal_prefix, &hash[..32])
         } else {
             format!("{}{:06}", self.config.deal_prefix, self.deal_sequence)
         };
@@ -364,9 +355,9 @@ impl StreamingReferenceManager {
         Ok(())
     }
 
-    /// Validate all references at the end of streaming
+    /// Report orphaned references and duplicate IDs at the end of streaming (as warnings;
+    /// before 0.6.0 it also had an `errors` list, which was always empty)
     pub fn validate_references(&self) -> ReferenceValidationResult {
-        let mut errors = Vec::new();
         let mut warnings = Vec::new();
 
         // Check for orphaned references
@@ -393,28 +384,7 @@ impl StreamingReferenceManager {
             ));
         }
 
-        // Check reference consistency
-        for (resource_id, reference_id) in &self.resource_references {
-            if !self.used_references.contains(reference_id) {
-                errors.push(format!(
-                    "Resource reference {} for resource {} not properly tracked",
-                    reference_id, resource_id
-                ));
-            }
-        }
-
-        for (release_id, reference_id) in &self.release_references {
-            if !self.used_references.contains(reference_id) {
-                errors.push(format!(
-                    "Release reference {} for release {} not properly tracked",
-                    reference_id, release_id
-                ));
-            }
-        }
-
         ReferenceValidationResult {
-            is_valid: errors.is_empty(),
-            errors,
             warnings,
             total_references: self.references_generated,
             resource_count: self.resource_references.len(),
@@ -499,61 +469,10 @@ impl Default for StreamingReferenceManager {
     }
 }
 
-/// Reference validation result
-///
-/// Comprehensive validation report for all references generated during
-/// streaming DDEX XML creation, including error detection and statistics.
-///
-/// # Example
-/// ```
-/// use ddex_builder::streaming::reference_manager::StreamingReferenceManager;
-///
-/// let mut manager = StreamingReferenceManager::new();
-/// // ... generate resources and releases ...
-/// let validation = manager.validate_references();
-///
-/// if !validation.is_valid {
-///     for error in &validation.errors {
-///         eprintln!("Validation error: {}", error);
-///     }
-/// }
-///
-/// for warning in &validation.warnings {
-///     println!("Warning: {}", warning);
-/// }
-///
-/// println!("Validated {} total references ({} resources, {} releases, {} deals)",
-///          validation.total_references,
-///          validation.resource_count,
-///          validation.release_count,
-///          validation.deal_count);
-/// ```
-#[derive(Debug)]
-pub struct ReferenceValidation {
-    /// Whether all references are valid (no errors found)
-    pub is_valid: bool,
-    /// List of validation errors found during reference checking
-    pub errors: Vec<String>,
-    /// List of warnings generated (non-fatal issues)
-    pub warnings: Vec<String>,
-    /// Total number of references checked during validation
-    pub total_references: usize,
-    /// Number of resource references validated
-    pub resource_count: usize,
-    /// Number of release references validated
-    pub release_count: usize,
-    /// Number of deal references validated
-    pub deal_count: usize,
-}
-
 /// Result of reference validation
 #[derive(Debug, Clone)]
 pub struct ReferenceValidationResult {
-    /// Whether all references passed validation
-    pub is_valid: bool,
-    /// List of validation errors found
-    pub errors: Vec<String>,
-    /// List of warnings generated
+    /// Orphaned references and duplicate IDs
     pub warnings: Vec<String>,
     /// Total number of references checked
     pub total_references: usize,
@@ -616,8 +535,11 @@ mod tests {
         let ref2 = manager.generate_resource_reference("resource2").unwrap();
 
         assert_ne!(ref1, ref2);
-        assert!(ref1.starts_with("R"));
-        assert!(ref2.starts_with("R"));
+        // "A" + 32 hex digits (128 bits of the SHA-256 of the ID)
+        for r in [&ref1, &ref2] {
+            assert!(r.starts_with('A') && r.len() == 33, "{r}");
+            assert!(r[1..].bytes().all(|b| b.is_ascii_hexdigit()), "{r}");
+        }
 
         // Test duplicate handling
         let ref3 = manager.generate_resource_reference("resource1").unwrap();
@@ -632,8 +554,8 @@ mod tests {
         let ref2 = manager.generate_release_reference("release2").unwrap();
 
         assert_ne!(ref1, ref2);
-        assert!(ref1.starts_with("REL"));
-        assert!(ref2.starts_with("REL"));
+        assert!(ref1.starts_with("REL") && ref1.len() == 35, "{ref1}");
+        assert!(ref2.starts_with("REL") && ref2.len() == 35, "{ref2}");
     }
 
     #[test]
@@ -664,7 +586,7 @@ mod tests {
             .unwrap();
 
         let validation = manager.validate_references();
-        assert!(validation.is_valid);
+        assert!(validation.warnings.is_empty());
         assert_eq!(validation.resource_count, 1);
         assert_eq!(validation.release_count, 1);
     }

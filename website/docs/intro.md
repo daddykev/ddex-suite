@@ -48,9 +48,6 @@ plus `ddex-core` on crates.io. All of them are released together at the same ver
 - **No parse-to-build bridge.** There is no built-in conversion from a parsed message to a
   build request yet; you map the fields you need (the
   [building quick start](./quick-start-building.mdx#parse-modify-build) shows how).
-- **Not byte-for-byte deterministic yet.** A message ID, references and
-  `MessageCreatedDateTime` that the request leaves out are generated, so two builds of the
-  same request can differ. Full determinism is planned for 0.6.0.
 - **No streaming in Node.js or Python.** `parse` reads the whole document. The Rust
   streaming APIs are experimental and read a subset of the fields.
 

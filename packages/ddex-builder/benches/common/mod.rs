@@ -57,12 +57,12 @@ pub fn request_with_tracks(track_count: usize) -> BuildRequest {
 
     BuildRequest {
         header: MessageHeaderRequest {
-            message_id: Some("BENCH_001".to_string()),
+            message_id: "BENCH_001".to_string(),
             message_sender: party("Benchmark Sender", "PADPIDA0000000001"),
             message_recipient: party("Benchmark Recipient", "PADPIDA0000000002"),
             message_control_type: None,
             // Fixed timestamp so every build of the same request is comparable.
-            message_created_date_time: Some("2024-01-01T00:00:00Z".to_string()),
+            message_created_date_time: "2024-01-01T00:00:00Z".to_string(),
         },
         version: "4.3".to_string(),
         profile: None,

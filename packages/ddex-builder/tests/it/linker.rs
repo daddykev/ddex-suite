@@ -239,7 +239,7 @@ fn test_custom_reference_style() {
 fn create_test_build_request() -> BuildRequest {
     BuildRequest {
         header: MessageHeaderRequest {
-            message_id: Some("TEST_MSG_123".to_string()),
+            message_id: "TEST_MSG_123".to_string(),
             message_sender: PartyRequest {
                 party_name: vec![LocalizedStringRequest {
                     text: "Test Label".to_string(),
@@ -257,7 +257,7 @@ fn create_test_build_request() -> BuildRequest {
                 party_reference: None,
             },
             message_control_type: Some("LiveMessage".to_string()),
-            message_created_date_time: None, // Add to existing MessageHeaderRequest structs
+            message_created_date_time: "2024-01-01T00:00:00Z".to_string(),
         },
         version: "4.3".to_string(),
         profile: Some("AudioAlbum".to_string()),
