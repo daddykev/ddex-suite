@@ -61,13 +61,16 @@ pub struct BuilderStats {
     pub validation_warnings: u32,
 }
 
+/// Options of `buildWithStatistics` (before 0.6.0, `FidelityOptions`)
 #[napi(object)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FidelityOptions {
-    pub canonicalization: Option<String>, // "none" or "db_c14n" (anything else is an error)
+pub struct BuildOptions {
+    /// "none" or "db_c14n" (anything else is an error); the output is DB-C14N/1.0 either way
+    pub canonicalization: Option<String>,
+    /// Run a real Parse → Build → Parse round trip of the output (`verification`)
     pub enable_verification: Option<bool>,
+    /// Count the output (`statistics`)
     pub collect_statistics: Option<bool>,
-    pub enable_deterministic_ordering: Option<bool>,
 }
 
 #[napi(object)]
@@ -99,7 +102,8 @@ pub struct VerificationResult {
     /// No score is computed: always null (before 0.5.1, a made-up 0.98 or 1.0).
     pub fidelity_score: Option<f64>,
     pub canonicalization_consistent: bool,
-    pub determinism_verified: bool,
+    /// Building the same request twice gave byte-identical XML.
+    pub builds_identical: bool,
     pub issues: Vec<String>,
     pub checksums_match: Option<bool>,
 }
@@ -140,7 +144,7 @@ fn round_trip(xml: &str) -> VerificationResult {
             round_trip_success: result.success,
             fidelity_score: None,
             canonicalization_consistent: result.canonical,
-            determinism_verified: result.deterministic,
+            builds_identical: result.deterministic,
             issues: result.differences,
             checksums_match: Some(result.checksums_match),
         },
@@ -148,7 +152,7 @@ fn round_trip(xml: &str) -> VerificationResult {
             round_trip_success: false,
             fidelity_score: None,
             canonicalization_consistent: false,
-            determinism_verified: false,
+            builds_identical: false,
             issues: vec![format!("round trip failed: {e}")],
             checksums_match: None,
         },
@@ -245,12 +249,12 @@ impl DdexBuilder {
     }
 
     #[napi(
-        ts_args_type = "request?: import('./build-request').BuildRequest | undefined | null, fidelityOptions?: FidelityOptions | undefined | null"
+        ts_args_type = "request?: import('./build-request').BuildRequest | undefined | null, options?: BuildOptions | undefined | null"
     )]
-    pub async unsafe fn build_with_fidelity(
+    pub async unsafe fn build_with_statistics(
         &mut self,
         data: Option<serde_json::Value>,
-        fidelity_options: Option<FidelityOptions>,
+        fidelity_options: Option<BuildOptions>,
     ) -> Result<BuildResult> {
         // The output is always DB-C14N/1.0; other algorithms are not implemented.
         if let Some(algorithm) = fidelity_options
@@ -332,13 +336,12 @@ impl DdexBuilder {
 
     /// Parse → build → parse `originalXml` and compare the two parsed messages on the
     /// fields a build request carries (ddex_builder::round_trip). `issues` lists the
-    /// differences; `fidelityScore` is null (no score is computed). The fidelity options
-    /// are not applied in 0.5.x. Before 0.5.1 this returned a made-up success.
+    /// differences; `fidelityScore` is null (no score is computed). Before 0.5.1 this
+    /// returned a made-up success. (Before 0.6.0, `testRoundTripFidelity`.)
     #[napi]
-    pub async unsafe fn test_round_trip_fidelity(
+    pub async unsafe fn check_round_trip(
         &mut self,
         original_xml: String,
-        _fidelity_options: Option<FidelityOptions>,
     ) -> Result<VerificationResult> {
         Ok(round_trip(&original_xml))
     }
@@ -806,10 +809,10 @@ fn structure_error(xml: &str) -> Option<String> {
     }
 }
 
-/// What `buildWithFidelity` applied: DB-C14N/1.0 canonical output; the preservation
+/// What `buildWithStatistics` applied: DB-C14N/1.0 canonical output; the preservation
 /// options are not applied in 0.5.x (before 0.5.1 the options were echoed back as if they
 /// had been).
-fn applied_fidelity(_options: &FidelityOptions) -> FidelityInfo {
+fn applied_fidelity(_options: &BuildOptions) -> FidelityInfo {
     FidelityInfo {
         fidelity_level: "not applied in 0.5.x".to_string(),
         canonicalization_algorithm: "db_c14n".to_string(),

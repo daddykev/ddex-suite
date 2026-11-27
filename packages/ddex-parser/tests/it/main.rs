@@ -15,7 +15,6 @@ mod error_contract;
 mod honest_results;
 mod large_file;
 mod malformed_xml;
-mod parse_options;
 mod playground_regression;
 mod reader_paths;
 mod serialization;

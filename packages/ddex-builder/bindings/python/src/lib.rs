@@ -1,6 +1,6 @@
 use ::ddex_builder::builder::{
-    BuildOptions, BuildRequest, DDEXBuilder, LocalizedStringRequest, ReleaseRequest, ResourceKind,
-    TrackRequest,
+    BuildOptions as CoreBuildOptions, BuildRequest, DDEXBuilder, LocalizedStringRequest,
+    ReleaseRequest, ResourceKind, TrackRequest,
 };
 use ::ddex_parser::DDEXParser;
 use ddex_core::models::flat::ParsedERNMessage;
@@ -234,40 +234,40 @@ impl BuilderStats {
     }
 }
 
+/// Options of `build_with_statistics` (before 0.6.0, `FidelityOptions`): `canonicalization`
+/// ("db_c14n" or "none"; anything else is an error, and the output is DB-C14N/1.0 either
+/// way), `enable_verification` (a real round trip of the output) and `collect_statistics`
+/// (counts of the output).
 #[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
-pub struct FidelityOptions {
+pub struct BuildOptions {
     #[pyo3(get, set)]
     pub canonicalization: String,
     #[pyo3(get, set)]
     pub enable_verification: bool,
     #[pyo3(get, set)]
     pub collect_statistics: bool,
-    #[pyo3(get, set)]
-    pub enable_deterministic_ordering: bool,
 }
 
 #[pymethods]
-impl FidelityOptions {
+impl BuildOptions {
     #[new]
-    #[pyo3(signature = (canonicalization="db_c14n".to_string(), enable_verification=false, collect_statistics=false, enable_deterministic_ordering=true))]
+    #[pyo3(signature = (canonicalization="db_c14n".to_string(), enable_verification=false, collect_statistics=false))]
     pub fn new(
         canonicalization: String,
         enable_verification: bool,
         collect_statistics: bool,
-        enable_deterministic_ordering: bool,
     ) -> Self {
-        FidelityOptions {
+        BuildOptions {
             canonicalization,
             enable_verification,
             collect_statistics,
-            enable_deterministic_ordering,
         }
     }
 
     fn __repr__(&self) -> String {
         format!(
-            "FidelityOptions(canonicalization='{}', collect_statistics={})",
+            "BuildOptions(canonicalization='{}', collect_statistics={})",
             self.canonicalization, self.collect_statistics
         )
     }
@@ -346,7 +346,8 @@ pub struct VerificationResult {
     #[pyo3(get, set)]
     pub canonicalization_consistent: bool,
     #[pyo3(get, set)]
-    pub determinism_verified: bool,
+    /// Building the same request twice gave byte-identical XML.
+    pub builds_identical: bool,
     #[pyo3(get, set)]
     pub issues: Vec<String>,
     #[pyo3(get, set)]
@@ -360,7 +361,7 @@ impl VerificationResult {
         round_trip_success: bool,
         fidelity_score: Option<f64>,
         canonicalization_consistent: bool,
-        determinism_verified: bool,
+        builds_identical: bool,
         issues: Vec<String>,
         checksums_match: Option<bool>,
     ) -> Self {
@@ -368,7 +369,7 @@ impl VerificationResult {
             round_trip_success,
             fidelity_score,
             canonicalization_consistent,
-            determinism_verified,
+            builds_identical,
             issues,
             checksums_match,
         }
@@ -456,7 +457,7 @@ impl DdexBuilder {
 
         // Use the actual DDEX builder
         let builder = DDEXBuilder::new();
-        let options = BuildOptions::default();
+        let options = CoreBuildOptions::default();
 
         let result = builder.build(build_request, options).map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Build failed: {}", e))
@@ -468,14 +469,16 @@ impl DdexBuilder {
         Ok(result.xml)
     }
 
-    #[pyo3(signature = (fidelity_options = None, request = None))]
-    pub fn build_with_fidelity(
+    /// Build and, with `options`, count the output and round-trip it (before 0.6.0,
+    /// `build_with_fidelity`).
+    #[pyo3(signature = (options = None, request = None))]
+    pub fn build_with_statistics(
         &mut self,
-        fidelity_options: Option<&FidelityOptions>,
+        options: Option<&BuildOptions>,
         request: Option<Bound<'_, PyAny>>,
     ) -> PyResult<BuildResult> {
         // The output is always DB-C14N/1.0; other algorithms are not implemented.
-        if let Some(algorithm) = fidelity_options
+        if let Some(algorithm) = options
             .map(|o| o.canonicalization.as_str())
             .filter(|a| !matches!(*a, "none" | "db_c14n"))
         {
@@ -491,9 +494,9 @@ impl DdexBuilder {
 
         // Use the actual DDEX builder
         let builder = DDEXBuilder::new();
-        let options = BuildOptions::default();
+        let build_options = CoreBuildOptions::default();
 
-        let result = builder.build(build_request, options).map_err(|e| {
+        let result = builder.build(build_request, build_options).map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Build failed: {}", e))
         })?;
 
@@ -502,7 +505,7 @@ impl DdexBuilder {
         self.stats.total_build_time_ms += build_time;
 
         // Statistics computed from the output; what is not measured is None.
-        let mut statistics = if fidelity_options.map_or(false, |o| o.collect_statistics) {
+        let mut statistics = if options.map_or(false, |o| o.collect_statistics) {
             let (elements, attributes, namespaces) = count_xml(&result.xml);
             Some(BuildStatistics::new(
                 build_time,
@@ -520,7 +523,7 @@ impl DdexBuilder {
         };
 
         // A real round trip of the built XML (before 0.5.1: constants, all passing).
-        let verification = if fidelity_options.map_or(false, |o| o.enable_verification) {
+        let verification = if options.map_or(false, |o| o.enable_verification) {
             let started = std::time::Instant::now();
             let verification = round_trip(&result.xml);
             if let Some(stats) = statistics.as_mut() {
@@ -536,16 +539,10 @@ impl DdexBuilder {
 
     /// Parse → build → parse `original_xml` and compare the two parsed messages on the
     /// fields a build request carries (ddex_builder::round_trip). `issues` lists the
-    /// differences; `fidelity_score` is None (no score is computed). The fidelity options
-    /// are not applied in 0.5.x. Before 0.5.1 the result was not compared: success was
-    /// always true and the score came from the size ratio.
-    #[pyo3(signature = (original_xml, fidelity_options = None))]
-    pub fn test_round_trip_fidelity(
-        &mut self,
-        original_xml: String,
-        fidelity_options: Option<&FidelityOptions>,
-    ) -> PyResult<VerificationResult> {
-        let _ = fidelity_options;
+    /// differences; `fidelity_score` is None (no score is computed). Before 0.5.1 the result
+    /// was not compared: success was always true and the score came from the size ratio.
+    /// (Before 0.6.0, `test_round_trip_fidelity`.)
+    pub fn check_round_trip(&mut self, original_xml: String) -> PyResult<VerificationResult> {
         Ok(round_trip(&original_xml))
     }
 
@@ -557,7 +554,7 @@ impl DdexBuilder {
             .map_err(|e| e.to_string())
             .and_then(|request| {
                 DDEXBuilder::new()
-                    .build(request, BuildOptions::default())
+                    .build(request, CoreBuildOptions::default())
                     .map_err(|e| e.to_string())
             }) {
             Ok(built) => ValidationResult::new(
@@ -649,7 +646,7 @@ impl DdexBuilder {
         };
         let build_request = self.build_request(request, Some(releases))?;
         let result = DDEXBuilder::new()
-            .build(build_request, BuildOptions::default())
+            .build(build_request, CoreBuildOptions::default())
             .map_err(|e| {
                 PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Build failed: {}", e))
             })?;
@@ -822,7 +819,7 @@ pub fn batch_build(requests: Vec<Bound<'_, PyAny>>) -> PyResult<Vec<String>> {
         let request = request_from_py(&item)
             .map_err(|e| PyValueError::new_err(format!("batch request {}: {}", i, e)))?;
         let result = DDEXBuilder::new()
-            .build(request, BuildOptions::default())
+            .build(request, CoreBuildOptions::default())
             .map_err(|e| {
                 PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
                     "batch request {}: Build failed: {}",
@@ -1192,7 +1189,7 @@ fn _internal(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Resource>()?;
     m.add_class::<ValidationResult>()?;
     m.add_class::<BuilderStats>()?;
-    m.add_class::<FidelityOptions>()?;
+    m.add_class::<BuildOptions>()?;
     m.add_class::<BuildStatistics>()?;
     m.add_class::<VerificationResult>()?;
     m.add_class::<BuildResult>()?;

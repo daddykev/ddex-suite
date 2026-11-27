@@ -583,26 +583,14 @@ fn rust_parse_options_from_dict(dict: &Bound<'_, PyDict>) -> PyResult<CoreParseO
     if let Some(v) = dict.get_item("resolve_references")? {
         options.resolve_references = v.extract()?;
     }
-    if let Some(v) = dict.get_item("include_raw")? {
-        options.include_raw = v.extract()?;
-    }
     if let Some(v) = dict.get_item("max_memory")? {
         options.max_memory = v.extract()?;
     }
     if let Some(v) = dict.get_item("timeout_ms")? {
         options.timeout_ms = v.extract()?;
     }
-    if let Some(v) = dict.get_item("allow_blocking")? {
-        options.allow_blocking = v.extract()?;
-    }
-    if let Some(v) = dict.get_item("preserve_unknown_elements")? {
-        options.preserve_unknown_elements = v.extract()?;
-    }
     if let Some(v) = dict.get_item("chunk_size")? {
         options.chunk_size = v.extract()?;
-    }
-    if let Some(v) = dict.get_item("auto_threshold")? {
-        options.auto_threshold = v.extract()?;
     }
 
     Ok(options)

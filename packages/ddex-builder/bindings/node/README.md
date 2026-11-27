@@ -131,7 +131,7 @@ new DdexBuilder()
 - Use `build(request)`. `StreamingDdexBuilder` only writes the old 3.8-style tree; see
   the known issues. The preset methods were removed in 0.6.0 (they did not change the
   output): set the fields directly in the build request.
-- `testRoundTripFidelity(xml)` parses, builds and parses again, and lists in `issues` the
+- `checkRoundTrip(xml)` parses, builds and parses again, and lists in `issues` the
   differences on the fields a build request carries (round trips are not lossless:
   contributors, P/C lines, images and other data are not rebuilt). `fidelityScore` is
   always null: no score is computed.

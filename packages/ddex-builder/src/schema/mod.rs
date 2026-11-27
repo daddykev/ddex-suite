@@ -21,21 +21,6 @@ pub use validation::{
     ValidationResult as SchemaValidationResult,
 };
 
-/// Message profile type (moved here from `presets` in 0.6.0; also exported at the crate root)
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum MessageProfile {
-    /// Audio album release
-    AudioAlbum,
-    /// Audio single release
-    AudioSingle,
-    /// Video album release
-    VideoAlbum,
-    /// Video single release
-    VideoSingle,
-    /// Mixed content release
-    Mixed,
-}
-
 /// Complete JSON Schema representation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JsonSchema {

@@ -142,7 +142,7 @@ print(len(xml), "bytes")
 
 - Use `build(request)` or `from_dataframe(...)`. The preset methods were removed in 0.6.0
   (they did not change the output): set the fields directly in the build request.
-- `test_round_trip_fidelity(xml)` parses, builds and parses again, and lists in `issues`
+- `check_round_trip(xml)` parses, builds and parses again, and lists in `issues`
   the differences on the fields a build request carries (round trips are not lossless:
   contributors, P/C lines, images and other data are not rebuilt). `fidelity_score` is
   always `None`: no score is computed.

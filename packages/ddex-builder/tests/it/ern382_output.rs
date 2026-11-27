@@ -7,7 +7,7 @@ use ddex_builder::builder::{
     DealRequest, DealTerms, IdStrategy, LocalizedStringRequest, MessageHeaderRequest, PartyRequest,
     ReleaseRequest, TrackRequest,
 };
-use ddex_builder::determinism::{CanonMode, DeterminismConfig};
+use ddex_builder::output::{CanonMode, OutputConfig};
 use ddex_builder::{BuildOptions, BuildRequest, DDEXBuilder};
 
 fn text(value: &str, lang: Option<&str>) -> LocalizedStringRequest {
@@ -89,15 +89,15 @@ fn request() -> BuildRequest {
 }
 
 fn build(canon_mode: CanonMode) -> String {
-    let determinism = DeterminismConfig {
+    let output = OutputConfig {
         canon_mode,
-        ..DeterminismConfig::default()
+        ..OutputConfig::default()
     };
     DDEXBuilder::new()
         .build(
             request(),
             BuildOptions {
-                determinism: Some(determinism),
+                output,
                 id_strategy: IdStrategy::Sequential,
                 ..BuildOptions::default()
             },

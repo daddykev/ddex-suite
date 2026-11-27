@@ -1,13 +1,10 @@
-//! Default determinism configuration.
+//! Default output configuration.
 
 #[test]
-fn test_determinism_config() {
-    use ddex_builder::DeterminismConfig;
+fn test_output_config() {
+    use ddex_builder::OutputConfig;
 
-    let config = DeterminismConfig::default();
-    assert_eq!(
-        config.canon_mode,
-        ddex_builder::determinism::CanonMode::DbC14n
-    );
+    let config = OutputConfig::default();
+    assert_eq!(config.canon_mode, ddex_builder::output::CanonMode::DbC14n);
     assert_eq!(config.indent_width, 2);
 }

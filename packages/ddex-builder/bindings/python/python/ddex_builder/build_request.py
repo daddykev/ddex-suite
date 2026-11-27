@@ -1,5 +1,5 @@
 """Types for the build request accepted by ``DdexBuilder.build(request)``,
-``DdexBuilder.build_with_fidelity(request=...)``, ``DdexBuilder.from_dataframe(df, request=...)``
+``DdexBuilder.build_with_statistics(request=...)``, ``DdexBuilder.from_dataframe(df, request=...)``
 and ``batch_build([...])``.
 
 The request mirrors the Rust core ``BuildRequest`` (same snake_case field names) and is passed

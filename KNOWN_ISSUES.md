@@ -109,13 +109,13 @@ These APIs returned made-up results before 0.5.1 (success, scores, counts, inven
 They now fail, or report the value as not measured, instead:
 
 - ddex-builder round trips: `RoundTripTester::test_round_trip_with`,
-  `Builder::test_round_trip_fidelity_with` and `round_trip::verify_round_trip` take the
-  parser's parse function and run a real round trip. Node `testRoundTripFidelity` and Python
-  `test_round_trip_fidelity` run it. Round trips compare only the fields a build request
+  `DDEXBuilder::check_round_trip` and `round_trip::verify_round_trip` take the
+  parser's parse function and run a real round trip. Node `checkRoundTrip` and Python
+  `check_round_trip` run it. Round trips compare only the fields a build request
   carries (contributors, P and C lines, images, ... are not rebuilt), and
   `fidelity_score` / `fidelityScore` is always null. (The fake round-trip, verification,
   fidelity-analysis and determinism-guarantee APIs were removed in 0.6.0.)
-- Node / Python builder bindings: `buildWithFidelity` / `build_with_fidelity` reject a
+- Node / Python builder bindings: `buildWithStatistics` / `build_with_statistics` reject a
   `canonicalization` other than `db_c14n` or `none`. Memory, extension count and
   canonicalization time are not measured (null). (The fidelity options that had no effect
   were removed in 0.6.0.)
@@ -124,12 +124,9 @@ They now fail, or report the value as not measured, instead:
   `ddex_currency_code` can be registered, and a custom rule naming any other validator
   fails validation as unknown.
 
-## Parked for after 0.6.0
+## Parked
 
 - The parsed models leave some DDEX fields always empty (`Release.party_list`, `Resource.rights_controller`, `Party.party_role` / `Party.contact_details`, `DealTerms.distribution_channel` / `DealTerms.price_information`); these elements are not parsed in 0.6.0.
-- `FidelityOptions.enable_deterministic_ordering` (Python) / `enableDeterministicOrdering` (Node) is accepted but never read (`ddex-builder/bindings/{python,node}/src/lib.rs`); not in PR 4b's list, so it was kept.
-- Node builder TS wrapper `js/index.ts`: the other `BuildOptions` fields (`version`, `canonicalization`, `validateOnBuild`, `includeStatistics`) are ignored, since `build` never passes `options` on; it is a no-op type users may rely on.
-- Python parser native `_internal.DDEXParser.parse` / `parse_async` / `stream` still take an options dict whose remaining keys (`resolve_references`, `include_raw`, `max_memory`, `timeout_ms`, ...) map to Rust `ParseOptions` fields owned by the Rust `ParseOptions` row of REMOVALS (4b inventory, not in this PR's list); the public wrapper no longer passes one.
 - Node parser `src/index.ts`, `src/parser.ts`, `src/types.ts`, `src/wasm.d.ts` and `js/index.ts` are unbuilt, unpublished TypeScript wrappers that still declare `ParseOptions` and `parse_stream`; CI and `npm publish` use only `index.js` / `index.d.ts`.
 - `docs/python_parser_api.txt` (a pydoc dump) still lists `ParseOptions` and `ParseResult`, and `docs/DB-C14N-SPEC.md` describes a `preserve_comments` option.
 - KNOWN_ISSUES.md repeats the end of its "Not implemented in 0.5.x" section (from "They now fail, or report the value as not measured" on) a second time at the end of the file.

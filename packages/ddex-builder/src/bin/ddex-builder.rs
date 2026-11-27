@@ -1,9 +1,9 @@
 //! DDEX Builder CLI - Comprehensive command-line interface for DDEX XML processing
 //!
 //! This CLI builds DDEX XML from a JSON / YAML / TOML build request (`build`, which runs
-//! `DDEXBuilder::build` and its preflight validation). `validate`, `watch` and `server` are
-//! not implemented: they exit with an error (before 0.5.1 they printed made-up results).
-//! The `convert` and `schema` commands were removed in 0.6.0 (they gave made-up results).
+//! `DDEXBuilder::build` and its preflight validation). The `convert`, `schema`, `validate`,
+//! `watch` and `server` commands were removed in 0.6.0 (they gave made-up results or were not
+//! implemented).
 
 use clap::{Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::{generate, Shell};
@@ -11,7 +11,7 @@ use console::style;
 use ddex_builder::*;
 use serde_json::Value as JsonValue;
 use std::fs;
-use std::io::{self, Read, Write};
+use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::process;
 
@@ -71,11 +71,11 @@ struct BuildCommand {
     #[arg(long, value_enum)]
     format: Option<InputFormat>,
 
-    /// Verify determinism by building multiple times
+    /// Build several times and check that the outputs are byte-identical
     #[arg(long)]
-    verify_determinism: bool,
+    check_repeatable: bool,
 
-    /// Number of iterations for determinism verification (default: 3)
+    /// Number of builds for --check-repeatable (default: 3)
     #[arg(long, default_value_t = 3)]
     determinism_iterations: usize,
 }
@@ -188,23 +188,19 @@ fn setup_colors(color_choice: ColorChoice) {
 fn handle_build_command(cmd: BuildCommand) -> Result<(), Box<dyn std::error::Error>> {
     let input_data = read_input_data(&cmd.input, cmd.format)?;
 
-    let mut builder = Builder::new();
-
-    if let Some(version) = cmd.ddex_version {
-        builder.with_version(version.into());
-    }
+    let version: Option<DdexVersion> = cmd.ddex_version.map(Into::into);
 
     // Validate input if requested
     if cmd.validate {
-        validate_input_data(&input_data, &builder)?;
+        validate_input_data(&input_data, version)?;
     }
 
     // Build the XML
-    let xml_output = build_ddex_xml(&input_data, &builder)?;
+    let xml_output = build_ddex_xml(&input_data, version)?;
 
-    // Verify determinism if requested
-    if cmd.verify_determinism {
-        verify_build_determinism(&input_data, &builder, cmd.determinism_iterations)?;
+    // Check that repeated builds are byte-identical, if requested
+    if cmd.check_repeatable {
+        check_repeatable(&input_data, version, cmd.determinism_iterations)?;
     }
 
     // Write output
@@ -215,9 +211,9 @@ fn handle_build_command(cmd: BuildCommand) -> Result<(), Box<dyn std::error::Err
         if let Some(version) = cmd.ddex_version {
             println!("  Version: {:?}", version);
         }
-        if cmd.verify_determinism {
+        if cmd.check_repeatable && cmd.determinism_iterations >= 2 {
             println!(
-                "  {} Determinism verified with {} iterations",
+                "  {} {} builds were byte-identical",
                 style("✓").green(),
                 cmd.determinism_iterations
             );
@@ -309,19 +305,20 @@ fn detect_input_format(path: &Path) -> InputFormat {
 
 fn validate_input_data(
     data: &JsonValue,
-    builder: &Builder,
+    version: Option<DdexVersion>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Preflight validation runs as part of the build.
-    build_ddex_xml(data, builder).map(|_| ())
+    build_ddex_xml(data, version).map(|_| ())
 }
 
+/// Builds the request in `data`; `--ddex-version` replaces the request's `version`.
 fn build_ddex_xml(
     data: &JsonValue,
-    builder: &Builder,
+    version: Option<DdexVersion>,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let mut request: BuildRequest = serde_json::from_value(data.clone())
         .map_err(|e| format!("the input is not a build request: {e}"))?;
-    if let Some(version) = builder.target_version() {
+    if let Some(version) = version {
         request.version = version.to_string().trim_start_matches("ERN/").to_string();
     }
     Ok(DDEXBuilder::new()
@@ -333,91 +330,35 @@ fn is_quiet() -> bool {
     std::env::var("DDEX_QUIET").unwrap_or_default() == "1"
 }
 
-fn verify_build_determinism(
+/// Builds `data` `builds` times and fails at the first build whose output differs from the
+/// first one.
+fn check_repeatable(
     data: &JsonValue,
-    builder: &Builder,
-    iterations: usize,
+    version: Option<DdexVersion>,
+    builds: usize,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    use sha2::{Digest, Sha256};
-
-    if iterations < 2 {
+    if builds < 2 {
         return Ok(());
     }
-
-    if !is_quiet() {
-        println!(
-            "  {} Verifying determinism with {} iterations...",
-            style("→").blue(),
-            iterations
-        );
-    }
-
-    let mut outputs = Vec::with_capacity(iterations);
-    let mut hashes = Vec::with_capacity(iterations);
-
-    // Build XML multiple times
-    for _i in 0..iterations {
-        let xml = build_ddex_xml(data, builder)?;
-
-        // Calculate SHA-256 hash
-        let mut hasher = Sha256::new();
-        hasher.update(xml.as_bytes());
-        let hash = hasher.finalize();
-        let hash_hex = format!("{:x}", hash);
-
-        outputs.push(xml);
-        hashes.push(hash_hex);
-
-        if !is_quiet() && iterations > 3 {
-            print!(".");
-            io::stdout().flush().unwrap_or_default();
-        }
-    }
-
-    if !is_quiet() && iterations > 3 {
-        println!(); // New line after dots
-    }
-
-    // Compare all outputs byte-for-byte
-    let first_output = &outputs[0];
-    let first_hash = &hashes[0];
-
-    for (i, (output, hash)) in outputs[1..].iter().zip(hashes[1..].iter()).enumerate() {
-        if output != first_output || hash != first_hash {
+    let first = build_ddex_xml(data, version)?;
+    for build in 2..=builds {
+        let output = build_ddex_xml(data, version)?;
+        if output != first {
             eprintln!(
-                "{} Determinism verification failed!",
-                style("✗").red().bold()
+                "{} builds differed at build {}",
+                style("✗").red().bold(),
+                build
             );
-            eprintln!("  Output from iteration 1 differs from iteration {}", i + 2);
-            eprintln!("  Hash 1: {}", first_hash);
-            eprintln!("  Hash {}: {}", i + 2, hash);
-
-            // Show byte-level differences for first 1000 characters
-            let diff_start = find_first_difference(first_output, output);
-            if let Some(pos) = diff_start {
+            if let Some(pos) = find_first_difference(&first, &output) {
                 eprintln!("  First difference at byte position: {}", pos);
                 let start = pos.saturating_sub(50);
-                let end = std::cmp::min(pos + 100, std::cmp::min(first_output.len(), output.len()));
-                eprintln!("  Context around difference:");
-                eprintln!("  Output 1: {:?}", &first_output[start..end]);
-                eprintln!("  Output {}: {:?}", i + 2, &output[start..end]);
+                let end = std::cmp::min(pos + 100, std::cmp::min(first.len(), output.len()));
+                eprintln!("  Build 1: {:?}", &first[start..end]);
+                eprintln!("  Build {}: {:?}", build, &output[start..end]);
             }
-
-            return Err(
-                "Determinism verification failed - outputs differ between iterations".into(),
-            );
+            return Err(format!("builds differed at build {build}").into());
         }
     }
-
-    if !is_quiet() {
-        println!(
-            "  {} All {} iterations produced identical output",
-            style("✓").green(),
-            iterations
-        );
-        println!("  SHA-256: {}", first_hash);
-    }
-
     Ok(())
 }
 

@@ -98,20 +98,7 @@ fn input_over_10_mb_uses_the_complete_parser() {
 }
 
 #[test]
-fn auto_mode_resolves_to_dom_and_stream_is_opt_in() {
-    use ddex_parser::parser::mode::ModeSelector;
-    let selector = ModeSelector::new(1);
-    assert_eq!(
-        selector.select_mode_hint(Some(u64::MAX), ParseMode::Auto),
-        ParseMode::Dom
-    );
-    assert_eq!(
-        selector.select_mode_hint(None, ParseMode::Auto),
-        ParseMode::Dom
-    );
-    assert_eq!(
-        selector.select_mode_hint(Some(0), ParseMode::Stream),
-        ParseMode::Stream
-    );
+fn dom_is_the_default_mode() {
+    assert_eq!(ParseMode::default(), ParseMode::Dom);
     assert_eq!(ParseOptions::default().mode, ParseMode::Dom);
 }

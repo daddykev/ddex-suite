@@ -1,5 +1,5 @@
 // Results the Node builder used to make up are now computed, or null where nothing is
-// measured: testRoundTripFidelity (it returned a constant 0.98 "success"), buildWithFidelity's
+// measured: checkRoundTrip (it returned a constant 0.98 "success"), buildWithStatistics's
 // statistics and verification, validate, and StreamingDdexBuilder.getXml
 // (it returned ""). Round trips use the official sample examples/Samples43/1 Audio.xml.
 // Run with: npm test (after `npm run build` here and in ../../../ddex-parser/bindings/node).
@@ -56,23 +56,23 @@ const request = {
 async function main() {
   const sample = fs.readFileSync(SAMPLE, 'utf8');
 
-  const pass = await new DdexBuilder().testRoundTripFidelity(sample);
+  const pass = await new DdexBuilder().checkRoundTrip(sample);
   assert.equal(pass.roundTripSuccess, true, pass.issues.join('; '));
   assert.deepEqual(pass.issues, []);
   assert.equal(pass.fidelityScore ?? null, null);
-  assert.equal(typeof pass.determinismVerified, 'boolean');
-  console.log('✓ testRoundTripFidelity: the official sample round-trips, no score');
+  assert.equal(typeof pass.buildsIdentical, 'boolean');
+  console.log('✓ checkRoundTrip: the official sample round-trips, no score');
 
   const changed = sample.replace('<ISRC>JPTO09404900</ISRC>', '<ISRC></ISRC>');
   assert.notEqual(changed, sample);
-  const fail = await new DdexBuilder().testRoundTripFidelity(changed);
+  const fail = await new DdexBuilder().checkRoundTrip(changed);
   assert.equal(fail.roundTripSuccess, false);
   assert.match(fail.issues[0], /^round trip failed:/);
-  const garbage = await new DdexBuilder().testRoundTripFidelity('<html/>');
+  const garbage = await new DdexBuilder().checkRoundTrip('<html/>');
   assert.equal(garbage.roundTripSuccess, false);
-  console.log('✓ testRoundTripFidelity: a changed field and non-DDEX input fail');
+  console.log('✓ checkRoundTrip: a changed field and non-DDEX input fail');
 
-  const built = await new DdexBuilder().buildWithFidelity(request, {
+  const built = await new DdexBuilder().buildWithStatistics(request, {
     collectStatistics: true,
     enableVerification: true,
   });
@@ -86,10 +86,10 @@ async function main() {
   assert.equal(built.verification.roundTripSuccess, true, built.verification.issues.join('; '));
   assert.equal(built.verification.fidelityScore ?? null, null);
   await assert.rejects(
-    new DdexBuilder().buildWithFidelity(request, { canonicalization: 'c14n' }),
+    new DdexBuilder().buildWithStatistics(request, { canonicalization: 'c14n' }),
     /not implemented in 0.5.x/,
   );
-  console.log('✓ buildWithFidelity: counted statistics, a real round trip');
+  console.log('✓ buildWithStatistics: counted statistics, a real round trip');
 
   const empty = new DdexBuilder();
   const validation = await empty.validate();

@@ -574,11 +574,18 @@ impl DealTerms {
     }
 }
 
-/// Build options
+/// Build options: the one options type of [`DDEXBuilder`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildOptions {
-    /// Determinism configuration
-    pub determinism: Option<super::determinism::DeterminismConfig>,
+    /// How [`DDEXBuilder::build`] writes its output (DB-C14N/1.0 by default)
+    pub output: super::output::OutputConfig,
+
+    /// Algorithm used by [`DDEXBuilder::canonicalize`]. It does not change what
+    /// [`DDEXBuilder::build`] writes (that is [`BuildOptions::output`]).
+    pub canonicalization: super::CanonicalizationAlgorithm,
+
+    /// Return [`super::BuildStatistics`] from [`DDEXBuilder::build_with_statistics`]
+    pub collect_statistics: bool,
 
     /// Validation level
     pub preflight_level: super::preflight::PreflightLevel,
@@ -593,7 +600,9 @@ pub struct BuildOptions {
 impl Default for BuildOptions {
     fn default() -> Self {
         Self {
-            determinism: None,
+            output: super::output::OutputConfig::default(),
+            canonicalization: super::CanonicalizationAlgorithm::default(),
+            collect_statistics: false,
             preflight_level: super::preflight::PreflightLevel::Warn,
             id_strategy: IdStrategy::UUID,
             stable_hash_config: None,
@@ -633,8 +642,18 @@ pub struct BuildResult {
     /// Canonical hash (if deterministic)
     pub canonical_hash: Option<String>,
 
-    /// Reproducibility banner (if requested)
-    pub reproducibility_banner: Option<String>,
+    /// Generator banner, naming the builder and DB-C14N versions (with
+    /// `OutputConfig::emit_generator_banner`; it is not written into the XML)
+    pub generator_banner: Option<String>,
+}
+
+/// Result of [`DDEXBuilder::build_with_statistics`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StatisticsBuildResult {
+    /// The build, as [`DDEXBuilder::build`] returns it
+    pub build: BuildResult,
+    /// Counts from the output (with `BuildOptions::collect_statistics`)
+    pub statistics: Option<super::BuildStatistics>,
 }
 
 /// Build warning
@@ -704,16 +723,75 @@ pub fn parse_target_version(
     }
 }
 
-/// Main DDEX Builder
-pub struct DDEXBuilder {
-    _inner: super::Builder,
-}
+/// The DDEX builder: builds ERN XML from a [`BuildRequest`], and canonicalizes, counts and
+/// round-trips it.
+///
+/// ```rust
+/// use ddex_builder::DDEXBuilder;
+///
+/// let builder = DDEXBuilder::new();
+/// println!("Supported versions: {:?}", builder.supported_versions());
+/// ```
+#[derive(Debug, Clone, Copy, Default)]
+pub struct DDEXBuilder;
 
 impl DDEXBuilder {
     /// Create new builder
     pub fn new() -> Self {
-        Self {
-            _inner: super::Builder::new(),
+        Self
+    }
+
+    /// The ERN versions the builder supports
+    pub fn supported_versions(&self) -> Vec<super::DdexVersion> {
+        super::versions::utils::supported_versions()
+    }
+
+    /// [`DDEXBuilder::build`], and with `options.collect_statistics` the counts of the
+    /// output's elements, attributes, namespace declarations, comments and processing
+    /// instructions.
+    pub fn build_with_statistics(
+        &self,
+        request: BuildRequest,
+        options: BuildOptions,
+    ) -> Result<StatisticsBuildResult, super::error::BuildError> {
+        let start = web_time::Instant::now();
+        let collect = options.collect_statistics;
+        let build = self.build(request, options)?;
+        let statistics = collect.then(|| {
+            let mut statistics = super::BuildStatistics {
+                build_time: start.elapsed(),
+                output_size_bytes: build.xml.len(),
+                ..Default::default()
+            };
+            super::count_xml(&build.xml, &mut statistics);
+            statistics
+        });
+        Ok(StatisticsBuildResult { build, statistics })
+    }
+
+    /// Round trip XML → Parse → Build → Parse → compare, with `parse` the parser's parse
+    /// function ([`super::round_trip::RoundTripTester::test_round_trip_with`]).
+    pub fn check_round_trip<F>(
+        &self,
+        original_xml: &str,
+        parse: F,
+    ) -> Result<super::round_trip::RoundTripResult, super::error::BuildError>
+    where
+        F: Fn(&str) -> Result<ddex_core::models::flat::ParsedERNMessage, String>,
+    {
+        super::round_trip::RoundTripTester::new().test_round_trip_with(original_xml, parse)
+    }
+
+    /// Canonicalize XML with `options.canonicalization`: DB-C14N/1.0 (`DbC14N`, with
+    /// [`super::DB_C14N`]) or nothing (`None`, the input is returned unchanged).
+    pub fn canonicalize(
+        &self,
+        xml: &str,
+        options: &BuildOptions,
+    ) -> Result<String, super::error::BuildError> {
+        match options.canonicalization {
+            super::CanonicalizationAlgorithm::None => Ok(xml.to_string()),
+            super::CanonicalizationAlgorithm::DbC14N => super::DB_C14N::new().canonicalize(xml),
         }
     }
 
@@ -775,26 +853,25 @@ impl DDEXBuilder {
         let mut generator = ASTGenerator::new(request.version.clone());
         let ast = generator.generate(&request)?;
 
-        // 4. Apply determinism config
-        let config = options.determinism.unwrap_or_default();
+        // 4. Output configuration
+        let config = options.output.clone();
 
         // 5. Generate XML
         let writer = XmlWriter::new(config.clone());
         let xml = writer.write(&ast)?;
 
         // 6. Apply canonicalization if requested
-        let (final_xml, canonical_hash) =
-            if config.canon_mode == super::determinism::CanonMode::DbC14n {
-                let canonicalizer = super::canonical::DB_C14N::new();
-                let canonical = canonicalizer.canonicalize(&xml)?;
-                let hash = Some(canonicalizer.canonical_hash(&canonical)?);
-                (canonical, hash)
-            } else {
-                (xml, None)
-            };
+        let (final_xml, canonical_hash) = if config.canon_mode == super::output::CanonMode::DbC14n {
+            let canonicalizer = super::canonical::DB_C14N::new();
+            let canonical = canonicalizer.canonicalize(&xml)?;
+            let hash = Some(canonicalizer.canonical_hash(&canonical)?);
+            (canonical, hash)
+        } else {
+            (xml, None)
+        };
 
-        // 7. Generate reproducibility banner if requested
-        let reproducibility_banner = if config.emit_reproducibility_banner {
+        // 7. Generator banner, if requested
+        let generator_banner = if config.emit_generator_banner {
             Some(format!(
                 "Generated by DDEX Builder v{} with DB-C14N/{}",
                 env!("CARGO_PKG_VERSION"),
@@ -818,7 +895,7 @@ impl DDEXBuilder {
                 xml_size_bytes: final_xml.len(),
             },
             canonical_hash,
-            reproducibility_banner,
+            generator_banner,
         })
     }
 
@@ -1062,11 +1139,5 @@ impl DDEXBuilder {
         }
 
         Some(seconds)
-    }
-}
-
-impl Default for DDEXBuilder {
-    fn default() -> Self {
-        Self::new()
     }
 }

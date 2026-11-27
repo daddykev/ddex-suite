@@ -7,7 +7,7 @@ use crate::ern4_support::*;
 use ddex_builder::builder::{
     AvsValueRequest, DealRequest, ResourceGroupContentItemRequest, ResourceGroupRequest,
 };
-use ddex_builder::determinism::{CanonMode, DeterminismConfig};
+use ddex_builder::output::{CanonMode, OutputConfig};
 use ddex_builder::{BuildError, BuildOptions, BuildRequest, DDEXBuilder};
 
 type Case = (&'static str, fn(&str) -> BuildRequest);
@@ -24,10 +24,10 @@ const CASES: [Case; 3] = [
 
 fn pretty() -> BuildOptions {
     BuildOptions {
-        determinism: Some(DeterminismConfig {
+        output: OutputConfig {
             canon_mode: CanonMode::Pretty,
-            ..DeterminismConfig::default()
-        }),
+            ..OutputConfig::default()
+        },
         ..BuildOptions::default()
     }
 }
