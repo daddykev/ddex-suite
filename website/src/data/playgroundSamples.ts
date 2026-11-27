@@ -210,7 +210,7 @@ export const BUILD_SAMPLES: Record<string, string> = {
   "avs_version_id": "12",
   "header": {
     "message_id": "PLAYGROUND-0001",
-    "message_created_date_time": "2024-01-01T00:00:00Z",
+    "message_created_date_time": "2026-01-15T10:00:00Z",
     "message_sender": {
       "party_id": "PADPIDA0000000001",
       "party_name": [
@@ -227,8 +227,7 @@ export const BUILD_SAMPLES: Record<string, string> = {
         }
       ]
     },
-    "message_control_type": "TestMessage",
-    "message_created_date_time": "2026-01-15T10:00:00Z"
+    "message_control_type": "TestMessage"
   },
   "releases": [
     {

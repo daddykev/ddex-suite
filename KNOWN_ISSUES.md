@@ -126,3 +126,4 @@ They now fail, or report the value as not measured, instead:
 - ddex-builder canonicalizer (`src/canonical/mod.rs`, `rules.rs`): the locked-prefix table rewrites the prefix of a DDEX namespace declaration but not the element and attribute names that use it, so input with other prefixes (e.g. `ernm:`) comes out not namespace-well-formed.
 - `packages/ddex-parser/bindings/node/package.json` keeps the `typescript` and `@types/node` devDependencies, which only the removed `build:ts` (tsc) used.
 - Root `Cargo.toml` `[workspace.dependencies]`: cargo 1.100 warns `unused workspace dependency` for getrandom, hex, napi, napi-derive, pyo3, sha2, similar, walkdir and wasm-bindgen on `cargo check -p <crate>`; manifest noise that hides real warnings (not rustc warnings).
+- Playground JSON editor accepts duplicate keys silently (last one wins); consider flagging them.
