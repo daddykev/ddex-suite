@@ -126,3 +126,4 @@ They now fail, or report the value as not measured, instead:
 - `parser::attribute_extractor::AttributeExtractor::extract_attributes` is only called by its unit tests (crate-private since 0.6.0 because it takes a quick-xml type), so the module is dead code outside tests.
 - Text line endings (XML 1.0 §2.11): only the DOM path (`transform/ern4.rs`) turns a literal CRLF / lone CR in character data into LF; the other readers (streaming, selective, xpath, multi-release, Stream mode) keep it as written.
 - The xpath, selective, multi-release, extension-capture, version-detection, working-streaming and zero-copy readers keep attribute values with their references unresolved (`&amp;` stays as written; the XML 1.0 whitespace normalization is applied); only the DOM path and the namespace detector resolve them.
+- The WASM builder binding has no parse-to-build bridge (`requestFromXml`): it does not include ddex-parser.

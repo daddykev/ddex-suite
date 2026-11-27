@@ -216,3 +216,14 @@ __all__ = [
     "Track",
     "TrackRelease",
 ]
+
+
+class RequestFromXml(TypedDict):
+    """The result of ``request_from_xml``."""
+
+    #: The build request, in the shape ``DdexBuilder.build`` accepts (``None`` where the
+    #: parsed message has no value)
+    request: BuildRequest
+    #: The dotted path of every non-empty parsed value the request cannot hold (e.g.
+    #: ``releases[0].p_line``)
+    unmapped: List[str]

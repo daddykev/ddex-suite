@@ -558,13 +558,20 @@ Old → new names (0.6.0 PR 5a):
 
 ### Added
 
+- Node.js `requestFromXml(xml): { request, unmapped }` and Python `request_from_xml(xml)
+  -> {"request": ..., "unmapped": [...]}` (ddex-builder bindings): parse a message and map it
+  with `BuildRequest::from_parsed`, returning the request in the shape `build` takes
+  (`null` / `None` where the message has no value) and the paths the request cannot hold.
+  A parse error throws (Node.js) or raises `ValueError` (Python). Typed in `index.d.ts`
+  (`RequestFromXml`) and `ddex_builder.build_request.RequestFromXml`.
+
 - `BuildRequest::from_parsed(&ParsedERNMessage) -> FromParsed` (ddex-builder, Rust): maps a
   parsed message to a build request for the same ERN version (header, releases, tracks,
   track releases, resource groups, deals, references, identifiers), inventing nothing.
   `FromParsed::unmapped` lists the dotted path of every non-empty parsed value the request
   cannot hold; the rustdoc lists what is never carried. `round_trip::request_from_parsed`
   now uses it. `tests/it/bridge_round_trip.rs` round-trips the ERN 4.x and 3.8.x samples
-  through it. (Rust only; the Node.js and Python bindings do not have it yet.)
+  through it.
 
 - `DDEXBuilder::preflight(&request, level)` (ddex-builder): the preflight checks `build` runs
   at that level, returned as a `preflight::ValidationResult` (errors and warnings) without

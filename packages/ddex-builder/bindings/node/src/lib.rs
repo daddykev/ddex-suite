@@ -153,6 +153,36 @@ fn preflight_and_build(request: ddex_builder::builder::BuildRequest) -> (Vec<Str
     (errors, warnings)
 }
 
+/// The result of `requestFromXml`: the build request and what it cannot carry.
+#[napi(object)]
+pub struct RequestFromXml {
+    /// The build request, in the shape `DdexBuilder.build` accepts (snake_case fields;
+    /// `null` where the parsed message has no value)
+    #[napi(ts_type = "import('./build-request').BuildRequest")]
+    pub request: serde_json::Value,
+    /// The dotted path of every non-empty parsed value the request cannot hold (e.g.
+    /// `releases[0].p_line`)
+    pub unmapped: Vec<String>,
+}
+
+/// Parse `xml` with ddex-parser and map it to a build request for the same ERN version
+/// (`BuildRequest::from_parsed` in Rust): parse, modify the request, then
+/// `new DdexBuilder().build(request)`. Nothing is invented: absent values are `null`, and an
+/// empty `MessageId` stays empty, so the build then fails naming the field. A parse error
+/// throws, as `DdexParser.parseSync` does.
+#[napi]
+pub fn request_from_xml(xml: String) -> Result<RequestFromXml> {
+    let parsed =
+        parse_xml(&xml).map_err(|e| Error::new(Status::InvalidArg, format!("Parse error: {e}")))?;
+    let bridge = ddex_builder::BuildRequest::from_parsed(&parsed);
+    let request = serde_json::to_value(&bridge.request)
+        .map_err(|e| Error::new(Status::GenericFailure, format!("Serialization error: {e}")))?;
+    Ok(RequestFromXml {
+        request,
+        unmapped: bridge.unmapped,
+    })
+}
+
 /// Parse with ddex-parser (the parse function the round trip needs).
 fn parse_xml(xml: &str) -> std::result::Result<ddex_core::models::flat::ParsedERNMessage, String> {
     ddex_parser::DDEXParser::new()

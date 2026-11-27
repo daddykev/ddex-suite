@@ -18,6 +18,7 @@ try:
         VerificationResult,
         batch_build,
         validate_structure,
+        request_from_xml,
     )
 except ImportError as e:
     raise ImportError(
@@ -27,7 +28,7 @@ except ImportError as e:
         "`maturin develop` in packages/ddex-builder/bindings/python."
     ) from e
 
-from ddex_builder.build_request import BuildRequest  # noqa: E402  (request types)
+from ddex_builder.build_request import BuildRequest, RequestFromXml  # noqa: E402  (request types)
 
 # Public API
 __all__ = [
@@ -43,6 +44,8 @@ __all__ = [
     "VerificationResult",
     "batch_build",
     "validate_structure",
+    "request_from_xml",
+    "RequestFromXml",
 ]
 
 

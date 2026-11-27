@@ -132,6 +132,26 @@ xml = DdexBuilder().from_dataframe(df, schema="tracks", request=message)
 print(len(xml), "bytes")
 ```
 
+## Parse, modify, build
+
+`request_from_xml(xml)` parses a message and maps it to a build request for the same ERN
+version, in the shape `build` takes. It returns `{"request": ..., "unmapped": [...]}`:
+nothing is invented (absent values are `None`), and `unmapped` lists the dotted path of every
+non-empty value the request cannot hold (P and C lines, contributors, images, ...):
+
+```python
+from ddex_builder import DdexBuilder, request_from_xml
+from ddex_parser import DDEXParser
+
+with open("release.xml", encoding="utf-8") as f:
+    bridge = request_from_xml(f.read())
+bridge["request"]["releases"][0]["title"][0]["text"] = "Remastered"
+
+xml = DdexBuilder().build(bridge["request"])
+assert DDEXParser().parse(xml).to_dataframe("releases").iloc[0]["title"] == "Remastered"
+print(len(bridge["unmapped"]), "values the request cannot hold")
+```
+
 ## Supported versions
 
 | `version` | Output |

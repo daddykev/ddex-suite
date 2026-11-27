@@ -121,6 +121,27 @@ export interface MessageHeader {
   messageCreatedDateTime: string
 }
 export declare function validateStructure(xml: string): Promise<ValidationResult>
+/** The result of `requestFromXml`: the build request and what it cannot carry. */
+export interface RequestFromXml {
+  /**
+   * The build request, in the shape `DdexBuilder.build` accepts (snake_case fields;
+   * `null` where the parsed message has no value)
+   */
+  request: import('./build-request').BuildRequest
+  /**
+   * The dotted path of every non-empty parsed value the request cannot hold (e.g.
+   * `releases[0].p_line`)
+   */
+  unmapped: Array<string>
+}
+/**
+ * Parse `xml` with ddex-parser and map it to a build request for the same ERN version
+ * (`BuildRequest::from_parsed` in Rust): parse, modify the request, then
+ * `new DdexBuilder().build(request)`. Nothing is invented: absent values are `null`, and an
+ * empty `MessageId` stays empty, so the build then fails naming the field. A parse error
+ * throws, as `DdexParser.parseSync` does.
+ */
+export declare function requestFromXml(xml: string): RequestFromXml
 export declare class DdexBuilder {
   constructor()
   addRelease(release: Release): void
