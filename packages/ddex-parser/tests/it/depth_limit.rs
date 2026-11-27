@@ -63,26 +63,6 @@ fn test_custom_depth_limit() {
     }
 }
 
-#[test]
-fn test_relaxed_depth_limit() {
-    let xml = create_deep_xml(150); // More than strict limit but within relaxed
-
-    let security_config = SecurityConfig::relaxed(); // Should have limit of 200
-    let mut parser = DDEXParser::with_config(security_config);
-
-    let cursor = Cursor::new(xml.as_bytes());
-
-    // Should not fail due to depth limits
-    match parser.parse(cursor) {
-        Err(ParseError::DepthLimitExceeded { .. }) => {
-            panic!("Should not fail with depth limit error for depth 150 with relaxed config");
-        }
-        _ => {
-            // Other errors are acceptable
-        }
-    }
-}
-
 /// Creates a deeply nested XML structure for testing depth limits
 fn create_deep_xml(depth: usize) -> String {
     let mut xml = String::from(

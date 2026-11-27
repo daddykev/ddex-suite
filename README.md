@@ -40,7 +40,7 @@ Working with DDEX XML shouldn't feel like archaeology. The suite transforms comp
 ### Core Value Proposition
 - **Single Rust Core**: One implementation to rule them all - consistent behavior across JavaScript, Python, and Rust
 - **Dual Model Architecture**: Choose between faithful graph representation (Rust) or developer-friendly flattened view (Rust, Node.js, Python)
-- **Hardened Parsing**: DTD and external-entity (XXE) rejection, entity expansion, depth and size limits, no network fetches. Pre-1.0: open bugs are listed in [KNOWN_ISSUES.md](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md)
+- **Hardened Parsing**: DTD and external-entity (XXE) rejection, no entity expansion, depth limits, no network fetches. Pre-1.0: open bugs are listed in [KNOWN_ISSUES.md](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md)
 - **Canonical Output**: Schema-valid ERN 4.3, 4.2 and 3.8.2, canonicalized with DB-C14N/1.0; fully deterministic output (no generated message IDs, references or timestamps) is planned for 0.6.0
 
 ## 👨🏻‍💻 Developer Statement
@@ -276,8 +276,8 @@ Use the library or a binding to build.
 The libraries defend against XML-level threats:
 
 - DTDs and external entities (XXE) are rejected
-- Entity expansion limits (billion laughs protection)
-- Nesting depth and input size limits
+- No entity is expanded (billion laughs protection)
+- Nesting depth limits (and a 100 MB input limit in the Node.js parser)
 - No network fetches
 - Metadata text that looks like SQL, HTML or script is accepted, passed through
   unchanged and XML-escaped on output

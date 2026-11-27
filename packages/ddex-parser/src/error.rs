@@ -10,16 +10,10 @@ pub enum ParseError {
         value: String,
     },
     XmlError(String),
-    StreamError(StreamError),
     InvalidUtf8 {
         message: String,
     },
     SimpleXmlError(String),
-    ConversionError {
-        from: String,
-        to: String,
-        message: String,
-    },
     IoError(String),
     Timeout {
         message: String,
@@ -54,15 +48,6 @@ pub enum ParseError {
     },
 }
 
-#[derive(Debug, Clone)]
-pub enum StreamError {
-    MissingReleaseReference,
-    MissingResourceReference,
-    MissingDealReference,
-    MissingPartyReference,
-    IncompleteData(String),
-}
-
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -73,12 +58,8 @@ impl fmt::Display for ParseError {
                 write!(f, "Invalid value '{}' for field '{}'", value, field)
             }
             ParseError::XmlError(msg) => write!(f, "XML parsing error: {}", msg),
-            ParseError::StreamError(e) => write!(f, "Streaming error: {:?}", e),
             ParseError::InvalidUtf8 { message } => write!(f, "UTF-8 error: {}", message),
             ParseError::SimpleXmlError(msg) => write!(f, "Simple XML error: {}", msg),
-            ParseError::ConversionError { from, to, message } => {
-                write!(f, "Conversion error from {} to {}: {}", from, to, message)
-            }
             ParseError::IoError(msg) => write!(f, "IO error: {}", msg),
             ParseError::Timeout { message } => write!(f, "Timeout: {}", message),
             ParseError::DepthLimitExceeded { depth, limit } => {
@@ -124,6 +105,9 @@ impl From<std::io::Error> for ParseError {
         if let Some(entity) = ddex_core::xml_refs::UndefinedEntity::from_io_error(&err) {
             return crate::xml_text::undefined_entity(entity);
         }
+        if let Some(doctype) = ddex_core::xml_refs::Doctype::from_io_error(&err) {
+            return crate::xml_text::doctype_error(doctype);
+        }
         ParseError::IoError(err.to_string())
     }
 }
@@ -141,6 +125,9 @@ impl From<quick_xml::Error> for ParseError {
         if let quick_xml::Error::Io(io) = &err {
             if let Some(entity) = ddex_core::xml_refs::UndefinedEntity::from_io_error(io) {
                 return crate::xml_text::undefined_entity(entity);
+            }
+            if let Some(doctype) = ddex_core::xml_refs::Doctype::from_io_error(io) {
+                return crate::xml_text::doctype_error(doctype);
             }
         }
         ParseError::XmlError(err.to_string())

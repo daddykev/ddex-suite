@@ -1,7 +1,6 @@
 // core/src/transform/graph.rs
 // Remove unused imports and variables
 use crate::error::ParseError;
-use crate::parser::namespace_detector::NamespaceContext;
 use crate::parser::xml_validator::XmlValidator;
 use crate::transform::{ern38, ern4};
 use ddex_core::models::graph::{
@@ -38,22 +37,16 @@ impl GraphBuilder {
         Self { version }
     }
 
+    /// Build the graph model from a document. A DOCTYPE or a reference to an undefined
+    /// entity is an error. (Before 0.6.0 there were `_with_security_config`, `_with_context`
+    /// and `_with_context_and_security` variants, whose extra arguments were never read.)
     pub fn build_from_xml<R: BufRead + std::io::Seek>(
         &self,
-        reader: R,
-    ) -> Result<ERNMessage, ParseError> {
-        self.build_from_xml_with_security_config(
-            reader,
-            &crate::parser::security::SecurityConfig::default(),
-        )
-    }
-
-    pub fn build_from_xml_with_security_config<R: BufRead + std::io::Seek>(
-        &self,
         mut reader: R,
-        _security_config: &crate::parser::security::SecurityConfig,
     ) -> Result<ERNMessage, ParseError> {
-        let mut xml_reader = Reader::from_reader(&mut reader);
+        // Both passes read through a checked input: a DOCTYPE or a reference to an undefined
+        // entity fails the read (`xml_text::read_error`).
+        let mut xml_reader = Reader::from_reader(crate::xml_text::checked(&mut reader));
 
         // Enable strict XML validation
         // Text is kept exactly as written (whitespace-only text between elements is
@@ -66,8 +59,9 @@ impl GraphBuilder {
         let message_header = self.parse_header_from_xml(&mut xml_reader)?;
 
         // Reset reader to start for main parsing loop
+        drop(xml_reader);
         reader.seek(std::io::SeekFrom::Start(0))?;
-        xml_reader = Reader::from_reader(&mut reader);
+        let mut xml_reader = Reader::from_reader(crate::xml_text::checked(&mut reader));
         // Text is kept exactly as written (whitespace-only text between elements is
         // formatting and never read as a value).
         xml_reader.config_mut().trim_text(false);
@@ -188,9 +182,7 @@ impl GraphBuilder {
                         _ => {}
                     }
                 }
-                Err(e) => {
-                    return Err(ParseError::XmlError(format!("XML parsing error: {}", e)));
-                }
+                Err(e) => return Err(crate::xml_text::read_error(e)),
             }
             buf.clear();
         }
@@ -257,30 +249,6 @@ impl GraphBuilder {
         Ok(false)
     }
 
-    /// Build graph model from XML with namespace context
-    pub fn build_from_xml_with_context<R: BufRead + std::io::Seek>(
-        &self,
-        reader: R,
-        _context: NamespaceContext,
-    ) -> Result<ERNMessage, ParseError> {
-        self.build_from_xml_with_context_and_security(
-            reader,
-            _context,
-            &crate::parser::security::SecurityConfig::default(),
-        )
-    }
-
-    pub fn build_from_xml_with_context_and_security<R: BufRead + std::io::Seek>(
-        &self,
-        reader: R,
-        _context: NamespaceContext,
-        security_config: &crate::parser::security::SecurityConfig,
-    ) -> Result<ERNMessage, ParseError> {
-        // For now, delegate to the security-aware method
-        // In the future, this would use the namespace context for proper element resolution
-        self.build_from_xml_with_security_config(reader, security_config)
-    }
-
     /// Read `MessageHeader` (first pass). Values follow the XSD whitespace rules: text
     /// (`xs:string`) exactly as written, `MessageCreatedDateTime` (`xs:dateTime`) collapsed
     /// before parsing. Missing values keep the historical fallbacks (message id
@@ -302,12 +270,7 @@ impl GraphBuilder {
                     break Some(ern4::read_subtree(reader, &mut validator, &start)?);
                 }
                 Ok(Event::Eof) => break None,
-                Err(e) => {
-                    return Err(ParseError::XmlError(format!(
-                        "XML parsing error in header: {}",
-                        e
-                    )))
-                }
+                Err(e) => return Err(crate::xml_text::read_error(e)),
                 _ => {}
             }
             buf.clear();

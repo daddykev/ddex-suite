@@ -70,28 +70,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```rust
 use ddex_parser::{DDEXParser, parser::security::SecurityConfig};
 
+// A DOCTYPE and undefined entities are always rejected; these are the two limits.
 let config = SecurityConfig {
-    max_entity_expansions: 50,    // Lower limit for XML bombs
-    max_element_depth: 50,        // Prevent stack overflow
-    disable_dtd: true,            // Block DTD declarations
-    disable_external_entities: true,
-    ..SecurityConfig::default()
+    max_entity_expansions: 50,    // references in text
+    max_element_depth: 50,        // nesting depth
 };
 
 let parser = DDEXParser::with_config(config);
 ```
 
-## 📊 Performance Characteristics (Actual Benchmarks)
+## 📊 Performance
 
-Based on real benchmark results:
-
-| Operation | Time | Throughput |
-|-----------|------|------------|
-| DOM Parse (small files) | ~21µs | ~65 MiB/s |
-| Stream Parse (stub) | ~4.8µs | ~294 MiB/s* |
-| Memory bounded | ~2.4µs | Variable |
-
-*Note: Stream parsing is currently a stub implementation, so these numbers reflect placeholder performance.
+Measured figures are in
+[dev-docs/PERFORMANCE.md](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md).
 
 ## 🔧 Data Models
 

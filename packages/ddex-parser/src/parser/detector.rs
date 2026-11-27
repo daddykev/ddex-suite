@@ -12,8 +12,10 @@ impl VersionDetector {
         Self::detect_from_bufread(&mut buf_reader)
     }
 
+    /// The ERN version from the root element's namespace. A DOCTYPE or a reference to an
+    /// undefined entity before the end of the root start tag is an error.
     pub fn detect_from_bufread<R: BufRead>(reader: R) -> crate::error::Result<ERNVersion> {
-        let mut xml_reader = Reader::from_reader(reader);
+        let mut xml_reader = Reader::from_reader(crate::xml_text::checked(reader));
         xml_reader.config_mut().trim_text(true);
 
         let mut buf = Vec::new();
@@ -22,7 +24,9 @@ impl VersionDetector {
 
         // Parse XML and collect namespace URIs from the root element
         loop {
-            match xml_reader.read_event_into(&mut buf) {
+            let read = xml_reader.read_event_into(&mut buf);
+            crate::xml_text::check(xml_reader.get_ref())?;
+            match read {
                 Ok(Event::Start(ref e)) | Ok(Event::Empty(ref e)) => {
                     found_root = true;
 
@@ -52,9 +56,7 @@ impl VersionDetector {
                     break;
                 }
                 Ok(_) => {} // Skip other events
-                Err(e) => {
-                    return Err(ParseError::XmlError(format!("XML parsing error: {}", e)));
-                }
+                Err(e) => return Err(crate::xml_text::read_error(e)),
             }
             buf.clear();
         }

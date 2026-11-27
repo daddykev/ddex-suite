@@ -12,6 +12,12 @@
 //! [`CheckedRead`] wraps a `BufRead` so that a streaming reader scans exactly the bytes it
 //! consumes. Predefined entities and character references are left alone: whether a
 //! character reference is valid stays the XML reader's decision.
+//!
+//! A DOCTYPE is skipped by default. [`ReferenceScanner::rejecting_doctype`] and
+//! [`CheckedRead::rejecting_doctype`] instead stop at the first `<!` declaration that is not
+//! a comment or a CDATA section (in a well-formed document, only a DOCTYPE) and report it as
+//! a [`Doctype`]; [`find_doctype`] does the same for a whole document. ddex-parser uses them
+//! on every reader, so a DOCTYPE is an error everywhere.
 
 use std::fmt;
 use std::io::{self, BufRead, Read};
@@ -49,6 +55,48 @@ impl fmt::Display for UndefinedEntity {
 }
 
 impl std::error::Error for UndefinedEntity {}
+
+/// A DOCTYPE (or another `<!` declaration that is not a comment or a CDATA section) found by
+/// a scanner that rejects them.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Doctype {
+    /// 1-based line of the `<`.
+    pub line: u64,
+    /// 1-based column of the `<`, counted in characters.
+    pub column: u64,
+    /// Byte offset of the `<` from the start of the document.
+    pub offset: u64,
+}
+
+impl fmt::Display for Doctype {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "DOCTYPE at line {}, column {}: DTDs are not accepted",
+            self.line, self.column
+        )
+    }
+}
+
+impl std::error::Error for Doctype {}
+
+impl Doctype {
+    /// The [`Doctype`] carried by an I/O error from a rejecting [`CheckedRead`], if any.
+    pub fn from_io_error(error: &io::Error) -> Option<&Doctype> {
+        error.get_ref()?.downcast_ref::<Doctype>()
+    }
+
+    fn to_io_error(&self) -> io::Error {
+        io::Error::new(io::ErrorKind::InvalidData, self.clone())
+    }
+}
+
+/// The first DOCTYPE in `xml`, a whole document (see [`ReferenceScanner::rejecting_doctype`]).
+pub fn find_doctype(xml: &[u8]) -> Option<Doctype> {
+    let mut scanner = ReferenceScanner::rejecting_doctype();
+    scanner.scan(xml, &mut |_| true);
+    scanner.doctype
+}
 
 impl UndefinedEntity {
     /// The [`UndefinedEntity`] carried by an I/O error from [`CheckedRead`], if any.
@@ -190,6 +238,9 @@ pub struct ReferenceScanner {
     previous: [u8; 2],
     doctype_depth: usize,
     error: Option<UndefinedEntity>,
+    /// Stop at a DOCTYPE instead of skipping it.
+    reject_doctype: bool,
+    doctype: Option<Doctype>,
 }
 
 impl Default for ReferenceScanner {
@@ -209,6 +260,18 @@ impl ReferenceScanner {
             previous: [0; 2],
             doctype_depth: 0,
             error: None,
+            reject_doctype: false,
+            doctype: None,
+        }
+    }
+
+    /// A scanner that stops at the first DOCTYPE (any `<!` declaration that is not a comment
+    /// or a CDATA section) and reports it from [`ReferenceScanner::doctype`]. Nothing after
+    /// it is scanned.
+    pub fn rejecting_doctype() -> Self {
+        Self {
+            reject_doctype: true,
+            ..Self::new()
         }
     }
 
@@ -217,9 +280,15 @@ impl ReferenceScanner {
         self.error.as_ref()
     }
 
-    /// Scans the next chunk of the document.
+    /// The DOCTYPE found by a [`ReferenceScanner::rejecting_doctype`] scanner, if any.
+    pub fn doctype(&self) -> Option<&Doctype> {
+        self.doctype.as_ref()
+    }
+
+    /// Scans the next chunk of the document. A DOCTYPE found by a rejecting scanner is
+    /// reported by [`ReferenceScanner::doctype`], not by this result.
     pub fn feed(&mut self, chunk: &[u8]) -> Result<(), UndefinedEntity> {
-        if self.error.is_none() {
+        if self.error.is_none() && self.doctype.is_none() {
             let mut first = None;
             self.scan(chunk, &mut |entity| {
                 first = Some(entity);
@@ -235,6 +304,9 @@ impl ReferenceScanner {
 
     /// Scans `chunk`, calling `found` for each undefined reference until it returns false.
     fn scan(&mut self, chunk: &[u8], found: &mut dyn FnMut(UndefinedEntity) -> bool) {
+        if self.doctype.is_some() {
+            return;
+        }
         let start = self.position;
         // Index of the `&` when the current reference started in this chunk.
         let mut ref_in_chunk: Option<usize> = None;
@@ -277,14 +349,18 @@ impl ReferenceScanner {
                         self.state = State::CdataOpen(1);
                         i += 1;
                     }
-                    _ => self.begin_doctype(),
+                    _ => {
+                        if self.begin_doctype(start, chunk, i, 2) {
+                            return;
+                        }
+                    }
                 },
                 State::BangDash => {
                     if chunk[i] == b'-' {
                         self.state = State::Comment;
                         i += 1;
-                    } else {
-                        self.begin_doctype();
+                    } else if self.begin_doctype(start, chunk, i, 3) {
+                        return;
                     }
                 }
                 State::CdataOpen(n) => {
@@ -295,8 +371,8 @@ impl ReferenceScanner {
                         } else {
                             State::CdataOpen(n + 1)
                         };
-                    } else {
-                        self.begin_doctype();
+                    } else if self.begin_doctype(start, chunk, i, n as u64 + 2) {
+                        return;
                     }
                 }
                 State::Tag => match memchr::memchr3(b'"', b'\'', b'>', &chunk[i..]) {
@@ -411,9 +487,23 @@ impl ReferenceScanner {
         self.name.clear();
     }
 
-    fn begin_doctype(&mut self) {
+    /// Enters a DOCTYPE at `chunk[i]`, `back` bytes after its `<`. A rejecting scanner
+    /// records it instead and returns true: the scan stops.
+    fn begin_doctype(&mut self, start: Position, chunk: &[u8], i: usize, back: u64) -> bool {
+        if self.reject_doctype {
+            // `<!` and what follows up to `chunk[i]` are ASCII on one line.
+            let at = start.advance(&chunk[..i]);
+            self.doctype = Some(Doctype {
+                line: at.line,
+                column: at.column.saturating_sub(back).max(1),
+                offset: at.offset.saturating_sub(back),
+            });
+            self.position = start.advance(chunk);
+            return true;
+        }
         self.state = State::Doctype;
         self.doctype_depth = 0;
+        false
     }
 
     /// The byte `back` positions before `chunk[j]`, looking into earlier chunks (`back` <= 2).
@@ -439,7 +529,8 @@ fn ends_name(byte: u8) -> bool {
 /// Once an undefined reference has been consumed, [`CheckedRead::error`] returns it and
 /// every further read fails with an `InvalidData` I/O error carrying it
 /// ([`UndefinedEntity::from_io_error`]). A reader that checks `error()` after each event
-/// fails on the event that holds the reference.
+/// fails on the event that holds the reference. A [`CheckedRead::rejecting_doctype`] input
+/// does the same for a DOCTYPE ([`CheckedRead::doctype`], [`Doctype::from_io_error`]).
 #[derive(Debug)]
 pub struct CheckedRead<R> {
     inner: R,
@@ -454,9 +545,30 @@ impl<R> CheckedRead<R> {
         }
     }
 
+    /// An input that also fails on a DOCTYPE (see [`ReferenceScanner::rejecting_doctype`]).
+    pub fn rejecting_doctype(inner: R) -> Self {
+        Self {
+            inner,
+            scanner: ReferenceScanner::rejecting_doctype(),
+        }
+    }
+
     /// The first undefined reference consumed so far.
     pub fn error(&self) -> Option<&UndefinedEntity> {
         self.scanner.error()
+    }
+
+    /// The DOCTYPE consumed so far by a rejecting input.
+    pub fn doctype(&self) -> Option<&Doctype> {
+        self.scanner.doctype()
+    }
+
+    /// The I/O error further reads fail with, once something was found.
+    fn failure(&self) -> Option<io::Error> {
+        if let Some(error) = self.scanner.error() {
+            return Some(error.to_io_error());
+        }
+        self.scanner.doctype().map(Doctype::to_io_error)
     }
 
     pub fn get_ref(&self) -> &R {
@@ -474,21 +586,24 @@ impl<R> CheckedRead<R> {
 
 impl<R: Read> Read for CheckedRead<R> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        if let Some(error) = self.scanner.error() {
-            return Err(error.to_io_error());
+        if let Some(error) = self.failure() {
+            return Err(error);
         }
         let n = self.inner.read(buf)?;
         self.scanner
             .feed(&buf[..n])
             .map_err(|error| error.to_io_error())?;
+        if let Some(error) = self.failure() {
+            return Err(error);
+        }
         Ok(n)
     }
 }
 
 impl<R: BufRead> BufRead for CheckedRead<R> {
     fn fill_buf(&mut self) -> io::Result<&[u8]> {
-        if let Some(error) = self.scanner.error() {
-            return Err(error.to_io_error());
+        if let Some(error) = self.failure() {
+            return Err(error);
         }
         self.inner.fill_buf()
     }
@@ -510,6 +625,38 @@ impl<R: BufRead> BufRead for CheckedRead<R> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_rejecting_scanner_stops_at_the_doctype() {
+        let xml = "<?xml version=\"1.0\"?>\n<!DOCTYPE a [<!ENTITY foo \"x\">]>\n<a>&foo;</a>";
+        let doctype = find_doctype(xml.as_bytes()).unwrap();
+        assert_eq!((doctype.line, doctype.column, doctype.offset), (2, 1, 22));
+        // The default scanner skips the DOCTYPE and reports the entity.
+        assert_eq!(first(xml).unwrap().name, "foo");
+        // Comments, CDATA and processing instructions are not DOCTYPEs.
+        assert_eq!(
+            find_doctype(b"<!-- c --><?pi x?><a><![CDATA[<!DOCTYPE>]]></a>"),
+            None
+        );
+    }
+
+    #[test]
+    fn a_rejecting_input_fails_its_reads_after_a_doctype() {
+        // Fed one byte at a time, so the `<!` and the keyword are split across chunks.
+        let xml = b"<!DOCTYPE a><a/>";
+        let mut scanner = ReferenceScanner::rejecting_doctype();
+        for byte in xml.iter() {
+            assert!(scanner.feed(std::slice::from_ref(byte)).is_ok());
+        }
+        let doctype = scanner.doctype().unwrap();
+        assert_eq!((doctype.line, doctype.column, doctype.offset), (1, 1, 0));
+
+        let mut input = CheckedRead::rejecting_doctype(&xml[..]);
+        let mut out = Vec::new();
+        let error = input.read_to_end(&mut out).unwrap_err();
+        assert!(Doctype::from_io_error(&error).is_some(), "{error}");
+        assert!(input.doctype().is_some());
+    }
 
     fn first(xml: &str) -> Option<UndefinedEntity> {
         check_document(xml.as_bytes()).err()

@@ -60,3 +60,10 @@ def test_predefined_entities_and_character_references_decode():
     tracks = ddex_parser.DDEXParser().parse(xml).to_dataframe("tracks").to_dict("records")
     track = next(t for t in tracks if t["isrc"] == "JPTO09404900")
     assert track["track_title"] == "A & B café café"
+
+
+def test_a_doctype_is_rejected():
+    xml = sample().replace("?>", "?>\n<!DOCTYPE ern:NewReleaseMessage>", 1)
+    with pytest.raises(Exception) as error:
+        ddex_parser.DDEXParser().parse(xml)
+    assert "DTD declarations are disabled" in str(error.value)

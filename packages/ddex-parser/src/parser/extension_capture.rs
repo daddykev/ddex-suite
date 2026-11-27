@@ -38,12 +38,6 @@ pub struct ExtensionCaptureContext {
 
     /// Extensions collected during parsing
     pub extensions: Extensions,
-
-    /// Current line number for position tracking
-    pub current_line: usize,
-
-    /// Current column number for position tracking
-    pub current_column: usize,
 }
 
 impl Default for ExtensionCaptureContext {
@@ -63,8 +57,6 @@ impl ExtensionCaptureContext {
             extension_buffer: String::new(),
             current_extension: None,
             extensions: Extensions::new(),
-            current_line: 1,
-            current_column: 1,
         }
     }
 
@@ -94,7 +86,7 @@ impl ExtensionCaptureContext {
     }
 
     /// Check if an element should be captured as an extension
-    pub fn should_capture_element(&self, _element_name: &str, namespace_uri: Option<&str>) -> bool {
+    pub fn should_capture_element(&self, namespace_uri: Option<&str>) -> bool {
         // If we're already in an extension, capture everything
         if self.in_extension {
             return true;
@@ -363,7 +355,7 @@ impl ExtensionAwareParser {
                     // Check if we should capture this element
                     if self
                         .context
-                        .should_capture_element(element_name, namespace_uri.as_deref())
+                        .should_capture_element(namespace_uri.as_deref())
                     {
                         if !self.context.in_extension {
                             self.context.start_extension_capture(
@@ -400,8 +392,8 @@ impl ExtensionAwareParser {
                         self.context.add_comment_with_position(
                             comment.trim().to_string(),
                             position,
-                            Some(self.context.current_line),
-                            Some(self.context.current_column),
+                            None,
+                            None,
                         );
                     }
                 }
@@ -520,10 +512,10 @@ mod tests {
         let context = ExtensionCaptureContext::new();
 
         // Should not capture DDEX elements
-        assert!(!context.should_capture_element("Release", Some("http://ddex.net/xml/ern/43")));
+        assert!(!context.should_capture_element(Some("http://ddex.net/xml/ern/43")));
 
         // Should capture non-DDEX elements
-        assert!(context.should_capture_element("customElement", Some("http://example.com/custom")));
+        assert!(context.should_capture_element(Some("http://example.com/custom")));
     }
 
     #[test]

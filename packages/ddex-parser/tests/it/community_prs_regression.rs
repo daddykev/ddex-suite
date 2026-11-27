@@ -79,8 +79,6 @@ fn streamed_deals_are_linked_to_their_releases() {
 
 #[test]
 fn streamed_deal_is_complete_per_schema() {
-    use ddex_parser::streaming::ParsedElement;
-
     let xml = fixture("deal_without_reference.xml");
     let mut parser = StreamingParser::new(Cursor::new(xml.as_bytes()), ERNVersion::V4_3);
     let deal = parser
@@ -91,7 +89,7 @@ fn streamed_deal_is_complete_per_schema() {
 
     // DealReference is optional; a deal linked to its release is complete
     assert_eq!(deal.deal_reference, None);
-    assert!(ParsedElement::Deal(deal).is_complete());
+    assert!(!deal.deal_release_reference.is_empty());
 }
 
 #[test]

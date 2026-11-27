@@ -3,6 +3,7 @@
 // values; the predefined entities and character references still decode. Input: the
 // official sample examples/Samples43/1 Audio.xml with `&foo;` injected into the first
 // sound recording's title.
+// A DOCTYPE is rejected too.
 // Run with: npm test (after `npm run build`).
 
 const assert = require('node:assert/strict');
@@ -47,6 +48,11 @@ async function main() {
     .find((t) => t.isrc === 'JPTO09404900');
   assert.equal(track.title, 'A & B café café');
   console.log('✓ &amp;, &#233; and &#xE9; still decode');
+
+  const withDoctype = sample.replace('?>', '?>\n<!DOCTYPE ern:NewReleaseMessage>');
+  assert.throws(() => parser.parseSync(withDoctype), /DTD declarations are disabled/);
+  await assert.rejects(parser.parse(withDoctype), /DTD declarations are disabled/);
+  console.log('✓ a DOCTYPE is rejected');
 }
 
 main().catch((e) => {

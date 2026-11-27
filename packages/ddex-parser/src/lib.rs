@@ -50,12 +50,6 @@ impl DDEXParser {
         &mut self,
         reader: R,
     ) -> Result<ddex_core::models::flat::ParsedERNMessage, error::ParseError> {
-        // Use fast streaming if enabled
-        if self.config.enable_fast_streaming {
-            return self.parse_fast_streaming(reader);
-        }
-
-        // Otherwise use standard path
         self.parse_with_options(reader, Default::default())
     }
 
@@ -65,14 +59,6 @@ impl DDEXParser {
         reader: R,
         options: parser::ParseOptions,
     ) -> Result<ddex_core::models::flat::ParsedERNMessage, error::ParseError> {
-        // Use fast streaming if enabled (we'll skip the options comparison for now)
-        if self.config.enable_fast_streaming {
-            return self.parse_fast_streaming(reader);
-        }
-
-        // Apply security config - check if external entities are disabled and we should block them
-        // Note: This security check will be enhanced with XML bomb protection
-
         parser::parse(reader, options, &self.config)
     }
 
@@ -148,24 +134,6 @@ impl DDEXParser {
         Ok(ParallelStreamingIterator::new(reader, version))
     }
 
-    /// Not implemented in 0.5.x: returns an error. `parse` and `parse_with_options` call it
-    /// when `SecurityConfig::enable_fast_streaming` is set (as `SecurityConfig::relaxed()`
-    /// does), so with that setting they fail too. Before 0.5.1 it returned a message with no
-    /// releases or resources and an invented header ("FAST_STREAMING_MESSAGE", version 4.3,
-    /// the current time). Use the default `SecurityConfig` (or set `enable_fast_streaming`
-    /// to false).
-    pub fn parse_fast_streaming<R: std::io::BufRead>(
-        &mut self,
-        _reader: R,
-    ) -> Result<ddex_core::models::flat::ParsedERNMessage, error::ParseError> {
-        Err(error::ParseError::InvalidValue {
-            field: "SecurityConfig::enable_fast_streaming".to_string(),
-            value: "true (the fast streaming parse is not implemented in 0.5.x; set it to \
-                    false, the default)"
-                .to_string(),
-        })
-    }
-
     /// Detect DDEX version from XML
     pub fn detect_version<R: std::io::BufRead>(
         &self,
@@ -216,10 +184,6 @@ pub struct SanityCheckResult {
     pub warnings: Vec<String>,
 }
 
-/// Benchmark report support
-#[cfg(feature = "bench")]
-pub mod bench_report;
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -227,7 +191,7 @@ mod tests {
     #[test]
     fn test_parser_creation() {
         let parser = DDEXParser::new();
-        assert!(parser.config.disable_external_entities);
+        assert_eq!(parser.config.max_element_depth, 100);
     }
 }
 

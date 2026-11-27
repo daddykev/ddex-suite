@@ -69,10 +69,8 @@ pub struct WorkingStreamingParser<R: BufRead> {
     text_buffer: String,
 
     // Current parsing context
-    in_message_header: bool,
     in_release: bool,
     in_resource: bool,
-    current_resource_type: Option<String>,
 
     // Collected data for current element
     current_attributes: std::collections::HashMap<String, String>,
@@ -95,7 +93,7 @@ pub struct WorkingStreamingParser<R: BufRead> {
 impl<R: BufRead> WorkingStreamingParser<R> {
     /// Create new working streaming parser
     pub fn new(reader: R, version: ERNVersion) -> Self {
-        let mut xml_reader = Reader::from_reader(crate::xml_text::Checked::new(reader));
+        let mut xml_reader = Reader::from_reader(crate::xml_text::checked(reader));
         xml_reader.config_mut().trim_text(true);
         xml_reader.config_mut().check_end_names = true;
         xml_reader.config_mut().check_comments = false;
@@ -108,10 +106,8 @@ impl<R: BufRead> WorkingStreamingParser<R> {
             current_element: Vec::new(),
             current_depth: 0,
             text_buffer: String::new(),
-            in_message_header: false,
             in_release: false,
             in_resource: false,
-            current_resource_type: None,
             current_attributes: std::collections::HashMap::new(),
             current_fields: std::collections::HashMap::new(),
             release_attributes: std::collections::HashMap::new(),
@@ -123,25 +119,6 @@ impl<R: BufRead> WorkingStreamingParser<R> {
             max_memory_used: 0,
             current_memory: 0,
         }
-    }
-
-    /// Feed a chunk of data and parse next element
-    pub fn feed_chunk(
-        &mut self,
-        chunk: &[u8],
-    ) -> Result<Option<WorkingStreamingElement>, ParseError> {
-        self.bytes_processed += chunk.len() as u64;
-        self.update_memory_usage();
-
-        // Security check: prevent excessive memory usage
-        if self.current_memory > 100 * 1024 * 1024 {
-            // 100MB limit
-            return Err(ParseError::SecurityViolation {
-                message: "Memory usage exceeds 100MB limit".to_string(),
-            });
-        }
-
-        self.parse_next()
     }
 
     /// Parse next element from the stream
@@ -228,9 +205,6 @@ impl<R: BufRead> WorkingStreamingParser<R> {
 
         // Track element state
         match name {
-            "MessageHeader" => {
-                self.in_message_header = true;
-            }
             "Release" => {
                 self.in_release = true;
                 self.current_fields.clear();
@@ -240,7 +214,6 @@ impl<R: BufRead> WorkingStreamingParser<R> {
             }
             "SoundRecording" | "Video" | "Image" | "Text" => {
                 self.in_resource = true;
-                self.current_resource_type = Some(name.to_string());
                 self.current_fields.clear();
                 // Store resource attributes for later use
                 self.resource_attributes = self.current_attributes.clone();
@@ -275,7 +248,6 @@ impl<R: BufRead> WorkingStreamingParser<R> {
         // Check if we completed a major element
         let result = match name {
             "MessageHeader" => {
-                self.in_message_header = false;
                 Some(WorkingStreamingElement::MessageHeader {
                     // An absent value is an empty string (before 0.5.1: "unknown" and the
                     // current time; the real element name was not read).
@@ -317,7 +289,6 @@ impl<R: BufRead> WorkingStreamingParser<R> {
             "SoundRecording" => {
                 if self.in_resource {
                     self.in_resource = false;
-                    self.current_resource_type = None;
                     Some(WorkingStreamingElement::SoundRecording {
                         reference: self.get_resource_reference(),
                         title: self.get_resource_title(),
@@ -331,7 +302,6 @@ impl<R: BufRead> WorkingStreamingParser<R> {
             "Video" => {
                 if self.in_resource {
                     self.in_resource = false;
-                    self.current_resource_type = None;
                     Some(WorkingStreamingElement::Video {
                         reference: self.get_resource_reference(),
                         title: self.get_resource_title(),
@@ -344,7 +314,6 @@ impl<R: BufRead> WorkingStreamingParser<R> {
             "Image" => {
                 if self.in_resource {
                     self.in_resource = false;
-                    self.current_resource_type = None;
                     Some(WorkingStreamingElement::Image {
                         reference: self.get_resource_reference(),
                         title: self.get_resource_title(),
@@ -364,7 +333,6 @@ impl<R: BufRead> WorkingStreamingParser<R> {
             "Text" => {
                 if self.in_resource {
                     self.in_resource = false;
-                    self.current_resource_type = None;
                     Some(WorkingStreamingElement::Text {
                         reference: self.get_resource_reference(),
                         title: self.get_resource_title(),
@@ -410,27 +378,6 @@ impl<R: BufRead> WorkingStreamingParser<R> {
     /// order (before 0.5.1 always empty)
     fn extract_resource_references(&self) -> Vec<String> {
         self.release_resource_refs.clone()
-    }
-
-    /// Update memory usage tracking
-    fn update_memory_usage(&mut self) {
-        let estimated_memory = self.buffer.capacity()
-            + self.current_element.iter().map(|s| s.len()).sum::<usize>()
-            + self.text_buffer.capacity()
-            + self
-                .current_attributes
-                .iter()
-                .map(|(k, v)| k.len() + v.len())
-                .sum::<usize>()
-            + self
-                .current_fields
-                .iter()
-                .map(|(k, v)| k.len() + v.len())
-                .sum::<usize>()
-            + 1024; // Base overhead
-
-        self.current_memory = estimated_memory;
-        self.max_memory_used = self.max_memory_used.max(estimated_memory);
     }
 
     /// Get current statistics

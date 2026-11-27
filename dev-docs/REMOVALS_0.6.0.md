@@ -685,3 +685,287 @@ run.
 - **`streaming`:** `progress_callback_frequency = 0` panics (`% 0`).
 - **`fuzz/`:** already does not compile (`DdexVersion::Ern383`, a stale `BuildRequest`
   literal); it is its own workspace and not in CI.
+
+---
+
+# ddex-parser / ddex-core (PR 4a)
+
+Inventory for PR 4a, on `main` after #24 (`33933d9`). Same classes and evidence rules as the
+builder inventory above. A `pub` item in a `pub` module counts as reachable, so it is DEAD only
+if it is not compiled, is private and unused, or is a type that nothing produces or consumes.
+The 4a changes would touch about 100 files, so the work is split (see
+[4a split](#4a-split)).
+
+**Status:** 4a-1 is done. It removed the decided items, the parser fakes and no-ops with no
+other owner, and `FastStreamingParser`. It also added one DOCTYPE policy on every reader
+(`ddex_core::xml_refs` rejecting mode) and closed the two undefined-entity gaps
+(`VersionDetector`, `GraphBuilder`). Those rows are marked "removed in 4a-1". 4a-2 (the
+ddex-core models) is next.
+
+I read the code and grepped `packages/ddex-parser`, `packages/core`, the builder, all
+bindings, tests, benches, examples and docs. I did not build or run anything. Paths are
+relative to the crate (`src/...`); `core/` means `packages/core/src/`.
+
+"Owner" names the PR a row is left for:
+- **4b**: ParseOptions, binding-only stubs, the CLI.
+- **5**: renames, `non_exhaustive`.
+- **7**: `sanity_check` version as `Option`, and fast / parallel statistics.
+- **8**: quick-xml types in the public API.
+- **9**: attribute normalization.
+- **perf**: parallel-parser performance.
+
+A blank owner means 4a.
+
+## Counts (4a inventory rows)
+
+Counted per row of the tables under [Decided removals (4a)](#decided-removals-4a) and
+[Inventory](#inventory-1), mixed rows under their first class; the two unused-dependency rows
+are counted as DEAD.
+
+| class | rows |
+|---|---:|
+| FAKE | 21 |
+| NO-OP | 15 |
+| DEAD | 15 |
+| REAL | 39 |
+| UNSURE | 2 |
+| **total** | **92** |
+
+Of these, 16 rows are owned by other PRs: 4b 5, 5 1, 7 4, 9 2, perf 2, bugs list 2. The
+[UNSURE](#unsure-4a) list has 3 entries; the third is `FastStreamingParser`, counted as FAKE.
+
+## Entry points
+
+- **Bindings and the CLI** use only `DDEXParser::new()` (the default `SecurityConfig`, i.e.
+  `strict()`), `parse` / `parse_with_options`, `detect_version` and `sanity_check`:
+  - Node `bindings/node/src/lib.rs:685-887`
+  - Python `bindings/python/src/lib.rs:24-205`; Python `stream` parses the whole document
+  - WASM `bindings/wasm/src/lib.rs:18`
+  - CLI `src/cli.rs:398-1160`
+- **No binding** uses `streaming::*`, `transform::*`, `StreamingParser`, `relaxed()` or
+  `with_config`.
+- **The default parse:** `DDEXParser::parse` → `parse_with_options` → `parser::parse`, which
+  runs `VersionDetector` and then `ParseMode::Dom` → `dom::parse_dom`.
+  - Pass 1 is `NamespaceDetector`, wrapped in `CheckedRead`.
+  - Pass 2 is `transform::graph::GraphBuilder`, which reads with a plain quick-xml
+    reader.
+
+## Decided removals (4a)
+
+| item | path | class | evidence | affected |
+|---|---|---|---|---|
+| `StreamingParser::stream_resources` / `ResourceIterator`, `stream_parties` / `PartyIterator` | `parser/stream.rs:341-348,594-665` | FAKE (**removed in 4a-1**) | yield one `Err` "not implemented in 0.5.x", then `None` | Rust; tests `honest_results.rs:224-233`; KNOWN_ISSUES:80 |
+| `SecurityConfig::relaxed()` | `parser/security.rs:57-69` | FAKE (**removed in 4a-1**) | sets `enable_fast_streaming = true`, so every `parse` / `parse_with_options` fails (it returns the `parse_fast_streaming` error). The other values it changes (depth 200, file size, timeouts) are never read | Rust; `fast_streaming_parser.rs:356`; tests `parser/tests.rs:47`, `tests/it/depth_limit.rs:70`, `fast_streaming.rs`, `honest_results.rs:75`; benches `fast_streaming_benchmark.rs` (5×); example `fast_streaming_usage.rs` (3×); docs |
+| `SecurityConfig::enable_fast_streaming` and `DDEXParser::parse_fast_streaming` (only `relaxed()` enables them) | `lib.rs:54-56,69-71,151-167`; `security.rs:27,52,67` | FAKE (**removed in 4a-1**) | `parse_fast_streaming` always returns `InvalidValue` "not implemented"; it never uses `FastStreamingParser` | Rust; tests `fast_streaming.rs` (whole file, ignored), `honest_results.rs:73-83` |
+| `parser/optimize.rs` | — | DEAD (**removed in 4a-1**) | not declared in `parser/mod.rs`; it uses nightly-only `std::simd` | none |
+
+## Inventory
+
+### `lib.rs` (`DDEXParser`)
+
+| item | class | evidence | affected | owner |
+|---|---|---|---|---|
+| `DDEXParser`, `new`, `Default`, `parse`, `parse_with_options`, `detect_version`, `sanity_check`, `SanityCheckResult`, `pub use ERNVersion` | REAL | default DOM path | all | |
+| `with_config` | REAL | read by `parse` only; no `stream*` method reads `self.config` | Rust, tests | |
+| `stream`, `stream_with_version_detection` | REAL | `WorkingStreamIterator`; the version only labels the header | Rust, benches | |
+| `stream_zero_copy`, `stream_zero_copy_with_version_detection` (feature `zero-copy`) | REAL, version argument NO-OP | `FastZeroCopyIterator::new(_, _version)` ignores it (`fast_zero_copy.rs:368`) | Rust | |
+| `stream_parallel`, `stream_parallel_with_threads`, `stream_parallel_with_version_detection` | REAL (single-threaded); `threads` and version NO-OP | `parallel_parser.rs:53-57,129` | Rust, tests | perf |
+| `SanityCheckResult.warnings` | NO-OP (always empty) | `sanity.rs:28,45` | Node, Python fields | 7 |
+| `pub mod bench_report` (feature `bench`) and bin `generate-bench-report` | FAKE (**removed in 4a-1**) | hard-coded `cpu: "AWS m7g.large (2 vCPU)"`, `memory_gb: 8.0`, `results: vec![]` (`bench_report.rs:44-48`, `bin/bench_report.rs:37-50`). The bin builds by default (`required-features = ["async"]`) | crate install | |
+
+### `parser/security.rs` (`SecurityConfig`)
+
+| item | class | evidence | affected |
+|---|---|---|---|
+| `strict()`, `Default` | REAL | — | all |
+| `disable_dtd` | REAL (DOM pass 1 only) (**removed in 4a-1** (every reader now rejects a DOCTYPE; nothing read it)) | `namespace_detector.rs:167`; an empty `if` at `:90` | Rust |
+| `max_entity_expansions` | REAL (counts references) | `namespace_detector.rs:144,158` | Rust |
+| `max_element_depth` | REAL, but capped | read at `namespace_detector.rs:106,119`, `stream.rs:76`, `multi_release_parser.rs:116,216`. Values above 100 have no effect on the DOM graph pass (hard-coded 100 at `transform/graph.rs:103`, `transform/ern4.rs:145`), see bugs | Rust |
+| `disable_external_entities`, `max_entity_depth`, `max_attribute_size`, `max_text_size`, `max_file_size`, `parse_timeout`, `stream_timeout`, `allow_network`, `allowed_schemas` | NO-OP (**removed in 4a-1**) | never read (only test asserts read `disable_external_entities`: `lib.rs:230`, `parser/tests.rs:42`) | Rust |
+
+### `parser/` modules
+
+| item | class | evidence | affected | owner |
+|---|---|---|---|---|
+| `parser::parse`, `dom::parse_dom`, `ParseMode::{Dom, Stream}` | REAL | — | all | |
+| `ParseOptions` fields `auto_threshold`, `resolve_references`, `include_raw`, `include_raw_extensions`, `include_comments`, `preserve_unknown_elements`, `allow_blocking`; `with_extensions()`, `for_round_trip()` | NO-OP | `mod.rs:26-108`, `dom.rs:24-26,46,66` | Rust, Python, Node | 4b |
+| `ParseOptions.max_memory`, `chunk_size`, `timeout_ms` | REAL in part | Stream-only estimate / `yield_now`; `timeout_ms` checked only after the parse | Rust, Python | 4b |
+| `ParseMode::Auto`, `ModeSelector` (`new`, `threshold`, `select_mode`, `select_mode_hint`) | NO-OP | `Auto` is `Dom`; the threshold and reader are never read (`mode.rs:44-67`) | Rust, `tests/it/large_file.rs` | 4b |
+| `stream::parse_streaming`, `StreamingParser::{new, new_with_security_config, parse_header, with_chunk_size, with_max_memory, with_progress_callback, stream_releases, stream_deals}` | REAL (subset of fields) | `stream.rs` | Rust, benches | |
+| `ParseProgress.resources_parsed` (always 0), `estimated_total_bytes` (always `None`) | FAKE | `stream.rs:21,23,104` | Rust | 7 |
+| `VersionDetector::detect`, `detect_from_bufread` | REAL | — | all | |
+| `NamespaceDetector` and its getters, `NamespaceContext`, `ResolvedName` | REAL | DOM pass 1 | Rust | |
+| `NamespaceDetectionResult.root_scope` | FAKE in effect | always the empty pre-root scope (`namespace_detector.rs:306`) | Rust | bugs |
+| `XmlValidator` (`new`, `strict`, `lenient`, `validate_event`, …) | REAL | graph, stream | Rust | |
+| `AttributeExtractor` and its methods, `SpecialAttributeHandler` | REAL (values never unescaped, `:262`) | no caller in the parse path | Rust | 9 |
+| `AttributeExtractionResult.warnings` (always empty), `SpecialAttributeValue::XsiType.resolved_type` (always `None`) | FAKE | `attribute_extractor.rs:196,375,382` | Rust | 9 |
+| `ExtensionAwareParser`, `capture_utils::*`, `ExtensionCaptureContext` | REAL (swallows XML errors, `:420`) | no caller | Rust | |
+| `ExtensionCaptureContext.current_line` / `current_column` | FAKE (stuck at 1:1) (**removed in 4a-1**) | `extension_capture.rs:66-67,403` | Rust | |
+| `should_capture_element`'s element-name argument | NO-OP (**removed in 4a-1**) | `:97` | Rust | |
+| `SelectiveParser` and its methods, `SelectiveResult` | REAL | — | Rust, examples, tests | |
+| `XPathSelector` and its methods, `XPathResult`, `XPathStats` | REAL | — | Rust, examples | |
+| `XPathSelector` `[n]` (`PathComponent::IndexFilter`) | FAKE (**removed in 4a-1** (now an error)) | the index is ignored, every occurrence matches (`xpath_selector.rs:466-488`) | Rust | |
+| private `XPathSelector.element_cache` | DEAD (**removed in 4a-1**) | `#[allow(dead_code)]`, never read | — | |
+| `MultiReleaseParser::{new, with_security_config, count_releases, max_releases, parse_releases}`, `MultiReleaseStats` | REAL (subset; every `ReleaseId` is Proprietary, `:446`) | — | Rust, tests | |
+| `MultiReleaseParser` version argument, `detailed_parsing` | NO-OP (**removed in 4a-1**) | `:67,76,86` | Rust | |
+| `MultiReleaseResult.message_header` | FAKE (always `None`) (**removed in 4a-1**) | `:46,183` | tests `honest_results.rs:97` | |
+| `parser/version_aware.rs` (`VersionAwareParser`, `todo!()`s) | DEAD (**removed in 4a-1**) | not compiled | — | |
+| `ERNVersionExt::namespace_uri` | REAL (duplicates `ERNVersion::namespace`; no users) | `version_ext.rs` | Rust | 5 |
+
+### `streaming/`
+
+| item | class | evidence | affected | owner |
+|---|---|---|---|---|
+| `WorkingStreamIterator` (`new`, `stats`, `is_finished`), `WorkingStreamingParser::{new, parse_next, get_stats}`, `WorkingStreamingElement` | REAL | `DDEXParser::stream` | Rust, benches | |
+| `WorkingStreamingParser::feed_chunk` | FAKE (**removed in 4a-1** (with its `update_memory_usage` helper; the memory stats it fed were already 0 in normal use, PR 7)) | the chunk bytes are never parsed, only counted (`working_impl.rs:129-145`) | none | |
+| `WorkingStreamingStats.max_depth_reached` | FAKE (the current depth) | `:442` | Rust | 7 |
+| private `in_message_header`, `current_resource_type` | NO-OP (**removed in 4a-1**) | written, never read | — | |
+| `StreamingConfig` (all 6 fields) | NO-OP (**removed in 4a-1**) | no field is ever read (`streaming/mod.rs:36-62`) | benches, example, tests | |
+| `StreamingProgress` | DEAD (**removed in 4a-1**) | never constructed | example | |
+| `FastStreamingParser::new(_config)`, `create_fast_parser()` | NO-OP config (**removed in 4a-1** (decided)) | `fast_streaming_parser.rs:78,354` | bench, example | |
+| `FastStreamingParser::parse_streaming` and its progress callback | FAKE (wrong by construction); NO-OP callback (**removed in 4a-1** (decided)) | byte scan: `<Release` / `<Party` / `<Deal` also match `<ReleaseList>`, `<ReleaseId>`, `<PartyId>`, `<DealTerms>`, and `ern:`-prefixed elements are never matched. Not reached through `relaxed()`; it is public (`streaming::FastStreamingParser`), and its numbers feed `dev-docs/PERFORMANCE.md` (bench `fast_streaming_benchmark`) | Rust, bench, example, tests | |
+| `FastStreamingIterator::{new, stats, filter_by_type, len, is_empty}`, `FastElementType`, `FastParsingStats` | REAL types over the scan above (**removed in 4a-1** (with `FastStreamingParser`)) | — | Rust | |
+| `FastZeroCopyParser`, `FastZeroCopyIterator` | REAL (bug: duplicates at chunk ends) | `fast_zero_copy.rs:103-110` | Rust, benches | bugs |
+| `FastZeroCopyParser::stats` (`max_depth_reached: 10`, `current_depth: 0` hard-coded), `read_buffer` | FAKE / NO-OP | `:17,325-327` | Rust | 7 |
+| `ParallelStreamingParser`, `ParallelStreamingIterator` | REAL (single-threaded; threads NO-OP; read errors swallowed `:132`) | `parallel_parser.rs` | Rust, benches | perf |
+| `ParallelBenchmark::measure_parallel_speedup` | FAKE ("not implemented") (**removed in 4a-1**) | `:203-216` | tests `honest_results.rs:187` | |
+| `ThreadResult`, `ParallelBenchmarkResult` | DEAD (never constructed) (**removed in 4a-1**) | `:219-237` | — | |
+| `element.rs` (`ParsedElement` and methods, `HeaderBuilder`) | DEAD (**removed in 4a-1**) | no parser yields them; only `tests/it/community_prs_regression.rs:82-94` builds one | tests | |
+
+### `transform/`, `error.rs`, features
+
+| item | class | evidence | affected | owner |
+|---|---|---|---|---|
+| `GraphBuilder::new`, `build_from_xml_with_context_and_security`, `Flattener::flatten`, `ern38`, `ern4` | REAL | DOM pass 2 | all | |
+| `GraphBuilder::build_from_xml`, `build_from_xml_with_context` | REAL, no callers (and no DOCTYPE / undefined-entity check of their own) (`build_from_xml` kept (now rejects a DOCTYPE and undefined entities); `build_from_xml_with_context` **removed in 4a-1**) | `graph.rs:41,261` | Rust | |
+| `GraphBuilder` `_security_config` / `_context` parameters | NO-OP (**removed in 4a-1** (the variants that took them)) | `graph.rs:54,264,276` | Rust | |
+| `transform::version_adapter::VersionAdapter` (`new`, `adapt_message_header`, `adapt_deal_terms`) | FAKE (**removed in 4a-1**) | the two methods return "not implemented"; `new` stores what it never reads | tests `honest_results.rs:85-89` | |
+| `resolve::ReferenceResolver` (`build_maps`, `validate_references`) | REAL (only `tracing` warnings) | `dom.rs:70-86` | internal | 4b |
+| `resolve_*_reference`, `deal_map`, `party_map` | REAL / NO-OP, no callers | `resolve.rs:11,51-70` | — | |
+| `ParseError::StreamError` + `enum StreamError` | DEAD (never constructed) (**removed in 4a-1**) | `error.rs:13,58` | Node match arms | |
+| `ParseError::ConversionError` | DEAD in the library (only cfg(test)) (**removed in 4a-1**) | `error.rs:18` | Node match arm | |
+| other `ParseError` variants, `utf8_utils::*`, `xml_text::*`, `sanity::*` | REAL | — | all | |
+| features `wasm`, `simd` | NO-OP (no `cfg` anywhere) (**removed in 4a-1**) | `Cargo.toml` | WASM manifest | |
+| features `async`, `tokio`, `futures` | NO-OP (compatibility) | only `required-features` of the fake bin | — | |
+| dependencies `thiserror`, `ts-rs` (direct) | unused (**removed in 4a-1**) | zero references | — | |
+| dev-dependencies `tempfile`, `pretty_assertions`, `proptest`, `test-case`, `insta` | unused (**removed in 4a-1**) | zero references | — | |
+| CLI-only dependencies compiled into every library consumer (`clap`, `indicatif`, `colored`, `anyhow`, `glob`, `serde_yaml`, `rmp-serde`, `base64`, `html-escape`, `env_logger`, `rayon`) | REAL for the CLI | candidates for a `cli` feature | bindings | 4b |
+
+### ddex-core
+
+| item | class | evidence | affected |
+|---|---|---|---|
+| `xml_refs::*` (`ReferenceScanner`, `check_document`, `CheckedRead`, `UndefinedEntity`, `is_defined`, `has_undefined`, `undefined_entities`, `line_column`) | REAL | parser and builder readers. It *skips* a DOCTYPE and never rejects one | all |
+| `DDEXError`, `ErrorLocation`, `error::ffi` `From` impl | DEAD (never built) | `core/error.rs:52-114`, `lib.rs:10` | none |
+| `ffi::{FFIError, FFIErrorLocation, FFIErrorSeverity, FFIErrorCategory, FFIResult, FFIParseOptions}`, feature `ffi` | DEAD / NO-OP | only a serde test (`parser tests/it/error_contract.rs:30-43`) | test, `docs/parser/ERROR_CONTRACT.md` |
+| `NamespaceRegistry` (`new`, `get_namespace_info`, `validate_declarations`) | REAL, but some data FAKE | invented URIs `avs/avs`, `mead/mead`, `pie/pie`, `rin/rin` (`namespace.rs:151-181`) | DOM pass 1 warnings |
+| other `NamespaceRegistry` methods, `ConflictResolution`, `NamespaceScope::get_all_declarations` | REAL, no callers | — | Rust |
+| `AttributeValidator::add_custom_validator` | FAKE | drops the closure (`validation.rs:264-287`); KNOWN_ISSUES:146 | Rust |
+| the built-in DDEX attribute rules (`setup_ddex_rules`) | FAKE | the names are DDEX elements, not attributes, so they never match; `ddex_territory_code` rejects `Worldwide` | Rust |
+| `ValidationPolicy.element_overrides`, `NamespacePolicy.validate_format` / `.custom_rules`, `ElementValidationConfig` | NO-OP | never read | Rust |
+| other `AttributeValidator` API, `ValidationRule`, `ValidationResult`, … | REAL logic, no production caller | core tests only; the only users of the `url` and `regex` deps | Rust |
+| `QName`, `AttributeValue`, `AttributeMap`, `AttributeInheritance` | REAL | parser / builder round trip | all |
+| `AttributeMap::merge` with `AttributeMergeStrategy::Error` | FAKE branch | `eprintln!` and continues (`attributes.rs:474`) | Rust |
+| `Extensions`, `XmlFragment`, `Comment`, … | REAL (only producer: the uncalled `ExtensionAwareParser`) | — | builder `ast.rs`, `xml_writer.rs` |
+| `Extensions.legacy_data` (+ `insert` / `get`) | NO-OP | never written outside core | Rust |
+| `models::streaming_types` (`ReleaseBuilder`, `ResourceBuilder`, `PartyBuilder`, `MessageHeaderBuilder`, `ToCore`, `Validate`, `ConversionError`) | DEAD + FAKE defaults | no users outside core tests; invented defaults (`disc_number: Some(1)`, `SoundRecording`, `NewReleaseMessage`) | Rust |
+| `VersionDifferences::for_version`, `VersionFeatures`, `DealTermsVersion`, `PartyDescriptorVersion` | FAKE | invented feature flags and schema URLs; only `VersionAdapter` stores it, unread | Rust |
+| `models::versions::{ern_382, ern_42, ern_43, common}` structs | DEAD | never built | Rust |
+| `ERNVersion` | REAL | everywhere | all |
+| graph / flat / common data structs | REAL | — | all |
+| `ERNMessage::to_build_request` | FAKE (`self.clone()`) | `graph/message.rs:64` | Rust, docs |
+| `ERNProfile`, `MessageAuditTrail`, `AuditTrailEvent`, `ParsedImage`, `ParsedVideo`, `common::{TerritoryCode, Price}` | DEAD | never built | Rust |
+| always-`None` fields: `ERNMessage.profile`, `.message_audit_trail`, `.legacy_extensions`, `FlattenedMessage.profile`, every `extensions` / `comments` field, the `attributes` fields other than `ERNMessage.attributes` | NO-OP | 28× `extensions: None`, 16× `comments: None`; no reader. `ERNMessage.attributes` is REAL (builder `round_trip/parsed.rs:35-40`) | Rust, Node, Python serialization |
+| always-empty `Release.party_list`, `Resource.rights_controller`, `Party.party_role` / `.contact_details`, `DealTerms.distribution_channel` / `.price_information`, and their types | UNSURE | only ever `Vec::new()` / `None`; are they placeholders for data the parser should read? | Rust, bindings |
+| `Identifier` / `IdentifierType` `cfg_attr(feature = "typescript")` and core `bindings/*.ts` | UNSURE / NO-OP | the parser's `typescript` feature enables `ddex-core/ts-rs`, not `ddex-core/typescript` | — |
+
+## Reader paths: DOCTYPE and undefined entities today
+
+**After 4a-1:** every path in this table rejects a DOCTYPE with `parse`'s `SecurityViolation`
+and rejects an undefined entity (`VersionDetector` and `GraphBuilder` included). This is
+tested per public entry point in `tests/it/reader_paths.rs`. The table below is the state
+before 4a-1.
+
+"Skipped": the DOCTYPE event falls into a catch-all arm. An entity declared in a DTD still
+counts as undefined (`core/xml_refs.rs`), so no path expands an entity. This is about
+consistency, not exposure.
+
+| path (public entry) | DOCTYPE | undefined-entity check |
+|---|---|---|
+| `parse` step 0: `VersionDetector` (`DDEXParser::detect_version`) | skipped (`detector.rs:54`) | **none** |
+| DOM pass 1: `NamespaceDetector` (`parse`) | **rejected** when `disable_dtd` (default), else skipped (`namespace_detector.rs:167`) | `CheckedRead` (`:85`) |
+| DOM pass 2: `GraphBuilder` (inside `parse`; also `pub` `build_from_xml*`) | skipped (`xml_validator.rs:98`) | **none** (plain reader, `graph.rs:56,70`); covered inside `parse` by pass 1 only |
+| `ParseMode::Stream` (`parse_with_options`, `parser::stream::*`) | skipped (`stream.rs:152,490,716`) | `CheckedRead` |
+| `DDEXParser::stream*` → `WorkingStreamIterator` | skipped (`working_impl.rs:198`) | `CheckedRead` |
+| `SelectiveParser::extract_fields` / `extract_isrcs` | skipped (`selective_parser.rs:192`) | `CheckedRead` |
+| `SelectiveParser::extract_isrcs_fast` | not parsed as XML | `check_document` |
+| `XPathSelector::select*`, `select_multiple` | skipped (`xpath_selector.rs:252,652`) | `CheckedRead` |
+| `MultiReleaseParser::count_releases`, `parse_releases` | skipped (`:151,349`) | `CheckedRead` |
+| `ExtensionAwareParser::parse_with_extensions` | skipped (`extension_capture.rs:426`) | `check_document` |
+| `FastStreamingParser::parse_streaming` | ignored (byte scan) (**removed in 4a-1** (decided)) | `check_document` |
+| `FastZeroCopyParser` / `stream_zero_copy*`, `ParallelStreamingParser` / `stream_parallel*` | ignored (byte scan) | `ReferenceScanner` |
+| `sanity_check` | reported as an error (`sanity.rs:100`) | `has_undefined` |
+
+**Proposed shared check (core, next to `xml_refs`):**
+- A `Doctype { line, column, offset }` error with `from_io_error`, mirroring `UndefinedEntity`.
+- `find_doctype(xml)`.
+- `ReferenceScanner` / `CheckedRead` constructors that fail on `<!DOCTYPE` (matched
+  case-sensitively at the `<!` transition).
+
+That gives one check, and one error, for every `CheckedRead` and `ReferenceScanner` user.
+`parse` keeps its `SecurityViolation`, so existing callers see no change. Whether
+`disable_dtd: false` stays as an escape hatch for `parse` is the judgement call in the
+prompt; I would keep it and report.
+
+**WASM:**
+- The binding calls `DDEXParser::new()` (default `SecurityConfig`, `wasm/src/lib.rs:18`), with
+  `default-features = false, features = ["wasm"]`, so it gets the defaults.
+- `parse`'s `_options` is ignored, and `parse_stream` is FAKE. Both are binding stubs (4b).
+
+## UNSURE (4a)
+
+1. The always-empty `party_list` / `rights_controller` / `party_role` / `contact_details` /
+   `distribution_channel` / `price_information` fields and their types: placeholders for data
+   the parser should read, or removable?
+2. Core `Identifier` / `IdentifierType` `ts-rs` derive and `core/bindings/*.ts`: dead
+   generation, or wanted for the TypeScript types?
+3. `FastStreamingParser`: classified FAKE (its counts are wrong by construction), but it
+   backed a bench quoted in `dev-docs/PERFORMANCE.md`. **Decided: removed in 4a-1**, with
+   its bench and figures.
+
+## Bugs found (not removals)
+
+- `FastZeroCopyParser` yields elements twice near chunk ends, and loses elements over 2 KB
+  that span chunks (`fast_zero_copy.rs:103-110`).
+- `ParallelStreamingIterator` swallows read errors (`parallel_parser.rs:132`).
+- The DOM graph pass hard-codes depth 100 and ignores `max_element_depth`
+  (`graph.rs:103`, `ern4.rs:145`). Because of that, and the `relaxed()` failure,
+  `tests/it/depth_limit.rs:67` passes without testing anything.
+- `NamespaceDetectionResult.root_scope` is always empty (`namespace_detector.rs:306`).
+- `xml_refs`'s DOCTYPE skipping ignores quotes, so a `]` inside a quoted entity value can end
+  the DOCTYPE early.
+- Core `Comment::to_xml` replaces `--` first, so its later replacements never match
+  (`extensions.rs:359`).
+- Core `extract_namespace_prefix("foo")` returns `Some("foo")` (`extensions.rs:516`).
+
+## 4a split
+
+Each part stays under about 60 files:
+
+1. **4a-1: decided removals, parser fakes, DOCTYPE (done)** (about 45 files):
+   - `stream_resources` / `stream_parties`, `relaxed()`, `enable_fast_streaming` /
+     `parse_fast_streaming`, `optimize.rs`, `version_aware.rs`;
+   - the parser FAKE / NO-OP / DEAD rows above with a blank owner (the `SecurityConfig` no-ops,
+     `bench_report`, `VersionAdapter`, `ParallelBenchmark`, `element.rs`, `StreamingConfig`,
+     `feed_chunk`, the dead `ParseError` variants, the unused deps);
+   - the shared DOCTYPE check in core `xml_refs` and its use on every reader, plus undefined-
+     entity checks for `VersionDetector` and the public `GraphBuilder` entry points;
+   - the table-driven reader-path test, plus one Node and one Python DOCTYPE test;
+   - docs and records.
+2. **4a-2: ddex-core dead and fake models** (about 45–55 files):
+   - `ffi.rs`, `DDEXError`, `streaming_types`, `VersionDifferences`, the `versions::ern_*`
+     structs, `to_build_request`, the dead model types, the `validation.rs` fakes;
+   - the always-`None` model fields, whose struct literals run through the parser,
+     the builder and its tests.
+
+   Needs answers on UNSURE 1–2.

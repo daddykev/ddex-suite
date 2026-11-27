@@ -1,8 +1,7 @@
 //! Experimental parallel streaming parser
 //!
-//! It uses rayon to process DDEX elements on several threads, but does not currently
-//! scale with the thread count: 1, 2, 4 and 8 threads take the same time (scaling is
-//! planned for 0.6.0; see `dev-docs/PERFORMANCE.md`).
+//! It processes the document on one thread whatever the thread count: 1, 2, 4 and 8 threads
+//! take the same time (scaling is planned for 0.6.0; see `dev-docs/PERFORMANCE.md`).
 
 #[allow(dead_code)] // Experimental parallel streaming parser
 use crate::error::ParseError;
@@ -197,43 +196,6 @@ impl<R: BufRead> Iterator for ParallelStreamingIterator<R> {
             None
         }
     }
-}
-
-/// Benchmark parallel performance
-pub struct ParallelBenchmark;
-
-impl ParallelBenchmark {
-    /// Not implemented in 0.5.x: returns an error. `ParallelStreamingParser` processes on
-    /// one thread whatever the thread count (a scaling parallel iterator is planned for
-    /// 0.6.0), so there is no speedup to measure; before 0.5.1 this compared identical code
-    /// paths and judged them against a fixed 280 MB/s target.
-    pub fn measure_parallel_speedup(_data: &[u8]) -> Result<ParallelBenchmarkResult, ParseError> {
-        Err(ParseError::InvalidValue {
-            field: "ParallelBenchmark::measure_parallel_speedup".to_string(),
-            value: "not implemented in 0.5.x (the parallel parser runs on one thread)".to_string(),
-        })
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct ThreadResult {
-    pub threads: usize,
-    pub time: std::time::Duration,
-    pub speedup: f64,
-    pub efficiency: f64,
-    pub throughput_mb_per_sec: f64,
-    pub elements_found: usize,
-}
-
-#[derive(Debug)]
-pub struct ParallelBenchmarkResult {
-    pub single_threaded_time: std::time::Duration,
-    pub single_threaded_throughput: f64,
-    pub single_threaded_elements: usize,
-    pub thread_results: Vec<ThreadResult>,
-    pub best_speedup: f64,
-    pub best_throughput: f64,
-    pub target_achieved: bool,
 }
 
 #[cfg(test)]

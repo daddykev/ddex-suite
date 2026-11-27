@@ -6,7 +6,7 @@ use crate::parser::ParseOptions;
 use crate::transform::flatten::Flattener;
 use crate::utf8_utils;
 use ddex_core::models::flat::ParsedERNMessage;
-use ddex_core::models::graph::{Deal, ERNMessage, MessageHeader, Party, Release, Resource};
+use ddex_core::models::graph::{Deal, ERNMessage, MessageHeader, Release};
 use ddex_core::models::versions::ERNVersion;
 use quick_xml::events::Event;
 use quick_xml::Reader;
@@ -56,7 +56,7 @@ impl<R: BufRead> StreamingParser<R> {
         version: ERNVersion,
         security_config: &crate::parser::security::SecurityConfig,
     ) -> Self {
-        let mut xml_reader = Reader::from_reader(crate::xml_text::Checked::new(reader));
+        let mut xml_reader = Reader::from_reader(crate::xml_text::checked(reader));
         xml_reader.config_mut().trim_text(true);
         xml_reader.config_mut().check_end_names = true;
         xml_reader.config_mut().expand_empty_elements = false;
@@ -337,16 +337,6 @@ impl<R: BufRead> StreamingParser<R> {
         ReleaseIterator::new(self)
     }
 
-    /// Stream resources one at a time
-    pub fn stream_resources(&mut self) -> ResourceIterator<'_, R> {
-        ResourceIterator::new(self)
-    }
-
-    /// Stream parties
-    pub fn stream_parties(&mut self) -> PartyIterator<'_, R> {
-        PartyIterator::new(self)
-    }
-
     /// Stream deals
     pub fn stream_deals(&mut self) -> DealIterator<'_, R> {
         DealIterator::new(self)
@@ -590,76 +580,6 @@ impl<'a, R: BufRead> Iterator for ReleaseIterator<'a, R> {
     }
 }
 
-// Similar iterators for other types
-pub struct ResourceIterator<'a, R: BufRead> {
-    _parser: &'a mut StreamingParser<R>,
-    _done: bool,
-    _in_resource_list: bool,
-}
-
-impl<'a, R: BufRead> ResourceIterator<'a, R> {
-    fn new(parser: &'a mut StreamingParser<R>) -> Self {
-        Self {
-            _parser: parser,
-            _done: false,
-            _in_resource_list: false,
-        }
-    }
-}
-
-impl<'a, R: BufRead> Iterator for ResourceIterator<'a, R> {
-    type Item = Result<Resource, ParseError>;
-
-    /// Not implemented in 0.5.x: yields one error, then ends (before 0.5.1 it yielded
-    /// nothing, as if the message had no resources).
-    fn next(&mut self) -> Option<Self::Item> {
-        if self._done {
-            return None;
-        }
-        self._done = true;
-        Some(Err(stream_not_implemented(
-            "StreamingParser::stream_resources",
-        )))
-    }
-}
-
-fn stream_not_implemented(api: &str) -> ParseError {
-    ParseError::InvalidValue {
-        field: api.to_string(),
-        value: "not implemented in 0.5.x (use DDEXParser::parse)".to_string(),
-    }
-}
-
-pub struct PartyIterator<'a, R: BufRead> {
-    _parser: &'a mut StreamingParser<R>,
-    _done: bool,
-}
-
-impl<'a, R: BufRead> PartyIterator<'a, R> {
-    fn new(parser: &'a mut StreamingParser<R>) -> Self {
-        Self {
-            _parser: parser,
-            _done: false,
-        }
-    }
-}
-
-impl<'a, R: BufRead> Iterator for PartyIterator<'a, R> {
-    type Item = Result<Party, ParseError>;
-
-    /// Not implemented in 0.5.x: yields one error, then ends (before 0.5.1 it yielded
-    /// nothing, as if the message had no parties).
-    fn next(&mut self) -> Option<Self::Item> {
-        if self._done {
-            return None;
-        }
-        self._done = true;
-        Some(Err(stream_not_implemented(
-            "StreamingParser::stream_parties",
-        )))
-    }
-}
-
 /// Streams the deals of the `DealList`.
 ///
 /// Each `ReleaseDeal` is parsed with the same logic as the DOM path, so every `Deal` carries
@@ -780,8 +700,7 @@ pub fn parse_streaming<R: BufRead>(
         releases.push(release);
     }
 
-    // Resources and parties are not streamed in 0.5.x (stream_resources / stream_parties
-    // are not implemented): this experimental path returns none of them.
+    // Resources and parties are not streamed: this experimental path returns none of them.
 
     // Stream deals
     for deal_result in parser.stream_deals() {

@@ -17,9 +17,6 @@ summarizes the ones you are most likely to meet. Report new ones on
   supported API. `ParseMode::Stream` and the `stream*` iterators read a subset of the fields
   (no territory details, dates, P and C lines, genres, labels or track layout) and still trim
   text. `StreamingParser::stream_releases` yields nothing for a full document.
-- **`SecurityConfig::relaxed()` makes `parse` fail.** It switches to the fast streaming
-  path, which is not implemented: since 0.5.1 it returns an error (before, a message with
-  no releases).
 - **The parallel streaming iterator does not scale** with the thread count.
 - **Deals**: with several `ValidityPeriod`s in one deal the last dates win;
   `StartDateTime` / `EndDateTime` are not read; the flat deal has no commercial model type.

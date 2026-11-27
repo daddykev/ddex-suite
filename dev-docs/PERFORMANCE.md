@@ -5,7 +5,7 @@ assertions left are the sanity limits behind the `perf-tests` feature (about 10Ã
 numbers, release mode only), which catch catastrophic regressions:
 
 ```bash
-cargo bench -p ddex-parser --bench throughput --bench fast_streaming_benchmark
+cargo bench -p ddex-parser --bench throughput
 cargo bench -p ddex-builder --bench performance --bench security --bench canonicalization --bench determinism
 cargo test --release --features ddex-parser/perf-tests,ddex-builder/perf-tests perf::
 ```
@@ -73,15 +73,6 @@ their numbers are not comparable with `parse`.
 The parallel iterator does not scale with the thread count (it runs on one thread; a
 scaling one is planned for 0.6.0). The runner has 4 vCPUs, so 8 threads were not
 measured.
-
-### `FastStreamingParser` (bench `fast_streaming_benchmark`)
-
-About 790â€“990 MiB/s on its generated inputs (e.g. "10MB" group: 2.91 ms; "100MB": 13 ms).
-Caveats: this is the parser behind `SecurityConfig::relaxed()`, whose conversion to the
-message model is not implemented (`parse` returns an error with that setting since 0.5.1,
-KNOWN_ISSUES.md), so it measures scanning, not extraction; the group labels are nominal
-(the "50MB" inputs are about 11 MB). Since 0.5.1 it also scans each input for references
-to undefined entities.
 
 ## ddex-builder
 

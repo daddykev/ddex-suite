@@ -68,8 +68,8 @@ print(tracks[["track_index", "track_title", "isrc", "duration", "disc_number", "
 
 ## Security
 
-The parser rejects DTDs and external entities (XXE), limits entity expansion, element
-depth and input size, and never fetches from the network. It does not validate against
+The parser rejects DTDs and external entities (XXE), expands no entity, limits element
+depth, and never fetches from the network. It does not validate against
 the DDEX XSD or the AVS business rules.
 
 ## Links

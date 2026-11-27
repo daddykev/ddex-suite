@@ -39,7 +39,7 @@ jobs:
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
       - name: ddex-parser benches
-        run: cargo bench -p ddex-parser --bench throughput --bench fast_streaming_benchmark
+        run: cargo bench -p ddex-parser --bench throughput
       - name: ddex-builder benches
         run: cargo bench -p ddex-builder --bench performance --bench security --bench canonicalization --bench determinism
       - name: Sanity limits (perf-tests, release)

@@ -16,12 +16,11 @@ bindings always use it) applies these rules before any value is read:
 
 | Threat | Handling |
 |---|---|
-| DTDs (`<!DOCTYPE ...>`) | Rejected. This also stops internal entity declarations |
+| DTDs (`<!DOCTYPE ...>`) | Rejected by every reader (`parse` and the Rust streaming and selective readers). This also stops internal entity declarations |
 | External entities (XXE) | Rejected; nothing is read from files or URLs |
-| Entity expansion ("billion laughs") | Limited (100 expansions, depth 10) |
+| Entity expansion ("billion laughs") | No entity is ever expanded (a reference to anything but the five predefined entities and character references is an error); `parse` also allows at most 100 references in text |
 | Deep nesting | Limited to 100 levels of elements |
-| Oversized values | Attribute values up to 100 KB, text nodes up to 1 MB |
-| Oversized input | Up to 1 GB in Rust; the Node.js binding takes up to 100 MB of XML |
+| Oversized input | The Node.js binding takes up to 100 MB of XML; Rust and Python set no size limit |
 | Network access | None: no schema, DTD or entity is ever fetched |
 
 A rejected message is an ordinary parse error that says which rule it broke:
@@ -39,9 +38,8 @@ const xxe = `<?xml version="1.0"?>
 assert.throws(() => new DdexParser().parseSync(xxe), /DTD declarations are disabled/);
 ```
 
-In Rust, `DDEXParser::with_config` takes a different `SecurityConfig`. Do not use
-`SecurityConfig::relaxed()`: it switches to the experimental fast streaming path, which
-is not implemented, so `parse` returns an error (see [known issues](./known-issues.md)).
+In Rust, `DDEXParser::with_config` takes a different `SecurityConfig` (the reference and
+depth limits). A DOCTYPE and undefined entities are rejected whatever the configuration.
 
 ## Text passes through, escaped
 

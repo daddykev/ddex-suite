@@ -1,15 +1,10 @@
 //! APIs that used to return made-up values (an invented header, placeholder IDs, zero
-//! statistics, the current time for a missing date) now report what the document holds or
-//! fail with "not implemented in 0.5.x". Checked on the official samples, with the expected
+//! statistics, the current time for a missing date) now report what the document holds
+//! (the ones that could not were removed in 0.6.0). Checked on the official samples, with the expected
 //! values read from the XML text independently of the parser.
 
 use ddex_parser::parser::multi_release_parser::MultiReleaseParser;
-use ddex_parser::parser::security::SecurityConfig;
-use ddex_parser::streaming::fast_streaming_parser::FastStreamingParser;
-use ddex_parser::streaming::{
-    ParallelBenchmark, ParallelStreamingParser, StreamingConfig, WorkingStreamingElement,
-};
-use ddex_parser::transform::version_adapter::VersionAdapter;
+use ddex_parser::streaming::{ParallelStreamingParser, WorkingStreamingElement};
 use ddex_parser::{DDEXParser, ERNVersion};
 use std::io::Cursor;
 
@@ -49,11 +44,6 @@ fn seconds(duration: &str) -> u64 {
     total
 }
 
-fn not_implemented(error: impl std::fmt::Display) {
-    let error = error.to_string();
-    assert!(error.contains("not implemented in 0.5.x"), "{error}");
-}
-
 #[test]
 fn total_duration_is_the_sum_of_the_resource_durations() {
     let xml = sample("Samples43");
@@ -70,31 +60,11 @@ fn total_duration_is_the_sum_of_the_resource_durations() {
 }
 
 #[test]
-fn the_fast_streaming_path_is_not_implemented() {
-    let xml = sample("Samples43");
-    let mut relaxed = DDEXParser::with_config(SecurityConfig::relaxed());
-    not_implemented(relaxed.parse(Cursor::new(xml.as_bytes())).unwrap_err());
-    not_implemented(
-        DDEXParser::new()
-            .parse_fast_streaming(Cursor::new(xml.as_bytes()))
-            .unwrap_err(),
-    );
-}
-
-#[test]
-fn version_adapter_is_not_implemented() {
-    let adapter = VersionAdapter::new(ERNVersion::V4_3);
-    not_implemented(adapter.adapt_message_header(b"<x/>").unwrap_err());
-    not_implemented(adapter.adapt_deal_terms(b"<x/>").unwrap_err());
-}
-
-#[test]
 fn multi_release_parser_invents_no_header() {
     let xml = sample("Samples43");
-    let result = MultiReleaseParser::new(ERNVersion::V4_3)
+    let result = MultiReleaseParser::new()
         .parse_releases(Cursor::new(xml.as_bytes()))
         .unwrap();
-    assert!(result.message_header.is_none());
     for release in &result.releases {
         assert!(
             !release.release_reference.starts_with("REL_"),
@@ -172,19 +142,11 @@ fn streaming_iterators_report_the_document_not_defaults() {
 #[test]
 fn parser_statistics_are_measured_or_zero() {
     let xml = sample("Samples43");
-    let mut fast = FastStreamingParser::new(StreamingConfig::default());
-    assert_eq!(fast.get_stats().total_bytes, 0);
-    fast.parse_streaming(&mut Cursor::new(xml.as_bytes()), None)
-        .unwrap();
-    assert_eq!(fast.get_stats().total_bytes, xml.len() as u64);
-
     let parallel = ParallelStreamingParser::new();
     parallel.parse_parallel(xml.as_bytes()).unwrap();
     let stats = parallel.get_stats();
     assert_eq!(stats.bytes_processed, xml.len() as u64);
     assert_eq!(stats.max_depth_reached, 0);
-
-    not_implemented(ParallelBenchmark::measure_parallel_speedup(xml.as_bytes()).unwrap_err());
 }
 
 fn cli(args: &[&str]) -> std::process::Output {
@@ -218,16 +180,4 @@ fn cli_reports_the_detected_version() {
     let wrong = cli(&["validate", &path, "--ddex-version", "4.3"]);
     assert!(!wrong.status.success());
     assert!(String::from_utf8_lossy(&wrong.stdout).contains("Expected ERN 4.3, found ERN 4.2"));
-}
-
-#[test]
-fn stream_mode_resource_and_party_iterators_are_not_implemented() {
-    use ddex_parser::parser::stream::StreamingParser;
-    let xml = sample("Samples43");
-    let mut parser = StreamingParser::new(Cursor::new(xml.as_bytes()), ERNVersion::V4_3);
-    let mut resources = parser.stream_resources();
-    not_implemented(resources.next().unwrap().unwrap_err());
-    assert!(resources.next().is_none());
-    let mut parser = StreamingParser::new(Cursor::new(xml.as_bytes()), ERNVersion::V4_3);
-    not_implemented(parser.stream_parties().next().unwrap().unwrap_err());
 }
