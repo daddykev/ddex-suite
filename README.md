@@ -298,15 +298,16 @@ Report vulnerabilities as described in
 
 ## 📊 Performance
 
-Criterion benches on a GitHub-hosted runner (Intel Xeon, 4 vCPUs), release profile, 0.5.1
+Criterion benches on a GitHub-hosted runner (Intel Xeon Platinum 8573C, 4 vCPUs), release
+profile, 0.6.0
 ([details and commands](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md)):
 
 | Operation | Measured |
 |---|---:|
-| Parse an official ERN 4.3 sample (10–330 KB) | 0.27–7.4 ms (about 33–47 MiB/s) |
-| Parse `1 Audio.xml` (75 KB, a typical album) | 1.7 ms |
-| Parse a ~10 MB ERN 4.3 catalog | 211 ms (47.3 MiB/s) |
-| Build ERN 4.3, 1 / 12 / 100 tracks | 1.7 / 8.3 / 58 ms |
+| Parse an official ERN 4.3 sample (10–330 KB) | 0.41–11 ms (about 22–31 MiB/s) |
+| Parse `1 Audio.xml` (75 KB, a typical album) | 2.5 ms |
+| Parse a ~10 MB ERN 4.3 catalog | 323 ms (31.0 MiB/s) |
+| Build ERN 4.3, 1 / 12 / 100 tracks | 0.73 / 3.4 / 24 ms |
 
 ## 🗂️ Repository layout
 

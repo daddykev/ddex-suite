@@ -97,21 +97,21 @@ function HomepageHeader() {
   );
 }
 
-// Measured numbers from dev-docs/PERFORMANCE.md (criterion, 0.5.1, GitHub-hosted runner,
+// Measured numbers from dev-docs/PERFORMANCE.md (criterion, 0.6.0, GitHub-hosted runner,
 // release profile). Do not add figures that are not in that file.
 function PerformanceBenchmarks() {
   const benchmarks = [
-    { label: 'Parse a typical album (ERN 4.3, 75 KB)', value: '1.7 ms', icon: faRocket },
-    { label: 'Parser throughput on real ERN 4.3', value: '33–47 MiB/s', icon: faBolt },
-    { label: 'Parse a ~10 MB catalog', value: '211 ms', icon: faDatabase },
-    { label: 'Build a 12-track album (ERN 4.3)', value: '8.3 ms', icon: faSave },
+    { label: 'Parse a typical album (ERN 4.3, 75 KB)', value: '2.5 ms', icon: faRocket },
+    { label: 'Parser throughput on real ERN 4.3', value: '22–31 MiB/s', icon: faBolt },
+    { label: 'Parse a ~10 MB catalog', value: '323 ms', icon: faDatabase },
+    { label: 'Build a 12-track album (ERN 4.3)', value: '3.4 ms', icon: faSave },
   ];
   // Bar heights on a log scale: 0.1 ms -> 0 %, 1000 ms -> 100 %.
   const bars = [
-    { size: '10 KB', ms: 0.27, label: '0.27 ms' },
-    { size: '75 KB', ms: 1.7, label: '1.7 ms' },
-    { size: '330 KB', ms: 7.43, label: '7.4 ms' },
-    { size: '10 MB', ms: 211, label: '211 ms' },
+    { size: '10 KB', ms: 0.41, label: '0.41 ms' },
+    { size: '75 KB', ms: 2.52, label: '2.5 ms' },
+    { size: '330 KB', ms: 11.0, label: '11 ms' },
+    { size: '10 MB', ms: 323, label: '323 ms' },
   ];
   const height = (ms: number) => `${Math.round(((Math.log10(ms) + 1) / 4) * 100)}%`;
 
@@ -151,8 +151,8 @@ function PerformanceBenchmarks() {
           </div>
         </div>
         <p className={styles.sectionSubtitle}>
-          Criterion benches on a GitHub-hosted runner (Intel Xeon, 4 vCPUs), release profile,
-          0.5.1.{' '}
+          Criterion benches on a GitHub-hosted runner (Intel Xeon Platinum 8573C, 4 vCPUs),
+          release profile, 0.6.0.{' '}
           <Link to="/docs/performance">Method and full results</Link>
         </p>
       </div>

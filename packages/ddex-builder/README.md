@@ -155,9 +155,9 @@ assert!(bridge.unmapped.contains(&"header.message_thread_id".to_string()));
 
 ## Performance
 
-Criterion benches on a GitHub-hosted runner (Intel Xeon, 4 vCPUs), release profile,
-0.5.1: ERN 4.3 with 1 track builds in 1.7 ms, 12 tracks in 8.3 ms and 100 tracks in 58 ms,
-about 0.56 ms per track plus 1–1.5 ms per message ([details](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md)).
+Criterion benches on a GitHub-hosted runner (Intel Xeon Platinum 8573C, 4 vCPUs), release
+profile, 0.6.0: ERN 4.3 with 1 track builds in 0.73 ms, 12 tracks in 3.4 ms and 100 tracks
+in 24 ms, roughly 0.24 ms per track plus about 0.5 ms per message ([details](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md)).
 
 ## Links
 
