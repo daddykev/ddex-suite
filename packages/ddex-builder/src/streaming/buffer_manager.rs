@@ -90,8 +90,14 @@ impl<W: IoWrite> BufferManager<W> {
             self.flush_current_buffer()?;
         }
 
-        // If chunk is larger than max buffer size, write it directly
+        // If chunk is larger than max buffer size, write it directly. The chunk is held in
+        // memory next to the queued buffers until it is written, so it counts towards the
+        // peak (before 0.6.0 this path skipped the peak update and under-reported it).
         if data.len() > self.config.max_buffer_size {
+            let current_memory = self.current_memory_usage() + data.len();
+            if current_memory > self.peak_buffer_size {
+                self.peak_buffer_size = current_memory;
+            }
             self.write_directly(data)?;
             return Ok(());
         }

@@ -732,6 +732,24 @@ impl DDEXBuilder {
         Self
     }
 
+    /// The preflight checks [`DDEXBuilder::build`] runs at `level`: their errors and
+    /// warnings, without building. ([`super::preflight::PreflightLevel::None`] checks
+    /// nothing.)
+    pub fn preflight(
+        &self,
+        request: &BuildRequest,
+        level: super::preflight::PreflightLevel,
+    ) -> Result<super::preflight::ValidationResult, super::error::BuildError> {
+        super::preflight::PreflightValidator::new(super::preflight::ValidationConfig {
+            level,
+            profile: request.profile.clone(),
+            validate_identifiers: true,
+            check_required_fields: true,
+            validate_references: true,
+        })
+        .validate(request)
+    }
+
     /// The ERN versions the builder supports
     pub fn supported_versions(&self) -> Vec<super::DdexVersion> {
         super::versions::utils::supported_versions()
@@ -803,17 +821,8 @@ impl DDEXBuilder {
         // output is well-formed for any accepted input.
         super::xml_escape::check_request_chars(&request)?;
 
-        // 1. Enhanced preflight checks with new validator
-        let validator =
-            super::preflight::PreflightValidator::new(super::preflight::ValidationConfig {
-                level: options.preflight_level,
-                profile: request.profile.clone(),
-                validate_identifiers: true,
-                check_required_fields: true,
-                validate_references: true,
-            });
-
-        let validation_result = validator.validate(&request)?;
+        // 1. Preflight checks
+        let validation_result = self.preflight(&request, options.preflight_level)?;
 
         // Convert validation warnings to build warnings
         for warning in validation_result.warnings {
@@ -824,17 +833,26 @@ impl DDEXBuilder {
             });
         }
 
-        // Fail if validation didn't pass
-        if !validation_result.passed {
-            if options.preflight_level == super::preflight::PreflightLevel::Strict {
-                return Err(super::error::BuildError::ValidationFailed {
-                    errors: validation_result
-                        .errors
-                        .iter()
-                        .map(|e| format!("{}: {}", e.code, e.message))
-                        .collect(),
-                });
-            }
+        // Strict: preflight errors (and warnings) fail the build. Warn (the default): each
+        // preflight error is returned in `BuildResult::warnings` with its code and message,
+        // and the build goes on (before 0.6.0 they were discarded). None: nothing is checked.
+        if options.preflight_level == super::preflight::PreflightLevel::Strict
+            && !validation_result.passed
+        {
+            return Err(super::error::BuildError::ValidationFailed {
+                errors: validation_result
+                    .errors
+                    .iter()
+                    .map(|e| format!("{}: {}", e.code, e.message))
+                    .collect(),
+            });
+        }
+        for error in validation_result.errors {
+            warnings.push(BuildWarning {
+                code: error.code,
+                message: error.message,
+                location: Some(error.location),
+            });
         }
 
         // 2. Number the references the request leaves out

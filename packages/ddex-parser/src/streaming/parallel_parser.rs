@@ -95,12 +95,11 @@ impl ParallelStreamingParser {
         WorkingStreamingStats {
             bytes_processed,
             elements_yielded: elements_found as usize,
-            // Depth and memory are not tracked by this parser: 0 (before 0.5.1, a constant
-            // 10 and chunk size x threads).
-            current_depth: 0,
-            max_depth_reached: 0,
-            current_memory_bytes: 0,
-            max_memory_used_bytes: 0,
+            // Depth and memory are not tracked by this parser (before 0.5.1, a constant 10
+            // and chunk size x threads; before 0.6.0, 0).
+            current_depth: None,
+            current_memory_bytes: None,
+            max_memory_used_bytes: None,
             elapsed_time: elapsed,
             throughput_mb_per_sec: throughput,
         }

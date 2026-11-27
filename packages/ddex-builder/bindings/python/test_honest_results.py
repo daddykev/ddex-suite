@@ -58,9 +58,9 @@ def test_build_with_statistics_statistics_and_verification_are_computed():
     stats = result.statistics
     assert stats.element_count == result.xml.count("<") - result.xml.count("</") - result.xml.count("<?")
     assert stats.attribute_count > 0 and stats.namespace_count > 0
-    assert stats.memory_used_bytes is None
-    assert stats.canonicalization_time_ms is None
-    assert stats.extension_count is None
+    # Never-measured fields were removed in 0.6.0.
+    for field in ("memory_used_bytes", "canonicalization_time_ms", "extension_count"):
+        assert not hasattr(stats, field), field
     assert stats.verification_time_ms is not None
     verification = result.verification
     assert verification.round_trip_success, verification.issues

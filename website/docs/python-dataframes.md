@@ -238,8 +238,8 @@ out (`None`) instead.
 - `DDEXParser().stream(xml)` parses the whole document, then yields one dict per release
   (`release_id`, `title`, `artist`, `track_count`). It does not reduce memory use.
 - `detect_version(xml)` returns `"V4_3"` (the enum spelling); `sanity_check(xml)` returns
-  `{"is_valid", "version", "errors", "warnings"}`: it detects the ERN version (`None` when
-  there is no ERN namespace) and checks that the XML is well-formed. It is not XSD
+  `{"is_valid", "version", "errors"}`: it detects the ERN version (`None` when none is
+  recognised) and checks that the XML is well-formed. It is not XSD
   validation, and `parse` can still fail on a document that passes.
 - `parse` takes no options: `ParseOptions`, whose fields had no effect, was removed in
   0.6.0.

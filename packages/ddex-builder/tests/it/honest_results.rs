@@ -125,6 +125,35 @@ fn build_with_statistics_counts_the_output() {
     assert!(without.statistics.is_none());
 }
 
+/// Warn (the default) returns each preflight error in `BuildResult::warnings` with its code;
+/// Strict fails on it. (Before 0.6.0 Warn discarded the errors.)
+#[test]
+fn warn_mode_reports_preflight_errors_as_warnings() {
+    let mut request = minimal_single("4.3");
+    request.releases[0].upc = Some("123456789013".to_string()); // wrong check digit
+    let built = DDEXBuilder::new()
+        .build(request.clone(), BuildOptions::default())
+        .expect("Warn builds");
+    assert!(
+        built
+            .warnings
+            .iter()
+            .any(|w| w.code == "INVALID_UPC" && w.message.contains("123456789013")),
+        "{:?}",
+        built.warnings
+    );
+    let preflight = DDEXBuilder::new()
+        .preflight(&request, ddex_builder::preflight::PreflightLevel::Warn)
+        .unwrap();
+    assert!(preflight.errors.iter().any(|e| e.code == "INVALID_UPC"));
+    let strict = BuildOptions {
+        preflight_level: ddex_builder::preflight::PreflightLevel::Strict,
+        ..BuildOptions::default()
+    };
+    let error = DDEXBuilder::new().build(request, strict).unwrap_err();
+    assert!(error.to_string().contains("INVALID_UPC"), "{error}");
+}
+
 #[test]
 fn info_strings_claim_nothing_that_is_not_there() {
     assert!(!ddex_builder::version_info().contains("Perfect"));

@@ -57,21 +57,17 @@ export interface BuildOptions {
   /** Count the output (`statistics`) */
   collectStatistics?: boolean
 }
+/**
+ * Counted from the output. (Before 0.6.0 it also had `memoryUsedBytes`, `extensionCount`
+ * and `canonicalizationTimeMs`, which were never measured.)
+ */
 export interface BuildStatistics {
   buildTimeMs: number
-  /** Not measured: always null (before 0.5.1, twice the XML size). */
-  memoryUsedBytes?: number
   xmlSizeBytes: number
   elementCount: number
   attributeCount: number
   namespaceCount: number
-  /** Not measured: always null. */
-  extensionCount?: number
-  /**
-   * Not measured separately (canonicalization is part of the build): always null
-   * (before 0.5.1, a constant 2.0).
-   */
-  canonicalizationTimeMs?: number
+  /** Time of the round trip, with `enableVerification`; null otherwise. */
   verificationTimeMs?: number
 }
 export interface VerificationResult {

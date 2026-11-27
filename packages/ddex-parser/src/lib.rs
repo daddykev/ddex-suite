@@ -149,10 +149,10 @@ impl DDEXParser {
     /// does not build the message model: [`DDEXParser::parse`] can still fail on a document
     /// that passes.
     ///
-    /// When a version is detected the result is `Ok`: `is_valid` is true when no problem
-    /// was found, and `errors` lists the problems otherwise. When no ERN version can be
-    /// detected (not XML, or not an ERN document) the result is an `Err` naming every
-    /// problem found, since [`SanityCheckResult::version`] cannot express an unknown version.
+    /// `is_valid` is true when a version was detected and no problem was found; `errors`
+    /// lists the problems otherwise. `version` is `None` when no ERN version is recognised
+    /// (not XML, or not an ERN document; before 0.6.0 that was an `Err`). The only `Err` is a
+    /// failure to read `reader`.
     pub fn sanity_check<R: std::io::BufRead>(
         &self,
         mut reader: R,
@@ -160,28 +160,24 @@ impl DDEXParser {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes)?;
         let report = sanity::check(&bytes);
-        match report.version {
-            Some(version) => Ok(SanityCheckResult {
-                is_valid: report.errors.is_empty(),
-                version,
-                errors: report.errors,
-                warnings: report.warnings,
-            }),
-            None => Err(error::ParseError::XmlError(report.errors.join("; "))),
-        }
+        Ok(SanityCheckResult {
+            is_valid: report.version.is_some() && report.errors.is_empty(),
+            version: report.version,
+            errors: report.errors,
+        })
     }
 }
 
 // Old StreamIterator removed - now using DDEXStreamIterator from streaming module
 
-/// Result of [`DDEXParser::sanity_check`]: the detected ERN version and the
-/// well-formedness problems found (`is_valid` is true when there are none).
+/// Result of [`DDEXParser::sanity_check`]: the detected ERN version (`None` when none is
+/// recognised) and the problems found (`is_valid` is true when a version was detected and
+/// there are none). (Before 0.6.0 it also had `warnings`, which was always empty.)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SanityCheckResult {
     pub is_valid: bool,
-    pub version: ddex_core::models::versions::ERNVersion,
+    pub version: Option<ddex_core::models::versions::ERNVersion>,
     pub errors: Vec<String>,
-    pub warnings: Vec<String>,
 }
 
 #[cfg(test)]

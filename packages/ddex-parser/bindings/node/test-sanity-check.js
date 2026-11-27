@@ -61,8 +61,8 @@ async function main() {
     seen.add(want);
     const result = await parser.sanityCheck(xml);
     assert.deepEqual(
-      { isValid: result.isValid, version: result.version, errors: result.errors, warnings: result.warnings },
-      { isValid: true, version: want, errors: [], warnings: [] },
+      { isValid: result.isValid, version: result.version, errors: result.errors },
+      { isValid: true, version: want, errors: [] },
       path.relative(REPO, file),
     );
   }
@@ -87,17 +87,17 @@ async function main() {
   assert.equal(result.version, 'V4_3');
   assert.ok(result.errors.some((e) => e.includes('not closed')), result.errors.join(' | '));
 
-  // Well-formed XML that is not a DDEX message: no version ("Unknown"), invalid.
+  // Well-formed XML that is not a DDEX message: no version (null; "Unknown" before 0.6.0), invalid.
   result = await parser.sanityCheck('<?xml version="1.0"?><html><body>Hi</body></html>');
   assert.equal(result.isValid, false);
-  assert.equal(result.version, 'Unknown');
+  assert.equal(result.version, null);
   assert.equal(result.errors.length, 1);
   assert.match(result.errors[0], /No DDEX ERN namespace found/);
 
   for (const text of ['', 'not xml at all']) {
     result = await parser.sanityCheck(text);
     assert.equal(result.isValid, false);
-    assert.equal(result.version, 'Unknown');
+    assert.equal(result.version, null);
     assert.ok(result.errors.length > 0);
   }
 

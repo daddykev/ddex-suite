@@ -146,7 +146,9 @@ fn parser_statistics_are_measured_or_zero() {
     parallel.parse_parallel(xml.as_bytes()).unwrap();
     let stats = parallel.get_stats();
     assert_eq!(stats.bytes_processed, xml.len() as u64);
-    assert_eq!(stats.max_depth_reached, 0);
+    // Depth and memory are not tracked by the parallel parser: None, not 0.
+    assert_eq!(stats.current_depth, None);
+    assert_eq!(stats.max_memory_used_bytes, None);
 }
 
 fn cli(args: &[&str]) -> std::process::Output {

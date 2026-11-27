@@ -245,42 +245,21 @@ mod tests {
         let mut iterator = WorkingStreamIterator::new(cursor, ERNVersion::V4_3);
 
         let mut element_count = 0;
-        let mut max_memory_seen = 0usize;
 
         // Process elements one by one and track memory usage
         while let Some(result) = iterator.next() {
             assert!(result.is_ok(), "All elements should parse successfully");
             element_count += 1;
 
-            let stats = iterator.stats();
-            max_memory_seen = max_memory_seen.max(stats.current_memory_bytes);
-
-            // Verify O(1) memory complexity: memory should not grow linearly with elements
-            if element_count > 10 {
-                assert!(
-                    stats.current_memory_bytes < 50 * 1024 * 1024,
-                    "Memory usage should stay bounded under 50MB, got {} bytes at element {}",
-                    stats.current_memory_bytes,
-                    element_count
-                );
-            }
+            // This parser does not measure memory (None, not 0).
+            assert_eq!(iterator.stats().current_memory_bytes, None);
         }
 
         println!("Processed {} elements", element_count);
-        println!(
-            "Max memory used: {} bytes ({:.2} MB)",
-            max_memory_seen,
-            max_memory_seen as f64 / (1024.0 * 1024.0)
-        );
 
         assert!(
             element_count >= 100,
             "Should process at least 100 sound recordings"
-        );
-        assert!(
-            max_memory_seen < 10 * 1024 * 1024,
-            "Max memory should be under 10MB for O(1) complexity, got {:.2} MB",
-            max_memory_seen as f64 / (1024.0 * 1024.0)
         );
     }
 

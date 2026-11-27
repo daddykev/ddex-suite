@@ -80,8 +80,9 @@ async function main() {
   const elements = xml.split('<').length - 1 - (xml.split('</').length - 1) - (xml.split('<?').length - 1);
   assert.equal(built.statistics.elementCount, elements);
   assert.ok(built.statistics.attributeCount > 0 && built.statistics.namespaceCount > 0);
+  // Never-measured fields were removed in 0.6.0.
   for (const field of ['memoryUsedBytes', 'extensionCount', 'canonicalizationTimeMs']) {
-    assert.equal(built.statistics[field] ?? null, null, field);
+    assert.ok(!(field in built.statistics), field);
   }
   assert.equal(built.verification.roundTripSuccess, true, built.verification.issues.join('; '));
   assert.equal(built.verification.fidelityScore ?? null, null);

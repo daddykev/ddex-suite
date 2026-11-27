@@ -772,8 +772,8 @@ fn sanity_check(path: &str) -> Result<()> {
     let parser = DDEXParser::new();
     let result = parser.sanity_check(std::io::Cursor::new(xml.as_bytes()))?;
 
-    if result.is_valid {
-        println!("✅ Valid DDEX {:?}", result.version);
+    if let (true, Some(version)) = (result.is_valid, result.version) {
+        println!("✅ Valid DDEX {:?}", version);
     } else {
         println!("❌ Invalid DDEX");
         for error in &result.errors {
@@ -962,8 +962,8 @@ fn validate_ddex_file(
     match parser.sanity_check(std::io::Cursor::new(xml_content.as_bytes())) {
         Ok(mut result) => {
             // --ddex-version: the detected version must match (before 0.5.1 it was ignored).
-            if let Some(expected) = ddex_version {
-                let found = result.version.as_str();
+            if let (Some(expected), Some(version)) = (ddex_version, result.version) {
+                let found = version.as_str();
                 if expected
                     .trim_start_matches("ERN")
                     .trim_start_matches(['/', ' '])
@@ -978,8 +978,8 @@ fn validate_ddex_file(
             Ok(ValidationResult {
                 errors: result.errors.clone(),
                 warnings: vec![],
-                info: if result.is_valid {
-                    vec![format!("Valid DDEX {:?}", result.version)]
+                info: if let (true, Some(version)) = (result.is_valid, result.version) {
+                    vec![format!("Valid DDEX {:?}", version)]
                 } else {
                     vec![]
                 },

@@ -15,12 +15,12 @@ use std::time::{Duration, Instant};
 
 /// Progress information for streaming parsing
 #[derive(Debug, Clone)]
+/// (Before 0.6.0 it also had `resources_parsed`, always 0, and `estimated_total_bytes`, always
+/// `None`.)
 pub struct ParseProgress {
     pub bytes_processed: u64,
     pub releases_parsed: usize,
-    pub resources_parsed: usize,
     pub elapsed: Duration,
-    pub estimated_total_bytes: Option<u64>,
 }
 
 /// Streaming parser for memory-efficient processing
@@ -34,7 +34,6 @@ pub struct StreamingParser<R: BufRead> {
     start_time: Instant,
     bytes_processed: u64,
     releases_parsed: usize,
-    resources_parsed: usize,
     chunk_size: usize,
     max_memory: usize,
     buffer: Vec<u8>,
@@ -68,7 +67,6 @@ impl<R: BufRead> StreamingParser<R> {
             start_time: Instant::now(),
             bytes_processed: 0,
             releases_parsed: 0,
-            resources_parsed: 0,
             chunk_size: 100,
             max_memory: 100 * 1024 * 1024, // 100MB default
             buffer: Vec::with_capacity(8192),
@@ -100,9 +98,7 @@ impl<R: BufRead> StreamingParser<R> {
             let progress = ParseProgress {
                 bytes_processed: self.bytes_processed,
                 releases_parsed: self.releases_parsed,
-                resources_parsed: self.resources_parsed,
                 elapsed: self.start_time.elapsed(),
-                estimated_total_bytes: None,
             };
             callback(progress);
         }

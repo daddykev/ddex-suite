@@ -718,9 +718,8 @@ impl DdexParser {
         if xml.is_empty() {
             return Ok(SanityCheckResult {
                 is_valid: false,
-                version: "Unknown".to_string(),
+                version: serde_json::Value::Null,
                 errors: vec!["XML input cannot be empty for sanity check".to_string()],
-                warnings: Vec::new(),
             });
         }
 
@@ -728,9 +727,8 @@ impl DdexParser {
         if !xml.trim_start().starts_with("<?xml") && !xml.trim_start().starts_with('<') {
             return Ok(SanityCheckResult {
                 is_valid: false,
-                version: "Unknown".to_string(),
+                version: serde_json::Value::Null,
                 errors: vec!["Input does not appear to be valid XML".to_string()],
-                warnings: Vec::new(),
             });
         }
 
@@ -740,9 +738,11 @@ impl DdexParser {
         match self.inner.sanity_check(cursor) {
             Ok(result) => Ok(SanityCheckResult {
                 is_valid: result.is_valid,
-                version: version_to_string(result.version),
+                version: result
+                    .version
+                    .map(|v| serde_json::Value::String(version_to_string(v)))
+                    .unwrap_or(serde_json::Value::Null),
                 errors: result.errors,
-                warnings: result.warnings,
             }),
             Err(err) => {
                 // If sanity check fails, return detailed error information
@@ -761,9 +761,8 @@ impl DdexParser {
 
                 Ok(SanityCheckResult {
                     is_valid: false,
-                    version: "Unknown".to_string(),
+                    version: serde_json::Value::Null,
                     errors: vec![detailed_error],
-                    warnings: vec![format!("Input size: {} bytes", xml.len())],
                 })
             }
         }
@@ -814,11 +813,14 @@ pub struct ParsedMessage {
 }
 
 #[napi(object)]
+/// (Before 0.6.0 `version` was `"Unknown"` when no ERN version was recognised, and there
+/// was a `warnings` list.)
 pub struct SanityCheckResult {
     pub is_valid: bool,
-    pub version: String,
+    /// The detected version (`"V4_3"`); null when none is recognised.
+    #[napi(ts_type = "string | null")]
+    pub version: serde_json::Value,
     pub errors: Vec<String>,
-    pub warnings: Vec<String>,
 }
 
 #[napi(object)]

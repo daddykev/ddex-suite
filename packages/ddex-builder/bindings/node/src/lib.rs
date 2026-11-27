@@ -75,10 +75,10 @@ pub struct BuildOptions {
 
 #[napi(object)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
+/// Counted from the output. (Before 0.6.0 it also had `memoryUsedBytes`, `extensionCount`
+/// and `canonicalizationTimeMs`, which were never measured.)
 pub struct BuildStatistics {
     pub build_time_ms: f64,
-    /// Not measured: always null (before 0.5.1, twice the XML size).
-    pub memory_used_bytes: Option<u32>,
     pub xml_size_bytes: u32,
     /// Elements in the output.
     pub element_count: u32,
@@ -86,11 +86,7 @@ pub struct BuildStatistics {
     pub attribute_count: u32,
     /// Namespace declarations in the output.
     pub namespace_count: u32,
-    /// Not measured: always null.
-    pub extension_count: Option<u32>,
-    /// Not measured separately (canonicalization is part of the build): always null
-    /// (before 0.5.1, a constant 2.0).
-    pub canonicalization_time_ms: Option<f64>,
+    /// Time of the round trip, with `enableVerification`; null otherwise.
     pub verification_time_ms: Option<f64>,
 }
 
@@ -127,6 +123,34 @@ pub struct FidelityInfo {
     pub processing_instructions_preserved: bool,
     pub attribute_order_preserved: bool,
     pub namespace_prefixes_preserved: bool,
+}
+
+/// The preflight errors (`CODE: message`) and warnings of `request`, as `build` checks them,
+/// plus the build's own error when it fails (before 0.6.0 the preflight errors were not
+/// returned).
+fn preflight_and_build(request: ddex_builder::builder::BuildRequest) -> (Vec<String>, Vec<String>) {
+    use ddex_builder::builder::{BuildOptions, DDEXBuilder};
+    let builder = DDEXBuilder::new();
+    let options = BuildOptions::default();
+    let (mut errors, warnings) = match builder.preflight(&request, options.preflight_level) {
+        Ok(preflight) => (
+            preflight
+                .errors
+                .iter()
+                .map(|e| format!("{}: {}", e.code, e.message))
+                .collect::<Vec<_>>(),
+            preflight
+                .warnings
+                .iter()
+                .map(|w| w.message.clone())
+                .collect::<Vec<_>>(),
+        ),
+        Err(e) => (vec![e.to_string()], Vec::new()),
+    };
+    if let Err(e) = builder.build(request, options) {
+        errors.push(e.to_string());
+    }
+    (errors, warnings)
 }
 
 /// Parse with ddex-parser (the parse function the round trip needs).
@@ -294,13 +318,10 @@ impl DdexBuilder {
             let (element_count, attribute_count, namespace_count) = count_xml(&result.xml);
             Some(BuildStatistics {
                 build_time_ms: build_time,
-                memory_used_bytes: None,
                 xml_size_bytes: result.xml.len() as u32,
                 element_count,
                 attribute_count,
                 namespace_count,
-                extension_count: None,
-                canonicalization_time_ms: None,
                 verification_time_ms: None,
             })
         } else {
@@ -350,26 +371,20 @@ impl DdexBuilder {
     /// 0.5.1 it only checked that a release had been added).
     #[napi]
     pub async unsafe fn validate(&mut self) -> Result<ValidationResult> {
-        let builder = ddex_builder::builder::DDEXBuilder::new();
-        let built = self
-            .build_request(None)
-            .map_err(|e| e.reason)
-            .and_then(|request| {
-                builder
-                    .build(request, ddex_builder::builder::BuildOptions::default())
-                    .map_err(|e| e.to_string())
-            });
-        let result = match built {
-            Ok(built) => ValidationResult {
-                is_valid: true,
-                errors: vec![],
-                warnings: built.warnings.iter().map(|w| w.message.clone()).collect(),
-            },
+        let result = match self.build_request(None) {
             Err(e) => ValidationResult {
                 is_valid: false,
-                errors: vec![e],
+                errors: vec![e.reason],
                 warnings: vec![],
             },
+            Ok(request) => {
+                let (errors, warnings) = preflight_and_build(request);
+                ValidationResult {
+                    is_valid: errors.is_empty(),
+                    errors,
+                    warnings,
+                }
+            }
         };
         self.stats.validation_errors = result.errors.len() as u32;
         self.stats.validation_warnings = result.warnings.len() as u32;

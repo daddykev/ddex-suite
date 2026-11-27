@@ -70,7 +70,6 @@ def test_official_sample_is_valid_with_its_version(path):
         "is_valid": True,
         "version": expected_version(path),
         "errors": [],
-        "warnings": [],
     }
 
 
@@ -113,7 +112,7 @@ def test_non_ddex_xml_is_invalid_without_a_version():
     assert result["version"] is None
     assert len(result["errors"]) == 1
     assert "No DDEX ERN namespace found" in result["errors"][0]
-    assert result["warnings"] == []
+    assert "warnings" not in result  # removed in 0.6.0 (it was always empty)
 
 
 @pytest.mark.parametrize("text", ["", "   ", "not xml at all"])
