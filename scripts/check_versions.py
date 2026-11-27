@@ -21,7 +21,7 @@ The reference is `[workspace.package] version` in the root Cargo.toml. Checked:
   a reader can tell apart.
 
 A listed file that does not exist is reported as a failure. Not checked (not released):
-benchmark-suite/, examples/perfect-fidelity, packages/ddex-builder/fuzz and
+benchmark-suite/, packages/ddex-builder/fuzz and
 packages/ddex-parser/bindings/node/src/Cargo.toml.
 
 Usage: python3 scripts/check_versions.py        (exit status 1 on any disagreement)

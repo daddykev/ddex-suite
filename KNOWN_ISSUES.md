@@ -126,31 +126,17 @@ reason, until the upgrade lands.
 These APIs returned made-up results before 0.5.1 (success, scores, counts, invented values).
 They now fail, or report the value as not measured, instead:
 
-- ddex-builder round trip and fidelity (`round_trip`, `verification`, `lib.rs`):
-  - `RoundTripTester::test_round_trip` and `Builder::test_round_trip_fidelity` return an
-    error (the builder has no parser); `test_round_trip_with` / `test_round_trip_fidelity_with`
-    and `round_trip::verify_round_trip` take the parser's parse function and run a real
-    round trip. Node `testRoundTripFidelity` and Python `test_round_trip_fidelity` run it.
-    Round trips compare only the fields a build request carries (not lossless: contributors,
-    P and C lines, images, ... are not rebuilt), and `fidelity_score` / `fidelityScore` is
-    always null.
-  - `RoundTripTester::analyze_fidelity` returns an error.
-  - `BuildVerifier::verify` (used by `Builder::verify_build` and `build_with_fidelity`)
-    reports round-trip verification and XSD validation as not done (`false`, with the
-    reason as an issue).
-  - C14N, C14N 1.1 and custom canonicalization (`Builder::canonicalize`,
-    `build_with_fidelity`, the bindings' `canonicalization` option) return an error; only
-    DB-C14N/1.0 is implemented.
-  - The other fidelity options (comments, extensions, attribute order, ...) are not applied.
-    `BuildStatistics` canonicalization / validation time, peak memory and input size are not
-    measured (0 in Rust, null in Node / Python, as are memory, extension count and
-    canonicalization time in the bindings).
-- ddex-builder determinism: `guarantees::validate_no_hashmap_usage` and
-  `validate_deterministic_sorting` return an error; the `DeterministicCollections` and
-  `StableSorting` guarantees report `passed: false` (not verified; ddex-builder still uses
-  HashMap); the runtime guarantees check only that repeated builds are byte-identical.
-  `DeterminismVerifier::verify` needs at least 2 iterations; `verify_with_hashmap_stress`
-  applies no stress (it is `verify`).
+- ddex-builder round trips: `RoundTripTester::test_round_trip_with`,
+  `Builder::test_round_trip_fidelity_with` and `round_trip::verify_round_trip` take the
+  parser's parse function and run a real round trip. Node `testRoundTripFidelity` and Python
+  `test_round_trip_fidelity` run it. Round trips compare only the fields a build request
+  carries (contributors, P and C lines, images, ... are not rebuilt), and
+  `fidelity_score` / `fidelityScore` is always null. (The fake round-trip, verification,
+  fidelity-analysis and determinism-guarantee APIs were removed in 0.6.0.)
+- Node / Python builder bindings: `buildWithFidelity` / `build_with_fidelity` reject a
+  `canonicalization` other than `db_c14n` or `none`, and apply none of the other fidelity
+  options (comments, extensions, attribute order, ...). Memory, extension count and
+  canonicalization time are not measured (null).
 - ddex-builder versions: `ConversionPath::fidelity` (and `fidelity_percentage`) are not
   measured (0.0) and no path is `production_ready`.
 - ddex-parser: `transform::version_adapter::VersionAdapter` methods return an error;

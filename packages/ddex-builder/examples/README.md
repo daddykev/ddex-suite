@@ -104,7 +104,7 @@ All examples demonstrate robust error handling:
 
 ```rust
 // Build with detailed error context
-let result = match builder.build_internal(&request) {
+let result = match builder.build(request.clone(), BuildOptions::default()) {
     Ok(result) => {
         println!("✅ Build successful: {} KB", result.xml.len() / 1024);
         result
@@ -130,7 +130,7 @@ Examples show how to track performance:
 
 ```rust
 let start = std::time::Instant::now();
-let result = builder.build_internal(&request)?;
+let result = builder.build(request.clone(), BuildOptions::default())?;
 let duration = start.elapsed();
 
 println!("⏱️  Build time: {}ms", duration.as_millis());
@@ -172,20 +172,20 @@ validate_audio_specifications(&audio_specs)?;
 //! 
 //! Brief description of what this example demonstrates.
 
-use ddex_builder::{Builder, BuildRequest};
+use ddex_builder::{BuildOptions, BuildRequest, DDEXBuilder};
 use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
     println!("🎵 Your Custom Example");
     
     // Step 1: Initialize builder
-    let builder = Builder::new();
+    let builder = DDEXBuilder::new();
     
     // Step 2: Create request
     let request = create_your_request();
     
     // Step 3: Build and validate
-    let result = builder.build_internal(&request)?;
+    let result = builder.build(request.clone(), BuildOptions::default())?;
     validate_your_requirements(&result.xml)?;
     
     // Step 4: Save and report

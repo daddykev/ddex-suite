@@ -10,7 +10,4 @@ fn test_determinism_config() {
         ddex_builder::determinism::CanonMode::DbC14n
     );
     assert_eq!(config.indent_width, 2);
-
-    // Verify locked prefixes are IndexMap
-    assert!(!config.locked_prefixes.is_empty());
 }

@@ -423,60 +423,23 @@ valgrind --tool=massif cargo test --package ddex-builder db_c14n_memory_test
 
 ### 7.1 DDEX Suite Implementation
 
-The reference implementation in DDEX Suite provides:
+`DDEXBuilder::build` writes DB-C14N/1.0 output by default. The canonicalizer can also be
+called on its own:
 
 ```rust
 use ddex_builder::{Builder, CanonicalizationAlgorithm};
 
-let builder = Builder::new()
-    .with_canonicalization(CanonicalizationAlgorithm::DbC14N);
+let mut builder = Builder::new();
+builder.with_canonicalization(CanonicalizationAlgorithm::DbC14N);
 
 let canonical_xml = builder.canonicalize(&input_xml)?;
 ```
 
 ### 7.2 Configuration Options
 
-```rust
-use ddex_builder::{CustomCanonicalizationRules, FidelityOptions};
-
-let rules = CustomCanonicalizationRules {
-    preserve_whitespace: false,
-    sort_attributes: true,
-    normalize_line_endings: true,
-    minimize_namespaces: true,
-    attribute_ordering: vec![
-        "MessageSchemaVersionId".to_string(),
-        "BusinessTransactionId".to_string(),
-        // ... other DDEX-specific ordering
-    ],
-};
-
-let fidelity_options = FidelityOptions {
-    canonicalization: CanonicalizationAlgorithm::DbC14N,
-    custom_canonicalization_rules: Some(rules),
-    preserve_extensions: true,
-    // ... other options
-};
-```
-
-### 7.3 Performance Tuning
-
-For different use cases:
-
-**Maximum Fidelity**:
-- Enable all preservation features
-- Use DB-C14N with comment preservation
-- Collect statistics for verification
-
-**Balanced Performance**:
-- Disable comment preservation
-- Use standard DB-C14N settings
-- Skip statistics collection
-
-**High Performance**:
-- Disable canonicalization (`Algorithm::None`)
-- Minimal preservation features
-- Streaming mode for large files
+`CanonicalizationAlgorithm` has two values: `DbC14N` (the default) and `None` (the input is
+returned unchanged). The other algorithms and the custom rules of earlier versions were not
+implemented and were removed in 0.6.0, as were the preservation options.
 
 ## 8. Future Considerations
 

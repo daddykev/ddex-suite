@@ -55,6 +55,79 @@ effect. Real features can come back later as additions. The inventory is
     `build --strict` (never read), and `schema --profile` and `schema --with-docs` (the
     profile was hard-coded and the option discarded).
   - Migration: drop the flag; the output does not change.
+- **Determinism guarantees and verifier removed** (Rust, CLI):
+  - What went:
+    - The `guarantees` module (`DeterminismGuarantee`, `DeterminismGuaranteeValidator`,
+      `GuaranteeReport`, `generate_guarantee_report`, `validate_no_hashmap_usage`,
+      `validate_deterministic_sorting` and their types) and its root re-exports.
+    - `determinism::DeterminismVerifier` (`verify`, `quick_check`, `thorough_check`,
+      `verify_with_hashmap_stress`, `verify_with_threading_stress`) and its result types
+      (`DeterminismResult`, `DeterminismDifference`, `HashDifference`, `LengthDifference`,
+      `DifferenceContext`, `DeterminismStats`).
+    - `BuildError::DeterminismGuaranteeViolated` and `BuildError::DeterminismFailed`.
+    - The CLI `guarantees` subcommand.
+  - Why: ten of the twelve guarantees were not checked as named (hard-coded "not verified",
+    or one shared repeat-build check reported six times).
+  - Migration: no replacement. Determinism is a documented, CI-tested property of
+    `DDEXBuilder::build` (`tests/it/determinism_0_6.rs`). To compare builds yourself, build
+    twice and compare the bytes; `ddex-builder build --verify-determinism` still does this.
+- **`DeterminismConfig` reduced to what a build reads** (Rust):
+  - Kept: `canon_mode`, `indent_char`, `indent_width` and `emit_reproducibility_banner`;
+    `CanonMode::{DbC14n, Pretty}` and `IndentChar`.
+  - Removed:
+    - The fields `sort_strategy`, `custom_sort_order`, `namespace_strategy`,
+      `locked_prefixes`, `output_mode`, `line_ending`, `unicode_normalization`,
+      `xml_character_policy`, `quote_style`, `time_zone_policy`, `date_time_format` and
+      `verify_determinism`.
+    - The enums `SortStrategy`, `NamespaceStrategy`, `OutputMode`, `LineEnding`,
+      `UnicodeNormalization`, `XmlCharacterPolicy`, `QuoteStyle`, `TimeZonePolicy` and
+      `DateTimeFormat`.
+    - `CanonMode::Compact`.
+  - Why: no build read the removed fields, and `Compact` gave the same output as `Pretty`.
+  - Migration: drop the fields (`..Default::default()` keeps working); use
+    `CanonMode::Pretty` instead of `Compact`.
+- **Verification removed** (Rust):
+  - What went: the `verification` module (`BuildVerifier`, `VerificationConfig`,
+    `VerificationResult`, `VerificationStatistics`, …); `Builder::verify_build` and
+    `Builder::with_verification`; the `lib.rs` copies of `VerificationConfig`,
+    `VerificationResult`, `VerificationIssue` and `VerificationSeverity`; and
+    `FidelityBuildResult::verification_result`.
+  - Why: the round-trip check was not implemented and always failed, the schema check
+    always failed, and the "determinism" check never built anything.
+  - Migration: use `round_trip::verify_round_trip` with the parser's parse function for a
+    real round trip, and DDEX Workbench (https://ddex-workbench.org) for XSD and business-rule
+    validation.
+- **Fidelity APIs removed** (Rust, Node, Python):
+  - Rust:
+    - The `fidelity` module (`FidelityConfig` and its option tree, `FidelityStatistics`,
+      `FidelityResult`, …) and its root re-exports.
+    - `Builder::with_perfect_fidelity`, `for_round_trip`, `enable_perfect_fidelity`,
+      `disable_perfect_fidelity`, `is_perfect_fidelity_enabled`, `test_round_trip_fidelity`
+      (it always returned an error), `with_config`, `config`, `db_c14n_config` (with
+      `DbC14NConfig` and `NamespaceHandling`) and `fidelity_engine_info`.
+    - `RoundTripTester::test_round_trip` and `analyze_fidelity` (both always returned an
+      error), `FidelityAnalysis` and its five analysis types, and the never-applied
+      `fidelity_options` of `RoundTripTester` (`RoundTripTester::new()` now takes no
+      argument).
+    - Every `FidelityOptions` field except `canonicalization` and `collect_statistics`:
+      `enable_perfect_fidelity`, the `preserve_*` options, `custom_canonicalization_rules`,
+      `enable_deterministic_ordering`, `enable_verification` and `verification_config`.
+    - The `BuildStatistics` fields that were always 0 (`canonicalization_time`,
+      `validation_time`, `peak_memory_bytes`, `input_size_bytes`) and `verification_time`.
+  - Node: `FidelityOptions.enablePerfectFidelity` (never read) and
+    `FidelityInfo.perfectFidelityEnabled` (always false).
+  - Python: `FidelityOptions(enable_perfect_fidelity=…)` (never read).
+  - Why: no build applied these options. `Builder::with_config` stored a
+    `DeterminismConfig` that no build read.
+  - Migration: drop the options. For round trips use
+    `Builder::test_round_trip_fidelity_with` or `round_trip::verify_round_trip`; for output
+    options pass `BuildOptions::determinism` to `DDEXBuilder::build`.
+- **Canonicalization algorithms removed** (Rust):
+  - What went: `CanonicalizationAlgorithm::C14N`, `C14N11` and `Custom`,
+    `CustomCanonicalizationRules`, and `Builder::with_c14n`, `with_c14n11` and
+    `with_custom_canonicalization`.
+  - Why: they were not implemented (each returned an error).
+  - Migration: `CanonicalizationAlgorithm` is `DbC14N` (the default) or `None`.
 
 ## [0.5.1] - 2026-11-26
 

@@ -64,8 +64,7 @@ pub struct BuilderStats {
 #[napi(object)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FidelityOptions {
-    pub enable_perfect_fidelity: Option<bool>,
-    pub canonicalization: Option<String>, // "none", "c14n", "c14n11", "db_c14n", "custom"
+    pub canonicalization: Option<String>, // "none" or "db_c14n" (anything else is an error)
     pub preserve_comments: Option<bool>,
     pub preserve_processing_instructions: Option<bool>,
     pub preserve_extensions: Option<bool>,
@@ -133,7 +132,6 @@ pub struct FidelityInfo {
     pub processing_instructions_preserved: bool,
     pub attribute_order_preserved: bool,
     pub namespace_prefixes_preserved: bool,
-    pub perfect_fidelity_enabled: bool,
 }
 
 /// Parse with ddex-parser (the parse function the round trip needs).
@@ -840,6 +838,5 @@ fn applied_fidelity(_options: &FidelityOptions) -> FidelityInfo {
         processing_instructions_preserved: false,
         attribute_order_preserved: false,
         namespace_prefixes_preserved: false,
-        perfect_fidelity_enabled: false,
     }
 }

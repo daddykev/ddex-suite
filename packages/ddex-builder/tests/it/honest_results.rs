@@ -1,13 +1,10 @@
-//! APIs that used to return made-up results (success, scores, counts) now compute them or
-//! fail with "not implemented in 0.5.x". Real results are checked on the official sample
+//! APIs that used to return made-up results (success, scores, counts) now compute them
+//! (the ones that could not were removed in 0.6.0), and the CLI stubs fail with "not
+//! implemented in 0.5.x". Real results are checked on the official sample
 //! `examples/Samples43/1 Audio.xml`.
 
 use crate::ern4_support::{minimal_single, parse};
-use ddex_builder::determinism::{DeterminismConfig, DeterminismVerifier};
-use ddex_builder::guarantees::{
-    validate_deterministic_sorting, validate_no_hashmap_usage, DeterminismGuarantee,
-    DeterminismGuaranteeValidator,
-};
+use ddex_builder::determinism::DeterminismConfig;
 use ddex_builder::round_trip::{verify_round_trip, RoundTripTester};
 use ddex_builder::versions::{ConverterResult, VersionConverter};
 use ddex_builder::{Builder, CanonicalizationAlgorithm, DdexVersion, FidelityOptions, DB_C14N};
@@ -25,11 +22,6 @@ fn parser(xml: &str) -> Result<ParsedERNMessage, String> {
     ddex_parser::DDEXParser::new()
         .parse(std::io::Cursor::new(xml.as_bytes()))
         .map_err(|e| e.to_string())
-}
-
-fn not_implemented(error: impl std::fmt::Display) {
-    let error = error.to_string();
-    assert!(error.contains("not implemented in 0.5.x"), "{error}");
 }
 
 // ----------------------------------------------------------------- round trip
@@ -78,16 +70,8 @@ fn round_trip_reports_a_field_changed_before_the_build() {
 }
 
 #[test]
-fn round_trip_testers_without_a_parser_are_not_implemented() {
-    let tester = RoundTripTester::new(FidelityOptions::default());
-    not_implemented(tester.test_round_trip(&sample()).unwrap_err());
-    not_implemented(tester.analyze_fidelity(&sample()).unwrap_err());
-    not_implemented(
-        Builder::new()
-            .test_round_trip_fidelity(&sample())
-            .unwrap_err(),
-    );
-
+fn round_trip_testers_run_a_real_round_trip() {
+    let tester = RoundTripTester::new();
     let with = tester.test_round_trip_with(&sample(), parser).unwrap();
     assert!(
         with.success && with.differences.is_empty(),
@@ -103,7 +87,7 @@ fn round_trip_testers_without_a_parser_are_not_implemented() {
 // ------------------------------------------------- canonicalize / fidelity build
 
 #[test]
-fn canonicalize_runs_db_c14n_and_rejects_the_others() {
+fn canonicalize_runs_db_c14n_or_nothing() {
     let xml = sample();
     let expected = DB_C14N::new(DeterminismConfig::default())
         .canonicalize(&xml)
@@ -122,12 +106,6 @@ fn canonicalize_runs_db_c14n_and_rejects_the_others() {
             .unwrap(),
         expected
     );
-    for algorithm in [
-        CanonicalizationAlgorithm::C14N,
-        CanonicalizationAlgorithm::C14N11,
-    ] {
-        not_implemented(with(algorithm).canonicalize(&xml).unwrap_err());
-    }
     assert_eq!(
         with(CanonicalizationAlgorithm::None)
             .canonicalize(&xml)
@@ -137,14 +115,12 @@ fn canonicalize_runs_db_c14n_and_rejects_the_others() {
 }
 
 #[test]
-fn build_with_fidelity_counts_the_output_and_verification_is_honest() {
+fn build_with_fidelity_counts_the_output() {
     let options = FidelityOptions {
         collect_statistics: true,
-        enable_verification: true,
         canonicalization: CanonicalizationAlgorithm::DbC14N,
-        ..FidelityOptions::default()
     };
-    let builder = Builder::with_fidelity_options(options.clone());
+    let builder = Builder::with_fidelity_options(options);
     let result = builder.build_with_fidelity(&minimal_single("4.3")).unwrap();
 
     let stats = result.statistics.unwrap();
@@ -155,29 +131,10 @@ fn build_with_fidelity_counts_the_output_and_verification_is_honest() {
     assert_eq!(stats.element_count, elements);
     assert!(stats.attribute_count > 0 && stats.namespace_count > 0);
     assert!(result.canonicalization_applied);
-
-    // No parser and no XSD validator in the builder: both are reported as not done.
-    let verification = result.verification_result.unwrap();
-    assert!(!verification.success);
-    assert!(verification
-        .issues
-        .iter()
-        .any(|i| i.message.contains("not implemented in 0.5.x")));
-
-    let c14n = Builder::with_fidelity_options(FidelityOptions {
-        canonicalization: CanonicalizationAlgorithm::C14N,
-        ..options
-    });
-    not_implemented(
-        c14n.build_with_fidelity(&minimal_single("4.3"))
-            .unwrap_err(),
-    );
 }
 
 #[test]
 fn info_strings_claim_nothing_that_is_not_there() {
-    let info = ddex_builder::fidelity_engine_info();
-    assert!(!info.contains('✓') && !info.contains("Perfect"), "{info}");
     assert!(!ddex_builder::version_info().contains("Perfect"));
 }
 
@@ -224,27 +181,6 @@ fn version_detection_needs_evidence() {
         DdexVersion::Ern43
     );
     assert!(builder.detect_version("<html><body/></html>").is_err());
-}
-
-// --------------------------------------------------------- determinism
-
-#[test]
-fn determinism_checks_build_or_fail() {
-    let request = minimal_single("4.3");
-    let verifier = DeterminismVerifier::new(DeterminismConfig::default());
-    assert!(verifier.verify(&request, 1).is_err());
-    let result = verifier.verify(&request, 2).unwrap();
-    assert_eq!(result.hashes.len(), 2);
-    let threaded = verifier.verify_with_threading_stress(&request, 2).unwrap();
-    assert_eq!(threaded.hashes.len(), 4, "2 sequential + 2 threaded builds");
-
-    not_implemented(validate_no_hashmap_usage().unwrap_err());
-    not_implemented(validate_deterministic_sorting().unwrap_err());
-    let validator = DeterminismGuaranteeValidator::new(DeterminismConfig::default());
-    let collections = validator
-        .validate_guarantee(&DeterminismGuarantee::DeterministicCollections, &request)
-        .unwrap();
-    assert!(!collections.passed, "{}", collections.details);
 }
 
 // ----------------------------------------------------- caches / updates / misc

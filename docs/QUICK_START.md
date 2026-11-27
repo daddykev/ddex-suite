@@ -14,8 +14,8 @@ Before you begin, make sure you have:
 In the next 5 minutes, you'll:
 1. **Parse** a DDEX XML message into clean, typed data
 2. **Modify** the metadata programmatically 
-3. **Build** a new, deterministic DDEX XML message
-4. **Validate** the round-trip fidelity
+3. **Build** a new, DB-C14N canonical DDEX XML message
+4. **Check** the round trip
 
 This is the core **Parse → Modify → Build** workflow that makes DDEX Suite powerful.
 
@@ -73,20 +73,13 @@ console.log(`Modified release now has ${release.tracks.length} tracks`);
 ```typescript
 import { DDEXBuilder } from 'ddex-builder';
 
-// Initialize builder with Spotify preset for compatibility
 const builder = new DDEXBuilder();
-await builder.applyPreset('spotify_audio_43');
 
 // Convert parsed data to build request
 const buildRequest = parsed.toBuildRequest();
 
-// Build deterministic XML
-const result = await builder.build(buildRequest, {
-    determinism: {
-        canonMode: 'db-c14n',
-        emitReproducibilityBanner: true
-    }
-});
+// Build canonical (DB-C14N/1.0) XML
+const result = await builder.build(buildRequest);
 
 console.log('✅ New XML generated!');
 console.log(`Size: ${(result.xml.length / 1024).toFixed(1)} KB`);
@@ -96,7 +89,7 @@ console.log(`Warnings: ${result.warnings.length}`);
 writeFileSync('updated_release.xml', result.xml);
 ```
 
-### Step 5: Verify Round-Trip Fidelity
+### Step 5: Check the Round Trip
 ```typescript
 // Parse the newly generated XML
 const reparsed = await parser.parse(result.xml);
@@ -310,7 +303,6 @@ npm install ddex-builder  # Includes WASM build automatically
 import { DDEXBuilder } from 'ddex-builder';
 
 const builder = new DDEXBuilder();
-await builder.applyPreset('spotify_audio_43');
 
 const spotifyRelease = {
     header: {
@@ -367,7 +359,6 @@ import pandas as pd
 catalog_df = pd.read_csv('label_catalog.csv')
 
 builder = DDEXBuilder()
-builder.apply_preset('universal_distribution')
 
 releases = []
 for _, row in catalog_df.iterrows():
@@ -455,21 +446,6 @@ isrc: 'USXYZ2400001'
 upc = '196589418425'  # Valid UPC with correct checksum
 ```
 
-### Preset Not Found
-```
-❌ Failed to apply preset: Preset 'custom_preset' not found
-```
-**Solution**: Use available presets or create custom configuration
-```typescript
-// Check available presets
-console.log(builder.availablePresets());
-
-// Use built-in presets
-await builder.applyPreset('spotify_audio_43');
-// or
-await builder.applyPreset('universal_distribution');
-```
-
 ---
 
 ## 📚 Next Steps
@@ -482,10 +458,8 @@ Congratulations! You've mastered the basics of DDEX Suite. Here's what to explor
 - **[Builder Examples](../packages/ddex-builder/examples/README.md)** - Real-world scenarios
 
 ### 🛠️ Advanced Features
-- **Partner Presets** - Platform-specific optimizations (Spotify, YouTube, Amazon)
 - **Streaming Processing** - Handle large catalogs efficiently
 - **DataFrame Integration** - Python pandas workflows
-- **Semantic Diff Engine** - Track changes between releases
 - **Custom Validation Rules** - Business logic enforcement
 
 ### 🏗️ Production Deployment  
@@ -510,11 +484,11 @@ You've successfully:
 - ✅ Parsed DDEX XML into structured data  
 - ✅ Modified metadata programmatically
 - ✅ Generated new, compliant DDEX XML
-- ✅ Verified round-trip fidelity
+- ✅ Checked the round trip
 
 **You're now ready to integrate DDEX Suite into your music technology stack!**
 
-The combination of reliable parsing and deterministic building makes DDEX Suite perfect for:
+The combination of reliable parsing and canonical building makes DDEX Suite a fit for:
 - **Digital Distributors** - Automate release processing
 - **Record Labels** - Manage catalog delivery  
 - **Streaming Platforms** - Normalize incoming metadata
@@ -525,4 +499,4 @@ The combination of reliable parsing and deterministic building makes DDEX Suite 
 
 *Ready to build the next generation of music technology? [Get started with the full documentation](../README.md) or dive into [advanced examples](../packages/ddex-builder/examples/)!*
 
-**DDEX Suite v0.1.0** - One Rust Core, Every Language, Perfect Fidelity
+**DDEX Suite** - One Rust Core, Every Language

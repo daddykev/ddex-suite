@@ -12,6 +12,12 @@ removed (`dev-docs/REMOVALS_0.6.0.md`). Their rows (D9, D10, D11, D15, D16) and 
 marked "removed in 3a"; their code and the ignored test `update_message_is_byte_identical`
 are gone. The line numbers are left as they were.
 
+**Since 0.6.0 PR 3b** the guarantees, the determinism verifier, verification, the fidelity
+module, the fake round-trip APIs, the unimplemented canonicalization algorithms and the
+twelve `DeterminismConfig` fields no build read are removed. Rows D18 and H4–H7 and their
+allows are marked "removed in 3b". D27's `DeterminismConfig::unicode_normalization` field is
+gone too (the NFC normalization it described stays in the canonicalizer and ID generator).
+
 Method: I read `builder.rs`, the ERN 3.8 and ERN 4 generators, the canonicalizer, the ID
 generator, the update-message, streaming and diff code, and the three binding crates. I
 grepped the in-scope crates for clocks (`Utc::now`, `Local::now`, `SystemTime::now`,
@@ -71,7 +77,7 @@ determinism test supplies them, which is why those tests pass.
 | D15 (**removed in 3a**) | `ddex-builder/src/diff/formatter.rs:405` | `DiffFormatter::generate_update_message` | `MessageId` = uuid v4 when `message_id: None` | only for that function | `DiffFormatter::generate_update_message` | Require the ID, or derive it | yes if it becomes required |
 | D16 (**removed in 3a**) | `ddex-builder/src/diff/types.rs:50` | `ChangeSet::new` | `ChangeSet.timestamp` = now. It is written as `MessageCreatedDateTime` by D15's function (`formatter.rs:415`) and serialized with the changeset | yes, for every diff | `ChangeSet.timestamp` (pub `DateTime<Utc>`), `DiffEngine::diff` | Make the timestamp optional / caller-supplied | yes (field type) |
 | D17 | `ddex-builder/src/schema/mod.rs:378`, `:401`, `:467`, `:490`, `:513` | `SchemaGenerator::generate_*`, TypeScript/Python code generators | `generated_at` metadata, and a timestamp line in the generated `.ts` / `.py` source | yes, for schema generation (CLI `schema`); not build output | `JsonSchema` / `SchemaGenerator` results (`generated_at: DateTime<Utc>`) | Omit the timestamp from generated source, or make it optional | yes (field type) if changed |
-| D18 | `ddex-builder/src/guarantees.rs:202`, `:541` | `DeterminismGuaranteeValidator`, `generate_guarantee_report` | report timestamps (not build output) | report only | `GuaranteeReport.timestamp` and the validation result's `timestamp` | None needed (a report time is legitimate) | no |
+| D18 (**removed in 3b**) | `ddex-builder/src/guarantees.rs:202`, `:541` | `DeterminismGuaranteeValidator`, `generate_guarantee_report` | report timestamps (not build output) | report only | `GuaranteeReport.timestamp` and the validation result's `timestamp` | None needed (a report time is legitimate) | no |
 | D19 | `ddex-builder/src/versions/mod.rs:230` | `ConversionResult` | `converted_at: DateTime<Utc>`. It is never assigned in the crate (the struct is not constructed), so nothing reaches output | no | pub field | Remove or make optional with D16 | yes if removed |
 | D20 | `ddex-builder/src/security.rs:726`, `:785`, `:842`; `api_security.rs:115` | secure logging, `SecureTempFile`, request IDs | log timestamps, temp-file names, request IDs (not build output) | not on the build path | `SecureTempFile`, `SecurityConfig` | None needed | no |
 | D21 | `ddex-builder/src/security/error_sanitizer.rs:88`, `:358` | `SanitizedErrorTrait::error_id`, `ErrorSanitizer::sanitize` | random correlation IDs in sanitized error text | only if the caller uses `ErrorSanitizer` (`generate_correlation_ids`). `build`, the CLI and the bindings do not | `security::ErrorSanitizer`, `sanitize_*` | None for 0.6.0. Document that error text then carries a random ID | no |
@@ -147,10 +153,10 @@ Uses in ddex-builder (library code) and whether each one is safe for output:
 | H1 | `canonical/rules.rs:22`, `:169`, `:187` | `HashSet` of reserved / used namespace prefixes | safe: membership only, never iterated (the declarations are an `IndexMap`) |
 | H2 | `attribute_normalizer.rs:52` | `HashMap` of special handlers | safe: the file is not compiled (`lib.rs` has no `mod attribute_normalizer`), so clippy never sees it and it needs no allow |
 | H3 | `security/entity_classifier.rs:220`, `security/error_sanitizer.rs:181-182`, `security/path_validator.rs:56`, `:99`, `:547` | caches, code maps, extension allow-lists, visited set | safe: lookup / membership only. But `PathValidatorConfig.allowed_extensions` is a pub `HashSet` (its `Debug` / serde order varies) |
-| H4 | `lib.rs:149` | `CustomCanonicalizationRules.element_ordering: HashMap` (pub field) | not reached: custom canonicalization returns "not implemented". If it is ever implemented, iteration order matters, so make it an `IndexMap` (breaking: pub field type) |
-| H5 | `fidelity.rs:216`, `:289`, `:358-366` | pub `HashMap` fields in `FidelityConfig` / `FidelityStatistics` | not XML. Their serde/`Debug` order varies. IndexMap is breaking (pub field types) |
-| H6 | `verification.rs:524` | `VerificationStatistics.extensions_verified` (pub) | as H5 |
-| H7 | `round_trip.rs:213`, `:226`, `:254`, `:269` | pub `HashMap` fields in `FidelityAnalysis` statistics | as H5 (and `analyze_fidelity` returns an error in 0.5.x) |
+| H4 (**removed in 3b**) | `lib.rs:149` | `CustomCanonicalizationRules.element_ordering: HashMap` (pub field) | not reached: custom canonicalization returns "not implemented". If it is ever implemented, iteration order matters, so make it an `IndexMap` (breaking: pub field type) |
+| H5 (**removed in 3b**) | `fidelity.rs:216`, `:289`, `:358-366` | pub `HashMap` fields in `FidelityConfig` / `FidelityStatistics` | not XML. Their serde/`Debug` order varies. IndexMap is breaking (pub field types) |
+| H6 (**removed in 3b**) | `verification.rs:524` | `VerificationStatistics.extensions_verified` (pub) | as H5 |
+| H7 (**removed in 3b**) | `round_trip.rs:213`, `:226`, `:254`, `:269` | pub `HashMap` fields in `FidelityAnalysis` statistics | as H5 (and `analyze_fidelity` returns an error in 0.5.x) |
 | H8 | `namespace_minimizer.rs:33`, `:99` | `NamespaceAnalysis.namespace_elements: HashMap` (pub), iterated by the minimizer | not on the build path. If the minimizer is used, its prefix choices may depend on iteration order. Make it an `IndexMap` (breaking: pub field) |
 
 ddex-core, outside the lint: `models/extensions.rs:119` `Extensions.legacy_data: HashMap`
@@ -194,17 +200,17 @@ Findings and Hash containers tables above are as of 0.5.1; this table has the cu
 | `packages/ddex-builder/src/canonical/rules.rs:203` | `disallowed_types` | H1 | H1: membership checks only, never iterated; the declarations are an IndexMap | `fn generate_unique_prefix(&self, base_prefix: &str, used_pre` |
 | `packages/ddex-builder/src/diff/formatter.rs:389` (**removed in 3a**) | `disallowed_methods` | D15 | known bug D15: removed in 0.6.0 determinism PR | `pub fn generate_update_message(` |
 | `packages/ddex-builder/src/diff/types.rs:45` (**removed in 3a**) | `disallowed_methods` | D16 | known bug D16: removed in 0.6.0 determinism PR | `pub fn new() -> Self {` |
-| `packages/ddex-builder/src/fidelity.rs:9` | `disallowed_types` | H5 | H5: fidelity config/statistics; not build output | `use std::collections::HashMap;` |
-| `packages/ddex-builder/src/fidelity.rs:17` | `disallowed_types` | H5 | H5: fidelity config/statistics; not build output | `type UnorderedMap<K, V> = HashMap<K, V>;` |
-| `packages/ddex-builder/src/fidelity.rs:232` | `disallowed_types` | H5 | H5: fidelity config/statistics; not build output | `fn default() -> Self {` |
-| `packages/ddex-builder/src/fidelity.rs:392` | `disallowed_types` | H5 | H5: fidelity config/statistics; not build output | `fn default() -> Self {` |
+| `packages/ddex-builder/src/fidelity.rs:9` (**removed in 3b**) | `disallowed_types` | H5 | H5: fidelity config/statistics; not build output | `use std::collections::HashMap;` |
+| `packages/ddex-builder/src/fidelity.rs:17` (**removed in 3b**) | `disallowed_types` | H5 | H5: fidelity config/statistics; not build output | `type UnorderedMap<K, V> = HashMap<K, V>;` |
+| `packages/ddex-builder/src/fidelity.rs:232` (**removed in 3b**) | `disallowed_types` | H5 | H5: fidelity config/statistics; not build output | `fn default() -> Self {` |
+| `packages/ddex-builder/src/fidelity.rs:392` (**removed in 3b**) | `disallowed_types` | H5 | H5: fidelity config/statistics; not build output | `fn default() -> Self {` |
 | `packages/ddex-builder/src/generator/ern38.rs:494` | `disallowed_methods` | D8 | known bug D8: removed in 0.6.0 determinism PR | `fn message_header(request: &BuildRequest) -> Element {` |
 | `packages/ddex-builder/src/generator/ern4.rs:464` | `disallowed_methods` | D8 | known bug D8: removed in 0.6.0 determinism PR | `fn message_header(request: &BuildRequest) -> Element {` |
-| `packages/ddex-builder/src/guarantees.rs:197` | `disallowed_methods` | D18 | D18: report timestamp; not build output | `pub fn validate_guarantee(` |
-| `packages/ddex-builder/src/guarantees.rs:529` | `disallowed_methods` | D18 | D18: report timestamp; not build output | `pub fn generate_guarantee_report(` |
-| `packages/ddex-builder/src/lib.rs:66` | `disallowed_types` | H4 | H4: custom canonicalization is not implemented (returns an error), so this map is never read | `use std::collections::HashMap;` |
-| `packages/ddex-builder/src/lib.rs:74` | `disallowed_types` | H4 | H4: custom canonicalization is not implemented (returns an error), so this map is never read | `type UnorderedMap<K, V> = HashMap<K, V>;` |
-| `packages/ddex-builder/src/lib.rs:165` | `disallowed_types` | H4 | H4: custom canonicalization is not implemented (returns an error), so this map is never read | `fn default() -> Self {` |
+| `packages/ddex-builder/src/guarantees.rs:197` (**removed in 3b**) | `disallowed_methods` | D18 | D18: report timestamp; not build output | `pub fn validate_guarantee(` |
+| `packages/ddex-builder/src/guarantees.rs:529` (**removed in 3b**) | `disallowed_methods` | D18 | D18: report timestamp; not build output | `pub fn generate_guarantee_report(` |
+| `packages/ddex-builder/src/lib.rs:66` (**removed in 3b**) | `disallowed_types` | H4 | H4: custom canonicalization is not implemented (returns an error), so this map is never read | `use std::collections::HashMap;` |
+| `packages/ddex-builder/src/lib.rs:74` (**removed in 3b**) | `disallowed_types` | H4 | H4: custom canonicalization is not implemented (returns an error), so this map is never read | `type UnorderedMap<K, V> = HashMap<K, V>;` |
+| `packages/ddex-builder/src/lib.rs:165` (**removed in 3b**) | `disallowed_types` | H4 | H4: custom canonicalization is not implemented (returns an error), so this map is never read | `fn default() -> Self {` |
 | `packages/ddex-builder/src/messages/update_release.rs:754` (**removed in 3a**) | `disallowed_methods` | D11 | known bug D11: removed in 0.6.0 determinism PR | `fn extract_entity_id(&self, path: &crate::diff::types::DiffP` |
 | `packages/ddex-builder/src/messages/update_release.rs:861` (**removed in 3a**) | `disallowed_methods` | D10 | known bug D10: removed in 0.6.0 determinism PR | `fn create_update_metadata(` |
 | `packages/ddex-builder/src/messages/update_release.rs:1096` (**removed in 3a**) | `disallowed_methods` | D10 | D10: unit-test fixture timestamp; not build output | `fn test_operation_validation() {` |
@@ -214,7 +220,7 @@ Findings and Hash containers tables above are as of 0.5.1; this table has the cu
 | `packages/ddex-builder/src/namespace_minimizer.rs:144` | `disallowed_types` | H8 | H8: NamespaceMinimizer is not on the build path | `fn analyze_element_usage(` |
 | `packages/ddex-builder/src/namespace_minimizer.rs:265` | `disallowed_types` | D22 | D22: NamespaceMinimizer is not on the build path | `fn generate_prefix_for_uri(&self, uri: &str) -> String {` |
 | `packages/ddex-builder/src/namespace_minimizer.rs:478` | `disallowed_types` | H8 | H8: NamespaceMinimizer is not on the build path | `fn test_minimal_declarations() {` |
-| `packages/ddex-builder/src/round_trip.rs:24` | `disallowed_types` | H7 | H7: round-trip statistics; not build output | `type UnorderedMap<K, V> = std::collections::HashMap<K, V>;` |
+| `packages/ddex-builder/src/round_trip.rs:24` (**removed in 3b**) | `disallowed_types` | H7 | H7: round-trip statistics; not build output | `type UnorderedMap<K, V> = std::collections::HashMap<K, V>;` |
 | `packages/ddex-builder/src/schema/mod.rs:369` | `disallowed_methods` | D17 | D17: schema metadata timestamp; not DDEX build output | `pub fn generate_build_request_schema(&self) -> Result<Schema` |
 | `packages/ddex-builder/src/schema/mod.rs:396` | `disallowed_methods` | D17 | D17: schema metadata timestamp; not DDEX build output | `pub fn generate_flat_release_schema(&self) -> Result<SchemaG` |
 | `packages/ddex-builder/src/schema/mod.rs:423` | `disallowed_methods` | D17 | D17: schema metadata timestamp; not DDEX build output | `pub fn generate_complete_schema(&self) -> Result<SchemaGener` |
@@ -238,9 +244,9 @@ Findings and Hash containers tables above are as of 0.5.1; this table has the cu
 | `packages/ddex-builder/src/security/path_validator.rs:117` | `disallowed_types` | H3 | H3: membership-only sets for path validation; not on the build path | `fn default() -> Self {` |
 | `packages/ddex-builder/src/security/path_validator.rs:534` | `disallowed_types` | H3 | H3: membership-only sets for path validation; not on the build path | `fn validate_symlinks(` |
 | `packages/ddex-builder/src/streaming/mod.rs:449` | `disallowed_methods` | D12, D13 | known bug D12, D13: removed in 0.6.0 determinism PR | `fn write_message_header(&mut self, header: &MessageHeaderReq` |
-| `packages/ddex-builder/src/verification.rs:8` | `disallowed_types` | H6 | H6: verification statistics; not build output | `use std::collections::HashMap;` |
-| `packages/ddex-builder/src/verification.rs:16` | `disallowed_types` | H6 | H6: verification statistics; not build output | `type UnorderedMap<K, V> = HashMap<K, V>;` |
-| `packages/ddex-builder/src/verification.rs:542` | `disallowed_types` | H6 | H6: verification statistics; not build output | `fn default() -> Self {` |
+| `packages/ddex-builder/src/verification.rs:8` (**removed in 3b**) | `disallowed_types` | H6 | H6: verification statistics; not build output | `use std::collections::HashMap;` |
+| `packages/ddex-builder/src/verification.rs:16` (**removed in 3b**) | `disallowed_types` | H6 | H6: verification statistics; not build output | `type UnorderedMap<K, V> = HashMap<K, V>;` |
+| `packages/ddex-builder/src/verification.rs:542` (**removed in 3b**) | `disallowed_types` | H6 | H6: verification statistics; not build output | `fn default() -> Self {` |
 | `packages/ddex-builder/tests/it/determinism.rs:27` | `disallowed_methods` | test/example | test only: the request is built once and cloned, so its timestamp is the same in every build | `fn create_test_build_request_base() -> BuildRequest {` |
 | `packages/ddex-builder/tests/it/determinism.rs:92` | `disallowed_methods` | test/example | test only: the request is built once and cloned, so its timestamps are the same in every build | `fn create_complex_build_request_base() -> BuildRequest {` |
 | `packages/ddex-builder/tests/it/determinism_0_6.rs:69` | `disallowed_methods` | test/example | test only: reads the clock to check the MessageId is not time-derived | `fn assert_not_time_derived(id: &str) {` |

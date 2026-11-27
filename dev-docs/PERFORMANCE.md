@@ -98,9 +98,9 @@ Complete ERN 4.3 requests (`benches/common`: one release, N sound recordings, de
 | 100 tracks | 57.8 ms |
 
 Bench `determinism`, group `single_build`: 5 tracks 3.62 ms, 50 tracks 29.5 ms,
-200 tracks 115 ms. Its `determinism_verification` groups build each request 2, 3 or 5
-times (e.g. `verify_3x` 5 / 50 / 200 tracks: 13.5 / 89.9 / 343 ms). The cost is roughly
-0.56 ms per track plus 1–1.5 ms per message; `DDEXBuilder::new()` alone is 63 µs.
+200 tracks 115 ms. The cost is roughly 0.56 ms per track plus 1–1.5 ms per message;
+`DDEXBuilder::new()` alone is 63 µs. (The bench's `DeterminismVerifier` groups were removed
+with the verifier in 0.6.0.)
 
 Other groups:
 

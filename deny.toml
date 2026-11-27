@@ -2,8 +2,8 @@
 # Run locally with `cargo deny check` (advisories, bans, licenses, sources).
 #
 # The workspace includes the Node, Python and WASM binding crates, so this one manifest
-# covers everything that ships. Not covered: packages/ddex-builder/fuzz,
-# benchmark-suite/rust and examples/perfect-fidelity (separate, unpublished manifests).
+# covers everything that ships. Not covered: packages/ddex-builder/fuzz and
+# benchmark-suite/rust (separate, unpublished manifests).
 
 [graph]
 # Check every feature (the CI action also passes --all-features), so optional
