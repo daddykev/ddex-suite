@@ -165,8 +165,8 @@ mod test_utilities {
                 );
             }
 
-            match reader.read_event(&mut buf) {
-                Ok(quick_xml::events::Event::Eof) => {
+            match reader.read_next(&mut buf) {
+                Ok(false) => {
                     // If we reach EOF without error, the security measure might not be working
                     // However, some attacks might be caught at the content level rather than XML level
                     break;
@@ -226,8 +226,8 @@ mod test_utilities {
         let mut events_processed = 0;
 
         loop {
-            match reader.read_event(&mut buf) {
-                Ok(quick_xml::events::Event::Eof) => break,
+            match reader.read_next(&mut buf) {
+                Ok(false) => break,
                 Ok(_) => {
                     events_processed += 1;
                     buf.clear();

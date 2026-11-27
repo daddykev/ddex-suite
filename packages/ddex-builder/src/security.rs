@@ -150,8 +150,16 @@ impl<R: BufRead> SecureXmlReader<R> {
         }
     }
 
+    /// Read the next XML event with the security checks: `Ok(true)` when an event was read,
+    /// `Ok(false)` at the end of the document. (Before 0.6.0 this was `read_event`, which
+    /// returned the quick-xml event.)
+    pub fn read_next(&mut self, buf: &mut Vec<u8>) -> Result<bool, BuildError> {
+        let event = self.read_event(buf)?;
+        Ok(!matches!(event, Event::Eof))
+    }
+
     /// Read the next event with security checks
-    pub fn read_event<'a>(&mut self, buf: &'a mut Vec<u8>) -> Result<Event<'a>, BuildError> {
+    fn read_event<'a>(&mut self, buf: &'a mut Vec<u8>) -> Result<Event<'a>, BuildError> {
         // Check for timeout to prevent DoS
         if self.start_time.elapsed() > Duration::from_secs(30) {
             return Err(BuildError::Security("XML processing timeout".to_string()));
@@ -217,11 +225,6 @@ impl<R: BufRead> SecureXmlReader<R> {
         }
 
         Ok(event)
-    }
-
-    /// Get the underlying reader
-    pub fn into_inner(self) -> Reader<R> {
-        self.reader
     }
 }
 

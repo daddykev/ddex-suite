@@ -28,7 +28,7 @@ pub fn decode_utf8_at_position(bytes: &[u8], position: usize) -> Result<String, 
 
 /// Handle text node from XML event
 #[allow(dead_code)]
-pub fn handle_text_node(event: &BytesText, position: usize) -> Result<String, ParseError> {
+pub(crate) fn handle_text_node(event: &BytesText, position: usize) -> Result<String, ParseError> {
     handle_escaped_text(event, position)
 }
 

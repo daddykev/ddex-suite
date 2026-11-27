@@ -120,24 +120,25 @@ impl From<std::str::Utf8Error> for ParseError {
     }
 }
 
-impl From<quick_xml::Error> for ParseError {
-    fn from(err: quick_xml::Error) -> Self {
-        if let quick_xml::Error::Io(io) = &err {
-            if let Some(entity) = ddex_core::xml_refs::UndefinedEntity::from_io_error(io) {
-                return crate::xml_text::undefined_entity(entity);
-            }
-            if let Some(doctype) = ddex_core::xml_refs::Doctype::from_io_error(io) {
-                return crate::xml_text::doctype_error(doctype);
-            }
+/// A quick-xml error as a [`ParseError`]: an undefined entity or a DOCTYPE found by the
+/// checked reader gets its own error, anything else is [`ParseError::XmlError`] with
+/// quick-xml's message (which includes the position when quick-xml gives one). quick-xml
+/// types are not part of the public API (before 0.6.0 this was a `From` impl).
+pub(crate) fn xml_error(err: quick_xml::Error) -> ParseError {
+    if let quick_xml::Error::Io(io) = &err {
+        if let Some(entity) = ddex_core::xml_refs::UndefinedEntity::from_io_error(io) {
+            return crate::xml_text::undefined_entity(entity);
         }
-        ParseError::XmlError(err.to_string())
+        if let Some(doctype) = ddex_core::xml_refs::Doctype::from_io_error(io) {
+            return crate::xml_text::doctype_error(doctype);
+        }
     }
+    ParseError::XmlError(err.to_string())
 }
 
-impl From<quick_xml::events::attributes::AttrError> for ParseError {
-    fn from(err: quick_xml::events::attributes::AttrError) -> Self {
-        ParseError::XmlError(format!("Attribute parsing error: {}", err))
-    }
+/// A quick-xml attribute error as [`ParseError::XmlError`] (before 0.6.0 a `From` impl).
+pub(crate) fn attr_error(err: quick_xml::events::attributes::AttrError) -> ParseError {
+    ParseError::XmlError(format!("Attribute parsing error: {}", err))
 }
 
 impl From<String> for ParseError {

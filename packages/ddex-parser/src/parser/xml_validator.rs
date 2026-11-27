@@ -50,7 +50,7 @@ impl XmlValidator {
     }
 
     /// Validate XML structure during parsing
-    pub fn validate_event<R: BufRead>(
+    pub(crate) fn validate_event<R: BufRead>(
         &mut self,
         event: &Event,
         reader: &Reader<R>,

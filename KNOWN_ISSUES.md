@@ -122,3 +122,5 @@ They now fail, or report the value as not measured, instead:
 - `ProprietaryIdRequest.value` is not checked: an empty value is written as an empty `ProprietaryId` (`packages/ddex-builder/src/generator/`), which the schema's non-empty string type rejects.
 - Golden-file output tests.
 - `packages/ddex-builder/bindings/node/streaming_test.js` (not run by `npm test`) passes snake_case header keys and `ern/43`, which `StreamingDdexBuilder.startMessage` does not accept.
+- Node/Python validate() checks stored releases, which have no header, so it reports the missing header before any preflight error; document or rework.
+- `parser::attribute_extractor::AttributeExtractor::extract_attributes` is only called by its unit tests (crate-private since 0.6.0 because it takes a quick-xml type), so the module is dead code outside tests.
