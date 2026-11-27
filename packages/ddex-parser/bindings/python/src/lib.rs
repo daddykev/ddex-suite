@@ -95,6 +95,7 @@ impl PyDDEXParser {
     }
 
     /// Stream parse large files
+    #[pyo3(signature = (source, options=None))]
     pub fn stream(
         &mut self,
         _py: Python,
