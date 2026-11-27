@@ -831,6 +831,26 @@ pub fn batch_build(requests: Vec<Bound<'_, PyAny>>) -> PyResult<Vec<String>> {
     Ok(results)
 }
 
+/// Parse `xml` with ddex-parser and map it to a build request for the same ERN version
+/// (`BuildRequest::from_parsed` in Rust). Returns `{"request": dict, "unmapped": [str]}`:
+/// the request in the shape `DdexBuilder.build` accepts (`None` where the parsed message has
+/// no value; nothing is invented, and an empty `MessageId` stays empty, so the build then
+/// fails naming the field), and the dotted path of every non-empty parsed value the request
+/// cannot hold. A parse error raises `ValueError`, as `ddex_parser.DDEXParser.parse` does.
+#[pyfunction]
+pub fn request_from_xml(py: Python, xml: String) -> PyResult<Py<PyAny>> {
+    let parsed =
+        parse_xml(&xml).map_err(|e| PyValueError::new_err(format!("Parse error: {}", e)))?;
+    let bridge = ::ddex_builder::BuildRequest::from_parsed(&parsed);
+    let text = serde_json::to_string(&bridge.request)
+        .map_err(|e| PyValueError::new_err(format!("Serialization error: {}", e)))?;
+    let request = py.import("json")?.call_method1("loads", (text,))?;
+    let result = PyDict::new(py);
+    result.set_item("request", request)?;
+    result.set_item("unmapped", bridge.unmapped)?;
+    Ok(result.into_any().unbind())
+}
+
 #[pyfunction]
 pub fn validate_structure(xml: String) -> PyResult<ValidationResult> {
     // Reads the whole document (before 0.5.1, only its first event).
@@ -1196,5 +1216,6 @@ fn _internal(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<DdexBuilder>()?;
     m.add_function(wrap_pyfunction!(batch_build, m)?)?;
     m.add_function(wrap_pyfunction!(validate_structure, m)?)?;
+    m.add_function(wrap_pyfunction!(request_from_xml, m)?)?;
     Ok(())
 }

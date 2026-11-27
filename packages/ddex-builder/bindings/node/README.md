@@ -120,6 +120,28 @@ new DdexBuilder()
   });
 ```
 
+## Parse, modify, build
+
+`requestFromXml(xml)` parses a message and maps it to a build request for the same ERN
+version, in the shape `build` takes. Nothing is invented (absent values are `null`), and
+`unmapped` lists the dotted path of every non-empty value the request cannot hold (P and C
+lines, contributors, images, ...):
+
+```js
+const fs = require('node:fs');
+const assert = require('node:assert/strict');
+const { DdexBuilder, requestFromXml } = require('ddex-builder');
+const { DdexParser } = require('ddex-parser');
+
+const { request, unmapped } = requestFromXml(fs.readFileSync('release.xml', 'utf8'));
+request.releases[0].title[0].text = 'Remastered';
+
+new DdexBuilder().build(request).then((xml) => {
+  assert.equal(new DdexParser().parseSync(xml).releases[0].title, 'Remastered');
+  console.log(`${unmapped.length} values the request cannot hold`);
+});
+```
+
 ## Supported versions
 
 | `version` | Output |

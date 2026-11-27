@@ -375,92 +375,32 @@ Which fields each version requires is listed in the
 
 ## Parse, modify, build {#parse-modify-build}
 
-In Rust, `BuildRequest::from_parsed` maps a parsed message to a build request (see the
-[ddex-builder README](https://github.com/daddykev/ddex-suite/tree/main/packages/ddex-builder#parse-modify-build)).
-Node.js and Python have no such conversion yet, and the examples below map the fields they
-need by hand: parse `release.xml`, change the title and build ERN 4.3 again. The flat model does
-not carry everything ERN 4.3 requires (for example the resource's DDEX `Type`), so the
-examples set those values themselves.
+The bridge maps a parsed message to a build request for the same ERN version:
+`BuildRequest::from_parsed` in Rust, `requestFromXml(xml)` in Node.js and
+`request_from_xml(xml)` in Python. It invents nothing: a value the message does not have is
+`None` / `null` in the request. `unmapped` lists the dotted path of every non-empty value the
+request cannot hold (P and C lines, contributors, images, ...). Parse `release.xml`, change
+the title and build again:
 
 <Tabs groupId="language">
 <TabItem value="rust" label="Rust">
 
 ```rust
-use ddex_builder::builder::{
-    LocalizedStringRequest, MessageHeaderRequest, PartyRequest, ReleaseRequest, TrackRequest,
-};
 use ddex_builder::{BuildOptions, BuildRequest, DDEXBuilder};
 use ddex_parser::DDEXParser;
 use std::io::Cursor;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Parse
-    let message = DDEXParser::new().parse(Cursor::new(std::fs::read("release.xml")?))?;
-    let flat = &message.flat;
-    let release = &flat.releases[0];
+    let xml = std::fs::read_to_string("release.xml")?;
+    let parsed = DDEXParser::new().parse(Cursor::new(xml.as_bytes()))?;
 
-    let text = |s: &str| vec![LocalizedStringRequest { text: s.to_string(), language_code: None }];
-    let party = |name: Option<&str>, id: &str| PartyRequest {
-        party_name: name.map(text).unwrap_or_default(),
-        party_id: Some(id.to_string()),
-        party_reference: None,
-    };
+    let mut bridge = BuildRequest::from_parsed(&parsed);
+    bridge.request.releases[0].title[0].text = "Remastered".to_string();
+    let built = DDEXBuilder::new().build(bridge.request, BuildOptions::default())?;
 
-    // Map the fields into a build request (ERN 4.3)
-    let tracks = release
-        .tracks
-        .iter()
-        .map(|track| TrackRequest {
-            track_id: track.track_id.clone(),
-            resource_reference: Some(track.track_id.clone()),
-            isrc: track.isrc.clone().filter(|s| !s.is_empty()),
-            title: track.title.clone().unwrap_or_default(),
-            duration: track
-                .duration
-                .map(|d| format!("PT{}M{}S", d.as_secs() / 60, d.as_secs() % 60))
-                .unwrap_or_default(),
-            artist: track.display_artist.clone().filter(|s| !s.is_empty()),
-            // The flat model does not carry the resource's DDEX Type, so set it
-            resource_type: Some("MusicalWorkSoundRecording".into()),
-            parental_warning_type: track.parental_warning.clone(),
-            ..Default::default()
-        })
-        .collect();
-    let title = release.default_title.as_deref().unwrap_or_default();
-    let request = BuildRequest {
-        header: MessageHeaderRequest {
-            // A new message: its own ID and creation time (the builder generates neither)
-            message_id: "MSG-REMASTER-001".to_string(),
-            message_sender: party(flat.sender.name.as_deref(), &flat.sender.id),
-            message_recipient: party(flat.recipient.name.as_deref(), &flat.recipient.id),
-            message_created_date_time: "2024-06-01T00:00:00Z".to_string(),
-            ..Default::default()
-        },
-        version: "4.3".to_string(),
-        avs_version_id: Some("12".to_string()),
-        language_and_script_code: Some("en".to_string()),
-        releases: vec![ReleaseRequest {
-            upc: release.identifiers.upc.clone(), // written as ReleaseId/ICPN
-            // Modify: a new title
-            title: text(&format!("{title} (Remastered)")),
-            artist: release.display_artist.clone().filter(|s| !s.is_empty()),
-            label: release.label_name.clone(),
-            release_type: Some(release.release_type.as_str().into()),
-            genre: release.genre.clone(),
-            parental_warning_type: release.parental_warning.clone(),
-            tracks,
-            ..Default::default()
-        }],
-        ..Default::default()
-    };
-
-    // Build, then read the result back
-    let xml = DDEXBuilder::new().build(request, BuildOptions::default())?.xml;
-    let rebuilt = DDEXParser::new().parse(Cursor::new(xml.into_bytes()))?;
-    let rebuilt = &rebuilt.flat.releases[0];
-    assert_eq!(rebuilt.default_title.as_deref(), Some(format!("{title} (Remastered)").as_str()));
-    assert_eq!(rebuilt.tracks.len(), release.tracks.len());
-    println!("{}: {} tracks", title, rebuilt.tracks.len());
+    let rebuilt = DDEXParser::new().parse(Cursor::new(built.xml.as_bytes()))?;
+    assert_eq!(rebuilt.flat.releases[0].default_title.as_deref(), Some("Remastered"));
+    println!("{} values the request cannot hold", bridge.unmapped.len());
     Ok(())
 }
 ```
@@ -471,58 +411,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```js
 const fs = require('node:fs');
 const assert = require('node:assert/strict');
+const { DdexBuilder, requestFromXml } = require('ddex-builder');
 const { DdexParser } = require('ddex-parser');
-const { DdexBuilder } = require('ddex-builder');
 
-// Parse
-const parser = new DdexParser();
-const message = parser.parseSync(fs.readFileSync('release.xml', 'utf8'));
-const release = message.releases[0];
+const { request, unmapped } = requestFromXml(fs.readFileSync('release.xml', 'utf8'));
+request.releases[0].title[0].text = 'Remastered';
 
-// Map the fields into a build request (ERN 4.3)
-const isoDuration = (seconds) => `PT${Math.floor(seconds / 60)}M${seconds % 60}S`;
-const request = {
-  header: {
-    // A new message: its own ID and creation time (the builder generates neither)
-    message_id: 'MSG-REMASTER-001',
-    message_sender: { party_name: [{ text: message.senderName }], party_id: message.senderId },
-    message_recipient: { party_name: [{ text: message.recipientName }], party_id: message.recipientId },
-    message_created_date_time: '2024-06-01T00:00:00Z',
-  },
-  version: '4.3',
-  avs_version_id: '12',
-  language_and_script_code: 'en',
-  releases: [{
-    upc: release.icpn, // written as ReleaseId/ICPN
-    // Modify: a new title
-    title: [{ text: `${release.title} (Remastered)` }],
-    artist: release.displayArtist,
-    label: release.labelName,
-    release_type: release.releaseType,
-    genre: release.genre,
-    parental_warning_type: release.parentalWarning,
-    tracks: release.tracks.map((track) => ({
-      track_id: track.trackId,
-      resource_reference: track.resourceReference,
-      isrc: track.isrc,
-      title: track.title,
-      duration: isoDuration(message.resources[track.resourceReference].durationSeconds),
-      artist: track.artist,
-      // The flat model does not carry the resource's DDEX Type, so set it
-      resource_type: 'MusicalWorkSoundRecording',
-      parental_warning_type: track.parentalWarning,
-    })),
-  }],
-  deals: [],
-};
-
-// Build, then read the result back
 new DdexBuilder().build(request).then((xml) => {
-  const rebuilt = parser.parseSync(xml).releases[0];
-  assert.equal(rebuilt.title, `${release.title} (Remastered)`);
-  assert.equal(rebuilt.icpn, release.icpn);
-  assert.deepEqual(rebuilt.tracks.map((t) => t.isrc), release.tracks.map((t) => t.isrc));
-  console.log(`${rebuilt.title}: ${rebuilt.tracks.length} tracks`);
+  assert.equal(new DdexParser().parseSync(xml).releases[0].title, 'Remastered');
+  console.log(`${unmapped.length} values the request cannot hold`);
 });
 ```
 
@@ -530,76 +427,16 @@ new DdexBuilder().build(request).then((xml) => {
 <TabItem value="python" label="Python">
 
 ```python
-import pandas as pd
-from ddex_builder import DdexBuilder
+from ddex_builder import DdexBuilder, request_from_xml
 from ddex_parser import DDEXParser
 
-# Parse
-parser = DDEXParser()
 with open("release.xml", encoding="utf-8") as f:
-    message = parser.parse(f.read())
-release = message.to_dataframe("releases").iloc[0]
-tracks = message.to_dataframe("tracks")
+    bridge = request_from_xml(f.read())
+bridge["request"]["releases"][0]["title"][0]["text"] = "Remastered"
 
-
-def text(value):
-    """A DataFrame cell as str, or None when it is missing (None or NaN)."""
-    return None if pd.isna(value) else str(value)
-
-
-def iso_duration(seconds):
-    seconds = int(seconds)
-    return f"PT{seconds // 60}M{seconds % 60}S"
-
-
-def party(name, party_id):
-    return {"party_name": [{"text": name}], "party_id": party_id}
-
-
-# Map the fields into a build request (ERN 4.3). The DataFrames do not carry the party IDs
-# or the release type, so they are set here.
-request = {
-    "header": {
-        "message_id": "MSG-001",
-        "message_sender": party("Example Label", "PADPIDA0000000001"),
-        "message_recipient": party("Example DSP", "PADPIDA0000000002"),
-        "message_created_date_time": "2024-01-01T00:00:00Z",
-    },
-    "version": "4.3",
-    "avs_version_id": "12",
-    "language_and_script_code": "en",
-    "releases": [{
-        "upc": text(release["icpn"]),  # written as ReleaseId/ICPN
-        # Modify: a new title
-        "title": [{"text": f"{release['title']} (Remastered)"}],
-        "artist": text(release["artist"]),
-        "label": text(release["label_name"]),
-        "release_type": "Album",
-        "genre": text(release["genre"]),
-        "parental_warning_type": text(release["parental_warning"]),
-        "tracks": [
-            {
-                "track_id": track.track_id,
-                "isrc": track.isrc,
-                "title": track.track_title,
-                "duration": iso_duration(track.duration),
-                "artist": track.artist,
-                # The DataFrames do not carry the resource's DDEX Type, so set it
-                "resource_type": "MusicalWorkSoundRecording",
-                "parental_warning_type": text(track.parental_warning),
-            }
-            for track in tracks.itertuples()
-        ],
-    }],
-    "deals": [],
-}
-
-# Build, then read the result back
-xml = DdexBuilder().build(request)
-rebuilt = parser.parse(xml)
-assert rebuilt.to_dataframe("releases").iloc[0]["title"] == f"{release['title']} (Remastered)"
-assert list(rebuilt.to_dataframe("tracks")["isrc"]) == list(tracks["isrc"])
-print(rebuilt.to_dataframe("releases").iloc[0]["title"], len(tracks), "tracks")
+xml = DdexBuilder().build(bridge["request"])
+assert DDEXParser().parse(xml).to_dataframe("releases").iloc[0]["title"] == "Remastered"
+print(len(bridge["unmapped"]), "values the request cannot hold")
 ```
 
 To build from a DataFrame directly, see
