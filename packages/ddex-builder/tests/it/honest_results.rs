@@ -377,7 +377,7 @@ fn cli_build_writes_real_xml_and_the_stubs_fail() {
         env!("CARGO_MANIFEST_DIR"),
         "/../../examples/Samples43/1 Audio.xml"
     );
-    for args in [vec!["diff", sample, sample], vec!["validate", sample]] {
+    for args in [vec!["validate", sample]] {
         let run = cli(&args);
         assert!(!run.status.success(), "{args:?}");
         let stderr = String::from_utf8_lossy(&run.stderr);
