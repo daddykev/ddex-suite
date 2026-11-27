@@ -548,6 +548,14 @@ Old → new names (0.6.0 PR 5a):
   - Migration: match on `ParseError` / `BuildError` variants; quick-xml types are no longer
     part of the API, so a quick-xml upgrade does not change it.
 
+- **`SecurityConfig::max_entity_expansions` removed** (Rust):
+  - Who: Rust code that sets or reads it.
+  - Why: it counted every reference in character data, `&amp;` and character references
+    included, so a valid document with more than 100 failed the default parse. A reference
+    to an undefined entity is already an error on every reader, so nothing can expand.
+  - Migration: drop the field (`SecurityConfig { max_element_depth, }`, or
+    `..SecurityConfig::default()`).
+
 ### Added
 
 - `DDEXBuilder::preflight(&request, level)` (ddex-builder): the preflight checks `build` runs
@@ -570,6 +578,20 @@ Old → new names (0.6.0 PR 5a):
 - `StreamingStats::peak_memory_usage` (streaming writer) counts chunks larger than the
   buffer, which are written directly; that path skipped the peak update and under-reported
   it.
+
+### Fixed
+
+- ddex-parser: attribute values are normalized per XML 1.0 §3.3.3 (CDATA attributes, no
+  DTD) on every reader: a literal tab, line feed, CRLF or lone carriage return becomes one
+  space; nothing is collapsed or trimmed, and the character references `&#9;`, `&#10;`,
+  `&#13;` still give the actual character. They were kept as written. One shared function,
+  `ddex_core::xml_refs::normalize_attribute_value`.
+- ddex-builder: the streaming writer now writes a carriage return in text as `&#13;`, like
+  the main writer, so it survives a re-parse. (The main writer and the canonicalizer
+  already wrote tab, LF and CR in attribute values as `&#9;`, `&#10;`, `&#13;`, and CR in
+  text as `&#13;`.)
+- ddex-parser: a document with more than 100 references (`&amp;`, character references)
+  no longer fails the default parse (see `max_entity_expansions` above).
 
 ### Documentation
 

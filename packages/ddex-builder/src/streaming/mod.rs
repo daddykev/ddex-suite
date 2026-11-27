@@ -544,11 +544,14 @@ pub struct StreamingStats {
     pub peak_memory_usage: usize,
 }
 
-/// Escape XML special characters
+/// Escape XML special characters in character data. A carriage return is written as
+/// `&#13;`, since a parser would otherwise turn it into a line feed (before 0.6.0 it was
+/// written as is).
 fn escape_xml(text: &str) -> String {
     text.replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
         .replace('"', "&quot;")
         .replace('\'', "&apos;")
+        .replace('\r', "&#13;")
 }

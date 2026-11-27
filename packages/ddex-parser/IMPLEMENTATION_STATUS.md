@@ -20,7 +20,7 @@ This document provides a clear breakdown of what functionality is **fully implem
 - **Extensions Support**: Full preservation of unknown elements and namespaces for round-trip fidelity
 
 ### Security Features
-- **Entity Expansion Protection**: Configurable limits (default: 100 expansions)
+- **Entity Expansion Protection**: no entity is ever expanded (a DOCTYPE and references to undefined entities are rejected)
 - **Nesting Depth Limits**: Configurable depth protection (default: 100 levels)
 - **DTD Blocking**: Optional DTD declaration blocking
 - **Memory Bounds**: Configurable memory limits for large files
@@ -95,7 +95,7 @@ XML Input → Version Detection → DOM Parser → Graph Model → Flattener →
 
 ### Current Flow
 1. **Input Validation**: XML is parsed and validated for well-formedness
-2. **Security Checks**: Entity expansion and nesting depth are enforced
+2. **Security Checks**: the DOCTYPE and undefined-entity rejection and the nesting depth are enforced
 3. **Version Detection**: ERN version is detected from namespace URIs
 4. **DOM Parsing**: XML is parsed into a graph model representation
 5. **Reference Resolution**: Basic reference resolution (placeholder)

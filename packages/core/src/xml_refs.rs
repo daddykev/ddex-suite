@@ -18,9 +18,51 @@
 //! a comment or a CDATA section (in a well-formed document, only a DOCTYPE) and report it as
 //! a [`Doctype`]; [`find_doctype`] does the same for a whole document. ddex-parser uses them
 //! on every reader, so a DOCTYPE is an error everywhere.
+//!
+//! [`normalize_attribute_value`] is the XML 1.0 attribute-value normalization (literal tab,
+//! line feed and carriage return become spaces) that every ddex-parser reader applies to
+//! attribute values.
 
 use std::fmt;
 use std::io::{self, BufRead, Read};
+
+/// XML 1.0 §3.3.3 attribute-value normalization for CDATA attributes (no DTD), applied to
+/// the raw value as written, before its references are resolved:
+///
+/// 1. a literal `"\r\n"` or a lone `"\r"` counts as one `"\n"`;
+/// 2. each literal tab, line feed or carriage return then becomes one space.
+///
+/// Nothing is collapsed or trimmed (that is only for non-CDATA attribute types, which need a
+/// DTD). Character references (`&#9;`, `&#10;`, `&#13;`, `&#x9;`, ...) are still text here,
+/// so they are not normalized: resolving them afterwards yields the actual character. The
+/// value is returned unchanged (borrowed) when it has no literal tab, LF or CR.
+///
+/// ```
+/// use ddex_core::xml_refs::normalize_attribute_value;
+/// assert_eq!(normalize_attribute_value("a\tb\r\nc\rd\ne&#10;"), "a b c d e&#10;");
+/// assert_eq!(normalize_attribute_value("plain &amp; value"), "plain &amp; value");
+/// ```
+pub fn normalize_attribute_value(raw: &str) -> std::borrow::Cow<'_, str> {
+    if !raw.contains(['\t', '\n', '\r']) {
+        return std::borrow::Cow::Borrowed(raw);
+    }
+    let mut out = String::with_capacity(raw.len());
+    let mut chars = raw.chars().peekable();
+    while let Some(c) = chars.next() {
+        match c {
+            '\r' => {
+                // "\r\n" is one line ending
+                if chars.peek() == Some(&'\n') {
+                    chars.next();
+                }
+                out.push(' ');
+            }
+            '\t' | '\n' => out.push(' '),
+            c => out.push(c),
+        }
+    }
+    std::borrow::Cow::Owned(out)
+}
 
 /// A reference to an entity that is neither predefined nor a character reference.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -624,6 +666,22 @@ impl<R: BufRead> BufRead for CheckedRead<R> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn attribute_values_are_normalized_per_xml_1_0() {
+        // A tab, a LF, a CRLF (one space) and a lone CR each become one space; references
+        // stay as written (they are resolved later, to the actual character).
+        assert_eq!(
+            normalize_attribute_value("a\tb\nc\r\nd\re&#9;&#10;&#13;&#x9;"),
+            "a b c d e&#9;&#10;&#13;&#x9;"
+        );
+        // Nothing is collapsed or trimmed.
+        assert_eq!(normalize_attribute_value("\t\t x \r\n\r\n"), "   x   ");
+        assert!(matches!(
+            normalize_attribute_value("no whitespace characters"),
+            std::borrow::Cow::Borrowed(_)
+        ));
+    }
+
     use super::*;
 
     #[test]

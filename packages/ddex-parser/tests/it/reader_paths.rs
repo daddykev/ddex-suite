@@ -178,6 +178,27 @@ fn every_reader_accepts_the_official_sample() {
     }
 }
 
+/// More than 100 references (`&amp;` here) are fine: before 0.6.0 the default parse counted
+/// every reference and failed above 100 (`SecurityConfig::max_entity_expansions`).
+#[test]
+fn every_reader_accepts_more_than_100_references() {
+    let xml = sample().replacen(
+        "<TitleText>",
+        &format!("<TitleText>{}", "&amp;".repeat(150)),
+        1,
+    );
+    assert!(xml.matches("&amp;").count() > 100);
+    for (name, read) in readers() {
+        match (name, read(&xml)) {
+            (STREAM_MODE, Err(error)) => {
+                assert!(error.contains(STREAM_MODE_BUG), "{name}: {error}")
+            }
+            (_, Err(error)) => panic!("{name}: {error}"),
+            (_, Ok(())) => {}
+        }
+    }
+}
+
 #[test]
 fn every_reader_rejects_a_doctype() {
     let xml = with_doctype(&sample());

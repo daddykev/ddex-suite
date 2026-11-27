@@ -35,11 +35,11 @@ impl VersionDetector {
                         match attr {
                             Ok(attr) => {
                                 let key = std::str::from_utf8(attr.key.as_ref()).unwrap_or("");
-                                let value = std::str::from_utf8(&attr.value).unwrap_or("");
+                                let value = crate::xml_text::raw_attr_value(&attr.value);
 
                                 // Look for xmlns declarations
                                 if key == "xmlns" || key.starts_with("xmlns:") {
-                                    namespace_uris.push(value.to_string());
+                                    namespace_uris.push(value);
                                 }
                             }
                             Err(e) => {

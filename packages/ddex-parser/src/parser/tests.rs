@@ -39,6 +39,5 @@ mod tests {
     fn test_security_config_defaults() {
         let config = SecurityConfig::default();
         assert_eq!(config.max_element_depth, 100);
-        assert_eq!(config.max_entity_expansions, 100);
     }
 }

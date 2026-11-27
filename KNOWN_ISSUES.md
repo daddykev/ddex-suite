@@ -124,3 +124,5 @@ They now fail, or report the value as not measured, instead:
 - `packages/ddex-builder/bindings/node/streaming_test.js` (not run by `npm test`) passes snake_case header keys and `ern/43`, which `StreamingDdexBuilder.startMessage` does not accept.
 - Node/Python validate() checks stored releases, which have no header, so it reports the missing header before any preflight error; document or rework.
 - `parser::attribute_extractor::AttributeExtractor::extract_attributes` is only called by its unit tests (crate-private since 0.6.0 because it takes a quick-xml type), so the module is dead code outside tests.
+- Text line endings (XML 1.0 §2.11): only the DOM path (`transform/ern4.rs`) turns a literal CRLF / lone CR in character data into LF; the other readers (streaming, selective, xpath, multi-release, Stream mode) keep it as written.
+- The xpath, selective, multi-release, extension-capture, version-detection, working-streaming and zero-copy readers keep attribute values with their references unresolved (`&amp;` stays as written; the XML 1.0 whitespace normalization is applied); only the DOM path and the namespace detector resolve them.

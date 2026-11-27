@@ -64,14 +64,22 @@ pub(crate) fn ref_text(reference: &BytesRef) -> String {
     unescape(&raw).map(|s| s.into_owned()).unwrap_or_default()
 }
 
-/// An attribute value with its references resolved and nothing else changed (the
-/// behaviour of `Attribute::unescape_value` before quick-xml 0.40: invalid UTF-8 and
-/// unknown references are errors).
+/// An attribute value normalized per XML 1.0 §3.3.3
+/// ([`ddex_core::xml_refs::normalize_attribute_value`]: literal tab, LF and CR become
+/// spaces) and then with its references resolved (invalid UTF-8 and unknown references are
+/// errors). Character references such as `&#10;` yield the actual character.
 pub(crate) fn attr_value(attr: &Attribute) -> Result<String, String> {
     let text = std::str::from_utf8(&attr.value).map_err(|e| e.to_string())?;
-    unescape(text)
+    let text = ddex_core::xml_refs::normalize_attribute_value(text);
+    unescape(&text)
         .map(|s| s.into_owned())
         .map_err(|e: EscapeError| e.to_string())
+}
+
+/// An attribute value as written (references not resolved), normalized per XML 1.0 §3.3.3,
+/// for the readers that return attribute values without resolving references.
+pub(crate) fn raw_attr_value(raw: &[u8]) -> String {
+    ddex_core::xml_refs::normalize_attribute_value(&String::from_utf8_lossy(raw)).into_owned()
 }
 
 /// An input that is scanned for references to undefined entities and for a DOCTYPE as it
