@@ -95,6 +95,7 @@ impl PyDDEXParser {
     }
 
     /// Stream parse large files
+    #[pyo3(signature = (source, options=None))]
     pub fn stream(
         &mut self,
         _py: Python,
@@ -152,23 +153,6 @@ impl PyDDEXParser {
 
         // Same rows as ParsedERNMessage.to_dataframe (one implementation of the columns)
         PyParsedERNMessage::new(parsed).to_dataframe(py, schema)
-    }
-
-    /// Not implemented in the parser: raises `NotImplementedError`. Before 0.5.1 it returned
-    /// a mock document (made-up message header, not valid ERN 4.3). Build from a DataFrame
-    /// with `ddex_builder.DDEXBuilder().from_dataframe(...)`.
-    #[pyo3(signature = (df, schema="flat", template=None))]
-    pub fn from_dataframe(
-        &self,
-        df: &Bound<'_, PyAny>,
-        schema: &str,
-        template: Option<&Bound<'_, PyAny>>,
-    ) -> PyResult<String> {
-        let _ = (df, schema, template);
-        Err(pyo3::exceptions::PyNotImplementedError::new_err(
-            "DDEXParser.from_dataframe is not implemented in 0.5.x: build from a DataFrame \
-             with ddex_builder.DDEXBuilder().from_dataframe(...)",
-        ))
     }
 
     /// Detect DDEX version
@@ -611,12 +595,6 @@ fn rust_parse_options_from_dict(dict: &Bound<'_, PyDict>) -> PyResult<CoreParseO
     if let Some(v) = dict.get_item("allow_blocking")? {
         options.allow_blocking = v.extract()?;
     }
-    if let Some(v) = dict.get_item("include_raw_extensions")? {
-        options.include_raw_extensions = v.extract()?;
-    }
-    if let Some(v) = dict.get_item("include_comments")? {
-        options.include_comments = v.extract()?;
-    }
     if let Some(v) = dict.get_item("preserve_unknown_elements")? {
         options.preserve_unknown_elements = v.extract()?;
     }
@@ -625,15 +603,6 @@ fn rust_parse_options_from_dict(dict: &Bound<'_, PyDict>) -> PyResult<CoreParseO
     }
     if let Some(v) = dict.get_item("auto_threshold")? {
         options.auto_threshold = v.extract()?;
-    }
-
-    // Legacy options for backward compatibility
-    if let Some(v) = dict.get_item("validate_references")? {
-        options.resolve_references = v.extract()?;
-    }
-    if let Some(v) = dict.get_item("timeout")? {
-        let timeout_secs: f64 = v.extract()?;
-        options.timeout_ms = (timeout_secs * 1000.0) as u64;
     }
 
     Ok(options)

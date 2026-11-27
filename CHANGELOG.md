@@ -289,6 +289,53 @@ effect. Real features can come back later as additions. The inventory is
     they reported a hard-coded machine and no results.
   - The `wasm` and `simd` features: nothing read them.
   - Migration: no replacement for any of these; they returned no real results.
+- **Python parser: `ParseOptions`, `ParseResult` and `from_dataframe` removed** (Python):
+  - Who: Python code that passes `ParseOptions` (or keyword options to `ddex_parser.parse`),
+    imports `ParseResult`, or calls the native `DDEXParser.from_dataframe`.
+  - What went: `ParseOptions` (all of its fields, `include_raw_extensions`,
+    `include_comments`, `validate_references`, `streaming` and `timeout`, had no effect), the
+    `options` argument of `DDEXParser.parse` / `parse_async` / `stream`, the keyword
+    arguments of `ddex_parser.parse`, the unused `ParseResult` class, and the native
+    `DDEXParser.from_dataframe`, which raised `NotImplementedError`.
+  - Migration: call `parse(xml)` without options (the result is the same). Drop
+    `ParseResult` imports; `parse` returns `ParsedERNMessage`. Build from a DataFrame with
+    `ddex_builder.DdexBuilder().from_dataframe(df, schema, request)`.
+- **Builder bindings: fidelity options that had no effect removed** (Node.js, Python):
+  - Who: code that sets these `FidelityOptions` fields for `buildWithFidelity` /
+    `build_with_fidelity` or `testRoundTripFidelity` / `test_round_trip_fidelity`.
+  - What went: `preserveComments`, `preserveProcessingInstructions`, `preserveExtensions`,
+    `preserveAttributeOrder`, `preserveNamespacePrefixes`, `memoryOptimization`,
+    `streamingMode`, `chunkSize` and `enableChecksums` (Python: `preserve_comments`,
+    `preserve_processing_instructions`, `preserve_extensions`, `preserve_attribute_order`,
+    `preserve_namespace_prefixes`, `memory_optimization`, `streaming_mode`, `chunk_size`,
+    `enable_checksums`). Nothing read them.
+  - Kept: `canonicalization`, `enableVerification` / `enable_verification` and
+    `collectStatistics` / `collect_statistics`, which have an effect, and
+    `enableDeterministicOrdering` / `enable_deterministic_ordering`.
+  - Migration: drop the fields. In Python, passing one to `FidelityOptions(...)` is now a
+    `TypeError`; in TypeScript it is a type error, and at run time Node ignores it.
+- **Node.js parser: `ParseOptions` removed** (Node.js):
+  - Who: code that passes a second argument to `parse` / `parseSync`.
+  - What went: `ParseOptions` and the `options` argument. Every field has thrown since
+    0.5.0.
+  - Migration: call `parse(xml)` / `parseSync(xml)`. In TypeScript a second argument is now
+    a type error.
+- **Node.js builder: `BuildOptions.enableDeterministicOrdering` removed** (TypeScript):
+  - Who: TypeScript code that sets it on the `BuildOptions` of the `js/index.ts` wrapper.
+  - Why: `build` never passed its options on, so it had no effect.
+  - Migration: drop the field.
+- **WASM parser: `parse_stream` and the `parse` options argument removed** (WASM):
+  - Who: browser code built from `packages/ddex-parser/bindings/wasm` (it is not
+    published).
+  - What went: `parse_stream`, which rejected with "not implemented", and the `options`
+    argument of `parse`, which was ignored.
+  - Migration: read the stream into a string and call `parse(xml)`.
+- **Builder CLI: `validate`, `watch` and `server` removed** (CLI):
+  - Who: scripts that run `ddex-builder validate`, `watch` or `server`.
+  - What went: the three subcommands and their flags. Each exited with "not implemented";
+    clap now reports an unrecognized subcommand.
+  - Migration: build with `ddex-builder build`, which runs preflight validation
+    (`--validate` is unchanged). There is no replacement for `watch` or `server`.
 
 ### Documentation
 
@@ -314,6 +361,10 @@ effect. Real features can come back later as additions. The inventory is
   `proptest`, `test-case` and `insta`.
 - The workspace manifest drops `pretty_assertions`, `test-case` and `ts-rs`, which no
   crate uses any more.
+- ddex-builder no longer depends on `num_cpus` (it was the `server` subcommand's default
+  worker count), and drops it from its dev-dependencies too.
+- The WASM parser binding no longer depends on `wasm-bindgen-futures` and `web-sys`, which
+  only `parse_stream` used.
 
 ## [0.5.1] - 2026-11-26
 

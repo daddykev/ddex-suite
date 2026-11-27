@@ -341,81 +341,6 @@ fn convert_resources_to_js_object(
     serde_json::Value::Object(js_resources)
 }
 
-/// Every parse option was removed in 0.5.0 (the streaming ones, and the ones that had no
-/// effect). They are rejected instead of silently ignored.
-fn reject_removed_options(options: &ParseOptions) -> Result<()> {
-    let streaming = [
-        ("mode", options.mode.is_some()),
-        ("autoThreshold", options.auto_threshold.is_some()),
-        ("enableStreaming", options.enable_streaming.is_some()),
-        ("streamingThreshold", options.streaming_threshold.is_some()),
-    ];
-    let no_effect = [
-        ("resolveReferences", options.resolve_references.is_some()),
-        ("includeRaw", options.include_raw.is_some()),
-        ("maxMemory", options.max_memory.is_some()),
-        ("timeoutMs", options.timeout_ms.is_some()),
-        ("allowBlocking", options.allow_blocking.is_some()),
-        ("chunkSize", options.chunk_size.is_some()),
-        ("fidelityLevel", options.fidelity_level.is_some()),
-        ("preserveComments", options.preserve_comments.is_some()),
-        (
-            "preserveProcessingInstructions",
-            options.preserve_processing_instructions.is_some(),
-        ),
-        ("preserveExtensions", options.preserve_extensions.is_some()),
-        (
-            "preserveAttributeOrder",
-            options.preserve_attribute_order.is_some(),
-        ),
-        (
-            "preserveNamespacePrefixes",
-            options.preserve_namespace_prefixes.is_some(),
-        ),
-        ("canonicalization", options.canonicalization.is_some()),
-        ("collectStatistics", options.collect_statistics.is_some()),
-        ("validationLevel", options.validation_level.is_some()),
-        (
-            "extensionValidation",
-            options.extension_validation.is_some(),
-        ),
-        ("enableChecksums", options.enable_checksums.is_some()),
-        ("memoryLimit", options.memory_limit.is_some()),
-        (
-            "enableDetailedErrors",
-            options.enable_detailed_errors.is_some(),
-        ),
-    ];
-    let names = |list: &[(&'static str, bool)]| -> Vec<&'static str> {
-        list.iter()
-            .filter(|(_, set)| *set)
-            .map(|(name, _)| *name)
-            .collect()
-    };
-    let (streaming, no_effect) = (names(&streaming), names(&no_effect));
-    let mut reasons = Vec::new();
-    if !streaming.is_empty() {
-        reasons.push(format!(
-            "{} were removed in 0.5.0: the Node parser always uses the complete parser, whatever \
-             the input size (streaming is not available in Node)",
-            streaming.join(", ")
-        ));
-    }
-    if !no_effect.is_empty() {
-        reasons.push(format!(
-            "{} were removed in 0.5.0: they had no effect on parsing",
-            no_effect.join(", ")
-        ));
-    }
-    if reasons.is_empty() {
-        return Ok(());
-    }
-    Err(napi::Error::new(
-        napi::Status::InvalidArg,
-        format!("Parse option(s) {}. Remove them.", reasons.join("; ")),
-    ))
-}
-
 /// Convert ParsedERNMessage to Node.js ParsedMessage structure
 fn convert_parsed_message(parsed: ParsedERNMessage) -> ParsedMessage {
     let flat = parsed.flat; // Take ownership instead of borrowing
@@ -700,15 +625,7 @@ impl DdexParser {
     }
 
     #[napi]
-    pub fn parse_sync(
-        &mut self,
-        xml: String,
-        options: Option<ParseOptions>,
-    ) -> Result<ParsedMessage> {
-        if let Some(opts) = &options {
-            reject_removed_options(opts)?;
-        }
-
+    pub fn parse_sync(&mut self, xml: String) -> Result<ParsedMessage> {
         // Validate input
         if xml.is_empty() {
             return Err(napi::Error::new(
@@ -768,11 +685,7 @@ impl DdexParser {
     /// napi-rs requires `unsafe` for an async method taking `&mut self`: the caller (JS)
     /// must not call methods of the same parser concurrently with this one.
     #[napi]
-    pub async unsafe fn parse(
-        &mut self,
-        xml: String,
-        options: Option<ParseOptions>,
-    ) -> Result<ParsedMessage> {
+    pub async unsafe fn parse(&mut self, xml: String) -> Result<ParsedMessage> {
         // For now, delegate to sync version with proper async handling
         // TODO: Implement true async parsing using tokio::task::spawn_blocking for CPU-intensive work
 
@@ -785,7 +698,7 @@ impl DdexParser {
         }
 
         // Use sync version but wrapped in proper async context
-        match self.parse_sync(xml, options) {
+        match self.parse_sync(xml) {
             Ok(result) => Ok(result),
             Err(err) => {
                 // Add async context to error message
@@ -869,83 +782,6 @@ impl DdexParser {
             Err(parse_error) => Ok(parse_error_to_detailed(parse_error)),
         }
     }
-}
-
-/// Options accepted by `parse` / `parseSync`. None are supported in 0.5.0: every field
-/// is a removed option, and passing any of them throws (they used to be ignored).
-#[napi(object)]
-#[derive(Default)]
-pub struct ParseOptions {
-    /// Removed in 0.5.0: parsing always uses the complete parser, whatever the input size
-    /// (the core's experimental streaming mode is not exposed in Node). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub mode: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (see `mode`). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub auto_threshold: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (see `mode`). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub enable_streaming: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (see `mode`). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub streaming_threshold: Option<serde_json::Value>,
-    /// Removed in 0.5.0: it had no effect on parsing. Passing it throws.
-    #[napi(ts_type = "never")]
-    pub resolve_references: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub include_raw: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub max_memory: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub timeout_ms: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub allow_blocking: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub chunk_size: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub fidelity_level: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub preserve_comments: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub preserve_processing_instructions: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub preserve_extensions: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub preserve_attribute_order: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub preserve_namespace_prefixes: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub canonicalization: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub collect_statistics: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub validation_level: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub extension_validation: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub enable_checksums: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub memory_limit: Option<serde_json::Value>,
-    /// Removed in 0.5.0 (no effect; see `resolveReferences`). Passing it throws.
-    #[napi(ts_type = "never")]
-    pub enable_detailed_errors: Option<serde_json::Value>,
 }
 
 #[napi(object)]

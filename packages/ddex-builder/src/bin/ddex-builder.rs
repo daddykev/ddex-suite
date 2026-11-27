@@ -45,12 +45,6 @@ struct Cli {
 enum Commands {
     /// Build DDEX XML from structured data
     Build(BuildCommand),
-    /// Validate DDEX XML files
-    Validate(ValidateCommand),
-    /// Watch files for changes and rebuild
-    Watch(WatchCommand),
-    /// Run HTTP API server for builder operations
-    Server(ServerCommand),
     /// Generate shell completions
     Completions(CompletionsCommand),
 }
@@ -84,114 +78,6 @@ struct BuildCommand {
     /// Number of iterations for determinism verification (default: 3)
     #[arg(long, default_value_t = 3)]
     determinism_iterations: usize,
-}
-
-#[derive(Args)]
-struct ValidateCommand {
-    /// DDEX XML files to validate
-    files: Vec<PathBuf>,
-
-    /// DDEX version for validation
-    #[arg(id = "ddex_version", long = "ddex-version", value_enum)]
-    version: Option<DdexVersionArg>,
-
-    /// Content profile for validation
-    #[arg(short, long)]
-    profile: Option<String>,
-
-    /// Enable strict validation rules
-    #[arg(long)]
-    strict: bool,
-
-    /// Output format for validation results
-    #[arg(long, value_enum, default_value_t = ValidateFormat::Human)]
-    output_format: ValidateFormat,
-
-    /// Stop at first validation error
-    #[arg(long)]
-    fail_fast: bool,
-}
-
-#[derive(Args)]
-struct WatchCommand {
-    /// Directory or file to watch
-    #[arg(short, long)]
-    path: PathBuf,
-
-    /// Pattern to match files (glob syntax)
-    #[arg(short, long, default_value = "**/*.{json,yaml,yml,toml}")]
-    pattern: String,
-
-    /// Command to run on file changes
-    #[arg(short, long)]
-    command: Option<String>,
-
-    /// Output directory for built files
-    #[arg(short, long)]
-    output_dir: Option<PathBuf>,
-
-    /// DDEX version to use for building
-    #[arg(id = "ddex_version", long = "ddex-version", value_enum)]
-    version: Option<DdexVersionArg>,
-
-    /// Debounce delay in milliseconds (default: 500ms)
-    #[arg(long, default_value_t = 500)]
-    debounce: u64,
-
-    /// Run initial build on startup
-    #[arg(long)]
-    initial_build: bool,
-
-    /// Recursive watch subdirectories
-    #[arg(short, long)]
-    recursive: bool,
-
-    /// Exclude patterns (glob syntax)
-    #[arg(long)]
-    exclude: Vec<String>,
-}
-
-#[derive(Args)]
-struct ServerCommand {
-    /// Server bind address
-    #[arg(short, long, default_value = "127.0.0.1")]
-    bind: String,
-
-    /// Server port
-    #[arg(short, long, default_value_t = 8080)]
-    port: u16,
-
-    /// Number of worker threads
-    #[arg(short, long, default_value_t = num_cpus::get())]
-    workers: usize,
-
-    /// Enable CORS for cross-origin requests
-    #[arg(long)]
-    cors: bool,
-
-    /// Maximum request size in MB
-    #[arg(long, default_value_t = 10)]
-    max_request_size: usize,
-
-    /// Request timeout in seconds
-    #[arg(long, default_value_t = 30)]
-    timeout: u64,
-
-    /// Enable request logging
-    #[arg(long)]
-    log_requests: bool,
-
-    /// TLS certificate file (for HTTPS)
-    #[arg(long)]
-    tls_cert: Option<PathBuf>,
-
-    /// TLS private key file (for HTTPS)
-    #[arg(long)]
-    tls_key: Option<PathBuf>,
-
-    /// Rate limiting: requests per minute per IP
-    #[arg(long)]
-    rate_limit: Option<u32>,
 }
 
 #[derive(Args)]
@@ -233,13 +119,6 @@ enum InputFormat {
     Toml,
 }
 
-#[derive(ValueEnum, Clone, Debug)]
-enum ValidateFormat {
-    Human,
-    Json,
-    Junit,
-}
-
 impl From<DdexVersionArg> for DdexVersion {
     fn from(version: DdexVersionArg) -> Self {
         match version {
@@ -263,9 +142,6 @@ fn main() {
 
     let result = match cli.command {
         Commands::Build(cmd) => handle_build_command(cmd),
-        Commands::Validate(cmd) => handle_validate_command(cmd),
-        Commands::Watch(cmd) => handle_watch_command(cmd),
-        Commands::Server(cmd) => handle_server_command(cmd),
         Commands::Completions(cmd) => handle_completions_command(cmd),
     };
 
@@ -349,18 +225,6 @@ fn handle_build_command(cmd: BuildCommand) -> Result<(), Box<dyn std::error::Err
     }
 
     Ok(())
-}
-
-fn handle_validate_command(_cmd: ValidateCommand) -> Result<(), Box<dyn std::error::Error>> {
-    Err("`ddex-builder validate` is not implemented in 0.5.x: reading DDEX XML needs the parser; use `ddex-parser validate` (it reported every file as valid)".into())
-}
-
-fn handle_watch_command(_cmd: WatchCommand) -> Result<(), Box<dyn std::error::Error>> {
-    Err("`ddex-builder watch` is not implemented in 0.5.x: no files are watched; run `ddex-builder build` instead".into())
-}
-
-fn handle_server_command(_cmd: ServerCommand) -> Result<(), Box<dyn std::error::Error>> {
-    Err("`ddex-builder server` is not implemented in 0.5.x: there is no HTTP server (it printed endpoints and waited)".into())
 }
 
 fn handle_completions_command(cmd: CompletionsCommand) -> Result<(), Box<dyn std::error::Error>> {

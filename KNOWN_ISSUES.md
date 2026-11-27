@@ -88,25 +88,12 @@ reason, until the upgrade lands.
 - ddex-parser ERN 3.8.x: only the first `ResourceGroup` of the default
   `ReleaseDetailsByTerritory` block is kept in the graph; resource `ProprietaryId`s
   (`SoundRecordingId`, `VideoId`, `ImageId`) are not read.
-- Node parser binding: `parse` / `parseSync` take no working options. Every
-  `ParseOptions` field throws since 0.5.0: the streaming ones (`mode`, `autoThreshold`,
-  `enableStreaming`, `streamingThreshold`) and the ones that had no effect
-  (`resolveReferences`, `includeRaw`, `maxMemory`, `timeoutMs`, `allowBlocking`,
-  `chunkSize`, the fidelity options, `collectStatistics`, `validationLevel`, ...).
-  `ParsedMessage.statistics` (all zeros) and `fidelityInfo` (an echo of the options) were
-  removed.
 - ddex-builder output is not deterministic (planned for 0.6.0). The cases above (the
   "Not deterministic" rows) are now pinned by `it::determinism_0_6`; the full inventory is
   `dev-docs/DETERMINISM_AUDIT_0.6.0.md`. Giving `message_id`, `message_created_date_time`,
   `release_reference` and each track's `resource_reference` makes `DDEXBuilder::build`
   output repeatable. Not pinned by a test: the streaming writer's references are SHA-256 of the caller's IDs cut to 8 hex digits, so a large
   catalog can fail with a reference collision (D14).
-- Python parser binding: no `ParseOptions` field changes the result. `include_raw_extensions`
-  and `include_comments` reach the Rust `ParseOptions`, which nothing reads;
-  `validate_references` (Rust `resolve_references`) only controls `tracing` warnings for
-  unresolved references, which the binding does not surface; `streaming` is not read by
-  `rust_parse_options_from_dict`; `timeout` is left out by `ParseOptions.to_dict`. The fields
-  are kept (accepted for forward compatibility) so existing code keeps working.
 - ERN 3.8.1 builder output is not XSD-checked: no official 3.8.1 schema can be obtained
   (DDEX no longer serves ERN 3.x XSDs, and no archived copy of the 3.8.1 one exists). It
   is the 3.8.2 document in the 381 namespace (`it::ern38_xsd`), and the content models
@@ -114,10 +101,6 @@ reason, until the upgrade lands.
 - The ERN 3.8.2 XSD is fetched from the Internet Archive's capture of its official URL
   (DDEX removed the ERN 3.x schemas from service.ddex.net in 2026), pinned by hash.
 - ddex-builder streaming writer (`streaming::StreamingBuilder`, Node `StreamingDdexBuilder`): ERN 4.2/4.3 targets are rejected with "not yet supported by the streaming writer" (it only writes the 3.8-style tree; use `DDEXBuilder::build` for 4.x). Its 3.8 output still declares the `ern/43` namespace whatever version is requested, and is the old 3.8-style tree, not the schema-valid 3.8.2 that `DDEXBuilder::build` writes.
-- ddex-builder CLI: `validate`, `watch` and `server` are not implemented and exit
-  with an error (before 0.5.1 they passed every file, simulated watching and printed
-  endpoints without a server). `build` runs `DDEXBuilder::build` since 0.5.1. (The no-op
-  `batch` subcommand was removed in 0.5.0; `diff` and `preset` were removed in 0.6.0.)
 - ERN prefixed local elements (`<ern:PartyId>`, not schema-valid) are handled inconsistently: some are found, `MessageSender/PartyId` is not.
 
 ## Not implemented in 0.5.x
@@ -133,13 +116,20 @@ They now fail, or report the value as not measured, instead:
   `fidelity_score` / `fidelityScore` is always null. (The fake round-trip, verification,
   fidelity-analysis and determinism-guarantee APIs were removed in 0.6.0.)
 - Node / Python builder bindings: `buildWithFidelity` / `build_with_fidelity` reject a
-  `canonicalization` other than `db_c14n` or `none`, and apply none of the other fidelity
-  options (comments, extensions, attribute order, ...). Memory, extension count and
-  canonicalization time are not measured (null).
-- Python parser binding: the native `DDEXParser.from_dataframe` raises
-  `NotImplementedError` (use `ddex_builder.DDEXBuilder().from_dataframe`).
-- WASM parser binding: `parse_stream` rejects with an error (it panicked).
+  `canonicalization` other than `db_c14n` or `none`. Memory, extension count and
+  canonicalization time are not measured (null). (The fidelity options that had no effect
+  were removed in 0.6.0.)
 - ddex-core `AttributeValidator::add_custom_validator` does not store the closure: only
   the built-in validators `ddex_territory_code`, `ddex_language_code` and
   `ddex_currency_code` can be registered, and a custom rule naming any other validator
   fails validation as unknown.
+
+## Parked for after 0.6.0
+
+- The parsed models leave some DDEX fields always empty (`Release.party_list`, `Resource.rights_controller`, `Party.party_role` / `Party.contact_details`, `DealTerms.distribution_channel` / `DealTerms.price_information`); these elements are not parsed in 0.6.0.
+- `FidelityOptions.enable_deterministic_ordering` (Python) / `enableDeterministicOrdering` (Node) is accepted but never read (`ddex-builder/bindings/{python,node}/src/lib.rs`); not in PR 4b's list, so it was kept.
+- Node builder TS wrapper `js/index.ts`: the other `BuildOptions` fields (`version`, `canonicalization`, `validateOnBuild`, `includeStatistics`) are ignored, since `build` never passes `options` on; it is a no-op type users may rely on.
+- Python parser native `_internal.DDEXParser.parse` / `parse_async` / `stream` still take an options dict whose remaining keys (`resolve_references`, `include_raw`, `max_memory`, `timeout_ms`, ...) map to Rust `ParseOptions` fields owned by the Rust `ParseOptions` row of REMOVALS (4b inventory, not in this PR's list); the public wrapper no longer passes one.
+- Node parser `src/index.ts`, `src/parser.ts`, `src/types.ts`, `src/wasm.d.ts` and `js/index.ts` are unbuilt, unpublished TypeScript wrappers that still declare `ParseOptions` and `parse_stream`; CI and `npm publish` use only `index.js` / `index.d.ts`.
+- `docs/python_parser_api.txt` (a pydoc dump) still lists `ParseOptions` and `ParseResult`, and `docs/DB-C14N-SPEC.md` describes a `preserve_comments` option.
+- KNOWN_ISSUES.md repeats the end of its "Not implemented in 0.5.x" section (from "They now fail, or report the value as not measured" on) a second time at the end of the file.

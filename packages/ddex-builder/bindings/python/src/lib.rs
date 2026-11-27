@@ -240,64 +240,28 @@ pub struct FidelityOptions {
     #[pyo3(get, set)]
     pub canonicalization: String,
     #[pyo3(get, set)]
-    pub preserve_comments: bool,
-    #[pyo3(get, set)]
-    pub preserve_processing_instructions: bool,
-    #[pyo3(get, set)]
-    pub preserve_extensions: bool,
-    #[pyo3(get, set)]
-    pub preserve_attribute_order: bool,
-    #[pyo3(get, set)]
-    pub preserve_namespace_prefixes: bool,
-    #[pyo3(get, set)]
     pub enable_verification: bool,
     #[pyo3(get, set)]
     pub collect_statistics: bool,
     #[pyo3(get, set)]
     pub enable_deterministic_ordering: bool,
-    #[pyo3(get, set)]
-    pub memory_optimization: String,
-    #[pyo3(get, set)]
-    pub streaming_mode: bool,
-    #[pyo3(get, set)]
-    pub chunk_size: u32,
-    #[pyo3(get, set)]
-    pub enable_checksums: bool,
 }
 
 #[pymethods]
 impl FidelityOptions {
     #[new]
-    #[pyo3(signature = (canonicalization="db_c14n".to_string(), preserve_comments=false, preserve_processing_instructions=false, preserve_extensions=true, preserve_attribute_order=true, preserve_namespace_prefixes=true, enable_verification=false, collect_statistics=false, enable_deterministic_ordering=true, memory_optimization="balanced".to_string(), streaming_mode=false, chunk_size=65536, enable_checksums=false))]
+    #[pyo3(signature = (canonicalization="db_c14n".to_string(), enable_verification=false, collect_statistics=false, enable_deterministic_ordering=true))]
     pub fn new(
         canonicalization: String,
-        preserve_comments: bool,
-        preserve_processing_instructions: bool,
-        preserve_extensions: bool,
-        preserve_attribute_order: bool,
-        preserve_namespace_prefixes: bool,
         enable_verification: bool,
         collect_statistics: bool,
         enable_deterministic_ordering: bool,
-        memory_optimization: String,
-        streaming_mode: bool,
-        chunk_size: u32,
-        enable_checksums: bool,
     ) -> Self {
         FidelityOptions {
             canonicalization,
-            preserve_comments,
-            preserve_processing_instructions,
-            preserve_extensions,
-            preserve_attribute_order,
-            preserve_namespace_prefixes,
             enable_verification,
             collect_statistics,
             enable_deterministic_ordering,
-            memory_optimization,
-            streaming_mode,
-            chunk_size,
-            enable_checksums,
         }
     }
 

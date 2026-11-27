@@ -227,17 +227,14 @@ fn cli_build_writes_real_xml_and_the_stubs_fail() {
     ]);
     assert!(!run.status.success());
 
-    let sample = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../examples/Samples43/1 Audio.xml"
-    );
-    for args in [vec!["validate", sample]] {
-        let run = cli(&args);
-        assert!(!run.status.success(), "{args:?}");
+    // The validate, watch and server subcommands were removed in 0.6.0.
+    for subcommand in ["validate", "watch", "server"] {
+        let run = cli(&[subcommand]);
+        assert!(!run.status.success(), "{subcommand}");
         let stderr = String::from_utf8_lossy(&run.stderr);
         assert!(
-            stderr.contains("not implemented in 0.5.x"),
-            "{args:?}: {stderr}"
+            stderr.contains("unrecognized subcommand"),
+            "{subcommand}: {stderr}"
         );
     }
 }

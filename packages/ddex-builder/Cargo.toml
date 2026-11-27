@@ -60,9 +60,6 @@ console = "0.15"
 serde_yaml = "0.9"
 toml = { version = "0.8", features = ["preserve_order"] }
 
-# System information
-num_cpus = "1.16"
-
 # Logging
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
@@ -79,7 +76,6 @@ ddex-parser = { path = "../ddex-parser" }
 
 # Fidelity testing dependencies
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
-num_cpus = "1.16"
 regex = "1.11"
 
 [features]

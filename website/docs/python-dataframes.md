@@ -238,8 +238,7 @@ A failed build raises `RuntimeError` with the same message as `build`; a missing
   `{"is_valid", "version", "errors", "warnings"}`: it detects the ERN version (`None` when
   there is no ERN namespace) and checks that the XML is well-formed. It is not XSD
   validation, and `parse` can still fail on a document that passes.
-- `ParseOptions` (`include_raw_extensions`, `include_comments`, `validate_references`,
-  `streaming`, `timeout`) is accepted for forward compatibility; none of its fields
-  currently changes the result.
+- `parse` takes no options: `ParseOptions`, whose fields had no effect, was removed in
+  0.6.0.
 - `ddex_parser.__version__` and `ddex_builder.__version__` report the installed package
   version.

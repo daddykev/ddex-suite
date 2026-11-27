@@ -56,9 +56,8 @@ print(tracks[["track_index", "track_title", "isrc", "duration", "disc_number", "
   spelling (`"V4_3"`).
 - `stream(xml)` parses the whole document and then yields its releases one by one; it
   does not reduce memory use.
-- `ParseOptions` (`include_raw_extensions`, `include_comments`, `validate_references`,
-  `streaming`, `timeout`) is accepted for forward compatibility; none of its fields
-  currently changes the result.
+- `parse` takes no options (`ParseOptions`, whose fields had no effect, was removed in
+  0.6.0).
 - `sanity_check(xml)` detects the ERN version (`None` when there is no ERN namespace)
   and checks that the XML is well-formed, listing each problem in `errors`. It is not XSD
   validation, and `parse` can still fail on a document that passes.

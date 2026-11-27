@@ -12,10 +12,11 @@ import init, { DDEXParser } from './pkg/ddex_parser_wasm.js';
 
 await init();
 const parser = new DDEXParser();
-const message = parser.parse(xmlString, undefined); // the parsed message (serde form of ParsedERNMessage)
+const message = parser.parse(xmlString); // the parsed message (serde form of ParsedERNMessage)
 ```
 
-The `options` argument of `parse` is ignored. For Node.js use the native
+`parse` takes only the XML (its ignored `options` argument and the unimplemented
+`parse_stream` were removed in 0.6.0). For Node.js use the native
 [`ddex-parser`](https://www.npmjs.com/package/ddex-parser) package.
 
 [Changelog](https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md),

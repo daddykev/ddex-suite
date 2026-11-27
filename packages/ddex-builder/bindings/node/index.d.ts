@@ -50,18 +50,9 @@ export interface BuilderStats {
 }
 export interface FidelityOptions {
   canonicalization?: string
-  preserveComments?: boolean
-  preserveProcessingInstructions?: boolean
-  preserveExtensions?: boolean
-  preserveAttributeOrder?: boolean
-  preserveNamespacePrefixes?: boolean
   enableVerification?: boolean
   collectStatistics?: boolean
   enableDeterministicOrdering?: boolean
-  memoryOptimization?: string
-  streamingMode?: boolean
-  chunkSize?: number
-  enableChecksums?: boolean
 }
 export interface BuildStatistics {
   buildTimeMs: number

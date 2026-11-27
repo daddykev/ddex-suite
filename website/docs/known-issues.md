@@ -27,8 +27,6 @@ summarizes the ones you are most likely to meet. Report new ones on
   `detect_version` return `"V4_3"`, not `"4.3"`.
 - **Malformed XML**: `]]>` in text is accepted, and mismatched tags come back as a generic
   XML error.
-- **Python `ParseOptions` has no effect**: its fields are accepted for forward compatibility
-  but do not change the result.
 
 ## Builder
 
