@@ -11,7 +11,7 @@ import os
 
 import pytest
 
-from ddex_builder import DdexBuilder, FidelityOptions
+from ddex_builder import BuildOptions, DdexBuilder
 from test_smoke_ern43 import REQUEST
 
 # CI runs these tests from a copy outside the repository.
@@ -27,11 +27,11 @@ def sample():
 
 
 def test_round_trip_of_an_official_sample_passes():
-    result = DdexBuilder().test_round_trip_fidelity(sample())
+    result = DdexBuilder().check_round_trip(sample())
     assert result.round_trip_success, result.issues
     assert result.issues == []
     assert result.fidelity_score is None
-    assert isinstance(result.determinism_verified, bool)
+    assert isinstance(result.builds_identical, bool)
     assert isinstance(result.checksums_match, bool)
 
 
@@ -40,21 +40,21 @@ def test_round_trip_reports_a_changed_field_as_a_failure():
     # validation, so the round trip fails and says why (before 0.5.1 it reported success).
     xml = sample().replace("<ISRC>JPTO09404900</ISRC>", "<ISRC></ISRC>", 1)
     assert xml != sample()
-    result = DdexBuilder().test_round_trip_fidelity(xml)
+    result = DdexBuilder().check_round_trip(xml)
     assert not result.round_trip_success
     assert result.issues and result.issues[0].startswith("round trip failed:"), result.issues
     assert result.fidelity_score is None
 
 
 def test_round_trip_of_non_ddex_input_fails():
-    result = DdexBuilder().test_round_trip_fidelity("<html/>")
+    result = DdexBuilder().check_round_trip("<html/>")
     assert not result.round_trip_success
     assert result.checksums_match is None
 
 
-def test_build_with_fidelity_statistics_and_verification_are_computed():
-    options = FidelityOptions(collect_statistics=True, enable_verification=True)
-    result = DdexBuilder().build_with_fidelity(options, REQUEST)
+def test_build_with_statistics_statistics_and_verification_are_computed():
+    options = BuildOptions(collect_statistics=True, enable_verification=True)
+    result = DdexBuilder().build_with_statistics(options, REQUEST)
     stats = result.statistics
     assert stats.element_count == result.xml.count("<") - result.xml.count("</") - result.xml.count("<?")
     assert stats.attribute_count > 0 and stats.namespace_count > 0
@@ -67,7 +67,7 @@ def test_build_with_fidelity_statistics_and_verification_are_computed():
     assert verification.fidelity_score is None
 
     with pytest.raises(NotImplementedError, match="not implemented in 0.5.x"):
-        DdexBuilder().build_with_fidelity(FidelityOptions(canonicalization="c14n"), REQUEST)
+        DdexBuilder().build_with_statistics(BuildOptions(canonicalization="c14n"), REQUEST)
 
 
 def test_validate_runs_preflight_validation():

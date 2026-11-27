@@ -21,21 +21,23 @@ use crate::error::ParseError;
 use ddex_core::models::flat::ParsedERNMessage;
 use std::io::BufRead;
 
-/// Main parser options
+/// Main parser options. (Before 0.6.0 it also had `auto_threshold`, `include_raw`,
+/// `allow_blocking`, `include_raw_extensions`, `include_comments` and
+/// `preserve_unknown_elements`, which no parse path read.)
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParseOptions {
     /// `Dom` (default, complete) or the experimental, opt-in `Stream` path.
     pub mode: mode::ParseMode,
-    /// Unused since 0.5.0: `Auto` no longer switches to `Stream` above a size threshold.
-    pub auto_threshold: u64,
+    /// Check references after a DOM parse; unresolved ones are logged through `tracing`
+    /// (the parsed message is the same either way).
     pub resolve_references: bool,
-    pub include_raw: bool,
+    /// `ParseMode::Stream` only: fail when the estimated memory use exceeds this (bytes).
     pub max_memory: usize,
+    /// DOM parse: fail with `ParseError::Timeout` when the parse took longer than this
+    /// (milliseconds; checked once the parse is done).
     pub timeout_ms: u64,
-    pub allow_blocking: bool,
-    pub include_raw_extensions: bool,
-    pub include_comments: bool,
-    pub preserve_unknown_elements: bool,
+    /// `ParseMode::Stream` only: yield the thread (`std::thread::yield_now`) every
+    /// `chunk_size` releases.
     pub chunk_size: usize,
 }
 
@@ -43,16 +45,10 @@ impl Default for ParseOptions {
     fn default() -> Self {
         Self {
             mode: mode::ParseMode::Dom,
-            auto_threshold: 10 * 1024 * 1024, // 10MB
             resolve_references: true,
-            include_raw: false,
             max_memory: 100 * 1024 * 1024, // 100MB
             timeout_ms: 30000,             // 30 seconds
-            allow_blocking: false,
             chunk_size: 100,
-            include_raw_extensions: false,
-            include_comments: false,
-            preserve_unknown_elements: false,
         }
     }
 }
@@ -68,12 +64,7 @@ pub fn parse<R: BufRead + std::io::Seek>(
     let version = detector::VersionDetector::detect(&mut reader)?;
     reader.seek(std::io::SeekFrom::Start(0))?;
 
-    // Select parsing mode
-    let mode_selector = mode::ModeSelector::new(options.auto_threshold);
-    let selected_mode = mode_selector.select_mode(&mut reader, options.mode)?;
-    reader.seek(std::io::SeekFrom::Start(0))?;
-
-    match selected_mode {
+    match options.mode {
         mode::ParseMode::Dom => {
             // Complete parser, for any input size
             dom::parse_dom(reader, version, options, security_config)
@@ -82,29 +73,7 @@ pub fn parse<R: BufRead + std::io::Seek>(
             // Experimental streaming path, only when requested explicitly
             stream::parse_streaming(reader, version, options, security_config)
         }
-        mode::ParseMode::Auto => unreachable!(), // Already resolved
     }
 }
 
 pub mod version_ext;
-
-impl ParseOptions {
-    pub fn with_extensions() -> Self {
-        Self {
-            include_raw_extensions: true,
-            include_comments: true,
-            preserve_unknown_elements: true,
-            ..Default::default()
-        }
-    }
-
-    pub fn for_round_trip() -> Self {
-        Self {
-            include_raw_extensions: true,
-            include_comments: true,
-            preserve_unknown_elements: true,
-            resolve_references: false,
-            ..Default::default()
-        }
-    }
-}

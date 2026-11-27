@@ -70,7 +70,7 @@ effect. Real features can come back later as additions. The inventory is
     or one shared repeat-build check reported six times).
   - Migration: no replacement. Determinism is a documented, CI-tested property of
     `DDEXBuilder::build` (`tests/it/determinism_0_6.rs`). To compare builds yourself, build
-    twice and compare the bytes; `ddex-builder build --verify-determinism` still does this.
+    twice and compare the bytes; `ddex-builder build --check-repeatable` does this.
 - **`DeterminismConfig` reduced to what a build reads** (Rust):
   - Kept: `canon_mode`, `indent_char`, `indent_width` and `emit_reproducibility_banner`;
     `CanonMode::{DbC14n, Pretty}` and `IndentChar`.
@@ -336,6 +336,100 @@ effect. Real features can come back later as additions. The inventory is
     clap now reports an unrecognized subcommand.
   - Migration: build with `ddex-builder build`, which runs preflight validation
     (`--validate` is unchanged). There is no replacement for `watch` or `server`.
+- **One builder: `Builder` folded into `DDEXBuilder`** (Rust):
+  - Who: Rust code that uses `ddex_builder::Builder`, `FidelityOptions`,
+    `FidelityBuildResult`, `MessageProfile` or the crate-root `RoundTripResult` copy.
+  - What changed: `DDEXBuilder` now has `build_with_statistics(request, options)`,
+    `check_round_trip(xml, parse)`, `canonicalize(xml, &options)` and
+    `supported_versions()`. `Builder` is gone with `with_fidelity_options`,
+    `set_fidelity_options`, `with_canonicalization`, `with_db_c14n`, `with_statistics`,
+    `canonicalization_algorithm`, `with_version` and `target_version`; the target version was
+    never applied to a build. `FidelityBuildResult` (its `canonicalization_applied` and
+    `db_c14n_version` were constants) is replaced by `StatisticsBuildResult { build,
+    statistics }`. `MessageProfile` was unused. `ddex_builder::RoundTripResult` is now the
+    `round_trip::RoundTripResult` it duplicated. `DDEXBuilder` is now a unit struct (it
+    derives `Copy` and `Default`).
+  - Migration: replace `Builder::new()` with `DDEXBuilder::new()` and pass the settings in
+    `BuildOptions` (see the table below). Set the target version in `BuildRequest::version`.
+- **One options type: `BuildOptions`** (Rust):
+  - Who: Rust code that sets `BuildOptions::determinism`, uses `DeterminismConfig` or the
+    `determinism` module, or uses `FidelityOptions`.
+  - What changed: `BuildOptions` gains `output: OutputConfig` (replacing
+    `determinism: Option<DeterminismConfig>`; the default writes the same bytes as
+    `determinism: None` did), `canonicalization` (for `canonicalize`) and
+    `collect_statistics` (for `build_with_statistics`). The `determinism` module is now
+    `output` (`OutputConfig`, `CanonMode`, `IndentChar`, also exported at the crate root).
+  - Migration: `determinism: Some(config)` becomes `output: config` (and `None` becomes
+    `..Default::default()`); `FidelityOptions { canonicalization, collect_statistics }`
+    becomes the same fields on `BuildOptions`.
+- **Renamed: the generator banner and the round-trip flag** (Rust, Node.js, Python):
+  - `emit_reproducibility_banner` → `emit_generator_banner` and
+    `BuildResult::reproducibility_banner` → `generator_banner`: the banner names the builder
+    version, it does not make output reproducible.
+  - Binding `VerificationResult.determinismVerified` / `determinism_verified` →
+    `buildsIdentical` / `builds_identical`: it reports whether two builds of the same
+    request were byte-identical.
+  - Migration: rename the field.
+- **Builder bindings renamed to match the Rust API** (Node.js, Python):
+  - Who: code that calls `buildWithFidelity` / `build_with_fidelity` or
+    `testRoundTripFidelity` / `test_round_trip_fidelity`, or uses `FidelityOptions`.
+  - What changed: `buildWithStatistics` / `build_with_statistics`, `checkRoundTrip` /
+    `check_round_trip` and `BuildOptions` (fields `canonicalization`, `collectStatistics` /
+    `collect_statistics`, `enableVerification` / `enable_verification`). The options
+    argument of the round-trip check, which was never applied, was removed.
+    `enableDeterministicOrdering` / `enable_deterministic_ordering` was removed (never
+    read). The Python keyword argument `fidelity_options=` is now `options=`.
+  - Migration: rename the calls and the options class.
+- **Node.js builder TS wrapper: `BuildOptions` of `build` removed** (TypeScript):
+  - Who: TypeScript code that passes a second argument to `DdexBuilder.build` in the
+    `js/index.ts` wrapper.
+  - What went: `version`, `canonicalization`, `validateOnBuild` and `includeStatistics`,
+    and the argument itself: `build` never passed them on. The `BuildOptions` name now
+    refers to the native options of `buildWithStatistics`.
+  - Migration: set the version in the build request; drop the rest.
+- **Builder CLI: `--verify-determinism` renamed `--check-repeatable`** (CLI):
+  - Who: scripts that pass `--verify-determinism`.
+  - What changed: the flag name, and the messages: "N builds were byte-identical", or
+    "builds differed at build K". The SHA-256 lines are no longer printed.
+    `--determinism-iterations` is unchanged.
+  - Migration: rename the flag.
+- **Parser `ParseOptions` fields that nothing read removed** (Rust, Python):
+  - Who: Rust code that sets `auto_threshold`, `include_raw`, `allow_blocking`,
+    `include_raw_extensions`, `include_comments` or `preserve_unknown_elements`, calls
+    `ParseOptions::with_extensions()` / `for_round_trip()`, or uses `ParseMode::Auto` /
+    `parser::mode::ModeSelector`; Python code that passes those keys in an options dict to
+    the native `ddex_parser._internal.DDEXParser`.
+  - Why: no parse path read the fields (`allow_blocking` guarded an empty block), the two
+    presets only set them (and `resolve_references: false`), and `Auto` always resolved to
+    `Dom`.
+  - Kept, because a parse path reads them: `mode` (`Dom` / `Stream`), `resolve_references`
+    (logs unresolved references), `timeout_ms` (DOM parse), `max_memory` and `chunk_size`
+    (`ParseMode::Stream`).
+  - Migration: drop the fields (`..Default::default()` keeps working); use `ParseMode::Dom`
+    (the default) instead of `Auto`.
+
+Old → new names (0.6.0 PR 5a):
+
+| Old | New |
+|---|---|
+| `ddex_builder::Builder` | `ddex_builder::DDEXBuilder` |
+| `Builder::build_with_fidelity(&request)` | `DDEXBuilder::build_with_statistics(request, options)` |
+| `Builder::test_round_trip_fidelity_with(xml, parse)` | `DDEXBuilder::check_round_trip(xml, parse)` |
+| `Builder::canonicalize(xml)` | `DDEXBuilder::canonicalize(xml, &options)` |
+| `Builder::supported_versions()` | `DDEXBuilder::supported_versions()` |
+| `Builder::with_version` / `target_version` | `BuildRequest::version` |
+| `FidelityOptions` | `BuildOptions` (`canonicalization`, `collect_statistics`) |
+| `FidelityBuildResult` | `StatisticsBuildResult` (`build`, `statistics`) |
+| `BuildOptions::determinism: Option<DeterminismConfig>` | `BuildOptions::output: OutputConfig` |
+| `ddex_builder::determinism` / `DeterminismConfig` | `ddex_builder::output` / `OutputConfig` |
+| `emit_reproducibility_banner` | `emit_generator_banner` |
+| `BuildResult::reproducibility_banner` | `BuildResult::generator_banner` |
+| Node `buildWithFidelity` / Python `build_with_fidelity` | `buildWithStatistics` / `build_with_statistics` |
+| Node `testRoundTripFidelity` / Python `test_round_trip_fidelity` | `checkRoundTrip` / `check_round_trip` |
+| Node / Python `FidelityOptions` | `BuildOptions` |
+| Node `determinismVerified` / Python `determinism_verified` | `buildsIdentical` / `builds_identical` |
+| CLI `--verify-determinism` | `--check-repeatable` |
+| `ParseMode::Auto` | `ParseMode::Dom` |
 
 ### Documentation
 

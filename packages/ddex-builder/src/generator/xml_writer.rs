@@ -1,20 +1,20 @@
 //! XML serialization from AST
 
 use crate::ast::{Element, Node, AST};
-use crate::determinism::{DeterminismConfig, IndentChar};
 use crate::error::BuildError;
+use crate::output::{IndentChar, OutputConfig};
 use ddex_core::models::CommentPosition; // Fixed import
 use indexmap::IndexMap;
 use std::io::Write;
 
 /// XML Writer for converting AST to XML string
 pub struct XmlWriter {
-    config: DeterminismConfig,
+    config: OutputConfig,
 }
 
 impl XmlWriter {
     /// Create a new XML writer
-    pub fn new(config: DeterminismConfig) -> Self {
+    pub fn new(config: OutputConfig) -> Self {
         Self { config }
     }
 
@@ -131,8 +131,8 @@ impl XmlWriter {
 
     fn get_indent(&self, depth: usize) -> String {
         let indent_char = match self.config.indent_char {
-            IndentChar::Space => " ", // Fixed: removed super::determinism::
-            IndentChar::Tab => "\t",  // Fixed: removed super::determinism::
+            IndentChar::Space => " ",
+            IndentChar::Tab => "\t",
         };
         indent_char.repeat(depth * self.config.indent_width)
     }

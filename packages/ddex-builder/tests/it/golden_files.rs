@@ -76,10 +76,10 @@ fn test_audio_album_golden() {
     };
 
     let options = BuildOptions {
-        determinism: Some(ddex_builder::DeterminismConfig::default()),
         preflight_level: ddex_builder::preflight::PreflightLevel::Warn,
         id_strategy: IdStrategy::StableHash,
         stable_hash_config: None,
+        ..BuildOptions::default()
     };
 
     let request = crate::ern4_support::ern4_test_data(request);
@@ -97,13 +97,14 @@ fn test_deterministic_generation() {
 
     let request = create_test_request();
     let options = BuildOptions {
-        determinism: Some(ddex_builder::DeterminismConfig {
-            canon_mode: ddex_builder::determinism::CanonMode::DbC14n,
+        output: ddex_builder::OutputConfig {
+            canon_mode: ddex_builder::output::CanonMode::DbC14n,
             ..Default::default()
-        }),
+        },
         preflight_level: ddex_builder::preflight::PreflightLevel::Strict,
         id_strategy: IdStrategy::StableHash,
         stable_hash_config: None,
+        ..BuildOptions::default()
     };
 
     // Generate multiple times
@@ -127,10 +128,10 @@ fn test_preflight_validation() {
     request.releases[0].tracks[0].isrc = "INVALID".to_string();
 
     let options = BuildOptions {
-        determinism: None,
         preflight_level: ddex_builder::preflight::PreflightLevel::Strict,
         id_strategy: IdStrategy::UUID,
         stable_hash_config: None,
+        ..BuildOptions::default()
     };
 
     let result = builder.build(request, options);

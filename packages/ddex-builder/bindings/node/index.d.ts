@@ -48,11 +48,14 @@ export interface BuilderStats {
   validationErrors: number
   validationWarnings: number
 }
-export interface FidelityOptions {
+/** Options of `buildWithStatistics` (before 0.6.0, `FidelityOptions`) */
+export interface BuildOptions {
+  /** "none" or "db_c14n" (anything else is an error); the output is DB-C14N/1.0 either way */
   canonicalization?: string
+  /** Run a real Parse → Build → Parse round trip of the output (`verification`) */
   enableVerification?: boolean
+  /** Count the output (`statistics`) */
   collectStatistics?: boolean
-  enableDeterministicOrdering?: boolean
 }
 export interface BuildStatistics {
   buildTimeMs: number
@@ -76,7 +79,8 @@ export interface VerificationResult {
   /** No score is computed: always null (before 0.5.1, a made-up 0.98 or 1.0). */
   fidelityScore?: number
   canonicalizationConsistent: boolean
-  determinismVerified: boolean
+  /** Building the same request twice gave byte-identical XML. */
+  buildsIdentical: boolean
   issues: Array<string>
   checksumsMatch?: boolean
 }
@@ -131,8 +135,14 @@ export declare class DdexBuilder {
    * `releases`, the releases added with `addRelease`/`addResource` are used.
    */
   build(request?: import('./build-request').BuildRequest | undefined | null): Promise<string>
-  buildWithFidelity(request?: import('./build-request').BuildRequest | undefined | null, fidelityOptions?: FidelityOptions | undefined | null): Promise<BuildResult>
-  testRoundTripFidelity(originalXml: string, fidelityOptions?: FidelityOptions | undefined | null): Promise<VerificationResult>
+  buildWithStatistics(request?: import('./build-request').BuildRequest | undefined | null, options?: BuildOptions | undefined | null): Promise<BuildResult>
+  /**
+   * Parse → build → parse `originalXml` and compare the two parsed messages on the
+   * fields a build request carries (ddex_builder::round_trip). `issues` lists the
+   * differences; `fidelityScore` is null (no score is computed). Before 0.5.1 this
+   * returned a made-up success. (Before 0.6.0, `testRoundTripFidelity`.)
+   */
+  checkRoundTrip(originalXml: string): Promise<VerificationResult>
   validate(): Promise<ValidationResult>
   getStats(): BuilderStats
   reset(): void

@@ -15,7 +15,7 @@ import {
   type Resource,
   type ValidationResult,
   type BuilderStats,
-  type FidelityOptions,
+  type BuildOptions,
   type BuildStatistics,
   type VerificationResult,
   type BuildResult,
@@ -26,21 +26,6 @@ import {
   type MessageHeader
 } from '../index.js';
 import type { BuildRequest } from '../build-request';
-
-/**
- * Configuration options for DDEX XML building operations
- * @category Builder Classes
- */
-export interface BuildOptions {
-  /** DDEX version to target for XML generation */
-  version?: '3.8.2' | '4.2' | '4.3';
-  /** Canonicalization algorithm to use for XML normalization */
-  canonicalization?: 'db-c14n-1.0' | 'exclusive' | 'none';
-  /** Validate structure during build process */
-  validateOnBuild?: boolean;
-  /** Include detailed build statistics in output */
-  includeStatistics?: boolean;
-}
 
 /**
  * Configuration options for streaming DDEX XML operations
@@ -158,7 +143,6 @@ export class DDEXBuilder {
    * @param data - Build request (core `BuildRequest` fields, see build-request.d.ts);
    *   `header` and `version` are required. Without `releases`, the releases added with
    *   `addRelease`/`addResource` are used.
-   * @param options - Build configuration options
    * @returns Promise resolving to XML string
    * @throws {Error} When build fails due to validation errors or missing data
    *
@@ -167,21 +151,21 @@ export class DDEXBuilder {
    * const xml = await builder.build(request);
    * ```
    */
-  async build(data?: BuildRequest | null, options?: BuildOptions): Promise<string> {
+  async build(data?: BuildRequest | null): Promise<string> {
     return this.native.build(data);
   }
 
   /**
-   * Build DDEX XML with full fidelity control and advanced options
+   * Build DDEX XML and, on request, count the output and round-trip it
    *
    * @param data - Optional additional data to include in build
-   * @param fidelityOptions - Advanced fidelity and canonicalization options
+   * @param options - `canonicalization`, `collectStatistics`, `enableVerification`
    * @returns Promise resolving to BuildResult with XML, statistics, and verification data
-   * @throws {Error} When build fails or fidelity requirements cannot be met
+   * @throws {Error} When the build fails or `canonicalization` is not `db_c14n` / `none`
    *
    * @example
    * ```typescript
-   * const result = await builder.buildWithFidelity(null, {
+   * const result = await builder.buildWithStatistics(null, {
    *   canonicalization: 'db_c14n',
    *   enableVerification: true,
    *   collectStatistics: true
@@ -192,30 +176,29 @@ export class DDEXBuilder {
    * console.log('Round trip:', result.verification?.roundTripSuccess, result.verification?.issues);
    * ```
    */
-  async buildWithFidelity(data?: BuildRequest | null, fidelityOptions?: FidelityOptions): Promise<BuildResult> {
-    return this.native.buildWithFidelity(data, fidelityOptions);
+  async buildWithStatistics(data?: BuildRequest | null, options?: BuildOptions): Promise<BuildResult> {
+    return this.native.buildWithStatistics(data, options);
   }
 
   /**
-   * Test round-trip fidelity by parsing and rebuilding original XML
+   * Round-trip check: parse, rebuild and parse the original XML again
    *
    * @param originalXml - Original DDEX XML to test against
-   * @param fidelityOptions - Fidelity options for the test
    * @returns Promise resolving to the round-trip result: `roundTripSuccess` and the
    *   differences in `issues` (`fidelityScore` is always null; no score is computed)
    * @throws {Error} When round-trip test fails or XML is invalid
    *
    * @example
    * ```typescript
-   * const verification = await builder.testRoundTripFidelity(originalXml);
+   * const verification = await builder.checkRoundTrip(originalXml);
    *
    * if (!verification.roundTripSuccess) {
    *   console.log('Differences:', verification.issues);
    * }
    * ```
    */
-  async testRoundTripFidelity(originalXml: string, fidelityOptions?: FidelityOptions): Promise<VerificationResult> {
-    return this.native.testRoundTripFidelity(originalXml, fidelityOptions);
+  async checkRoundTrip(originalXml: string): Promise<VerificationResult> {
+    return this.native.checkRoundTrip(originalXml);
   }
 
   /**
@@ -604,7 +587,7 @@ export type {
   Resource,
   ValidationResult,
   BuilderStats,
-  FidelityOptions,
+  BuildOptions,
   BuildStatistics,
   VerificationResult,
   BuildResult,

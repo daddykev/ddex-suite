@@ -5,7 +5,7 @@
 
 use crate::ern4_support::{minimal_single, parse};
 use ddex_builder::round_trip::{verify_round_trip, RoundTripTester};
-use ddex_builder::{Builder, CanonicalizationAlgorithm, FidelityOptions, DB_C14N};
+use ddex_builder::{BuildOptions, CanonicalizationAlgorithm, DDEXBuilder, DB_C14N};
 use ddex_core::models::flat::ParsedERNMessage;
 
 fn sample() -> String {
@@ -76,13 +76,13 @@ fn round_trip_testers_run_a_real_round_trip() {
         "{:?}",
         with.differences
     );
-    let with = Builder::new()
-        .test_round_trip_fidelity_with(&sample(), parser)
+    let with = DDEXBuilder::new()
+        .check_round_trip(&sample(), parser)
         .unwrap();
     assert!(with.success, "{:?}", with.differences);
 }
 
-// ------------------------------------------------- canonicalize / fidelity build
+// ---------------------------------------------- canonicalize / statistics build
 
 #[test]
 fn canonicalize_runs_db_c14n_or_nothing() {
@@ -91,42 +91,38 @@ fn canonicalize_runs_db_c14n_or_nothing() {
     assert_ne!(expected, xml, "DB-C14N changes the official sample");
 
     let with = |canonicalization| {
-        Builder::with_fidelity_options(FidelityOptions {
+        let options = BuildOptions {
             canonicalization,
-            ..FidelityOptions::default()
-        })
+            ..BuildOptions::default()
+        };
+        DDEXBuilder::new().canonicalize(&xml, &options).unwrap()
     };
-    assert_eq!(
-        with(CanonicalizationAlgorithm::DbC14N)
-            .canonicalize(&xml)
-            .unwrap(),
-        expected
-    );
-    assert_eq!(
-        with(CanonicalizationAlgorithm::None)
-            .canonicalize(&xml)
-            .unwrap(),
-        xml
-    );
+    assert_eq!(with(CanonicalizationAlgorithm::DbC14N), expected);
+    assert_eq!(with(CanonicalizationAlgorithm::None), xml);
 }
 
 #[test]
-fn build_with_fidelity_counts_the_output() {
-    let options = FidelityOptions {
+fn build_with_statistics_counts_the_output() {
+    let options = BuildOptions {
         collect_statistics: true,
-        canonicalization: CanonicalizationAlgorithm::DbC14N,
+        ..BuildOptions::default()
     };
-    let builder = Builder::with_fidelity_options(options);
-    let result = builder.build_with_fidelity(&minimal_single("4.3")).unwrap();
+    let result = DDEXBuilder::new()
+        .build_with_statistics(minimal_single("4.3"), options)
+        .unwrap();
 
     let stats = result.statistics.unwrap();
-    let elements = result.xml.matches('<').count()
-        - result.xml.matches("</").count()
-        - result.xml.matches("<?").count()
-        - result.xml.matches("<!--").count();
+    let xml = &result.build.xml;
+    let elements = xml.matches('<').count()
+        - xml.matches("</").count()
+        - xml.matches("<?").count()
+        - xml.matches("<!--").count();
     assert_eq!(stats.element_count, elements);
     assert!(stats.attribute_count > 0 && stats.namespace_count > 0);
-    assert!(result.canonicalization_applied);
+    let without = DDEXBuilder::new()
+        .build_with_statistics(minimal_single("4.3"), BuildOptions::default())
+        .unwrap();
+    assert!(without.statistics.is_none());
 }
 
 #[test]

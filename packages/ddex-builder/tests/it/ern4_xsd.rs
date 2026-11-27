@@ -2,7 +2,7 @@
 //! both the default (DB-C14N) and pretty output modes.
 
 use crate::ern4_support::*;
-use ddex_builder::determinism::{CanonMode, DeterminismConfig};
+use ddex_builder::output::{CanonMode, OutputConfig};
 use ddex_builder::{BuildOptions, BuildRequest, DDEXBuilder};
 
 type Case = (&'static str, fn(&str) -> BuildRequest);
@@ -27,10 +27,10 @@ fn builder_output_is_schema_valid() {
 #[test]
 fn pretty_output_is_schema_valid() {
     let options = || BuildOptions {
-        determinism: Some(DeterminismConfig {
+        output: OutputConfig {
             canon_mode: CanonMode::Pretty,
-            ..DeterminismConfig::default()
-        }),
+            ..OutputConfig::default()
+        },
         ..BuildOptions::default()
     };
     for version in VERSIONS {
