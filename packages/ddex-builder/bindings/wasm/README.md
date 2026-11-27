@@ -23,8 +23,10 @@ const builder = new WasmDdexBuilder();
 
 const xml = builder.build({
   header: {
+    message_id: 'MSG-001',
     message_sender: { party_name: [{ text: 'Example Label' }], party_id: 'PADPIDA0000000001' },
     message_recipient: { party_name: [{ text: 'Example DSP' }], party_id: 'PADPIDA0000000002' },
+    message_created_date_time: '2024-01-01T00:00:00Z',
   },
   version: '4.3',
   avs_version_id: '12',

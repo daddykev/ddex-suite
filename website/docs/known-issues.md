@@ -30,11 +30,6 @@ summarizes the ones you are most likely to meet. Report new ones on
 
 ## Builder
 
-- **Not byte-for-byte deterministic yet.** Values the request leaves out (message ID,
-  references, creation time) are generated from random UUIDs or the clock, the stable-hash
-  ID option puts the current date into the message ID, and the sequential option the
-  current Unix time. The streaming writer generates a random message ID and the current
-  time when they are missing.
 - **ERN 3.8.x targets**: video resources are rejected, and a release identified only by an
   ISRC cannot be built. An empty `MessageId` is reported as missing for 3.8.2.
 - **Empty titles**: the request cannot express a present but empty title; `""` means "not

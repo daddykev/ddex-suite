@@ -164,10 +164,7 @@ impl Checker {
                 );
             }
         }
-        if let Some(created) = &header.message_created_date_time {
-            self.p
-                .date_time(created, "header.message_created_date_time");
-        }
+        self.p.message_header(header);
 
         match request.releases.len() {
             0 => self.p.push(format!(
@@ -473,17 +470,10 @@ impl PartyTable {
 // Elements
 // ---------------------------------------------------------------------------
 
-#[allow(
-    clippy::disallowed_methods,
-    reason = "known bug D8: removed in 0.6.0 determinism PR"
-)]
 fn message_header(request: &BuildRequest) -> Element {
     let header = &request.header;
     let mut element = Element::new("MessageHeader");
-    element.add_child(text_element(
-        "MessageId",
-        header.message_id.as_deref().unwrap_or_default(),
-    ));
+    element.add_child(text_element("MessageId", &header.message_id));
     for (name, party) in [
         ("MessageSender", &header.message_sender),
         ("MessageRecipient", &header.message_recipient),
@@ -500,11 +490,10 @@ fn message_header(request: &BuildRequest) -> Element {
         }
         element.add_child(party_element);
     }
-    let created = header
-        .message_created_date_time
-        .clone()
-        .unwrap_or_else(|| chrono::Utc::now().to_rfc3339());
-    element.add_child(text_element("MessageCreatedDateTime", &created));
+    element.add_child(text_element(
+        "MessageCreatedDateTime",
+        &header.message_created_date_time,
+    ));
     if let Some(control) = &header.message_control_type {
         element.add_child(text_element("MessageControlType", control));
     }

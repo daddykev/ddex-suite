@@ -77,7 +77,17 @@ struct BuildCommand {
 
     /// Number of builds for --check-repeatable (default: 3)
     #[arg(long, default_value_t = 3)]
-    determinism_iterations: usize,
+    repeat_count: usize,
+
+    /// `header.message_id`, when the request does not give one (the builder never generates
+    /// it, so a request without one fails unless this is set)
+    #[arg(long)]
+    message_id: Option<String>,
+
+    /// `header.message_created_date_time` (an xs:dateTime such as 2024-01-01T00:00:00Z),
+    /// when the request does not give one (the builder reads no clock)
+    #[arg(long)]
+    message_created_date_time: Option<String>,
 }
 
 #[derive(Args)]
@@ -186,7 +196,13 @@ fn setup_colors(color_choice: ColorChoice) {
 }
 
 fn handle_build_command(cmd: BuildCommand) -> Result<(), Box<dyn std::error::Error>> {
-    let input_data = read_input_data(&cmd.input, cmd.format)?;
+    let mut input_data = read_input_data(&cmd.input, cmd.format)?;
+    fill_header(&mut input_data, "message_id", cmd.message_id.as_deref())?;
+    fill_header(
+        &mut input_data,
+        "message_created_date_time",
+        cmd.message_created_date_time.as_deref(),
+    )?;
 
     let version: Option<DdexVersion> = cmd.ddex_version.map(Into::into);
 
@@ -200,7 +216,7 @@ fn handle_build_command(cmd: BuildCommand) -> Result<(), Box<dyn std::error::Err
 
     // Check that repeated builds are byte-identical, if requested
     if cmd.check_repeatable {
-        check_repeatable(&input_data, version, cmd.determinism_iterations)?;
+        check_repeatable(&input_data, version, cmd.repeat_count)?;
     }
 
     // Write output
@@ -211,11 +227,11 @@ fn handle_build_command(cmd: BuildCommand) -> Result<(), Box<dyn std::error::Err
         if let Some(version) = cmd.ddex_version {
             println!("  Version: {:?}", version);
         }
-        if cmd.check_repeatable && cmd.determinism_iterations >= 2 {
+        if cmd.check_repeatable && cmd.repeat_count >= 2 {
             println!(
                 "  {} {} builds were byte-identical",
                 style("✓").green(),
-                cmd.determinism_iterations
+                cmd.repeat_count
             );
         }
     }
@@ -301,6 +317,30 @@ fn detect_input_format(path: &Path) -> InputFormat {
         Some("toml") => InputFormat::Toml,
         _ => InputFormat::Json,
     }
+}
+
+/// Sets `header.<field>` to the flag's value when the request leaves it out (missing, null
+/// or empty). A value the request gives is kept.
+fn fill_header(
+    data: &mut JsonValue,
+    field: &str,
+    value: Option<&str>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let Some(value) = value else {
+        return Ok(());
+    };
+    let header = data
+        .get_mut("header")
+        .and_then(JsonValue::as_object_mut)
+        .ok_or("the input is not a build request: it has no header object")?;
+    let given = header
+        .get(field)
+        .and_then(JsonValue::as_str)
+        .is_some_and(|s| !s.is_empty());
+    if !given {
+        header.insert(field.to_string(), JsonValue::String(value.to_string()));
+    }
+    Ok(())
 }
 
 fn validate_input_data(

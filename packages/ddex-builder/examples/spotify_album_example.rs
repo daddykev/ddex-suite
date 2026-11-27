@@ -186,7 +186,7 @@ fn create_spotify_album_request() -> BuildRequest {
         header: MessageHeaderRequest {
             // Unique message identifier - should be globally unique
             // Format: [LABEL]_[TYPE]_[YEAR]_[SEQUENCE]
-            message_id: Some("INDIE_ALBUM_2024_001".to_string()),
+            message_id: "INDIE_ALBUM_2024_001".to_string(),
 
             // Message sender: Your record label or distributor
             // This identifies who is delivering the content
@@ -218,7 +218,7 @@ fn create_spotify_album_request() -> BuildRequest {
 
             // Message creation timestamp - should be current time in production
             // Format: ISO 8601 (RFC 3339) with UTC timezone
-            message_created_date_time: Some(chrono::Utc::now().to_rfc3339()),
+            message_created_date_time: chrono::Utc::now().to_rfc3339(),
         },
 
         // DDEX Schema version - Spotify requires ERN 4.3

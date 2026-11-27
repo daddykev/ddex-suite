@@ -71,8 +71,10 @@ export interface StreamingBuildOptions {
  *   language_and_script_code: 'en',
  *   avs_version_id: '12',
  *   header: {
+ *     message_id: 'MSG-001',
  *     message_sender: { party_name: [{ text: 'My Label' }], party_id: 'PADPIDA0000000001' },
- *     message_recipient: { party_name: [{ text: 'My DSP' }], party_id: 'PADPIDA0000000002' }
+ *     message_recipient: { party_name: [{ text: 'My DSP' }], party_id: 'PADPIDA0000000002' },
+ *     message_created_date_time: '2024-01-01T00:00:00Z',
  *   }
  * });
  * console.log(xml);
@@ -276,9 +278,11 @@ export class DDEXBuilder {
  *
  * // Start message
  * builder.startMessage({
+ *   messageId: 'MSG001',
  *   messageSenderName: 'My Label',
- *   messageRecipientName: 'Distribution Platform'
- * }, '4.3');
+ *   messageRecipientName: 'Distribution Platform',
+ *   messageCreatedDateTime: '2024-01-15T10:30:00Z'
+ * }, '3.8.2');
  *
  * // Stream resources and releases
  * const resId = builder.writeResource('RES001', 'Track 1', 'Artist', 'USRC17607839');

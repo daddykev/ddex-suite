@@ -100,7 +100,12 @@ async function main() {
 
   const streaming = new StreamingDdexBuilder();
   streaming.startMessage(
-    { messageSenderName: 'Label', messageRecipientName: 'DSP', messageId: 'STREAM-1' },
+    {
+      messageSenderName: 'Label',
+      messageRecipientName: 'DSP',
+      messageId: 'STREAM-1',
+      messageCreatedDateTime: '2024-01-01T00:00:00Z',
+    },
     '3.8.2',
   );
   const ref = streaming.writeResource('A1', 'Track 1', 'Artist', 'USRT12400001', 'PT3M42S', null);

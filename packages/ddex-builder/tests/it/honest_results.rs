@@ -223,6 +223,46 @@ fn cli_build_writes_real_xml_and_the_stubs_fail() {
     ]);
     assert!(!run.status.success());
 
+    // MessageId and MessageCreatedDateTime are required: a request without them fails,
+    // naming both fields, unless --message-id / --message-created-date-time give them.
+    let mut no_header = serde_json::to_value(minimal_single("4.3")).unwrap();
+    no_header["header"]["message_id"] = serde_json::Value::Null;
+    no_header["header"]
+        .as_object_mut()
+        .unwrap()
+        .remove("message_created_date_time");
+    std::fs::write(&request, no_header.to_string()).unwrap();
+    let path = request.to_str().unwrap();
+    let run = cli(&["build", "-i", path, "-o", output.to_str().unwrap()]);
+    assert!(!run.status.success());
+    let stderr = String::from_utf8_lossy(&run.stderr);
+    assert!(
+        stderr.contains("(header.message_id)")
+            && stderr.contains("(header.message_created_date_time)"),
+        "{stderr}"
+    );
+    let run = cli(&[
+        "build",
+        "-i",
+        path,
+        "-o",
+        output.to_str().unwrap(),
+        "--message-id",
+        "MSG-ERN4-001",
+        "--message-created-date-time",
+        "2024-09-13T12:00:00Z",
+        "--check-repeatable",
+        "--repeat-count",
+        "2",
+    ]);
+    assert!(
+        run.status.success(),
+        "{}",
+        String::from_utf8_lossy(&run.stderr)
+    );
+    assert_eq!(std::fs::read_to_string(&output).unwrap(), expected);
+    assert!(String::from_utf8_lossy(&run.stdout).contains("2 builds were byte-identical"));
+
     // The validate, watch and server subcommands were removed in 0.6.0.
     for subcommand in ["validate", "watch", "server"] {
         let run = cli(&[subcommand]);

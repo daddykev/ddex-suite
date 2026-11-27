@@ -28,7 +28,7 @@ fn create_platform_agnostic_request() -> BuildRequest {
 fn create_platform_agnostic_request_base() -> BuildRequest {
     BuildRequest {
         header: MessageHeaderRequest {
-            message_id: Some("PLAT001".to_string()),
+            message_id: "PLAT001".to_string(),
             message_sender: PartyRequest {
                 party_name: vec![LocalizedStringRequest {
                     text: "Platform Test Sender".to_string(),
@@ -47,7 +47,7 @@ fn create_platform_agnostic_request_base() -> BuildRequest {
             },
             message_control_type: Some("NewReleaseMessage".to_string()),
             // Use fixed timestamp for deterministic results
-            message_created_date_time: Some("2024-01-01T12:00:00.000Z".to_string()),
+            message_created_date_time: "2024-01-01T12:00:00.000Z".to_string(),
         },
         version: "ern/43".to_string(),
         profile: Some("PlatformTestProfile".to_string()),

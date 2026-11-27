@@ -461,6 +461,47 @@ Old → new names (0.6.0 PR 5a):
 | CLI `--verify-determinism` | `--check-repeatable` |
 | `ParseMode::Auto` | `ParseMode::Dom` |
 
+- **`MessageId` and `MessageCreatedDateTime` are required** (Rust, Node.js, Python, CLI):
+  - Who: everyone who relied on the fallbacks: a request (or a streaming `start_message`
+    / `startMessage` header) without a message ID got a random UUID (or, with other ID
+    strategies, the current Unix time or a hash of today's date), and one without a
+    creation time got the current time.
+  - What changed: `MessageHeaderRequest::message_id` and `::message_created_date_time` are
+    `String`. An empty, missing or `null` value fails the build, naming the field
+    ("ERN 4.3 requires MessageHeader/MessageId (header.message_id)"); the time must still
+    be an `xs:dateTime`. The builder reads no clock and no random source on any build path.
+  - Migration: supply both values. The CLI takes them as `--message-id` and
+    `--message-created-date-time` when the request file has none.
+- **`IdStrategy` and the stable-hash ID types removed** (Rust):
+  - What went: `IdStrategy` (`UUID`, `UUIDv7`, `Sequential`, `StableHash`),
+    `BuildOptions::id_strategy` and `::stable_hash_config`, and the `id_generator` module
+    (`StableHashGenerator`, `StableHashConfig`, `HashRecipe`, `NormalizeOptions`,
+    `HashAlgorithm`, `UnicodeForm`, `CaseNormalization`).
+  - Why: `UUID` and `UUIDv7` were random, `Sequential` used the clock for the message ID,
+    and `StableHash` mixed today's date into it and wrote references (`B3:...`) that do not
+    match the ERN reference pattern.
+  - Migration: supply references, or rely on the sequential defaults (below).
+- **New format for references the request leaves out** (Rust, Node.js, Python):
+  - Release, resource and deal references that are `None` are numbered in request order,
+    one counter per kind per message: `R1`, `R2`, ... (`ReleaseReference`, pattern
+    `R[\d\-_a-zA-Z]+`), `A1`, `A2`, ... (`ResourceReference`, `A[\d\-_a-zA-Z]+`), and
+    `D1`, `D2`, ... (`DealReference`, an `xs:string`; only for deals with terms). They were
+    `R<uuid>` / `A<uuid>` by default.
+  - A number the request already uses for a reference of that kind is skipped, so generated
+    and supplied references never collide. Supplied references are never changed.
+  - Who is affected: code that stored or compared the generated references.
+- **Streaming references are 128 bits** (Rust, Node.js):
+  - `StreamingReferenceManager` references are the prefix plus 32 hex digits of the SHA-256
+    of the caller's ID (they were 8 digits, so large catalogs could collide). The default
+    resource prefix is `A` (it was `R`, which does not match the ERN `ResourceReference`
+    pattern); releases keep `REL`.
+  - `ReferenceValidationResult::is_valid` / `::errors` (always valid, always empty) and the
+    unused `ReferenceValidation` type were removed; `warnings` and the counts remain.
+  - Migration: none, unless you stored the references.
+- **CLI: `--determinism-iterations` renamed `--repeat-count`** (CLI):
+  - Who: scripts that pass `--determinism-iterations` with `--check-repeatable`.
+  - Migration: rename the flag.
+
 ### Documentation
 
 - Removed the `FastStreamingParser` figures (about 790–990 MiB/s on generated inputs) from
@@ -485,6 +526,8 @@ Old → new names (0.6.0 PR 5a):
   `proptest`, `test-case` and `insta`.
 - The workspace manifest drops `pretty_assertions`, `test-case` and `ts-rs`, which no
   crate uses any more.
+- ddex-builder no longer depends on `blake3`, which only the removed stable-hash ID
+  generator used.
 - ddex-builder no longer depends on `num_cpus` (it was the `server` subcommand's default
   worker count), and drops it from its dev-dependencies too.
 - The WASM parser binding no longer depends on `wasm-bindgen-futures` and `web-sys`, which

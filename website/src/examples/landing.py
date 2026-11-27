@@ -16,8 +16,10 @@ def party(name, party_id):
 
 xml = DdexBuilder().build({
     "header": {
+        "message_id": "MSG-001",
         "message_sender": party("Example Label", "PADPIDA0000000001"),
         "message_recipient": party("Example DSP", "PADPIDA0000000002"),
+        "message_created_date_time": "2024-01-01T00:00:00Z",
     },
     "version": "4.3",
     "avs_version_id": "12",

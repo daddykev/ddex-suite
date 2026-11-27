@@ -45,9 +45,9 @@ left out ([canonical output](#canonical-output)).
 |---|---|---|
 | `message_sender` | [Party](#party) | **Required.** |
 | `message_recipient` | [Party](#party) | **Required.** |
-| `message_id` | string | `MessageId`. Generated (a UUID) when omitted |
+| `message_id` | string | **Required.** `MessageId` (the builder never generates it) |
 | `message_control_type` | string | `LiveMessage` or `TestMessage` |
-| `message_created_date_time` | string | `MessageCreatedDateTime`, an `xs:dateTime` such as `2024-01-01T00:00:00Z`. The current time when omitted |
+| `message_created_date_time` | string | **Required.** `MessageCreatedDateTime`, an `xs:dateTime` such as `2024-01-01T00:00:00Z` (the builder reads no clock) |
 
 ### Party
 
@@ -84,7 +84,7 @@ In Rust the type is `AvsValueRequest`, which converts from `&str` and `String` (
 | `release_id` | string | Written as `ReleaseId/GRid` unless `release_ids` is set; leave it out for no GRid |
 | `upc` | string | Written as `ReleaseId/ICPN` unless `release_ids` is set |
 | `release_ids` | [ReleaseIds](#releaseids) | All the release's identifiers; replaces `release_id` and `upc` |
-| `release_reference` | string | `ReleaseReference`, matching `R[\d\-_a-zA-Z]+`. Generated when omitted |
+| `release_reference` | string | `ReleaseReference`, matching `R[\d\-_a-zA-Z]+`. Numbered (`R1`, `R2`, ...) when omitted |
 | `title` | [LocalizedString](#localizedstring)[] | **Required** (the list). 4.x `DisplayTitleText`, 3.8.x `ReferenceTitle` |
 | `artist` | string | The display artist (4.x: required, `DisplayArtistName` and a `MainArtist` `DisplayArtist`; 3.8.x: optional) |
 | `artist_role` | AvsValue | The display artist's role (default `MainArtist`) |
@@ -119,7 +119,7 @@ In Rust the type is `AvsValueRequest`, which converts from `&str` and `String` (
 | Field | Type | Description |
 |---|---|---|
 | `track_id` | string | **Required.** An ID for the track within the request |
-| `resource_reference` | string | `ResourceReference`, matching `A[\d\-_a-zA-Z]+`. Generated when omitted |
+| `resource_reference` | string | `ResourceReference`, matching `A[\d\-_a-zA-Z]+`. Numbered (`A1`, `A2`, ...) when omitted |
 | `isrc` | string | The resource's ISRC; leave it out when `proprietary_ids` identify the resource |
 | `proprietary_ids` | `{ namespace, value }[]` | The resource's `ProprietaryId`s |
 | `title` | string | **Required.** 4.x `DisplayTitleText`, 3.8.x `ReferenceTitle` |
@@ -149,7 +149,7 @@ In Rust the type is `AvsValueRequest`, which converts from `&str` and `String` (
 |---|---|---|
 | `release_references` | string[] | **Required.** The release or track release references the deal applies to; each must be in the message |
 | `deal_terms` | [DealTerms](#dealterms) | **Required.** |
-| `deal_reference` | string | `DealReference` |
+| `deal_reference` | string | `DealReference`. Numbered (`D1`, `D2`, ...) when omitted for a deal with terms |
 
 ### DealTerms
 
@@ -168,6 +168,7 @@ The builder checks what the target version's schema requires before it writes an
 |---|:---:|:---:|:---:|
 | `language_and_script_code` | ✓ | ✓ | |
 | `avs_version_id` | ✓ | | |
+| `header.message_id`, `header.message_created_date_time` (xs:dateTime) | ✓ | ✓ | ✓ |
 | `header.message_sender.party_id`, `header.message_recipient.party_id` | ✓ (DPID) | ✓ (DPID) | ✓ |
 | exactly one release | ✓ | ✓ | at least one |
 | a release identifier (`release_id`, `upc` or `release_ids`) | ✓ | ✓ | ✓ |
@@ -244,8 +245,10 @@ const { DdexParser } = require('ddex-parser');
 const party = (name, id) => ({ party_name: [{ text: name }], party_id: id });
 const request = (title) => ({
   header: {
+    message_id: 'MSG-001',
     message_sender: party('Example Label', 'PADPIDA0000000001'),
     message_recipient: party('Example DSP', 'PADPIDA0000000002'),
+    message_created_date_time: '2024-01-01T00:00:00Z',
   },
   version: '4.3',
   avs_version_id: '12',
@@ -293,12 +296,12 @@ Output is canonicalized with DB-C14N/1.0 (the project's
 fixed namespace prefixes, sorted attributes, consistent indentation, and elements in XSD
 order.
 
-It is **not byte-for-byte deterministic yet**: with the default options, a message ID,
-release and resource references and `MessageCreatedDateTime` that the request leaves out are
-generated (random UUIDs, the current time), and the Rust stable-hash ID option puts the
-current date into the `MessageId`. Give `message_id`, `message_created_date_time`,
-`release_reference` and each track's `resource_reference`, and nothing is generated. Full
-determinism (stable IDs by default) is planned for 0.6.0.
+The builder reads no clock or random source and uses no unordered iteration on the build path (enforced by clippy lints). The same request and options produce byte-identical output with the same crate version; repeated builds are tested to be byte-identical.
+
+References the request leaves out are numbered in request order, one counter per kind per
+message (`R1`, `R2`, ... for releases, `A1`, `A2`, ... for resources, `D1`, `D2`, ... for
+deals); a number the request already uses for that kind is skipped, and supplied
+references are never changed.
 
 The builder does not validate its output against the XSD or the AVS rules at runtime; the
 required-field checks above are what it enforces. CI validates the output of every

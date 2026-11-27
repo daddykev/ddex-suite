@@ -7,10 +7,10 @@ DDEX ERN XML builder for Python, a native extension over the Rust
 DB-C14N/1.0 (fixed namespace prefixes, sorted attributes, consistent formatting,
 elements in XSD order).
 
-Byte-for-byte determinism is not complete yet: a message ID, release and resource
-references and `message_created_date_time` that the request leaves out are generated
-(random UUIDs, the current time), so two builds of the same request can differ. Full
-determinism is planned for 0.6.0.
+The builder reads no clock or random source and uses no unordered iteration on the build
+path (enforced by clippy lints). The same request and options produce byte-identical output
+with the same crate version; repeated builds are tested to be byte-identical.
+`message_id` and `message_created_date_time` are required in the request header.
 
 > **0.5.0 has breaking changes.** `build(request)` and `from_dataframe(df, schema,
 > request)` run the core builder (nothing is filled in), and importing without the native
@@ -97,8 +97,10 @@ from ddex_builder import DdexBuilder
 
 message = {
     "header": {
+        "message_id": "MSG-001",
         "message_sender": {"party_name": [{"text": "Example Label"}], "party_id": "PADPIDA0000000001"},
         "message_recipient": {"party_name": [{"text": "Example DSP"}], "party_id": "PADPIDA0000000002"},
+        "message_created_date_time": "2024-01-01T00:00:00Z",
     },
     "version": "4.3",
     "avs_version_id": "12",

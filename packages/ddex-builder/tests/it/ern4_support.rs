@@ -37,11 +37,11 @@ pub fn party(id: &str, name: &str) -> PartyRequest {
 
 pub fn header(message_id: &str) -> MessageHeaderRequest {
     MessageHeaderRequest {
-        message_id: Some(message_id.to_string()),
+        message_id: message_id.to_string(),
         message_sender: party("PADPIDA0000000001", "Example Label"),
         message_recipient: party("PADPIDA0000000002", "Example DSP"),
         message_control_type: Some("LiveMessage".to_string()),
-        message_created_date_time: Some("2024-09-13T12:00:00Z".to_string()),
+        message_created_date_time: "2024-09-13T12:00:00Z".to_string(),
     }
 }
 

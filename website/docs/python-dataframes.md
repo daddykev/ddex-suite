@@ -212,8 +212,10 @@ frame = tracks.rename(columns={"parental_warning": "parental_warning_type"}).ass
 )
 
 header = {
+    "message_id": "MSG-001",
     "message_sender": {"party_name": [{"text": "Example Label"}], "party_id": "PADPIDA0000000001"},
     "message_recipient": {"party_name": [{"text": "Example DSP"}], "party_id": "PADPIDA0000000002"},
+    "message_created_date_time": "2024-01-01T00:00:00Z",
 }
 xml = DdexBuilder().from_dataframe(
     frame,

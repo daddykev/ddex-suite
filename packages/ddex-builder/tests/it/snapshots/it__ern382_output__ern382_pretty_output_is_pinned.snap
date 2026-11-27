@@ -66,7 +66,7 @@ expression: "build(CanonMode::Pretty)"
       <SoundRecordingId>
         <ISRC>USRT12400003</ISRC>
       </SoundRecordingId>
-      <ResourceReference>A1001</ResourceReference>
+      <ResourceReference>A3</ResourceReference>
       <ReferenceTitle>
         <TitleText>Three</TitleText>
       </ReferenceTitle>
@@ -133,7 +133,7 @@ expression: "build(CanonMode::Pretty)"
         <TitleText>&lt;script&gt;alert('x')&lt;/script&gt;</TitleText>
       </ReferenceTitle>
       <ReleaseResourceReferenceList>
-        <ReleaseResourceReference>A1001</ReleaseResourceReference>
+        <ReleaseResourceReference>A3</ReleaseResourceReference>
       </ReleaseResourceReferenceList>
       <ReleaseDetailsByTerritory>
         <TerritoryCode>Worldwide</TerritoryCode>
@@ -149,7 +149,7 @@ expression: "build(CanonMode::Pretty)"
         </DisplayArtist>
         <ResourceGroup>
           <ResourceGroupContentItem>
-            <ReleaseResourceReference>A1001</ReleaseResourceReference>
+            <ReleaseResourceReference>A3</ReleaseResourceReference>
           </ResourceGroupContentItem>
         </ResourceGroup>
       </ReleaseDetailsByTerritory>

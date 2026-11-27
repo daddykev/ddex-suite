@@ -21,10 +21,10 @@ DDEX Suite brings together tools for music industry data exchange, combining the
   and a graph that follows the message structure.
 - **ddex-builder** writes ERN 4.3, 4.2, 3.8.2 and 3.8.1 from a typed build request. Output
   is canonicalized with DB-C14N/1.0 (fixed namespace prefixes, sorted attributes,
-  consistent formatting, elements in XSD order). Byte-for-byte determinism is not complete
-  yet: values the request leaves out are generated (see
-  [Canonical output and round trips](#-canonical-output-and-round-trips)). Full
-  determinism is planned for 0.6.0.
+  consistent formatting, elements in XSD order). The builder reads no clock or random
+  source and uses no unordered iteration on the build path (enforced by clippy lints). The same request and options produce byte-identical
+  output with the same crate version; repeated builds are tested to be byte-identical.
+  `MessageId` and `MessageCreatedDateTime` are required inputs.
 - **ddex-core** holds the shared data models.
 
 > **0.5.0 has breaking changes**: text is kept exactly as written, `parse` no longer
@@ -41,7 +41,7 @@ Working with DDEX XML shouldn't feel like archaeology. The suite transforms comp
 - **Single Rust Core**: One implementation to rule them all - consistent behavior across JavaScript, Python, and Rust
 - **Dual Model Architecture**: Choose between faithful graph representation (Rust) or developer-friendly flattened view (Rust, Node.js, Python)
 - **Hardened Parsing**: DTD and external-entity (XXE) rejection, no entity expansion, depth limits, no network fetches. Pre-1.0: open bugs are listed in [KNOWN_ISSUES.md](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md)
-- **Canonical Output**: Schema-valid ERN 4.3, 4.2 and 3.8.2, canonicalized with DB-C14N/1.0; fully deterministic output (no generated message IDs, references or timestamps) is planned for 0.6.0
+- **Canonical Output**: Schema-valid ERN 4.3, 4.2 and 3.8.2, canonicalized with DB-C14N/1.0; the same request and options produce byte-identical output with the same crate version
 
 ## 👨🏻‍💻 Developer Statement
 
@@ -128,8 +128,10 @@ def party(name, party_id):
 
 xml = DdexBuilder().build({
     "header": {
+        "message_id": "MSG-001",
         "message_sender": party("Example Label", "PADPIDA0000000001"),
         "message_recipient": party("Example DSP", "PADPIDA0000000002"),
+        "message_created_date_time": "2024-01-01T00:00:00Z",
     },
     "version": "4.3",
     "avs_version_id": "12",
@@ -216,14 +218,11 @@ conversion from a parsed message to a build request yet.
 - **DB-C14N/1.0** ([specification](https://github.com/daddykev/ddex-suite/blob/main/docs/DB-C14N-SPEC.md)):
   builder output uses fixed namespace prefixes, sorted attributes and consistent
   formatting; the generators write elements in XSD order.
-- **Not yet deterministic**: with the default options, a message ID, release and resource
-  references and `MessageCreatedDateTime` that the request leaves out are generated
-  (random UUIDs, the current time), and the stable-hash ID strategy puts today's date
-  into the `MessageId` (the Rust-only sequential strategy uses the current Unix time).
-  The streaming writer generates a random `MessageId` and the current time when they are
-  missing. Two builds of the same
-  request can therefore differ. Full determinism is planned for 0.6.0; the complete list is
-  in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+- **Determinism**: The builder reads no clock or random source and uses no unordered iteration on the build
+  path (enforced by clippy lints). The same request and options produce byte-identical
+  output with the same crate version; repeated builds are tested to be byte-identical.
+  `MessageId` and `MessageCreatedDateTime` are required inputs. References the request
+  leaves out are numbered in request order (R1, A1, D1, ...).
 - **Round trips on the official samples**: each of the 19 official DDEX ERN 4.2 and 4.3
   samples in `examples/` is parsed, rebuilt in its own version, validated against the
   official XSD and re-parsed in the test suite. Release title, ICPN, type and display

@@ -117,10 +117,12 @@ export interface StreamingStats {
   peakMemoryUsage: number
 }
 export interface MessageHeader {
-  messageId?: string
+  /** Required (the writer never generates it); a missing value fails `startMessage` naming the field */
+  messageId: string
   messageSenderName: string
   messageRecipientName: string
-  messageCreatedDateTime?: string
+  /** Required xs:dateTime (the writer reads no clock); a missing value fails `startMessage` naming the field */
+  messageCreatedDateTime: string
 }
 export declare function validateStructure(xml: string): Promise<ValidationResult>
 export declare class DdexBuilder {

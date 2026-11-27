@@ -128,6 +128,27 @@ impl Problems {
         }
     }
 
+    /// `MessageId` and `MessageCreatedDateTime`: required (the builder never generates
+    /// them), and the time is an xs:dateTime.
+    pub(super) fn message_header(&mut self, header: &crate::builder::MessageHeaderRequest) {
+        self.require_text(
+            &header.message_id,
+            "MessageHeader/MessageId",
+            "header.message_id",
+        );
+        if header.message_created_date_time.is_empty() {
+            self.missing(
+                "MessageHeader/MessageCreatedDateTime",
+                "header.message_created_date_time",
+            );
+        } else {
+            self.date_time(
+                &header.message_created_date_time,
+                "header.message_created_date_time",
+            );
+        }
+    }
+
     pub(super) fn date_time(&mut self, value: &str, field: &str) {
         if !is_xs_date_time(value) {
             self.invalid(

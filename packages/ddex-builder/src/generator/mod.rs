@@ -48,11 +48,11 @@
 //! # };
 //! # let request = BuildRequest {
 //! #     header: MessageHeaderRequest {
-//! #         message_id: Some("MSG-1".to_string()),
+//! #         message_id: "MSG-1".to_string(),
 //! #         message_sender: party("Label"),
 //! #         message_recipient: party("DSP"),
 //! #         message_control_type: None,
-//! #         message_created_date_time: Some("2024-01-01T00:00:00Z".to_string()),
+//! #         message_created_date_time: "2024-01-01T00:00:00Z".to_string(),
 //! #     },
 //! #     version: "4.3".to_string(),
 //! #     profile: None,
@@ -107,8 +107,20 @@ mod shared;
 pub mod xml_writer;
 
 use crate::ast::AST;
-use crate::builder::BuildRequest;
+use crate::builder::{BuildRequest, MessageHeaderRequest};
 use crate::error::BuildError;
+
+/// `MessageId` and `MessageCreatedDateTime` checked as `DDEXBuilder::build` checks them (both
+/// required, the time an xs:dateTime), for writers that do not go through
+/// [`ASTGenerator::generate`] (the streaming writer). `label` is the ERN version, e.g. `"3.8.2"`.
+pub(crate) fn check_message_header(
+    label: &'static str,
+    header: &MessageHeaderRequest,
+) -> Result<(), BuildError> {
+    let mut problems = shared::Problems::new(label);
+    problems.message_header(header);
+    problems.finish()
+}
 
 /// AST generator for converting build requests to abstract syntax trees
 pub struct ASTGenerator {

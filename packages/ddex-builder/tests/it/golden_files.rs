@@ -1,95 +1,10 @@
-//! Golden file tests for DDEX Builder
+//! Builder output tests: repeatability, preflight validation and profiles. (The ignored
+//! golden-file snapshot test was removed in 0.6.0; see KNOWN_ISSUES.md "Parked".)
 
 use ddex_builder::builder::{
-    IdStrategy, LocalizedStringRequest, MessageHeaderRequest, PartyRequest, ReleaseRequest,
-    TrackRequest,
+    LocalizedStringRequest, MessageHeaderRequest, PartyRequest, ReleaseRequest, TrackRequest,
 };
 use ddex_builder::{BuildOptions, BuildRequest, DDEXBuilder};
-use insta::assert_snapshot;
-
-#[test]
-#[ignore = "known bug: the stable-hash MessageId mixes in Utc::now()'s date (builder.rs generate_stable_hash_ids), so the snapshot changes daily"]
-fn test_audio_album_golden() {
-    let builder = DDEXBuilder::new();
-
-    let request = BuildRequest {
-        header: MessageHeaderRequest {
-            message_id: None,
-            message_sender: PartyRequest {
-                party_name: vec![LocalizedStringRequest {
-                    text: "Test Sender".to_string(),
-                    language_code: None,
-                }],
-                party_id: None,
-                party_reference: None,
-            },
-            message_recipient: PartyRequest {
-                party_name: vec![LocalizedStringRequest {
-                    text: "Test Recipient".to_string(),
-                    language_code: None,
-                }],
-                party_id: None,
-                party_reference: None,
-            },
-            message_control_type: Some("LiveMessage".to_string()),
-            message_created_date_time: Some("2025-01-01T00:00:00Z".to_string()), // Fixed timestamp
-        },
-        version: "4.3".to_string(),
-        profile: Some("AudioAlbum".to_string()),
-        releases: vec![ReleaseRequest {
-            release_id: Some("REL001".to_string()),
-            release_reference: Some("R1".to_string()),
-            title: vec![LocalizedStringRequest {
-                text: "Test Album".to_string(),
-                language_code: Some("en".to_string()),
-            }],
-            artist: Some("Test Artist".to_string()),
-            label: Some("Test Label".to_string()),
-            release_date: Some("2024-01-01".to_string()),
-            upc: Some("123456789014".to_string()),
-            tracks: vec![
-                TrackRequest {
-                    track_id: "TRK001".to_string(),
-                    resource_reference: Some("A1".to_string()),
-                    isrc: Some("USRC12345678".to_string()),
-                    title: "Track One".to_string(),
-                    duration: "PT3M45S".to_string(),
-                    artist: Some("Test Artist".to_string()),
-                    ..Default::default()
-                },
-                TrackRequest {
-                    track_id: "TRK002".to_string(),
-                    resource_reference: Some("A2".to_string()),
-                    isrc: Some("USRC12345679".to_string()),
-                    title: "Track Two".to_string(),
-                    duration: "PT4M20S".to_string(),
-                    artist: Some("Test Artist feat. Guest".to_string()),
-                    ..Default::default()
-                },
-            ],
-            resource_references: None,
-            ..Default::default()
-        }],
-        deals: vec![],
-        extensions: None,
-        ..Default::default()
-    };
-
-    let options = BuildOptions {
-        preflight_level: ddex_builder::preflight::PreflightLevel::Warn,
-        id_strategy: IdStrategy::StableHash,
-        stable_hash_config: None,
-        ..BuildOptions::default()
-    };
-
-    let request = crate::ern4_support::ern4_test_data(request);
-    let result = builder.build(request, options).unwrap();
-
-    // Assert against golden file
-    assert_snapshot!("audio_album_output", result.xml);
-    assert!(result.errors.is_empty());
-    assert!(result.canonical_hash.is_some());
-}
 
 #[test]
 fn test_deterministic_generation() {
@@ -102,8 +17,6 @@ fn test_deterministic_generation() {
             ..Default::default()
         },
         preflight_level: ddex_builder::preflight::PreflightLevel::Strict,
-        id_strategy: IdStrategy::StableHash,
-        stable_hash_config: None,
         ..BuildOptions::default()
     };
 
@@ -129,50 +42,11 @@ fn test_preflight_validation() {
 
     let options = BuildOptions {
         preflight_level: ddex_builder::preflight::PreflightLevel::Strict,
-        id_strategy: IdStrategy::UUID,
-        stable_hash_config: None,
         ..BuildOptions::default()
     };
 
     let result = builder.build(request, options);
     assert!(result.is_err());
-}
-
-#[test]
-fn test_stable_hash_ids() {
-    use ddex_builder::id_generator::{HashAlgorithm, StableHashConfig, StableHashGenerator};
-
-    let config = StableHashConfig {
-        recipe: "v1".to_string(),
-        algorithm: HashAlgorithm::Blake3,
-        use_cache: true,
-        salt: Some("test_salt".to_string()),
-    };
-
-    let mut generator = StableHashGenerator::new(config);
-
-    // Generate IDs
-    let id1 = generator
-        .generate_release_id(
-            "123456789012",
-            "Album",
-            &["USRC12345678".to_string()],
-            &["US".to_string()],
-        )
-        .unwrap();
-
-    // Same inputs should produce same ID
-    let id2 = generator
-        .generate_release_id(
-            "123456789012",
-            "Album",
-            &["USRC12345678".to_string()],
-            &["US".to_string()],
-        )
-        .unwrap();
-
-    assert_eq!(id1, id2);
-    assert!(id1.starts_with("B3:"));
 }
 
 #[test]
@@ -206,7 +80,7 @@ fn create_test_request() -> BuildRequest {
 fn create_test_request_base() -> BuildRequest {
     BuildRequest {
         header: MessageHeaderRequest {
-            message_id: None,
+            message_id: "MSG-GOLDEN-001".to_string(),
             message_sender: PartyRequest {
                 party_name: vec![LocalizedStringRequest {
                     text: "Test Sender".to_string(),
@@ -224,7 +98,7 @@ fn create_test_request_base() -> BuildRequest {
                 party_reference: None,
             },
             message_control_type: Some("LiveMessage".to_string()),
-            message_created_date_time: Some("2025-01-01T00:00:00Z".to_string()), // Fixed timestamp
+            message_created_date_time: "2025-01-01T00:00:00Z".to_string(),
         },
         version: "4.3".to_string(),
         profile: Some("AudioAlbum".to_string()),

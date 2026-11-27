@@ -31,7 +31,7 @@ fn create_test_build_request() -> BuildRequest {
 fn create_test_build_request_base() -> BuildRequest {
     BuildRequest {
         header: MessageHeaderRequest {
-            message_id: Some("MSG001".to_string()),
+            message_id: "MSG001".to_string(),
             message_sender: PartyRequest {
                 party_name: vec![LocalizedStringRequest {
                     text: "Test Sender".to_string(),
@@ -49,7 +49,7 @@ fn create_test_build_request_base() -> BuildRequest {
                 party_reference: None,
             },
             message_control_type: Some("NewReleaseMessage".to_string()),
-            message_created_date_time: Some(chrono::Utc::now().to_rfc3339()),
+            message_created_date_time: chrono::Utc::now().to_rfc3339(),
         },
         version: "ern/43".to_string(),
         profile: Some("BasicProfile".to_string()),
@@ -110,13 +110,13 @@ fn create_complex_build_request_base() -> BuildRequest {
 
     BuildRequest {
         header: MessageHeaderRequest {
-            message_id: Some(format!(
+            message_id: format!(
                 "MSG_{}",
                 SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .unwrap()
                     .as_nanos()
-            )),
+            ),
             message_sender: PartyRequest {
                 party_name: vec![LocalizedStringRequest {
                     text: "Complex Test Sender".to_string(),
@@ -134,7 +134,7 @@ fn create_complex_build_request_base() -> BuildRequest {
                 party_reference: None,
             },
             message_control_type: Some("NewReleaseMessage".to_string()),
-            message_created_date_time: Some(chrono::Utc::now().to_rfc3339()),
+            message_created_date_time: chrono::Utc::now().to_rfc3339(),
         },
         version: "ern/43".to_string(),
         profile: Some("ComplexProfile".to_string()),
@@ -292,7 +292,7 @@ fn test_multithreaded_determinism() {
 fn test_different_system_times() {
     // Create request with deterministic timestamp
     let mut request = create_test_build_request();
-    request.header.message_created_date_time = Some("2024-01-01T00:00:00Z".to_string());
+    request.header.message_created_date_time = "2024-01-01T00:00:00Z".to_string();
 
     let builder = DDEXBuilder::new();
     let mut outputs = vec![];

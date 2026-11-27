@@ -55,11 +55,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     }));
 
     let header = MessageHeaderRequest {
-        message_id: Some("CATALOG-0001".to_string()),
+        message_id: "CATALOG-0001".to_string(),
         message_sender: party("Example Label"),
         message_recipient: party("Example DSP"),
         message_control_type: None,
-        message_created_date_time: Some("2024-01-01T00:00:00Z".to_string()),
+        message_created_date_time: "2024-01-01T00:00:00Z".to_string(),
     };
 
     let start = Instant::now();
