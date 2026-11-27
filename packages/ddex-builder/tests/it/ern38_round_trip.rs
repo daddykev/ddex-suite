@@ -76,7 +76,14 @@ pub(crate) fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
+/// The samples, fetched once per test process (two tests use them, and parallel runs of the
+/// fetch script would collide).
 pub(crate) fn youtube_samples() -> Vec<PathBuf> {
+    static SAMPLES: std::sync::OnceLock<Vec<PathBuf>> = std::sync::OnceLock::new();
+    SAMPLES.get_or_init(fetch_youtube_samples).clone()
+}
+
+fn fetch_youtube_samples() -> Vec<PathBuf> {
     let dir = repo_root().join("samples/youtube-ern382");
     if !dir.is_dir() || std::fs::read_dir(&dir).map_or(0, |d| d.count()) < 20 {
         let script = repo_root().join("scripts/fetch_ern382_samples.sh");
