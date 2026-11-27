@@ -25,7 +25,7 @@ def test_class_creation():
 def test_available_methods():
     """DdexBuilder exposes the documented methods."""
     builder = ddex_builder.DdexBuilder()
-    expected = {"add_release", "add_resource", "apply_preset", "build", "get_available_presets"}
+    expected = {"add_release", "add_resource", "build"}
     available = {name for name in dir(builder) if not name.startswith("_")}
     assert expected <= available, f"missing methods: {sorted(expected - available)}"
 

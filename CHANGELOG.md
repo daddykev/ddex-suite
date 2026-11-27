@@ -5,6 +5,57 @@ All notable changes to the DDEX Suite project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — 0.6.0
+
+0.6.0 removes the builder APIs that returned no real results, or whose settings had no
+effect. Real features can come back later as additions. The inventory is
+`dev-docs/REMOVALS_0.6.0.md`.
+
+### Breaking
+
+- **Update messages removed** (Rust):
+  - What went: `DDEXBuilder::create_update`, `create_update_with_config`,
+    `create_update_from_request`, `apply_update`, `validate_update` and `serialize_update`;
+    the `messages` module (`UpdateGenerator`, `UpdateReleaseMessage`, `UpdateConfig`,
+    `UpdateMetadata`, `UpdateOperation`, `UpdateAction`, `ValidationStatus` and the update
+    types); and their crate-root re-exports.
+  - Why: they could not produce a real update. The documents were never parsed (each one
+    became a single `/#text` change), entity IDs were random `unknown_…` values,
+    `apply_update` was not implemented, and the timestamps were the current time.
+  - Migration: send a full `NewReleaseMessage` built with `DDEXBuilder::build`.
+- **Semantic diff removed** (Rust, WASM, CLI):
+  - Rust: `DDEXBuilder::diff_xml`, `diff_xml_with_config` and `diff_request_with_xml`; the
+    `diff` module (`DiffEngine`, `DiffConfig`, `DiffFormatter`, `ChangeSet`, `ChangeType`,
+    `DiffPath`, `ImpactLevel`, `SemanticChange`, `VersionCompatibility`) and their re-exports.
+  - WASM: `DdexDiffViewer` and `DiffViewerConfig`.
+  - CLI: the `diff` subcommand.
+  - Why: the XML was never parsed, so any difference was reported as one text change; the
+    CLI command already exited with "not implemented".
+  - Migration: no replacement; it returned no real results.
+- **Presets removed** (Rust, Node, Python, CLI):
+  - Rust: the `presets` module (`PartnerPreset`, `PresetConfig`, `all_presets`, the
+    generic and YouTube presets and their types); `Builder::apply_preset`, `preset`,
+    `available_presets`, `get_preset` and `is_preset_locked`; the root re-export
+    `PartnerPreset`; `SchemaGenerator::with_preset`.
+  - Node: `getAvailablePresets`, `getPresetInfo`, `applyPreset`,
+    `getPresetValidationRules`, the `PresetInfo` and `ValidationRule` types, and the
+    `preset` option of the TypeScript wrapper's `BuildOptions` / `StreamingBuildOptions`.
+  - Python: `get_available_presets`, `get_preset_info`, `apply_preset`,
+    `get_preset_validation_rules`, and the `PresetInfo` and `ValidationRule` classes.
+  - CLI: `preset list/show/apply` and the `--preset` flag of `build`, `validate` and
+    `watch`.
+  - Why: none of the 7 presets changed the output.
+  - Migration: set the fields directly in the build request.
+- **`DdexVersion` and `MessageProfile` moved** (Rust): `ddex_builder::presets::DdexVersion`
+  is now `ddex_builder::versions::DdexVersion`. It is still exported at the root as
+  `ddex_builder::DdexVersion`, so code that used the root path is unaffected.
+  `ddex_builder::presets::MessageProfile` is now `ddex_builder::schema::MessageProfile`.
+- **No-op CLI flags removed** (CLI):
+  - The flags: global `--config` (no configuration file was read), `build --profile` and
+    `build --strict` (never read), and `schema --profile` and `schema --with-docs` (the
+    profile was hard-coded and the option discarded).
+  - Migration: drop the flag; the output does not change.
+
 ## [0.5.1] - 2026-11-26
 
 A patch release: security updates (quick-xml, pyo3), errors instead of silently dropped

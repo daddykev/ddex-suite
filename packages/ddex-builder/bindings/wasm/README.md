@@ -67,8 +67,11 @@ output was not schema-valid, and `batchBuild` returned placeholder XML. In 0.5.0
   classes with `addRelease` / `addResource`, `buildWithFidelity`,
   `testRoundTripFidelity`, `canonicalizeXml`, `validate`, `getStats`, `reset`, the preset
   methods and `validateStructure`. They returned fixed or invented values.
-- `DdexDiffViewer` is unchanged. It does not parse XML yet: it compares the two
-  documents as single text nodes (see KNOWN_ISSUES.md).
+
+## Changes in 0.6.0
+
+- Removed `DdexDiffViewer`: it did not parse XML (it compared the two documents as single
+  text nodes). There is no replacement.
 
 ## Size
 

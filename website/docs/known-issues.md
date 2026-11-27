@@ -38,10 +38,8 @@ summarizes the ones you are most likely to meet. Report new ones on
 - **Not byte-for-byte deterministic yet.** Values the request leaves out (message ID,
   references, creation time) are generated from random UUIDs or the clock, the stable-hash
   ID option puts the current date into the message ID, and the sequential option the
-  current Unix time. Update messages always carry the current time, and the streaming
-  writer generates a random message ID and the current time when they are missing.
-- **Presets do not change the output.** The preset APIs (`applyPreset`, `apply_preset`,
-  partner presets) have no effect on `build` in 0.5.x.
+  current Unix time. The streaming writer generates a random message ID and the current
+  time when they are missing.
 - **ERN 3.8.x targets**: video resources are rejected, and a release identified only by an
   ISRC cannot be built. An empty `MessageId` is reported as missing for 3.8.2.
 - **Empty titles**: the request cannot express a present but empty title; `""` means "not
@@ -52,8 +50,7 @@ summarizes the ones you are most likely to meet. Report new ones on
   `--validate` never fails. Use the library or a binding to build.
 - **Other APIs to avoid**: the streaming writer (`StreamingBuilder`, Node.js
   `StreamingDdexBuilder`) writes only the old 3.8-style tree and rejects 4.x; the Node.js
-  `validateStructure` reports invalid XML as valid; `DDEXBuilder::diff_xml` and the WASM
-  `DdexDiffViewer` report any difference as one change. The security helpers
+  `validateStructure` reports invalid XML as valid. The security helpers
   (`PathValidator`, `InputValidator`, `OutputSanitizer`) have the issues listed in the
   [security model](./security.md#known-security-issues).
 
@@ -68,7 +65,6 @@ summarizes the ones you are most likely to meet. Report new ones on
 
 - Builder determinism: byte-for-byte reproducible output, with stable, content-addressed IDs
   as the default.
-- Presets that change the output.
 - A conformance suite.
 - A parallel streaming iterator that scales with the thread count.
 - The builder's determinism lint (no `HashMap` / `HashSet` in output paths) enforced in CI.

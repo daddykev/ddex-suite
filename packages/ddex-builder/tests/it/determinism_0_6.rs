@@ -250,43 +250,6 @@ fn omitted_message_created_date_time_is_an_error() {
     }
 }
 
-// --- e. Update messages ---------------------------------------------------------------------
-
-fn update_message_xml() -> String {
-    let original = build_default(multi_track_album("4.3"));
-    let mut changed = multi_track_album("4.3");
-    changed.releases[0].genre = Some("Electronic".to_string());
-    let updated = build_default(changed);
-
-    let builder = DDEXBuilder::new();
-    let update = builder
-        .create_update(&original, &updated, "MSG-ERN4-001")
-        .expect("create_update");
-    for operation in &update.update_list {
-        for id in [&operation.operation_id, &operation.entity_id] {
-            assert!(!id.starts_with("unknown_"), "generated ID {id:?}");
-        }
-    }
-    for id in update
-        .resource_updates
-        .keys()
-        .chain(update.release_updates.keys())
-        .chain(update.deal_updates.keys())
-    {
-        assert!(!id.starts_with("unknown_"), "generated ID {id:?}");
-    }
-    builder.serialize_update(&update).expect("serialize_update")
-}
-
-/// Audit rows D10, D11.
-#[test]
-#[ignore = "known bug: update messages carry the current time and random unknown_ entity IDs (0.6.0 determinism)"]
-fn update_message_is_byte_identical() {
-    let first = update_message_xml();
-    assert_eq!(first, update_message_xml());
-    assert!(!first.contains(">unknown_"), "{first}");
-}
-
 // --- f. Streaming writer --------------------------------------------------------------------
 
 /// The fixture's album through the streaming writer (3.8-style; it rejects 4.x targets).

@@ -262,14 +262,6 @@ fn cache_statistics_count_hits_and_misses() {
 }
 
 #[test]
-fn apply_update_is_not_implemented() {
-    let builder = ddex_builder::DDEXBuilder::new();
-    let xml = sample();
-    let update = builder.create_update(&xml, &xml, "MSG-1").unwrap();
-    not_implemented(builder.apply_update(&xml, &update).unwrap_err());
-}
-
-#[test]
 fn schema_if_then_else_follows_the_condition() {
     use ddex_builder::schema::{JsonSchema, SchemaValidator};
     let schema: JsonSchema = serde_json::from_value(serde_json::json!({

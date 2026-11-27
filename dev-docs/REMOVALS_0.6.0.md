@@ -3,8 +3,13 @@
 Inventory for 0.6.0 PR 3. Covers every public item of `ddex-builder` (the `lib.rs` `Builder`
 facade and its option types, `builder.rs`, every `src/` module, the CLI) and the builder
 bindings (Node, Python, WASM), on `main` after PR 2 (`d89fdff`). This document is the
-inventory only. **Nothing has been removed yet**: the full removal touches about 100 files,
-so the work is split (see [Proposed split](#proposed-split)).
+inventory. The full removal touches about 100 files, so the work is split (see
+[Proposed split](#proposed-split)).
+
+**Status:** PR 3a is done. It removed the [Decided removals](#decided-removals) and the
+no-op CLI flags `--config`, `build --profile`, `build --strict`, `schema --profile` and
+`schema --with-docs`; those rows are marked "removed in 3a". The rest is for 3b–3d. Line
+numbers are as of `d89fdff`, before 3a.
 
 Method: I read the code and grepped every field, method and type for its readers and callers
 across `src/`, `tests/`, `benches/`, `examples/`, `fuzz/`, the three binding crates and their
@@ -83,7 +88,7 @@ inventory row; the others are noted next to REAL rows or are binding-only.
 These are decided (PR 3 prompt), so no classification is needed. The notes say what each one
 actually does.
 
-### Update messages and diff
+### Update messages and diff (removed in 3a)
 
 | item | path | note |
 |---|---|---|
@@ -97,12 +102,12 @@ actually does.
 | test (e) `update_message_is_byte_identical` and helper `update_message_xml` | `tests/it/determinism_0_6.rs:253-288` | ignored known bug (D10, D11) |
 | test `apply_update_is_not_implemented` | `tests/it/honest_results.rs:264-270` | — |
 
-### Presets
+### Presets (removed in 3a)
 
 | item | path | note |
 |---|---|---|
 | `presets/` (`mod.rs`, `generic.rs`, `youtube.rs`; `custom_template.rs` is not compiled): `PartnerPreset`, `PresetConfig`, `all_presets`, the 7 presets and the rest | `src/presets/*` | no preset changes any output (`PartnerPreset.determinism` goes to `Builder.config`, which is never applied) |
-| **keep, but move**: `DdexVersion` (with `Display`) and `MessageProfile` | `presets/mod.rs:109-152` | used by kept code (`versions`, `schema`, the CLI, `Builder::with_version`). Move them before deleting the module and keep `pub use …::DdexVersion` at the root. Where they go depends on whether `versions` / `schema` stay (see the split) |
+| **kept, moved in 3a**: `DdexVersion` (with `Display`) and `MessageProfile` | `presets/mod.rs:109-152` | used by kept code (`versions`, `schema`, the CLI, `Builder::with_version`). Now `versions::DdexVersion` (still `ddex_builder::DdexVersion` at the root) and `schema::MessageProfile`. If 3d removes `versions` / `schema`, they move again |
 | `Builder::apply_preset`, `preset`, `available_presets`, `get_preset`, `is_preset_locked`; fields `presets`, `locked_preset`; `load_default_presets` | `lib.rs:399-400,525-608,750-752` | — |
 | root re-export `PartnerPreset` | `lib.rs:49` | — |
 | `SchemaGenerator.preset` field and `with_preset` | `schema/mod.rs:168-170,348-360` | the field is `#[allow(dead_code)]`, never read |
@@ -171,7 +176,7 @@ Dependencies: no ddex-builder dependency becomes unused because of the decided r
 | `BuildResult.xml`, `warnings`, `statistics`, `canonical_hash`, `reproducibility_banner` | REAL | `:812-825` | all |
 | `BuildResult.errors` | FAKE | always `Vec::new()` (`:815`); errors are returned as `Err` | Rust |
 | `BuildStatistics` (builder) | REAL | `:816-822` | — |
-| `DDEXBuilder._inner: Builder` | NO-OP | private; never read (`:709,716`) | — (it builds every preset each time `DDEXBuilder::new` runs) |
+| `DDEXBuilder._inner: Builder` | NO-OP | private; never read (`:709,716`) | — (before 3a it also loaded every preset each time `DDEXBuilder::new` ran) |
 | private `preflight` (legacy) | DEAD | `#[allow(dead_code)]` (`:1070`); no callers | — |
 | private `parse_duration_to_seconds` | REAL | used at `:1002` | — |
 | update / diff methods | decided | see [Decided removals](#decided-removals) | — |
@@ -465,16 +470,16 @@ Most of it is REAL; many REAL items are buggy (see
 | `build` | REAL | `DDEXBuilder::build` | CLI |
 | `build --verify-determinism`, `--determinism-iterations` | REAL | builds N times and compares the bytes (`:1138-1224`) | CLI |
 | `build --validate` | REAL (redundant) | runs the build once more; preflight runs anyway | CLI |
-| `build --profile`, `build --strict` | NO-OP | `cmd.profile` is never read; `validate_input_data` ignores `_strict` (`:1016`) | CLI |
+| `build --profile`, `build --strict` | NO-OP (**removed in 3a**) | `cmd.profile` is never read; `validate_input_data` ignores `_strict` (`:1016`) | CLI |
 | `build --preset` | decided | — | — |
 | `convert` | FAKE | `VersionConverter::convert`; `--allow-lossy` is NO-OP (above) | CLI |
 | `diff` | decided (FAKE: "not implemented") | — | — |
-| `validate`, `watch`, `server` | FAKE ("not implemented") | **PR 4**; only their `--preset` flag goes here | CLI |
-| `schema` | FAKE | `generate_complete_schema`; `--profile` is ignored (hard-coded `MessageProfile::AudioAlbum`, `:614`), `--with-docs` is NO-OP | CLI |
+| `validate`, `watch`, `server` | FAKE ("not implemented") | **PR 4**; only their `--preset` flag went (3a). `validate`'s own `--profile` / `--strict` stay with the command | CLI |
+| `schema` | FAKE | `generate_complete_schema`; `--profile` is ignored (hard-coded `MessageProfile::AudioAlbum`, `:614`) and `--with-docs` is NO-OP (both flags **removed in 3a**) | CLI |
 | `guarantees` | FAKE | `generate_guarantee_report`; `--thorough` discards its result (`:661-662`) | CLI |
 | `preset list/show/apply` | decided | — | — |
 | `completions` | REAL | clap | CLI |
-| global `--config` (`load_config`, `ConfigFile`) | NO-OP | `load_config` returns an empty default (`:473-481`, `TODO`) | CLI |
+| global `--config` (`load_config`, `ConfigFile`) | NO-OP (**removed in 3a**) | `load_config` returns an empty default (`:473-481`, `TODO`) | CLI |
 | `DdexVersionArg::V41`, `V44` | UNSURE | `4.4` maps silently to `Ern43` (`:399`) and `4.1` to `Ern41`, which the builder cannot target | CLI |
 
 ### Bindings beyond the decided removals
@@ -574,7 +579,7 @@ The 31 by group:
 
 Each part is under about 60 files and can land on its own.
 
-1. **PR 3a: the decided removals.** About 45 files:
+1. **PR 3a: the decided removals (done).** About 45 files:
    - update messages + diff, and presets (Rust, CLI `diff` / `preset` / `--preset`, the
      Node / Python preset methods, the WASM diff viewer);
    - the move of `DdexVersion` / `MessageProfile`;

@@ -1,6 +1,6 @@
 // Results the Node builder used to make up are now computed, or null where nothing is
 // measured: testRoundTripFidelity (it returned a constant 0.98 "success"), buildWithFidelity's
-// statistics and verification, the preset lists, validate, and StreamingDdexBuilder.getXml
+// statistics and verification, validate, and StreamingDdexBuilder.getXml
 // (it returned ""). Round trips use the official sample examples/Samples43/1 Audio.xml.
 // Run with: npm test (after `npm run build` here and in ../../../ddex-parser/bindings/node).
 
@@ -90,16 +90,6 @@ async function main() {
     /not implemented in 0.5.x/,
   );
   console.log('✓ buildWithFidelity: counted statistics, a real round trip');
-
-  const builder = new DdexBuilder();
-  const presets = builder.getAvailablePresets();
-  assert.ok(presets.includes('audio_album'), presets.join(', '));
-  assert.ok(!presets.some((p) => p.startsWith('spotify') || p.startsWith('apple')), presets.join(', '));
-  assert.equal(builder.getPresetInfo('audio_album').name, 'audio_album');
-  builder.applyPreset('audio_album');
-  assert.throws(() => builder.applyPreset('spotify_album'), /Unknown preset/);
-  assert.ok(Array.isArray(builder.getPresetValidationRules('audio_album')));
-  console.log("✓ presets are the builder's");
 
   const empty = new DdexBuilder();
   const validation = await empty.validate();
