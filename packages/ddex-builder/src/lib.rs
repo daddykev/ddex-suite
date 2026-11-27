@@ -27,11 +27,8 @@ pub use error::{BuildError, BuildWarning};
 pub use id_generator::{HashAlgorithm, StableHashConfig, StableHashGenerator};
 pub use linker::{EntityType, LinkerConfig, LinkingError, ReferenceLinker};
 pub use preflight::{PreflightLevel, PreflightValidator, ValidationConfig, ValidationResult};
-pub use schema::{JsonSchema, SchemaCommand, SchemaConfig, SchemaDraft, SchemaGenerator};
-pub use versions::{
-    ConversionOptions, ConverterResult as ConversionResult, DdexVersion, VersionConverter,
-    VersionManager,
-};
+pub use schema::{JsonSchema, MessageProfile, SchemaValidator};
+pub use versions::DdexVersion;
 
 // Security module exports
 pub use api_security::{ApiSecurityManager, BatchStats, FfiDataType};
@@ -86,8 +83,7 @@ pub struct BuildStatistics {
     pub processing_instruction_count: usize,
 }
 
-/// Builder facade: target version, version detection and conversion, statistics and
-/// round trips.
+/// Builder facade: target version, statistics, canonicalization and round trips.
 ///
 /// To generate XML, use [`DDEXBuilder::build`]. The target version set here does not
 /// affect `DDEXBuilder::build` output (KNOWN_ISSUES.md).
@@ -96,7 +92,7 @@ pub struct BuildStatistics {
 ///
 /// - **Canonical Output**: DB-C14N/1.0 ordering and formatting; byte-for-byte
 ///   determinism is not complete yet (see the [`determinism`] module; planned for 0.6.0)
-/// - **Version Management**: Support for ERN 3.8.2, 4.2, and 4.3 with conversion
+/// - **Versions**: ERN 3.8.2, 4.2 and 4.3 (`supported_versions`)
 /// - **Security**: Built-in validation, rate limiting, and XXE protection
 /// - **Streaming**: an experimental streaming writer (`streaming::StreamingBuilder`),
 ///   which writes only the old ERN 3.8-style tree (KNOWN_ISSUES.md)
@@ -112,36 +108,6 @@ pub struct BuildStatistics {
 /// println!("Supported versions: {:?}", builder.supported_versions());
 /// ```
 ///
-/// ### Version Conversion
-///
-/// ```rust
-/// use ddex_builder::{Builder, DdexVersion};
-/// use ddex_builder::versions::ConversionOptions;
-///
-/// let builder = Builder::new();
-/// let xml_content = "<test></test>";
-///
-/// // Check version compatibility
-/// let compatible = builder.is_version_compatible(
-///     DdexVersion::Ern382,
-///     DdexVersion::Ern43
-/// );
-///
-/// if compatible {
-///     let options = Some(ConversionOptions::default());
-///     let result = builder.convert_version(
-///         xml_content,
-///         DdexVersion::Ern382,
-///         DdexVersion::Ern43,
-///         options
-///     )?;
-///     if let ddex_builder::versions::ConverterResult::Success { xml, .. } = result {
-///         println!("Converted XML: {}", xml);
-///     }
-/// }
-/// # Ok::<(), ddex_builder::BuildError>(())
-/// ```
-///
 /// ## Thread Safety
 ///
 /// `Builder` is `Send + Sync` and can be safely shared between threads.
@@ -152,7 +118,6 @@ pub struct BuildStatistics {
 /// Memory use has not been measured. Build times are in `dev-docs/PERFORMANCE.md`.
 #[derive(Debug, Clone)]
 pub struct Builder {
-    version_manager: versions::VersionManager,
     target_version: Option<DdexVersion>,
     fidelity_options: FidelityOptions,
 }
@@ -181,7 +146,6 @@ impl Builder {
     /// Create builder with the given options
     pub fn with_fidelity_options(fidelity_options: FidelityOptions) -> Self {
         Self {
-            version_manager: versions::VersionManager::new(),
             target_version: None,
             fidelity_options,
         }
@@ -230,34 +194,6 @@ impl Builder {
     /// Get the target DDEX version
     pub fn target_version(&self) -> Option<DdexVersion> {
         self.target_version
-    }
-
-    /// Detect version from XML content
-    pub fn detect_version(&self, xml_content: &str) -> Result<DdexVersion, error::BuildError> {
-        self.version_manager
-            .detect_version(xml_content)
-            .map(|detection| detection.detected_version)
-            .map_err(|e| error::BuildError::InvalidFormat {
-                field: "version".to_string(),
-                message: format!("Version detection failed: {}", e),
-            })
-    }
-
-    /// Convert XML between DDEX versions
-    pub fn convert_version(
-        &self,
-        xml_content: &str,
-        from_version: DdexVersion,
-        to_version: DdexVersion,
-        options: Option<ConversionOptions>,
-    ) -> Result<versions::ConverterResult, error::BuildError> {
-        let converter = versions::VersionConverter::new();
-        Ok(converter.convert(xml_content, from_version, to_version, options))
-    }
-
-    /// Get version compatibility information
-    pub fn is_version_compatible(&self, from: DdexVersion, to: DdexVersion) -> bool {
-        self.version_manager.is_conversion_supported(from, to)
     }
 
     /// Get supported DDEX versions

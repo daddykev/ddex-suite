@@ -75,10 +75,6 @@ pub struct ValidationMetadata {
     pub properties_validated: usize,
     /// Validation duration
     pub validation_time: std::time::Duration,
-    /// Schema complexity
-    pub schema_complexity: f64,
-    /// Data complexity
-    pub data_complexity: f64,
 }
 
 // Common DDEX validation patterns
@@ -148,16 +144,8 @@ impl SchemaValidator {
             metadata: ValidationMetadata {
                 properties_validated,
                 validation_time,
-                schema_complexity: self.calculate_schema_complexity(&self.schema),
-                data_complexity: self.calculate_data_complexity(data),
             },
         }
-    }
-
-    /// Validate and return detailed path-based errors
-    pub fn validate_with_paths(&self, data: &JsonValue) -> ValidationResult {
-        // Same as validate but with more detailed path tracking
-        self.validate(data)
     }
 
     // Private validation methods
@@ -808,51 +796,6 @@ impl SchemaValidator {
             }
         }
         None
-    }
-
-    fn calculate_schema_complexity(&self, schema: &JsonSchema) -> f64 {
-        let mut complexity = 0.0;
-
-        if let Some(ref properties) = schema.properties {
-            complexity += properties.len() as f64;
-        }
-        if let Some(ref definitions) = schema.definitions {
-            complexity += definitions.len() as f64 * 2.0;
-        }
-        if schema.all_of.is_some() {
-            complexity += 3.0;
-        }
-        if schema.any_of.is_some() {
-            complexity += 4.0;
-        }
-        if schema.one_of.is_some() {
-            complexity += 5.0;
-        }
-        if schema.if_schema.is_some() {
-            complexity += 6.0;
-        }
-
-        complexity
-    }
-
-    fn calculate_data_complexity(&self, data: &JsonValue) -> f64 {
-        match data {
-            JsonValue::Object(obj) => {
-                obj.len() as f64
-                    + obj
-                        .values()
-                        .map(|v| self.calculate_data_complexity(v) * 0.5)
-                        .sum::<f64>()
-            }
-            JsonValue::Array(arr) => {
-                arr.len() as f64
-                    + arr
-                        .iter()
-                        .map(|v| self.calculate_data_complexity(v) * 0.3)
-                        .sum::<f64>()
-            }
-            _ => 1.0,
-        }
     }
 }
 

@@ -187,6 +187,46 @@ effect. Real features can come back later as additions. The inventory is
     not follow the XSD sequences and were never applied.
   - Migration: drop the argument.
 
+- **Version conversion and detection removed** (Rust, CLI):
+  - Rust:
+    - `versions::VersionConverter` and `ConverterResult`, `ConverterReport` and
+      `ConverterWarning`, `ConversionOptions` and `ValidationLevel`.
+    - `VersionManager`, `VersionDetection` and the compatibility, feature and strategy types.
+    - The never-constructed `ConversionResult` (with `converted_at`) and the other conversion
+      report types.
+    - The `ern382` / `ern42` / `ern43` spec tables, builders, templates and validators.
+    - `utils::is_legacy_version`, `is_modern_version`, `get_version_release_date` and
+      `get_version_description`.
+    - `Builder::convert_version`, `detect_version` and `is_version_compatible`, and the root
+      re-exports `ConversionOptions`, `ConversionResult`, `VersionConverter` and
+      `VersionManager`.
+  - CLI: the `convert` subcommand.
+  - Why: the converter swapped the namespace URI and renamed one element, then reported
+    success. Detection scored invented element lists and misidentified many real messages.
+    The compatibility table, release dates and descriptions were made up.
+  - Migration: no replacement; it didn't convert. Build the target version from a build
+    request instead. ddex-parser reads the version of a message.
+  - Kept: `versions::DdexVersion` (still also `ddex_builder::DdexVersion`),
+    `versions::utils::supported_versions`, and `Builder::with_version` / `target_version` /
+    `supported_versions`.
+- **Schema generation removed** (Rust, CLI):
+  - Rust:
+    - `schema::SchemaGenerator`, `SchemaConfig`, `SchemaDraft`, `SchemaGenerationResult`,
+      `SchemaMetadata`, `SchemaWarning` and `SchemaCommand`.
+    - The JSON Schema / TypeScript / Python generators and `generate_openapi_spec`.
+    - `SchemaValidator::validate_with_paths` (identical to `validate`) and the invented
+      `ValidationMetadata::schema_complexity` / `data_complexity` scores.
+    - The root re-exports `SchemaCommand`, `SchemaConfig`, `SchemaDraft` and
+      `SchemaGenerator`.
+  - CLI: the `schema` subcommand.
+  - Why: the schemas were hand-written, left out required `BuildRequest` fields (so a real
+    request failed them), and did not depend on the version or the profile.
+  - Migration: no replacement; use the documented `BuildRequest` types (`build-request.d.ts`,
+    `ddex_builder.build_request`, the Rust `builder` module).
+  - Kept: `SchemaValidator` and `JsonSchema`.
+  - Path change: `schema::MessageProfile` is now also exported at the crate root as
+    `ddex_builder::MessageProfile`.
+
 ### Dependencies
 
 - ddex-builder no longer depends on:
