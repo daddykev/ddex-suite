@@ -77,12 +77,6 @@ impl From<serde_json::Error> for BuildError {
     }
 }
 
-impl From<quick_xml::Error> for BuildError {
-    fn from(err: quick_xml::Error) -> Self {
-        BuildError::XmlGeneration(err.to_string())
-    }
-}
-
 /// Build warning (non-fatal)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildWarning {

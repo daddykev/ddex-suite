@@ -129,7 +129,7 @@ impl ExtensionCaptureContext {
     }
 
     /// Process an opening tag during extension capture
-    pub fn process_extension_start_tag(&mut self, event: &BytesStart) {
+    pub(crate) fn process_extension_start_tag(&mut self, event: &BytesStart) {
         if !self.in_extension {
             return;
         }
@@ -160,7 +160,7 @@ impl ExtensionCaptureContext {
     }
 
     /// Process a closing tag during extension capture
-    pub fn process_extension_end_tag(&mut self, event: &BytesEnd) {
+    pub(crate) fn process_extension_end_tag(&mut self, event: &BytesEnd) {
         if !self.in_extension {
             return;
         }
@@ -179,7 +179,7 @@ impl ExtensionCaptureContext {
     }
 
     /// Process text content during extension capture
-    pub fn process_extension_text(&mut self, event: &BytesText) {
+    pub(crate) fn process_extension_text(&mut self, event: &BytesText) {
         if !self.in_extension {
             return;
         }

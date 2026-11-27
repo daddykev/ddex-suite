@@ -529,6 +529,31 @@ Old → new names (0.6.0 PR 5a):
   - Migration: match on `version: None` instead of an `Err` / `"Unknown"`; drop
     `warnings`.
 
+- **quick-xml types are no longer part of the public API** (Rust):
+  - Who: Rust code that converts quick-xml errors with `?` / `.into()` into `ParseError` or
+    `BuildError`, or that calls the items below.
+  - What went: `impl From<quick_xml::Error> for BuildError`, `impl From<quick_xml::Error>
+    for ParseError` and `impl From<quick_xml::events::attributes::AttrError> for
+    ParseError`; `security::SecureXmlReader::read_event` (it returned a quick-xml `Event`)
+    is replaced by `read_next(&mut buf) -> Result<bool, BuildError>` (`false` at the end of
+    the document), and `SecureXmlReader::into_inner` (it returned the quick-xml `Reader`) was
+    removed. Crate-private now (they take quick-xml types): `utf8_utils::handle_text_node`,
+    `parser::extension_capture::ExtensionCaptureContext::process_extension_start_tag` /
+    `process_extension_end_tag` / `process_extension_text`,
+    `parser::attribute_extractor::AttributeExtractor::extract_attributes` and
+    `parser::xml_validator::XmlValidator::validate_event`.
+  - Error messages are unchanged: the parser and builder map quick-xml errors internally to
+    the same variants and text as before (`ParseError::XmlError`, the undefined-entity and
+    DOCTYPE errors, `BuildError::XmlGeneration`).
+  - Migration: match on `ParseError` / `BuildError` variants; quick-xml types are no longer
+    part of the API, so a quick-xml upgrade does not change it.
+
+### Added
+
+- `DDEXBuilder::preflight(&request, level)` (ddex-builder): the preflight checks `build` runs
+  at that level, returned as a `preflight::ValidationResult` (errors and warnings) without
+  building. The Node and Python `validate()` use it.
+
 ### Changed
 
 - ddex-builder preflight, `PreflightLevel::Warn` (the default): preflight errors are no

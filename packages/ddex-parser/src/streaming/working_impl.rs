@@ -122,7 +122,10 @@ impl<R: BufRead> WorkingStreamingParser<R> {
         let mut text_run = crate::xml_text::TextRun::default();
         loop {
             self.buffer.clear();
-            let event = self.reader.read_event_into(&mut self.buffer)?;
+            let event = self
+                .reader
+                .read_event_into(&mut self.buffer)
+                .map_err(crate::error::xml_error)?;
             crate::xml_text::check(self.reader.get_ref())?;
 
             // One text value per run of Text / GeneralRef events (one Text event before
@@ -144,7 +147,7 @@ impl<R: BufRead> WorkingStreamingParser<R> {
                     // Extract attributes first to avoid borrow conflicts
                     let mut attributes = std::collections::HashMap::new();
                     for attr_result in e.attributes() {
-                        let attr = attr_result?;
+                        let attr = attr_result.map_err(crate::error::attr_error)?;
                         let key = std::str::from_utf8(attr.key.as_ref())?;
                         let value = std::str::from_utf8(&attr.value)?;
                         attributes.insert(key.to_string(), value.to_string());

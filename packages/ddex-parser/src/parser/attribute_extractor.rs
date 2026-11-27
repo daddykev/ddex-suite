@@ -185,7 +185,14 @@ impl AttributeExtractor {
     }
 
     /// Extract all attributes from an XML element
-    pub fn extract_attributes(
+    #[cfg_attr(
+        not(test),
+        allow(
+            dead_code,
+            reason = "takes a quick-xml type, so it is crate-private since 0.6.0; only the unit tests call it (KNOWN_ISSUES.md Parked)"
+        )
+    )]
+    pub(crate) fn extract_attributes(
         &self,
         element: &BytesStart,
         namespace_context: &NamespaceContext,

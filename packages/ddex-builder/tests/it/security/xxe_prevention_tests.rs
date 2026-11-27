@@ -301,7 +301,7 @@ fn test_secure_xml_reader_xxe_protection() {
     let mut reader = SecureXmlReader::new(cursor, config.clone());
 
     let mut buf = Vec::new();
-    let result = reader.read_event(&mut buf);
+    let result = reader.read_next(&mut buf);
 
     // Should fail when encountering DTD
     match result {
@@ -326,7 +326,7 @@ fn test_secure_xml_reader_xxe_protection() {
     let mut reader = SecureXmlReader::new(cursor, config.clone());
 
     let mut buf = Vec::new();
-    let result = reader.read_event(&mut buf);
+    let result = reader.read_next(&mut buf);
 
     match result {
         Err(BuildError::Security(msg)) => {
@@ -362,8 +362,8 @@ fn test_depth_limit_protection() {
     let mut events_processed = 0;
 
     loop {
-        match reader.read_event(&mut buf) {
-            Ok(quick_xml::events::Event::Eof) => break,
+        match reader.read_next(&mut buf) {
+            Ok(false) => break,
             Ok(_) => {
                 events_processed += 1;
                 buf.clear();
@@ -408,8 +408,8 @@ fn test_element_count_limit_protection() {
     let mut error_found = false;
 
     loop {
-        match reader.read_event(&mut buf) {
-            Ok(quick_xml::events::Event::Eof) => break,
+        match reader.read_next(&mut buf) {
+            Ok(false) => break,
             Ok(_) => {
                 buf.clear();
             }
@@ -443,8 +443,8 @@ fn test_timeout_protection() {
     // but for testing we rely on the fact that this should not timeout
     // under normal circumstances
     loop {
-        match reader.read_event(&mut buf) {
-            Ok(quick_xml::events::Event::Eof) => break,
+        match reader.read_next(&mut buf) {
+            Ok(false) => break,
             Ok(_) => {
                 buf.clear();
             }
@@ -633,8 +633,8 @@ fn test_valid_xml_still_works() {
     let mut event_count = 0;
 
     loop {
-        match reader.read_event(&mut buf) {
-            Ok(quick_xml::events::Event::Eof) => break,
+        match reader.read_next(&mut buf) {
+            Ok(false) => break,
             Ok(_) => {
                 event_count += 1;
                 buf.clear();

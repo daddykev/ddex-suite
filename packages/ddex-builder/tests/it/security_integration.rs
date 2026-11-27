@@ -93,7 +93,7 @@ fn test_secure_xml_reader() {
     let mut reader = SecureXmlReader::new(cursor, config.clone());
 
     let mut buf = Vec::new();
-    let result = reader.read_event(&mut buf);
+    let result = reader.read_next(&mut buf);
 
     match result {
         Err(BuildError::Security(msg)) => {
@@ -115,8 +115,8 @@ fn test_secure_xml_reader() {
     let mut events = 0;
 
     loop {
-        match reader.read_event(&mut buf) {
-            Ok(quick_xml::events::Event::Eof) => break,
+        match reader.read_next(&mut buf) {
+            Ok(false) => break,
             Ok(_) => {
                 events += 1;
                 buf.clear();
@@ -228,8 +228,8 @@ fn test_security_limits() {
 
     for _ in 0..50 {
         // Limit iterations to prevent infinite loop
-        match reader.read_event(&mut buf) {
-            Ok(quick_xml::events::Event::Eof) => break,
+        match reader.read_next(&mut buf) {
+            Ok(false) => break,
             Ok(_) => {
                 buf.clear();
             }
@@ -379,8 +379,8 @@ fn test_normal_operation_preserved() {
     let mut events_processed = 0;
 
     loop {
-        match reader.read_event(&mut buf) {
-            Ok(quick_xml::events::Event::Eof) => break,
+        match reader.read_next(&mut buf) {
+            Ok(false) => break,
             Ok(_) => {
                 events_processed += 1;
                 buf.clear();

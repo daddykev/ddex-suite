@@ -304,8 +304,8 @@ fn test_memory_safety_under_attack() {
             panic!("Too many events processed, depth limit not working");
         }
 
-        match reader.read_event(&mut buf) {
-            Ok(quick_xml::events::Event::Eof) => break,
+        match reader.read_next(&mut buf) {
+            Ok(false) => break,
             Ok(_) => {
                 events_processed += 1;
                 buf.clear();

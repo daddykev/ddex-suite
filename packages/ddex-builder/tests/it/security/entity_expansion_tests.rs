@@ -352,7 +352,7 @@ fn test_secure_xml_reader_entity_protection() {
     let mut reader = SecureXmlReader::new(cursor, config.clone());
 
     let mut buf = Vec::new();
-    match reader.read_event(&mut buf) {
+    match reader.read_next(&mut buf) {
         Err(BuildError::Security(msg)) => {
             assert!(
                 msg.contains("DTD processing not allowed")
@@ -376,7 +376,7 @@ fn test_secure_xml_reader_entity_protection() {
     let mut reader = SecureXmlReader::new(cursor, config);
 
     let mut buf = Vec::new();
-    match reader.read_event(&mut buf) {
+    match reader.read_next(&mut buf) {
         Err(BuildError::Security(msg)) => {
             assert!(msg.contains("DTD processing not allowed") || msg.contains("Dangerous entity"));
         }
