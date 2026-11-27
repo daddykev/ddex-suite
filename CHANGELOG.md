@@ -633,6 +633,11 @@ Old → new names (0.6.0 PR 5a):
   MiB/s). The measured figures are in `dev-docs/PERFORMANCE.md`.
 - The parser README, the root README and the website no longer claim text, attribute or
   input-size limits for Rust and Python: those settings were never read.
+- Deleted stale status reports and API dumps that described APIs or packages that do not
+  exist: `packages/ddex-parser/ENTRY_POINTS.md`, `IMPLEMENTATION_STATUS.md`,
+  `bindings/node/NATIVE_BINDINGS_REPORT.md`,
+  `packages/ddex-builder/bindings/api-consistency-report.md` and
+  `docs/python_builder_api.txt`.
 
 ### Dependencies
 

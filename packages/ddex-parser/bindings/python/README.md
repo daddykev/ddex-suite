@@ -73,7 +73,7 @@ the DDEX XSD or the AVS business rules.
 
 ## Links
 
-- Documentation: [ddex-suite.org](https://ddex-suite.org/docs/parser)
+- Documentation: [ddex-suite.org](https://ddex-suite.org/docs/quick-start-parsing)
 - [Changelog](https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md)
 - [0.6.0 migration guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md)
 - [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md)

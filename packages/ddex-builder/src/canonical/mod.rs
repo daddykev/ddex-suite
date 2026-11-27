@@ -1,49 +1,16 @@
 //! # DB-C14N/1.0 - DDEX Builder Canonicalization
 //!
-//! This module implements the DB-C14N/1.0 (DDEX Builder Canonical XML 1.0)
-//! specification for deterministic XML canonicalization. This ensures that
-//! identical logical XML documents always produce byte-identical output.
+//! The canonical form `ddex-builder` writes (DDEX Builder Canonical XML 1.0). It is the
+//! project's own form, not a W3C canonicalization. The full description is
+//! `docs/DB-C14N-SPEC.md` in the repository.
 //!
-//! ## Why Canonicalization?
-//!
-//! Canonicalizing the same document always gives the same bytes.
-//!
-//! The builder reads no clock or random source and uses no unordered iteration on the build
-//! path (enforced by clippy lints). The same request and options produce byte-identical
-//! output with the same crate version; repeated builds are tested to be byte-identical.
-//! Reproducible output matters for:
-//!
-//! - **Supply chain integrity**: Partners can verify XML hasn't changed
-//! - **Reproducible builds**: CI/CD systems produce identical artifacts
-//! - **Digital signatures**: Cryptographic signatures remain valid
-//! - **Caching and deduplication**: Identical content can be detected
-//!
-//! ## DB-C14N/1.0 Specification
-//!
-//! ```text
-//! Canonicalization Process
-//! ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-//! │   Input XML     │───▶│   Parse & Sort   │───▶│  Canonical XML  │
-//! │ (any format)    │    │                  │    │ (deterministic) │
-//! └─────────────────┘    └──────────────────┘    └─────────────────┘
-//!                               │
-//!                               ▼
-//!                        ┌──────────────────┐
-//!                        │ Apply Rules:     │
-//!                        │ • Namespace lock │
-//!                        │ • Element order  │
-//!                        │ • Attribute sort │
-//!                        │ • Whitespace fix │
-//!                        └──────────────────┘
-//! ```
-//!
-//! ## Key Features
-//!
-//! - **Namespace Prefix Locking**: Fixed prefixes for DDEX namespaces
-//! - **Deterministic Element Ordering**: Stable child element sequences
-//! - **Attribute Canonicalization**: Alphabetical attribute ordering
-//! - **Whitespace Normalization**: Consistent formatting and indentation
-//! - **Comment Preservation**: Optional comment handling
+//! [`DDEXBuilder::build`](crate::DDEXBuilder::build) canonicalizes its output by default
+//! (`OutputConfig::canon_mode` is `CanonMode::DbC14n`), and
+//! [`DDEXBuilder::canonicalize`](crate::DDEXBuilder::canonicalize) canonicalizes any XML.
+//! Canonicalizing the same input always gives the same bytes. The builder reads no clock or
+//! random source and uses no unordered iteration on the build path (enforced by clippy
+//! lints). The same request and options produce byte-identical output with the same crate
+//! version; repeated builds are tested to be byte-identical.
 //!
 //! ## Usage Example
 //!
@@ -64,16 +31,27 @@
 //! # Ok::<(), ddex_builder::BuildError>(())
 //! ```
 //!
-//! ## Specification Rules
+//! ## Rules
 //!
-//! The canonicalization follows these rules in order:
+//! The input must be well-formed XML with one root element; a reference to an entity other
+//! than the five predefined ones (and character references) is an error. The ERN version
+//! comes from the first ERN namespace URI in the text, or else the canonicalizer's version.
 //!
-//! 1. **XML Declaration**: Always `<?xml version="1.0" encoding="UTF-8"?>`
-//! 2. **Namespace Prefixes**: Use locked prefix table for DDEX namespaces
-//! 3. **Element Order**: Kept as written (the generators write elements in XSD order)
-//! 4. **Attribute Order**: Sort attributes alphabetically by qualified name
-//! 5. **Text Normalization**: Trim whitespace, normalize line endings
-//! 6. **Indentation**: Use 2-space indentation with no trailing whitespace
+//! 1. **XML declaration**: always `<?xml version="1.0" encoding="UTF-8"?>` and a line feed.
+//! 2. **What is kept**: elements, attributes, text and comments inside the root element.
+//!    Processing instructions, a DOCTYPE and comments outside the root are dropped.
+//! 3. **Element order**: kept as written (the generators write elements in XSD order).
+//! 4. **Namespace declarations**: a declaration of a DDEX namespace URI is written with the
+//!    version's locked prefix ([`rules`]); other declarations keep their prefix. Element and
+//!    attribute names are not rewritten.
+//! 5. **Attribute order**: namespace declarations first, sorted by prefix, then the other
+//!    attributes sorted by qualified name.
+//! 6. **Text**: whitespace-only text between elements is dropped; all other text is kept
+//!    exactly as written (not trimmed or collapsed), and a leaf keeps whitespace-only text.
+//! 7. **Escaping**: `&`, `<`, `>` and CR (`&#13;`) in text; in attribute values also `"`,
+//!    `'`, tab, LF and CR as character references. Comments are written as they were.
+//! 8. **Layout**: two-space indentation, one element per line, text-only elements inline,
+//!    empty elements as `<Name/>`, no trailing whitespace.
 
 use indexmap::IndexMap;
 use quick_xml::{events::Event, Reader};
@@ -150,7 +128,7 @@ impl DB_C14N {
         self.serialize_canonical(canonical_doc)
     }
 
-    /// Calculate canonical hash
+    /// The SHA-256 (lowercase hex) of `xml` as given; it does not canonicalize first.
     pub fn canonical_hash(&self, xml: &str) -> Result<String, super::error::BuildError> {
         let mut hasher = Sha256::new();
         hasher.update(xml.as_bytes());
