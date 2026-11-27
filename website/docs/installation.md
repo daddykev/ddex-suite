@@ -33,7 +33,7 @@ code.
 npm install ddex-parser ddex-builder
 ```
 
-Node.js **18 or newer**. TypeScript types are included (`index.d.ts`; the builder also has
+Node.js **22 or newer**. TypeScript types are included (`index.d.ts`; the builder also has
 `build-request.d.ts`). The packages are native addons: npm installs a prebuilt binary
 through an optional platform package (`ddex-parser-<platform>`, `ddex-builder-<platform>`).
 
@@ -55,7 +55,7 @@ pip install ddex-parser ddex-builder
 pip install "ddex-parser[pandas]" "ddex-builder[pandas]"   # for the DataFrame APIs
 ```
 
-Python **3.10 to 3.14** (CI tests each one). The wheels use the stable ABI (`cp310-abi3`),
+Python **3.11 to 3.14** (CI tests each one). The wheels use the stable ABI (`cp311-abi3`),
 so one wheel per platform covers every supported Python version.
 
 Prebuilt wheels:

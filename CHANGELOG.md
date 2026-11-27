@@ -556,6 +556,18 @@ Old → new names (0.6.0 PR 5a):
   - Migration: drop the field (`SecurityConfig { max_element_depth, }`, or
     `..SecurityConfig::default()`).
 
+- **Python 3.11 or newer** (Python bindings):
+  - Who: users on Python 3.10.
+  - What changed: the wheels are `cp311-abi3` (pyo3 `abi3-py311`), `requires-python` is
+    `>=3.11`, and CI no longer tests 3.10.
+  - Migration: upgrade to Python 3.11 or newer, or stay on 0.5.x. On Python 3.10, pip keeps
+    resolving 0.5.1 (the latest release whose `requires-python` allows it).
+- **Node.js 22 or newer** (Node.js packages):
+  - Who: users on Node.js 18 or 20.
+  - What changed: `engines.node` is `>=22` in `ddex-parser`, `ddex-builder` and their
+    platform packages. (CI already ran on Node.js 22 only.)
+  - Migration: upgrade to Node.js 22 or newer, or stay on 0.5.x.
+
 ### Added
 
 - Node.js `requestFromXml(xml): { request, unmapped }` and Python `request_from_xml(xml)

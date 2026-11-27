@@ -2,7 +2,7 @@
 
 ![Rust](https://img.shields.io/badge/Rust-1.82%2B-orange?logo=rust)
 ![Node.js](https://img.shields.io/badge/Node.js-18%2B-green?logo=node.js)
-![Python](https://img.shields.io/badge/Python-3.10%20%E2%80%93%203.14-blue?logo=python)
+![Python](https://img.shields.io/badge/Python-3.11%20%E2%80%93%203.14-blue?logo=python)
 ![TypeScript](https://img.shields.io/badge/TypeScript-types%20included-blue?logo=typescript)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20x64%20%7C%20arm64%20%7C%20musl%20x64%20%C2%B7%20macOS%20arm64%20%7C%20x64%20%C2%B7%20Windows%20x64-lightgrey)
 [![npm ddex-builder](https://img.shields.io/npm/v/ddex-builder?label=npm%20ddex-builder)](https://www.npmjs.com/package/ddex-builder)
@@ -47,7 +47,7 @@ Working with DDEX XML shouldn't feel like archaeology. The suite transforms comp
 
 I'm building **DDEX Suite** as a rigorous, end-to-end learning project to deepen my Rust skills while unifying my JavaScript and Python experience into a production-grade toolkit for music metadata. It's built on a **single Rust core** that powers both a security-hardened DDEX XML parser library (`ddex-parser`) and a schema-driven builder library (`ddex-builder`). That core is exposed through **napi-rs** for Node/TypeScript, **PyO3** for Python and **wasm-bindgen** for WebAssembly, with a consistent API across languages and **pandas DataFrame** import and export for Python users. The project is deliberately "industry-shaped": it reads ERN 3.8.1, 3.8.2, 4.2 and 4.3 into a faithful **graph** model (in Rust) and a developer-friendly **flattened** view (in every language), and it writes ERN 3.8.2, 4.2 and 4.3 that validates against the official DDEX XSDs. Its guiding rule is to **never invent data**: absent values stay empty, and a build that lacks a value the standard requires fails with an error naming the field. Output is canonicalized by a custom specification, **DB-C14N/1.0**; making it fully byte-for-byte reproducible, with **stable, content-addressable IDs** as the default, is the focus of 0.6.0.
 
-Beyond the core implementation, this is a showcase of **software craftsmanship and platform thinking**. Correctness is checked rather than assumed. CI covers Rust, Node.js and Python 3.10–3.14, and every prebuilt binary for Linux, macOS and Windows is install-tested before release. The builder runs **preflight validation** on every build, and the parser ships a CLI for working with messages from the command line. Paired with my validator work (**DDEX Workbench**, which handles XSD validation and business rules), DDEX Suite covers both ends of a **Parse → Build** pipeline. Next come a built-in bridge from parsed messages to build requests for true **Parse → Modify → Build**, a semantic diff, and further supply-chain hardening. Already in place: `cargo-deny` runs in CI, and from 0.5.1 release artifacts are built in GitHub Actions with signed build-provenance attestations and SBOMs, verifiable with `gh attestation verify <file> --repo daddykev/ddex-suite`, provided the published files are the ones release-build produced. The goal is to show how interoperable components can be designed to be correct, safe and easy to adopt in real-world systems.
+Beyond the core implementation, this is a showcase of **software craftsmanship and platform thinking**. Correctness is checked rather than assumed. CI covers Rust, Node.js and Python 3.11–3.14, and every prebuilt binary for Linux, macOS and Windows is install-tested before release. The builder runs **preflight validation** on every build, and the parser ships a CLI for working with messages from the command line. Paired with my validator work (**DDEX Workbench**, which handles XSD validation and business rules), DDEX Suite covers both ends of a **Parse → Build** pipeline. Next come a built-in bridge from parsed messages to build requests for true **Parse → Modify → Build**, a semantic diff, and further supply-chain hardening. Already in place: `cargo-deny` runs in CI, and from 0.5.1 release artifacts are built in GitHub Actions with signed build-provenance attestations and SBOMs, verifiable with `gh attestation verify <file> --repo daddykev/ddex-suite`, provided the published files are the ones release-build produced. The goal is to show how interoperable components can be designed to be correct, safe and easy to adopt in real-world systems.
 
 ## 🚧 Development Status
 
@@ -72,7 +72,7 @@ All packages are released together at the same version.
 ✅ **One parse path** - `parse()` uses the complete parser for every input size; streaming is opt-in and experimental  
 ✅ **Schema-valid builder output** - ERN 4.3, 4.2 and 3.8.2, validated against the official XSDs in CI; the WASM builder runs the core builder  
 ✅ **Bindings that fail loudly** - Python raises `ImportError` without its native extension; Node parse options that had no effect throw  
-✅ **Packages for every common platform** - abi3 wheels for Python 3.10+ and npm binaries for macOS, Linux and Windows  
+✅ **Packages for every common platform** - abi3 wheels for Python 3.11+ and npm binaries for macOS, Linux and Windows  
 ✅ **Measured performance** - Criterion bench results in [PERFORMANCE.md](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md)
 
 🔄 **Next: v0.6.0** - Builder determinism, a conformance suite  
@@ -90,8 +90,8 @@ pip install ddex-parser ddex-builder
 
 Prebuilt binaries:
 
-- **npm**: macOS arm64 and x64, Linux x64 (glibc), Windows x64. Node.js 18 or newer.
-- **PyPI**: abi3 wheels for Python 3.10 or newer on Linux x86_64 and aarch64 (glibc
+- **npm**: macOS arm64 and x64, Linux x64 (glibc), Windows x64. Node.js 22 or newer.
+- **PyPI**: abi3 wheels for Python 3.11 or newer on Linux x86_64 and aarch64 (glibc
   2.28+), Linux x86_64 (musl), macOS x86_64 and arm64, and Windows x64. Other platforms
   build from the source distribution, which needs a Rust toolchain.
 - **Rust**: 1.82 or newer.
