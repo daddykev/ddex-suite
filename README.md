@@ -1,7 +1,7 @@
 # DDEX Suite
 
 ![Rust](https://img.shields.io/badge/Rust-1.82%2B-orange?logo=rust)
-![Node.js](https://img.shields.io/badge/Node.js-18%2B-green?logo=node.js)
+![Node.js](https://img.shields.io/badge/Node.js-22%2B-green?logo=node.js)
 ![Python](https://img.shields.io/badge/Python-3.11%20%E2%80%93%203.14-blue?logo=python)
 ![TypeScript](https://img.shields.io/badge/TypeScript-types%20included-blue?logo=typescript)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20x64%20%7C%20arm64%20%7C%20musl%20x64%20%C2%B7%20macOS%20arm64%20%7C%20x64%20%C2%B7%20Windows%20x64-lightgrey)
@@ -27,11 +27,12 @@ DDEX Suite brings together tools for music industry data exchange, combining the
   `MessageId` and `MessageCreatedDateTime` are required inputs.
 - **ddex-core** holds the shared data models.
 
-> **0.5.0 has breaking changes**: text is kept exactly as written, `parse` no longer
-> switches to streaming above 10 MB, the Node parse options throw, the Python packages
-> need their native extension, and the build request is the core's. Read the
-> [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md)
-> before upgrading.
+> **0.6.0 has breaking changes**: APIs that returned no real results were removed,
+> `Builder` is folded into `DDEXBuilder`, `MessageId` and `MessageCreatedDateTime` are
+> required, absent request values are `None` / `null` instead of `""`, and the floors are
+> Node.js 22 and Python 3.11. Read the [0.6.0 migration guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md) before upgrading
+> (and the [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md)
+> when coming from 0.4.x).
 
 ## 🎯 Why DDEX Suite?
 
@@ -45,9 +46,9 @@ Working with DDEX XML shouldn't feel like archaeology. The suite transforms comp
 
 ## 👨🏻‍💻 Developer Statement
 
-I'm building **DDEX Suite** as a rigorous, end-to-end learning project to deepen my Rust skills while unifying my JavaScript and Python experience into a production-grade toolkit for music metadata. It's built on a **single Rust core** that powers both a security-hardened DDEX XML parser library (`ddex-parser`) and a schema-driven builder library (`ddex-builder`). That core is exposed through **napi-rs** for Node/TypeScript, **PyO3** for Python and **wasm-bindgen** for WebAssembly, with a consistent API across languages and **pandas DataFrame** import and export for Python users. The project is deliberately "industry-shaped": it reads ERN 3.8.1, 3.8.2, 4.2 and 4.3 into a faithful **graph** model (in Rust) and a developer-friendly **flattened** view (in every language), and it writes ERN 3.8.2, 4.2 and 4.3 that validates against the official DDEX XSDs. Its guiding rule is to **never invent data**: absent values stay empty, and a build that lacks a value the standard requires fails with an error naming the field. Output is canonicalized by a custom specification, **DB-C14N/1.0**; making it fully byte-for-byte reproducible, with **stable, content-addressable IDs** as the default, is the focus of 0.6.0.
+I'm building **DDEX Suite** as a rigorous, end-to-end learning project to deepen my Rust skills while unifying my JavaScript and Python experience into a production-grade toolkit for music metadata. It's built on a **single Rust core** that powers both a security-hardened DDEX XML parser library (`ddex-parser`) and a schema-driven builder library (`ddex-builder`). That core is exposed through **napi-rs** for Node/TypeScript, **PyO3** for Python and **wasm-bindgen** for WebAssembly, with a consistent API across languages and **pandas DataFrame** import and export for Python users. The project is deliberately "industry-shaped": it reads ERN 3.8.1, 3.8.2, 4.2 and 4.3 into a faithful **graph** model (in Rust) and a developer-friendly **flattened** view (in every language), and it writes ERN 3.8.2, 4.2 and 4.3 that validates against the official DDEX XSDs. Its guiding rule is to **never invent data**: absent values stay empty, and a build that lacks a value the standard requires fails with an error naming the field. Output is canonicalized by a custom specification, **DB-C14N/1.0**. The builder reads no clock or random source and uses no unordered iteration on the build path (enforced by clippy lints), so the same request and options produce byte-identical output with the same crate version; references the request leaves out are numbered in request order.
 
-Beyond the core implementation, this is a showcase of **software craftsmanship and platform thinking**. Correctness is checked rather than assumed. CI covers Rust, Node.js and Python 3.11–3.14, and every prebuilt binary for Linux, macOS and Windows is install-tested before release. The builder runs **preflight validation** on every build, and the parser ships a CLI for working with messages from the command line. Paired with my validator work (**DDEX Workbench**, which handles XSD validation and business rules), DDEX Suite covers both ends of a **Parse → Build** pipeline. Next come a built-in bridge from parsed messages to build requests for true **Parse → Modify → Build**, a semantic diff, and further supply-chain hardening. Already in place: `cargo-deny` runs in CI, and from 0.5.1 release artifacts are built in GitHub Actions with signed build-provenance attestations and SBOMs, verifiable with `gh attestation verify <file> --repo daddykev/ddex-suite`, provided the published files are the ones release-build produced. The goal is to show how interoperable components can be designed to be correct, safe and easy to adopt in real-world systems.
+Beyond the core implementation, this is a showcase of **software craftsmanship and platform thinking**. Correctness is checked rather than assumed. CI covers Rust, Node.js and Python 3.11–3.14, and every prebuilt binary for Linux, macOS and Windows is install-tested before release. The builder runs **preflight validation** on every build, and the parser ships a CLI for working with messages from the command line. Paired with my validator work (**DDEX Workbench**, which handles XSD validation and business rules), DDEX Suite covers both ends of a **Parse → Build** pipeline. A bridge from parsed messages to build requests (`BuildRequest::from_parsed`, Node `requestFromXml`, Python `request_from_xml`) gives **Parse → Modify → Build**, listing what the request cannot carry. Already in place: `cargo-deny` runs in CI, and from 0.5.1 release artifacts are built in GitHub Actions with signed build-provenance attestations and SBOMs, verifiable with `gh attestation verify <file> --repo daddykev/ddex-suite`, provided the published files are the ones release-build produced. The goal is to show how interoperable components can be designed to be correct, safe and easy to adopt in real-world systems.
 
 ## 🚧 Development Status
 
@@ -71,11 +72,13 @@ All packages are released together at the same version.
 ✅ **Text kept as written** - Values follow their XSD `whiteSpace` facet  
 ✅ **One parse path** - `parse()` uses the complete parser for every input size; streaming is opt-in and experimental  
 ✅ **Schema-valid builder output** - ERN 4.3, 4.2 and 3.8.2, validated against the official XSDs in CI; the WASM builder runs the core builder  
-✅ **Bindings that fail loudly** - Python raises `ImportError` without its native extension; Node parse options that had no effect throw  
+✅ **Bindings that fail loudly** - Python raises `ImportError` without its native extension; options that had no effect were removed  
 ✅ **Packages for every common platform** - abi3 wheels for Python 3.11+ and npm binaries for macOS, Linux and Windows  
 ✅ **Measured performance** - Criterion bench results in [PERFORMANCE.md](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md)
 
-🔄 **Next: v0.6.0** - Builder determinism, a conformance suite  
+✅ **Parse → Modify → Build** - `BuildRequest::from_parsed`, `requestFromXml`, `request_from_xml` (0.6.0, unreleased)  
+✅ **Only real results** - APIs that returned invented or placeholder results were removed (0.6.0, unreleased; see the [migration guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md))  
+🔄 **Next: v0.6.0** - release of the changes above  
 🎯 **Goal: v1.0.0** - Official stable release
 
 For detailed development progress and technical implementation details, see [blueprint.md](https://github.com/daddykev/ddex-suite/blob/main/blueprint.md).
@@ -210,8 +213,10 @@ interface JsRelease {
   tracks: JsTrack[]               // Fully resolved: ISRC, title, duration, artists, disc, position
 }
 ```
-The Rust equivalent is `ddex_core::models::flat::ParsedRelease`. There is no built-in
-conversion from a parsed message to a build request yet.
+The Rust equivalent is `ddex_core::models::flat::ParsedRelease`. `BuildRequest::from_parsed`
+(Rust), `requestFromXml` (Node.js) and `request_from_xml` (Python) map a parsed message to a
+build request; `unmapped` lists what the request cannot hold (P and C lines, contributors,
+images, ...).
 
 ## 📐 Canonical output and round trips
 
@@ -241,7 +246,7 @@ conversion from a parsed message to a build request yet.
   the 3.8.1 namespace and is not checked against an official XSD (none is available).
 - **Streaming**: `parse` reads the whole document. The Rust streaming APIs are
   experimental and opt-in, and read a subset of the fields. The parallel streaming
-  iterator does not currently scale with the thread count (planned for 0.6.0).
+  iterator does not currently scale with the thread count.
 
 Open bugs are listed in
 [KNOWN_ISSUES.md](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md).
@@ -265,10 +270,8 @@ Built as a monorepo with shared core components:
 └───────────────────────────────────────┘
 ```
 
-\* The parser and builder crates each have a CLI binary. The builder CLI's `build` command is a known stub: it
-writes a placeholder document, and its `--validate` never fails
-([KNOWN_ISSUES.md](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md)).
-Use the library or a binding to build.
+\* The parser and builder crates each have a CLI binary. The builder CLI's `build` runs
+`DDEXBuilder::build` with its preflight validation.
 
 ## 🔒 Security
 
@@ -321,6 +324,7 @@ Criterion benches on a GitHub-hosted runner (Intel Xeon, 4 vCPUs), release profi
 - [Blueprint](https://github.com/daddykev/ddex-suite/blob/main/blueprint.md)
 - [Changelog](https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md)
 - [0.5.1 release notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.1.md)
+- [0.6.0 migration guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md)
 - [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md)
 - [Known issues](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md)
 - [Report an issue](https://github.com/daddykev/ddex-suite/issues)
@@ -345,4 +349,4 @@ DDEX Suite is designed to complement [DDEX Workbench](https://ddex-workbench.org
 **Builder**: v0.5.1 on [npm](https://www.npmjs.com/package/ddex-builder), [PyPI](https://pypi.org/project/ddex-builder/) and [crates.io](https://crates.io/crates/ddex-builder)  
 **Core**: v0.5.1 on [crates.io](https://crates.io/crates/ddex-core)  
 **Suite Goal**: v1.0.0  
-**Last Updated**: November 22, 2026
+**Last Updated**: November 27, 2026

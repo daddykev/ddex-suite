@@ -5,10 +5,11 @@ It reads ERN 3.8.1, 3.8.2, 4.2 and 4.3 messages into a developer-friendly flat m
 a graph that follows the message structure. Node.js and Python bindings use the same
 parser: `npm install ddex-parser`, `pip install ddex-parser`.
 
-> **0.5.0 has breaking changes.** Text is kept exactly as written (no trimming), and
-> `parse` always uses the complete parser (it no longer switches to a streaming path above
-> 10 MB). The models gained new fields. See the
-> [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md).
+> **0.6.0 has breaking changes.** Stub and no-op APIs were removed (`FastStreamingParser`,
+> `SecurityConfig::relaxed()`, the unread `SecurityConfig` and `ParseOptions` fields),
+> every reader rejects a DOCTYPE, `sanity_check` reports an unrecognised version as
+> `None`, and quick-xml types are no longer part of the API. See the [0.6.0 migration
+> guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md).
 
 ## Installation
 
@@ -82,8 +83,8 @@ What you get:
 
 Every reader rejects a DOCTYPE (and with it any DTD or external entity, XXE) and
 references to undefined entities, so no entity is ever expanded. The default configuration
-(`SecurityConfig::strict()`) also limits element depth (100) and the number of references
-in text (100), and the parser never fetches from the network. It sets no input-size limit. The parser does not validate
+(`SecurityConfig::strict()`) also limits element depth (100), and the parser never fetches
+from the network. It sets no input-size limit. The parser does not validate
 against the DDEX XSD or the AVS business rules.
 
 ## Streaming
@@ -104,6 +105,7 @@ the size
 
 - Documentation: [docs.rs/ddex-parser](https://docs.rs/ddex-parser) and [ddex-suite.org](https://ddex-suite.org)
 - [Changelog](https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md)
+- [0.6.0 migration guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md)
 - [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md)
 - [Known issues](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md)
 - [Report an issue](https://github.com/daddykev/ddex-suite/issues)

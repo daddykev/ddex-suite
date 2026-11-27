@@ -13,10 +13,13 @@ with the same crate version; repeated builds are tested to be byte-identical.
 `MessageId` and `MessageCreatedDateTime` are required inputs. References the request leaves
 out are numbered in request order (`R1`, `A1`, `D1`, ...).
 
-> **0.5.0 has breaking changes.** ERN 3.8.2 output is now schema-valid, the WASM binding
-> runs this builder, and the request types gained fields (use `..Default::default()`).
-> See the
-> [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md).
+> **0.6.0 has breaking changes.** `Builder` is folded into `DDEXBuilder`, `BuildOptions`
+> is the one options type (`output` replaces `determinism`), `MessageId` and
+> `MessageCreatedDateTime` are required, absent request values are `None` (`Some("")`
+> fails), and APIs that returned no real results (update messages, the diff, presets, the
+> fidelity, verification and determinism-guarantee APIs, version conversion, schema
+> generation) were removed. See the [0.6.0 migration
+> guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md).
 
 ## Installation
 
@@ -146,9 +149,9 @@ assert!(bridge.unmapped.contains(&"header.message_thread_id".to_string()));
 
 - Text is XML-escaped on output. `build` checks the fields the target version requires;
   it does not validate the output against the XSD or the AVS business rules at runtime.
-- The `ddex-builder` command-line tool's `build` runs `DDEXBuilder::build`; its
-  `validate`, `watch` and `server` are not implemented. See the known issues. (The preset
-  APIs, update messages and the diff were removed in 0.6.0; see the changelog.)
+- The `ddex-builder` command-line tool's `build` runs `DDEXBuilder::build`. (Its
+  `validate`, `watch` and `server` subcommands, the preset APIs, update messages and the
+  diff were removed in 0.6.0; see the changelog.)
 
 ## Performance
 
@@ -160,6 +163,7 @@ about 0.56 ms per track plus 1–1.5 ms per message ([details](https://github.co
 
 - Documentation: [docs.rs/ddex-builder](https://docs.rs/ddex-builder) and [ddex-suite.org](https://ddex-suite.org)
 - [Changelog](https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md)
+- [0.6.0 migration guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md)
 - [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md)
 - [Known issues](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md)
 - [Report an issue](https://github.com/daddykev/ddex-suite/issues)

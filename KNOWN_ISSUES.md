@@ -114,11 +114,7 @@ They now fail, or report the value as not measured, instead:
 ## Parked
 
 - The parsed models leave some DDEX fields always empty (`Release.party_list`, `Resource.rights_controller`, `Party.party_role` / `Party.contact_details`, `DealTerms.distribution_channel` / `DealTerms.price_information`); these elements are not parsed in 0.6.0.
-- Node parser `src/index.ts`, `src/parser.ts`, `src/types.ts`, `src/wasm.d.ts` and `js/index.ts` are unbuilt, unpublished TypeScript wrappers that still declare `ParseOptions` and `parse_stream`; CI and `npm publish` use only `index.js` / `index.d.ts`.
-- `docs/python_parser_api.txt` (a pydoc dump) still lists `ParseOptions` and `ParseResult`, and `docs/DB-C14N-SPEC.md` describes a `preserve_comments` option.
-- KNOWN_ISSUES.md repeats the end of its "Not implemented in 0.5.x" section (from "They now fail, or report the value as not measured" on) a second time at the end of the file.
 - Consider #[non_exhaustive] on options/results/errors/enums before 1.0.
-- `packages/ddex-builder/README.md` "Scope" still says the CLI's `validate`, `watch` and `server` are not implemented; they were removed in 0.6.0 (PR 4b).
 - `ProprietaryIdRequest.value` is not checked: an empty value is written as an empty `ProprietaryId` (`packages/ddex-builder/src/generator/`), which the schema's non-empty string type rejects.
 - Golden-file output tests.
 - `packages/ddex-builder/bindings/node/streaming_test.js` (not run by `npm test`) passes snake_case header keys and `ern/43`, which `StreamingDdexBuilder.startMessage` does not accept.
@@ -127,3 +123,8 @@ They now fail, or report the value as not measured, instead:
 - Text line endings (XML 1.0 §2.11): only the DOM path (`transform/ern4.rs`) turns a literal CRLF / lone CR in character data into LF; the other readers (streaming, selective, xpath, multi-release, Stream mode) keep it as written.
 - The xpath, selective, multi-release, extension-capture, version-detection, working-streaming and zero-copy readers keep attribute values with their references unresolved (`&amp;` stays as written; the XML 1.0 whitespace normalization is applied); only the DOM path and the namespace detector resolve them.
 - The WASM builder binding has no parse-to-build bridge (`requestFromXml`): it does not include ddex-parser.
+- ddex-builder canonicalizer (`src/canonical/mod.rs`, `rules.rs`): the locked-prefix table rewrites the prefix of a DDEX namespace declaration but not the element and attribute names that use it, so input with other prefixes (e.g. `ernm:`) comes out not namespace-well-formed.
+- The `canonical` module rustdoc (`packages/ddex-builder/src/canonical/mod.rs`) still says text is trimmed and line endings normalized, and lists "comment preservation" as optional; the code keeps text as written and always keeps comments inside the root.
+- Node parser: `tsconfig.json`, the `build:ts` script and `scripts/test-npm-package.sh` (`npm run build:ts`) refer to the TypeScript sources deleted in 0.6.0; `npm run build:ts` now has no input.
+- Package docs outside the 0.6.0 claims sweep were not checked: `packages/ddex-parser/ENTRY_POINTS.md` (still says the npm and PyPI packages do not exist), `IMPLEMENTATION_STATUS.md`, `bindings/node/NATIVE_BINDINGS_REPORT.md`, `packages/ddex-builder/bindings/api-consistency-report.md`, and `docs/python_builder_api.txt` (a pydoc dump from an earlier version).
+- The Node and Python binding READMEs link to `ddex-suite.org/docs/parser` and `ddex-suite.org/docs/builder`, which do not exist (the site has `quick-start-parsing`, `build-request`, ...).

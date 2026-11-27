@@ -5,10 +5,10 @@ DDEX ERN XML parser for Python, a native extension over the Rust
 [DDEX Suite](https://github.com/daddykev/ddex-suite). It reads ERN 3.8.1, 3.8.2, 4.2 and
 4.3 messages and exports them to pandas DataFrames.
 
-> **0.5.0 has breaking changes.** Importing without the native extension raises
-> `ImportError` (the mock fallback is gone), text is kept exactly as written, and the
-> DataFrames gained columns. See the
-> [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md).
+> **0.6.0 has breaking changes.** `ParseOptions`, `ParseResult` and the native
+> `DDEXParser.from_dataframe` were removed (`parse(xml)` takes no options), `sanity_check`
+> has no `warnings`, and Python 3.11 or newer is required. See the [0.6.0 migration
+> guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md).
 
 ## Installation
 
@@ -75,6 +75,7 @@ the DDEX XSD or the AVS business rules.
 
 - Documentation: [ddex-suite.org](https://ddex-suite.org/docs/parser)
 - [Changelog](https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md)
+- [0.6.0 migration guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md)
 - [0.5.0 migration notes](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md)
 - [Known issues](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md)
 - [Report an issue](https://github.com/daddykev/ddex-suite/issues)

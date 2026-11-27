@@ -2,8 +2,8 @@
 
 The DDEX Suite builder for browsers and other WebAssembly hosts: the core Rust
 `ddex-builder` compiled to WebAssembly. It takes the same build request as the Rust core
-and the Node binding, applies the same validation, and writes the same deterministic,
-schema-valid XML (ERN 4.3, 4.2 and 3.8.2).
+and the Node binding, applies the same validation, and writes the same schema-valid XML
+(ERN 4.3, 4.2 and 3.8.2).
 
 ## Build
 

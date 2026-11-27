@@ -58,8 +58,10 @@ field. See [escaping and illegal characters](./build-request.mdx#escaping-and-il
   runtime. The parser reads what it understands and ignores the rest; the builder checks the
   fields the target version requires, and its output is validated against the official XSDs
   in CI ([ERN version support](./ern-versions.md)).
-- **No AVS / business-rule validation.** Allowed-value sets, identifier checksums and
-  partner rules are not enforced. Use [DDEX Workbench](https://ddex-workbench.org) for that.
+- **No AVS / business-rule validation.** Allowed-value sets and partner rules are not
+  enforced; use [DDEX Workbench](https://ddex-workbench.org) for that. (The builder's
+  preflight does check the UPC / EAN check digit: by default a failure is returned as a
+  warning, and with `PreflightLevel::Strict` it fails the build.)
 - **Well-formedness gaps.** A `]]>` sequence in character data is accepted (it is not
   well-formed XML) and the surrounding text is mangled; mismatched tags are reported as a
   generic XML error rather than a specific one.

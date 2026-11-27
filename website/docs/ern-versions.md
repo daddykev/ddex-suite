@@ -69,8 +69,8 @@ runs on every pull request:
   official 4.x samples are parsed, rebuilt as ERN 3.8.2 and validated; the cases the builder
   cannot express yet (videos, ISRC-only release IDs) are listed in
   [KNOWN_ISSUES.md](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md).
-- **Parser oracle.** The parser's output for the official 4.2 and 4.3 samples is compared,
-  track by track, with an independent `lxml` reading of the same files.
+- **Parser oracle.** An independent `lxml` reading compares flat fields (not attribute
+  values) on the 19 official 4.x samples.
 
 The XSDs check structure and types only. Neither CI nor the packages check the AVS business
 rules; [DDEX Workbench](https://ddex-workbench.org) validates those.

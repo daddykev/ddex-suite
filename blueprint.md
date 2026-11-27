@@ -1,3 +1,5 @@
+> Design document: it may describe features that aren't in the current release. See CHANGELOG.md and KNOWN_ISSUES.md.
+
 # DDEX Suite - Blueprint
 
 ## Project Overview
