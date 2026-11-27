@@ -35,7 +35,7 @@ keywords = ["ddex", "xml", "parser", "music", "metadata", "ern"]
 
 [project.urls]
 Homepage = "https://ddex-suite.org"
-Documentation = "https://ddex-suite.org/docs/parser"
+Documentation = "https://ddex-suite.org/docs/quick-start-parsing"
 Repository = "https://github.com/daddykev/ddex-suite"
 Changelog = "https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md"
 "Migration notes (0.5.0)" = "https://github.com/daddykev/ddex-suite/blob/main/dev-docs/RELEASE_NOTES_0.5.0.md"

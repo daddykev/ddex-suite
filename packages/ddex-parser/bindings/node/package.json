@@ -29,7 +29,6 @@
   "scripts": {
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
-    "build:ts": "tsc",
     "artifacts": "napi artifacts",
     "version": "napi version",
     "test": "node test-manual.js && node test-community-prs.js && node test-ern4-tracks.js && node test-parser-fields.js && node test-sanity-check.js && node test-undefined-entities.js && node test-types.js"

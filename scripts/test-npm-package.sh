@@ -10,11 +10,9 @@ echo "=================================="
 # Navigate to the node bindings
 cd packages/ddex-parser/bindings/node
 
-# Check if dist exists
-if [ ! -d "dist" ]; then
-  echo "⚠️  No dist folder found. Building TypeScript..."
-  npm run build:ts 2>/dev/null || npx tsc
-fi
+# The package is index.js and index.d.ts (package.json "files"); there is nothing to compile.
+# The native binary comes from the platform package (ddex-parser-<platform>), an optional
+# dependency installed from npm.
 
 # Copy LICENSE if needed
 if [ ! -f "LICENSE" ] && [ -f "../../../../LICENSE" ]; then
@@ -38,8 +36,8 @@ npm install ddex-parser-*.tgz --silent
 printf "✅ Testing CommonJS import... "
 cat > test-cjs.js << 'EOF'
 try {
-  const { DDEXParser } = require('ddex-parser');
-  const parser = new DDEXParser();
+  const { DdexParser } = require('ddex-parser');
+  const parser = new DdexParser();
   console.log('works');
   process.exit(0);
 } catch (e) {
@@ -53,7 +51,7 @@ printf "✅ Testing ES modules... "
 cat > test-esm.mjs << 'EOF'
 try {
   const mod = await import('ddex-parser');
-  const parser = new mod.DDEXParser();
+  const parser = new (mod.DdexParser ?? mod.default.DdexParser)();
   console.log('works');
   process.exit(0);
 } catch (e) {
