@@ -209,7 +209,6 @@ Comprehensive fuzzing targets for security testing:
 - `fuzz_xml_parsing` - XML input fuzzing with XXE attempts
 - `fuzz_json_parsing` - JSON depth and structure fuzzing  
 - `fuzz_builder_api` - API boundary fuzzing
-- `fuzz_version_conversion` - Version conversion fuzzing
 
 ### 7. Secure Cryptographic Operations
 

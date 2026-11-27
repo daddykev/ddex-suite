@@ -1,10 +1,8 @@
-//! The builder's XML readers (DB-C14N canonicalization and version conversion of an input
-//! document) fail on a reference to an undefined entity (`&foo;`; DTDs are not read), naming
+//! The builder's XML reader (DB-C14N canonicalization of an input document) fails on a reference to an undefined entity (`&foo;`; DTDs are not read), naming
 //! it with its line and column, instead of dropping or copying it. Input: the official
 //! sample `Samples43/1 Audio.xml` with `&foo;` injected into a text node or an attribute.
 
-use ddex_builder::versions::{ConverterResult, VersionConverter};
-use ddex_builder::{DdexVersion, DB_C14N};
+use ddex_builder::DB_C14N;
 
 const TITLE: &str = "<TitleText>Yume no Lullaby</TitleText>";
 const DISPLAY_TITLE: &str =
@@ -61,17 +59,4 @@ fn canonicalization_still_decodes_predefined_entities_and_character_references()
         out.contains("<TitleText>A &amp; B café café</TitleText>"),
         "{out}"
     );
-}
-
-#[test]
-fn version_conversion_fails_on_an_undefined_entity() {
-    let converter = VersionConverter::new();
-    for (xml, expected) in injected() {
-        match converter.convert(&xml, DdexVersion::Ern43, DdexVersion::Ern42, None) {
-            ConverterResult::Failure { error, .. } => {
-                assert!(error.contains(expected), "{error}")
-            }
-            ConverterResult::Success { .. } => panic!("conversion accepted {expected}"),
-        }
-    }
 }

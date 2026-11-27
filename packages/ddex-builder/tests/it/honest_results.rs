@@ -5,8 +5,7 @@
 
 use crate::ern4_support::{minimal_single, parse};
 use ddex_builder::round_trip::{verify_round_trip, RoundTripTester};
-use ddex_builder::versions::{ConverterResult, VersionConverter};
-use ddex_builder::{Builder, CanonicalizationAlgorithm, DdexVersion, FidelityOptions, DB_C14N};
+use ddex_builder::{Builder, CanonicalizationAlgorithm, FidelityOptions, DB_C14N};
 use ddex_core::models::flat::ParsedERNMessage;
 
 fn sample() -> String {
@@ -133,51 +132,6 @@ fn build_with_fidelity_counts_the_output() {
 #[test]
 fn info_strings_claim_nothing_that_is_not_there() {
     assert!(!ddex_builder::version_info().contains("Perfect"));
-}
-
-// ------------------------------------------------------------ versions
-
-#[test]
-fn version_conversion_writes_one_namespace_declaration_and_counts_elements() {
-    let xml = sample();
-    match VersionConverter::new().convert(&xml, DdexVersion::Ern43, DdexVersion::Ern42, None) {
-        ConverterResult::Success { xml: out, report } => {
-            let root = &out[out.find("<ern:NewReleaseMessage").unwrap()..];
-            let root = &root[..root.find('>').unwrap()];
-            assert_eq!(root.matches("xmlns:ern=").count(), 1, "{root}");
-            assert!(
-                root.contains(r#"xmlns:ern="http://ddex.net/xml/ern/42""#),
-                "{root}"
-            );
-            // Well-formed: every attribute once.
-            let mut reader = quick_xml::Reader::from_str(&out);
-            loop {
-                match reader.read_event().unwrap() {
-                    quick_xml::events::Event::Start(e) | quick_xml::events::Event::Empty(e) => {
-                        for attr in e.attributes() {
-                            attr.unwrap();
-                        }
-                    }
-                    quick_xml::events::Event::Eof => break,
-                    _ => {}
-                }
-            }
-            assert!(report.elements_converted > 0);
-            assert!(report.elements_converted <= xml.matches('<').count());
-            assert_eq!(report.elements_added, 0);
-        }
-        ConverterResult::Failure { error, .. } => panic!("{error}"),
-    }
-}
-
-#[test]
-fn version_detection_needs_evidence() {
-    let builder = Builder::new();
-    assert_eq!(
-        builder.detect_version(&sample()).unwrap(),
-        DdexVersion::Ern43
-    );
-    assert!(builder.detect_version("<html><body/></html>").is_err());
 }
 
 // ------------------------------------------------------------------ schema

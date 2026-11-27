@@ -137,8 +137,6 @@ They now fail, or report the value as not measured, instead:
   `canonicalization` other than `db_c14n` or `none`, and apply none of the other fidelity
   options (comments, extensions, attribute order, ...). Memory, extension count and
   canonicalization time are not measured (null).
-- ddex-builder versions: `ConversionPath::fidelity` (and `fidelity_percentage`) are not
-  measured (0.0) and no path is `production_ready`.
 - ddex-parser: `transform::version_adapter::VersionAdapter` methods return an error;
   `ParallelBenchmark::measure_parallel_speedup` returns an error (the parallel parser runs
   on one thread); `MultiReleaseParser`'s `message_header` is always `None`.

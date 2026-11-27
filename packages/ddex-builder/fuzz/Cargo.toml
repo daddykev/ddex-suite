@@ -40,9 +40,3 @@ test = false
 doc = false
 bench = false
 
-[[bin]]
-name = "fuzz_version_conversion"
-path = "fuzz_targets/fuzz_version_conversion.rs"
-test = false
-doc = false
-bench = false

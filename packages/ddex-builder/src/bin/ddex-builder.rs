@@ -1,14 +1,13 @@
 //! DDEX Builder CLI - Comprehensive command-line interface for DDEX XML processing
 //!
 //! This CLI builds DDEX XML from a JSON / YAML / TOML build request (`build`, which runs
-//! `DDEXBuilder::build` and its preflight validation) and converts between versions
-//! (`convert`). `validate`, `watch` and `server` are not implemented: they exit with an
-//! error (before 0.5.1 they printed made-up results).
+//! `DDEXBuilder::build` and its preflight validation). `validate`, `watch` and `server` are
+//! not implemented: they exit with an error (before 0.5.1 they printed made-up results).
+//! The `convert` and `schema` commands were removed in 0.6.0 (they gave made-up results).
 
 use clap::{Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::{generate, Shell};
 use console::style;
-use ddex_builder::schema::MessageProfile;
 use ddex_builder::*;
 use serde_json::Value as JsonValue;
 use std::fs;
@@ -20,7 +19,7 @@ use std::process;
 #[command(
     name = "ddex-builder",
     about = "DDEX Builder CLI - High-performance DDEX XML processing toolkit",
-    long_about = "A comprehensive command-line interface for building, converting, validating, and comparing DDEX XML files with DB-C14N/1.0 canonical output.",
+    long_about = "A comprehensive command-line interface for building DDEX XML files with DB-C14N/1.0 canonical output.",
     version = env!("CARGO_PKG_VERSION"),
     author = "Kevin Marques Moo"
 )]
@@ -46,12 +45,8 @@ struct Cli {
 enum Commands {
     /// Build DDEX XML from structured data
     Build(BuildCommand),
-    /// Convert DDEX XML between versions
-    Convert(ConvertCommand),
     /// Validate DDEX XML files
     Validate(ValidateCommand),
-    /// Generate schemas for validation
-    Schema(SchemaCommand),
     /// Watch files for changes and rebuild
     Watch(WatchCommand),
     /// Run HTTP API server for builder operations
@@ -92,33 +87,6 @@ struct BuildCommand {
 }
 
 #[derive(Args)]
-struct ConvertCommand {
-    /// Input DDEX XML file or '-' for stdin
-    #[arg(short, long)]
-    input: Option<PathBuf>,
-
-    /// Source DDEX version
-    #[arg(short, long, value_enum)]
-    from: DdexVersionArg,
-
-    /// Target DDEX version
-    #[arg(short, long, value_enum)]
-    to: DdexVersionArg,
-
-    /// Output file path or '-' for stdout
-    #[arg(short, long)]
-    output: Option<PathBuf>,
-
-    /// Generate conversion report
-    #[arg(long)]
-    report: Option<PathBuf>,
-
-    /// Enable lossy conversion warnings
-    #[arg(long)]
-    allow_lossy: bool,
-}
-
-#[derive(Args)]
 struct ValidateCommand {
     /// DDEX XML files to validate
     files: Vec<PathBuf>,
@@ -142,21 +110,6 @@ struct ValidateCommand {
     /// Stop at first validation error
     #[arg(long)]
     fail_fast: bool,
-}
-
-#[derive(Args)]
-struct SchemaCommand {
-    /// DDEX version for schema generation
-    #[arg(id = "ddex_version", long = "ddex-version", value_enum)]
-    version: DdexVersionArg,
-
-    /// Output format
-    #[arg(short, long, value_enum, default_value_t = SchemaFormat::Json)]
-    format: SchemaFormat,
-
-    /// Output file path or '-' for stdout
-    #[arg(short, long)]
-    output: Option<PathBuf>,
 }
 
 #[derive(Args)]
@@ -287,13 +240,6 @@ enum ValidateFormat {
     Junit,
 }
 
-#[derive(ValueEnum, Clone, Debug)]
-enum SchemaFormat {
-    Json,
-    Typescript,
-    Python,
-}
-
 impl From<DdexVersionArg> for DdexVersion {
     fn from(version: DdexVersionArg) -> Self {
         match version {
@@ -317,9 +263,7 @@ fn main() {
 
     let result = match cli.command {
         Commands::Build(cmd) => handle_build_command(cmd),
-        Commands::Convert(cmd) => handle_convert_command(cmd),
         Commands::Validate(cmd) => handle_validate_command(cmd),
-        Commands::Schema(cmd) => handle_schema_command(cmd),
         Commands::Watch(cmd) => handle_watch_command(cmd),
         Commands::Server(cmd) => handle_server_command(cmd),
         Commands::Completions(cmd) => handle_completions_command(cmd),
@@ -407,74 +351,8 @@ fn handle_build_command(cmd: BuildCommand) -> Result<(), Box<dyn std::error::Err
     Ok(())
 }
 
-fn handle_convert_command(cmd: ConvertCommand) -> Result<(), Box<dyn std::error::Error>> {
-    let input_xml = read_input_string(&cmd.input)?;
-
-    let builder = Builder::new();
-    let conversion_options = ConversionOptions {
-        detailed_reports: true,
-        preserve_unknown: cmd.allow_lossy,
-        preserve_comments: true,
-        ..Default::default()
-    };
-
-    let result = builder.convert_version(
-        &input_xml,
-        cmd.from.into(),
-        cmd.to.into(),
-        Some(conversion_options),
-    )?;
-
-    match result {
-        versions::ConverterResult::Success { xml, report } => {
-            // Write converted XML
-            write_output(&xml, &cmd.output)?;
-
-            // Generate report if requested
-            if let Some(report_path) = cmd.report {
-                let report_json = serde_json::to_string_pretty(&report)?;
-                fs::write(report_path, report_json)?;
-            }
-
-            if !is_quiet() {
-                println!("{} Conversion completed", style("✓").green());
-                println!("  From: {:?} → To: {:?}", cmd.from, cmd.to);
-                if !report.warnings.is_empty() {
-                    println!("  {} warnings generated", report.warnings.len());
-                }
-            }
-        }
-        versions::ConverterResult::Failure { error, report: _ } => {
-            return Err(format!("Conversion failed: {}", error).into());
-        }
-    }
-
-    Ok(())
-}
-
 fn handle_validate_command(_cmd: ValidateCommand) -> Result<(), Box<dyn std::error::Error>> {
     Err("`ddex-builder validate` is not implemented in 0.5.x: reading DDEX XML needs the parser; use `ddex-parser validate` (it reported every file as valid)".into())
-}
-
-fn handle_schema_command(cmd: SchemaCommand) -> Result<(), Box<dyn std::error::Error>> {
-    let profile = MessageProfile::AudioAlbum;
-    let generator = schema::SchemaGenerator::new(cmd.version.into(), profile);
-    let schema_result = generator.generate_complete_schema()?;
-    let schema_output = match cmd.format {
-        SchemaFormat::Json => serde_json::to_string_pretty(&schema_result.schema)?,
-        SchemaFormat::Typescript => generator.generate_typescript_types(&schema_result.schema)?,
-        SchemaFormat::Python => generator.generate_python_types(&schema_result.schema)?,
-    };
-
-    write_output(&schema_output, &cmd.output)?;
-
-    if !is_quiet() {
-        println!("{} Schema generated successfully", style("✓").green());
-        println!("  Format: {:?}", cmd.format);
-        println!("  Version: {:?}", cmd.version);
-    }
-
-    Ok(())
 }
 
 fn handle_watch_command(_cmd: WatchCommand) -> Result<(), Box<dyn std::error::Error>> {
