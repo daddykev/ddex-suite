@@ -212,7 +212,7 @@ fn cli_build_writes_real_xml_and_the_stubs_fail() {
 
     // An incomplete request fails preflight validation instead of printing success.
     let mut incomplete = minimal_single("4.3");
-    incomplete.releases[0].tracks[0].isrc.clear();
+    incomplete.releases[0].tracks[0].isrc = None;
     std::fs::write(&request, serde_json::to_string(&incomplete).unwrap()).unwrap();
     let run = cli(&[
         "build",

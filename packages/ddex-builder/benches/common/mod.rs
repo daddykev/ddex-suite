@@ -23,13 +23,13 @@ pub fn request_with_tracks(track_count: usize) -> BuildRequest {
         vec![]
     } else {
         vec![ReleaseRequest {
-            release_id: "R0001".to_string(),
+            release_id: Some("R0001".to_string()),
             release_reference: Some("R1".to_string()),
             title: vec![LocalizedStringRequest {
                 text: format!("Benchmark Album ({track_count} tracks)"),
                 language_code: Some("en".to_string()),
             }],
-            artist: "Benchmark Artist".to_string(),
+            artist: Some("Benchmark Artist".to_string()),
             label: Some("Benchmark Label".to_string()),
             release_date: Some("2024-01-01".to_string()),
             upc: Some("123456789012".to_string()),
@@ -37,10 +37,10 @@ pub fn request_with_tracks(track_count: usize) -> BuildRequest {
                 .map(|i| TrackRequest {
                     track_id: format!("T{:04}", i + 1),
                     resource_reference: Some(format!("A{}", i + 1)),
-                    isrc: format!("USRC1{:07}", i + 1),
+                    isrc: Some(format!("USRC1{:07}", i + 1)),
                     title: format!("Track {}", i + 1),
                     duration: format!("PT{}M{}S", 2 + i % 4, (i * 7) % 60),
-                    artist: "Benchmark Artist".to_string(),
+                    artist: Some("Benchmark Artist".to_string()),
                     resource_type: Some("MusicalWorkSoundRecording".into()),
                     parental_warning_type: Some("NotExplicit".to_string()),
                     sequence_number: Some(i as u32 + 1),

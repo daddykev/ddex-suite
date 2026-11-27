@@ -92,12 +92,12 @@ fn release_reference(release: &ReleaseRequest) -> String {
     release
         .release_reference
         .clone()
-        .unwrap_or_else(|| format!("R{}", release.release_id))
+        .unwrap_or_else(|| format!("R{}", release.release_id.as_deref().unwrap_or_default()))
 }
 
-/// The release's `ReferenceTitle`: its first non-empty title.
+/// The release's `ReferenceTitle`: its first title.
 fn reference_title(release: &ReleaseRequest) -> Option<&crate::builder::LocalizedStringRequest> {
-    release.title.iter().find(|t| !t.text.is_empty())
+    release.title.first()
 }
 
 /// Generate the AST of an ERN 3.8.x message, or fail listing every schema requirement the
@@ -285,6 +285,9 @@ impl Checker {
             self.p
                 .missing("Release/ReferenceTitle", &format!("{at}.title"));
         }
+        self.p.title_texts(&release.title, at);
+        self.p
+            .optional_text(&release.artist, &format!("{at}.artist"));
         if let Some(t) = &release.release_type {
             self.p.avs_value(t, &format!("{at}.release_type"));
         }
@@ -355,7 +358,9 @@ impl Checker {
         if let Some(t) = &track.resource_type {
             self.p.avs_value(t, &format!("{at}.resource_type"));
         }
-        if track.isrc.is_empty() && track.proprietary_ids.is_empty() {
+        self.p.optional_text(&track.isrc, &format!("{at}.isrc"));
+        self.p.optional_text(&track.artist, &format!("{at}.artist"));
+        if track.isrc.is_none() && track.proprietary_ids.is_empty() {
             self.p.missing(
                 "an identifier in SoundRecording/SoundRecordingId",
                 &format!("{at}.isrc or {at}.proprietary_ids"),
@@ -465,6 +470,10 @@ impl Checker {
         if let Some(d) = &terms.end_date {
             self.p.date(d, &format!("{at}.end_date"));
         }
+        self.p.optional_text(
+            &terms.commercial_model_type,
+            &format!("{at}.commercial_model_type"),
+        );
     }
 }
 
@@ -549,8 +558,8 @@ fn sound_recording(track: &TrackRequest, reference: &str) -> Element {
         element.add_child(avs_element("SoundRecordingType", t));
     }
     let mut id = Element::new("SoundRecordingId");
-    if !track.isrc.is_empty() {
-        id.add_child(text_element("ISRC", &track.isrc));
+    if let Some(isrc) = &track.isrc {
+        id.add_child(text_element("ISRC", isrc));
     }
     for p in &track.proprietary_ids {
         id.add_child(
@@ -566,9 +575,9 @@ fn sound_recording(track: &TrackRequest, reference: &str) -> Element {
 
     let mut details = Element::new("SoundRecordingDetailsByTerritory");
     details.add_child(text_element("TerritoryCode", WORLDWIDE));
-    if !track.artist.is_empty() {
-        details.add_child(display_artist(&track.artist, track.artist_role.as_ref()));
-        details.add_child(text_element("DisplayArtistName", &track.artist));
+    if let Some(artist) = &track.artist {
+        details.add_child(display_artist(artist, track.artist_role.as_ref()));
+        details.add_child(text_element("DisplayArtistName", artist));
     }
     if let Some(pw) = &track.parental_warning_type {
         details.add_child(text_element("ParentalWarningType", pw));
@@ -635,13 +644,13 @@ fn main_release(release: &ReleaseRequest) -> Element {
 
     let mut details = Element::new("ReleaseDetailsByTerritory");
     details.add_child(text_element("TerritoryCode", WORLDWIDE));
-    if !release.artist.is_empty() {
-        details.add_child(text_element("DisplayArtistName", &release.artist));
+    if let Some(artist) = &release.artist {
+        details.add_child(text_element("DisplayArtistName", artist));
     }
     if let Some(label) = &release.label {
         details.add_child(text_element("LabelName", label));
     }
-    for title in release.title.iter().filter(|t| !t.text.is_empty()) {
+    for title in &release.title {
         let mut e = Element::new("Title");
         if let Some(lang) = &title.language_code {
             e.attributes
@@ -652,11 +661,8 @@ fn main_release(release: &ReleaseRequest) -> Element {
         e.add_child(text_element("TitleText", &title.text));
         details.add_child(e);
     }
-    if !release.artist.is_empty() {
-        details.add_child(display_artist(
-            &release.artist,
-            release.artist_role.as_ref(),
-        ));
+    if let Some(artist) = &release.artist {
+        details.add_child(display_artist(artist, release.artist_role.as_ref()));
     }
     if let Some(pw) = &release.parental_warning_type {
         details.add_child(text_element("ParentalWarningType", pw));
@@ -713,11 +719,8 @@ fn deal(deal: &DealRequest) -> Element {
         return element;
     }
     let mut terms_element = Element::new("DealTerms");
-    if !terms.commercial_model_type.is_empty() {
-        terms_element.add_child(text_element(
-            "CommercialModelType",
-            &terms.commercial_model_type,
-        ));
+    if let Some(model) = &terms.commercial_model_type {
+        terms_element.add_child(text_element("CommercialModelType", model));
     }
     let mut usage = Element::new("Usage");
     for u in &terms.use_types {

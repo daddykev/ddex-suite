@@ -199,7 +199,7 @@ fn request_from_parsed_38(parsed: &ParsedERNMessage, version: &str) -> BuildRequ
                 TrackRequest {
                     track_id: t.track_id.clone(),
                     resource_reference: Some(t.track_id.clone()),
-                    isrc: t.isrc.clone().unwrap_or_default(),
+                    isrc: t.isrc.clone().filter(|s| !s.is_empty()),
                     title: t.title.clone().unwrap_or_default(),
                     duration: t
                         .duration
@@ -210,7 +210,7 @@ fn request_from_parsed_38(parsed: &ParsedERNMessage, version: &str) -> BuildRequ
                         .first()
                         .and_then(|a| a.display_artist_name.first())
                         .map(|n| n.text.clone())
-                        .unwrap_or_default(),
+                        .filter(|s| !s.is_empty()),
                     resource_kind: match resource.resource_type {
                         ResourceType::Video => ResourceKind::Video,
                         _ => ResourceKind::SoundRecording,
@@ -222,10 +222,13 @@ fn request_from_parsed_38(parsed: &ParsedERNMessage, version: &str) -> BuildRequ
             })
             .collect();
         releases.push(ReleaseRequest {
-            release_id: String::new(),
+            release_id: None,
             release_reference: Some(release.release_reference.clone()),
             title: texts(&release.release_title),
-            artist: flat_release.display_artist.clone().unwrap_or_default(),
+            artist: flat_release
+                .display_artist
+                .clone()
+                .filter(|s| !s.is_empty()),
             tracks,
             release_type: release
                 .release_type
@@ -247,7 +250,7 @@ fn request_from_parsed_38(parsed: &ParsedERNMessage, version: &str) -> BuildRequ
                     .commercial_model_type
                     .first()
                     .map(commercial_model_name)
-                    .unwrap_or_default(),
+                    .filter(|s| !s.is_empty()),
                 territory_code: d.deal_terms.territory_code.clone(),
                 start_date: d
                     .deal_terms

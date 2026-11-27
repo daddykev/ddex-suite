@@ -176,7 +176,7 @@ impl PreflightValidator {
                 });
             }
 
-            if release.artist.is_empty() {
+            if release.artist.as_deref().unwrap_or_default().is_empty() {
                 result.warnings.push(ValidationWarning {
                     code: "MISSING_ARTIST".to_string(),
                     field: "artist".to_string(),
@@ -220,11 +220,12 @@ impl PreflightValidator {
 
         // Validate ISRC
         if self.config.validate_identifiers {
-            if !self.validate_isrc(&track.isrc) {
+            let isrc = track.isrc.as_deref().unwrap_or_default();
+            if !self.validate_isrc(isrc) {
                 result.errors.push(ValidationError {
                     code: "INVALID_ISRC".to_string(),
                     field: "isrc".to_string(),
-                    message: format!("Invalid ISRC format: {}", track.isrc),
+                    message: format!("Invalid ISRC format: {}", isrc),
                     location: format!("{}/isrc", location),
                 });
             }

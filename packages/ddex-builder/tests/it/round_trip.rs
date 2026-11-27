@@ -9,9 +9,9 @@ use ddex_builder::BuildRequest;
 
 fn round_trip_track(n: u32, isrc: &str, title: &str, duration: &str) -> TrackRequest {
     TrackRequest {
-        isrc: isrc.to_string(),
+        isrc: Some(isrc.to_string()),
         duration: duration.to_string(),
-        artist: "Round Trip Artist".to_string(),
+        artist: Some("Round Trip Artist".to_string()),
         ..track(n, title)
     }
 }
@@ -31,7 +31,7 @@ fn original_request(version: &str) -> BuildRequest {
         releases: vec![ReleaseRequest {
             release_reference: Some("R1".to_string()),
             title: crate::ern4_support::text("Round Trip Album"),
-            artist: "Round Trip Artist".to_string(),
+            artist: Some("Round Trip Artist".to_string()),
             label: Some("Round Trip Records".to_string()),
             tracks: vec![
                 round_trip_track(1, "USRT12400001", "Track One", "PT3M42S"),

@@ -130,3 +130,6 @@ They now fail, or report the value as not measured, instead:
 - Node parser `src/index.ts`, `src/parser.ts`, `src/types.ts`, `src/wasm.d.ts` and `js/index.ts` are unbuilt, unpublished TypeScript wrappers that still declare `ParseOptions` and `parse_stream`; CI and `npm publish` use only `index.js` / `index.d.ts`.
 - `docs/python_parser_api.txt` (a pydoc dump) still lists `ParseOptions` and `ParseResult`, and `docs/DB-C14N-SPEC.md` describes a `preserve_comments` option.
 - KNOWN_ISSUES.md repeats the end of its "Not implemented in 0.5.x" section (from "They now fail, or report the value as not measured" on) a second time at the end of the file.
+- Consider #[non_exhaustive] on options/results/errors/enums before 1.0.
+- `packages/ddex-builder/README.md` "Scope" still says the CLI's `validate`, `watch` and `server` are not implemented; they were removed in 0.6.0 (PR 4b).
+- `ProprietaryIdRequest.value` is not checked: an empty value is written as an empty `ProprietaryId` (`packages/ddex-builder/src/generator/`), which the schema's non-empty string type rejects.

@@ -46,19 +46,19 @@ fn main() -> Result<(), ddex_builder::BuildError> {
         avs_version_id: Some("12".to_string()),
         language_and_script_code: Some("en".to_string()),
         releases: vec![ReleaseRequest {
-            release_id: "A1-ABCDE-0000000001-M".to_string(),
+            release_id: Some("A1-ABCDE-0000000001-M".to_string()),
             title: text("Example Single"),
-            artist: "Example Artist".to_string(),
+            artist: Some("Example Artist".to_string()),
             label: Some("Example Label".to_string()),
             release_type: Some("Single".into()),
             genre: Some("Pop".to_string()),
             parental_warning_type: Some("NotExplicit".to_string()),
             tracks: vec![TrackRequest {
                 track_id: "T1".to_string(),
-                isrc: "ZZ0000000001".to_string(),
+                isrc: Some("ZZ0000000001".to_string()),
                 title: "Example Track".to_string(),
                 duration: "PT3M42S".to_string(),
-                artist: "Example Artist".to_string(),
+                artist: Some("Example Artist".to_string()),
                 resource_type: Some("MusicalWorkSoundRecording".into()),
                 parental_warning_type: Some("NotExplicit".to_string()),
                 ..Default::default()
@@ -223,17 +223,17 @@ fn main() {
         avs_version_id: Some("12".to_string()),
         language_and_script_code: Some("en".to_string()),
         releases: vec![ReleaseRequest {
-            release_id: "A1-ABCDE-0000000001-M".to_string(),
+            release_id: Some("A1-ABCDE-0000000001-M".to_string()),
             title: text("Example Single"),
-            artist: "Example Artist".to_string(),
+            artist: Some("Example Artist".to_string()),
             label: Some("Example Label".to_string()),
             parental_warning_type: Some("NotExplicit".to_string()),
             tracks: vec![TrackRequest {
                 track_id: "T1".to_string(),
-                isrc: "ZZ0000000001".to_string(),
+                isrc: Some("ZZ0000000001".to_string()),
                 title: "Example Track".to_string(),
                 duration: "PT3M42S".to_string(),
-                artist: "Example Artist".to_string(),
+                artist: Some("Example Artist".to_string()),
                 resource_type: Some("MusicalWorkSoundRecording".into()),
                 parental_warning_type: Some("NotExplicit".to_string()),
                 ..Default::default()
@@ -405,13 +405,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|track| TrackRequest {
             track_id: track.track_id.clone(),
             resource_reference: Some(track.track_id.clone()),
-            isrc: track.isrc.clone().unwrap_or_default(),
+            isrc: track.isrc.clone().filter(|s| !s.is_empty()),
             title: track.title.clone().unwrap_or_default(),
             duration: track
                 .duration
                 .map(|d| format!("PT{}M{}S", d.as_secs() / 60, d.as_secs() % 60))
                 .unwrap_or_default(),
-            artist: track.display_artist.clone().unwrap_or_default(),
+            artist: track.display_artist.clone().filter(|s| !s.is_empty()),
             // The flat model does not carry the resource's DDEX Type, so set it
             resource_type: Some("MusicalWorkSoundRecording".into()),
             parental_warning_type: track.parental_warning.clone(),
@@ -432,7 +432,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             upc: release.identifiers.upc.clone(), // written as ReleaseId/ICPN
             // Modify: a new title
             title: text(&format!("{title} (Remastered)")),
-            artist: release.display_artist.clone().unwrap_or_default(),
+            artist: release.display_artist.clone().filter(|s| !s.is_empty()),
             label: release.label_name.clone(),
             release_type: Some(release.release_type.as_str().into()),
             genre: release.genre.clone(),
@@ -479,7 +479,6 @@ const request = {
   avs_version_id: '12',
   language_and_script_code: 'en',
   releases: [{
-    release_id: '',
     upc: release.icpn, // written as ReleaseId/ICPN
     // Modify: a new title
     title: [{ text: `${release.title} (Remastered)` }],

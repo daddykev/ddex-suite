@@ -54,13 +54,13 @@ fn create_test_build_request_base() -> BuildRequest {
         version: "ern/43".to_string(),
         profile: Some("BasicProfile".to_string()),
         releases: vec![ReleaseRequest {
-            release_id: "REL001".to_string(),
+            release_id: Some("REL001".to_string()),
             release_reference: Some("REL001".to_string()),
             title: vec![LocalizedStringRequest {
                 text: "Test Album".to_string(),
                 language_code: None,
             }],
-            artist: "Test Artist".to_string(),
+            artist: Some("Test Artist".to_string()),
             label: None,
             release_date: Some("2024-01-01".to_string()),
             upc: None,
@@ -71,7 +71,7 @@ fn create_test_build_request_base() -> BuildRequest {
         deals: vec![DealRequest {
             deal_reference: Some("DEAL001".to_string()),
             deal_terms: ddex_builder::builder::DealTerms {
-                commercial_model_type: "FreeOfChargeModel".to_string(),
+                commercial_model_type: Some("FreeOfChargeModel".to_string()),
                 territory_code: vec!["Worldwide".to_string()],
                 start_date: Some("2024-01-01".to_string()),
                 ..Default::default()
@@ -139,13 +139,13 @@ fn create_complex_build_request_base() -> BuildRequest {
         version: "ern/43".to_string(),
         profile: Some("ComplexProfile".to_string()),
         releases: vec![ReleaseRequest {
-            release_id: "REL001".to_string(),
+            release_id: Some("REL001".to_string()),
             release_reference: Some("REL001".to_string()),
             title: vec![LocalizedStringRequest {
                 text: "Complex Test Album".to_string(),
                 language_code: None,
             }],
-            artist: "Test Artist".to_string(),
+            artist: Some("Test Artist".to_string()),
             label: Some("Test Label".to_string()),
             release_date: Some("2024-01-01".to_string()),
             upc: Some("123456789012".to_string()),
@@ -157,7 +157,7 @@ fn create_complex_build_request_base() -> BuildRequest {
             .map(|i| DealRequest {
                 deal_reference: Some(format!("DEAL{:03}", i)),
                 deal_terms: ddex_builder::builder::DealTerms {
-                    commercial_model_type: "FreeOfChargeModel".to_string(),
+                    commercial_model_type: Some("FreeOfChargeModel".to_string()),
                     territory_code: vec!["Worldwide".to_string()],
                     start_date: Some("2024-01-01".to_string()),
                     ..Default::default()
@@ -396,7 +396,7 @@ fn test_unicode_normalization_determinism() {
 
     // Add Unicode text with different normalization forms
     request.releases[0].title[0].text = "Café Münchën".to_string(); // Contains combining characters
-    request.releases[0].artist = "Ångström & Naïve".to_string(); // Various accented characters
+    request.releases[0].artist = Some("Ångström & Naïve".to_string()); // Various accented characters
 
     let builder = DDEXBuilder::new();
 
@@ -427,13 +427,13 @@ fn test_large_dataset_determinism() {
         .map(|i| TrackRequest {
             track_id: format!("TRK{:04}", i),
             resource_reference: Some(format!("A{:04}", i)),
-            isrc: format!("USRT1{:07}", i),
+            isrc: Some(format!("USRT1{:07}", i)),
             title: format!(
                 "Track {} with very long title that contains lots of metadata and information",
                 i
             ),
             duration: format!("PT{}M{}S", 2 + i % 4, (i * 7) % 60),
-            artist: format!("Artist {}", i % 10),
+            artist: Some(format!("Artist {}", i % 10)),
             ..Default::default()
         })
         .collect();

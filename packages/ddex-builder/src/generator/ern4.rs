@@ -218,11 +218,12 @@ impl Checker {
             self.p.avs_value(t, &format!("{at}.release_type"));
         }
         self.p.release_identifier(release, at);
-        if release.title.iter().all(|t| t.text.is_empty()) {
+        if release.title.is_empty() {
             self.p
                 .missing("Release/DisplayTitleText", &format!("{at}.title"));
         }
-        self.p.require_text(
+        self.p.title_texts(&release.title, at);
+        self.p.require_some_text(
             &release.artist,
             "Release/DisplayArtistName",
             &format!("{at}.artist"),
@@ -297,7 +298,8 @@ impl Checker {
         if let Some(t) = &track.resource_type {
             self.p.avs_value(t, &format!("{at}.resource_type"));
         }
-        if track.isrc.is_empty() && track.proprietary_ids.is_empty() {
+        self.p.optional_text(&track.isrc, &format!("{at}.isrc"));
+        if track.isrc.is_none() && track.proprietary_ids.is_empty() {
             self.p.missing(
                 &format!("an identifier in {kind} ResourceId"),
                 &format!("{at}.isrc or {at}.proprietary_ids"),
@@ -316,7 +318,7 @@ impl Checker {
             &format!("{kind}/DisplayTitleText"),
             &format!("{at}.title"),
         );
-        self.p.require_text(
+        self.p.require_some_text(
             &track.artist,
             &format!("{kind}/DisplayArtistName"),
             &format!("{at}.artist"),
@@ -388,6 +390,10 @@ impl Checker {
         if let Some(d) = &deal.deal_terms.end_date {
             self.p.date(d, &format!("{at}.deal_terms.end_date"));
         }
+        self.p.optional_text(
+            &deal.deal_terms.commercial_model_type,
+            &format!("{at}.deal_terms.commercial_model_type"),
+        );
     }
 }
 
@@ -411,12 +417,18 @@ impl PartyTable {
         let mut table = Self {
             parties: Vec::new(),
         };
-        table.add(PartyKind::Artist, &release.artist);
+        table.add(
+            PartyKind::Artist,
+            release.artist.as_deref().unwrap_or_default(),
+        );
         if let Some(label) = &release.label {
             table.add(PartyKind::Label, label);
         }
         for track in &release.tracks {
-            table.add(PartyKind::Artist, &track.artist);
+            table.add(
+                PartyKind::Artist,
+                track.artist.as_deref().unwrap_or_default(),
+            );
             if let Some(label) = track
                 .track_release
                 .as_ref()
@@ -539,8 +551,8 @@ fn resource(track: &TrackRequest, parties: &PartyTable, version: Ern4Version) ->
     }
 
     let mut resource_id = Element::new("ResourceId");
-    if !track.isrc.is_empty() {
-        resource_id.add_child(text_element("ISRC", &track.isrc));
+    if let Some(isrc) = &track.isrc {
+        resource_id.add_child(text_element("ISRC", isrc));
     }
     for p in &track.proprietary_ids {
         resource_id.add_child(
@@ -560,10 +572,11 @@ fn resource(track: &TrackRequest, parties: &PartyTable, version: Ern4Version) ->
     let mut display_title = Element::new("DisplayTitle");
     display_title.add_child(text_element("TitleText", &track.title));
     element.add_child(display_title);
-    element.add_child(text_element("DisplayArtistName", &track.artist));
+    let track_artist = track.artist.as_deref().unwrap_or_default();
+    element.add_child(text_element("DisplayArtistName", track_artist));
     element.add_child(display_artist(
         parties,
-        &track.artist,
+        track_artist,
         track.artist_role.as_ref(),
     ));
     element.add_child(text_element("Duration", &track.duration));
@@ -586,11 +599,7 @@ fn release_list(release: &ReleaseRequest, parties: &PartyTable) -> Element {
     // Exactly one ReleaseId: release_ids, else release_id as GRid and upc as ICPN.
     element.add_child(release_id(&release_identifiers(release)));
 
-    let titles: Vec<_> = release
-        .title
-        .iter()
-        .filter(|t| !t.text.is_empty())
-        .collect();
+    let titles: Vec<_> = release.title.iter().collect();
     for title in &titles {
         let mut e = text_element("DisplayTitleText", &title.text);
         if let Some(lang) = &title.language_code {
@@ -608,10 +617,11 @@ fn release_list(release: &ReleaseRequest, parties: &PartyTable) -> Element {
         e.add_child(text_element("TitleText", &title.text));
         element.add_child(e);
     }
-    element.add_child(text_element("DisplayArtistName", &release.artist));
+    let release_artist = release.artist.as_deref().unwrap_or_default();
+    element.add_child(text_element("DisplayArtistName", release_artist));
     element.add_child(display_artist(
         parties,
-        &release.artist,
+        release_artist,
         release.artist_role.as_ref(),
     ));
     if let Some(label) = &release.label {
@@ -682,11 +692,8 @@ fn deal(deal: &DealRequest) -> Element {
         validity.add_child(text_element("EndDate", end));
     }
     terms_element.add_child(validity);
-    if !terms.commercial_model_type.is_empty() {
-        terms_element.add_child(text_element(
-            "CommercialModelType",
-            &terms.commercial_model_type,
-        ));
+    if let Some(model) = &terms.commercial_model_type {
+        terms_element.add_child(text_element("CommercialModelType", model));
     }
     for u in &terms.use_types {
         terms_element.add_child(text_element("UseType", u));

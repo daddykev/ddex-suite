@@ -37,13 +37,13 @@ fn test_audio_album_golden() {
         version: "4.3".to_string(),
         profile: Some("AudioAlbum".to_string()),
         releases: vec![ReleaseRequest {
-            release_id: "REL001".to_string(),
+            release_id: Some("REL001".to_string()),
             release_reference: Some("R1".to_string()),
             title: vec![LocalizedStringRequest {
                 text: "Test Album".to_string(),
                 language_code: Some("en".to_string()),
             }],
-            artist: "Test Artist".to_string(),
+            artist: Some("Test Artist".to_string()),
             label: Some("Test Label".to_string()),
             release_date: Some("2024-01-01".to_string()),
             upc: Some("123456789014".to_string()),
@@ -51,19 +51,19 @@ fn test_audio_album_golden() {
                 TrackRequest {
                     track_id: "TRK001".to_string(),
                     resource_reference: Some("A1".to_string()),
-                    isrc: "USRC12345678".to_string(),
+                    isrc: Some("USRC12345678".to_string()),
                     title: "Track One".to_string(),
                     duration: "PT3M45S".to_string(),
-                    artist: "Test Artist".to_string(),
+                    artist: Some("Test Artist".to_string()),
                     ..Default::default()
                 },
                 TrackRequest {
                     track_id: "TRK002".to_string(),
                     resource_reference: Some("A2".to_string()),
-                    isrc: "USRC12345679".to_string(),
+                    isrc: Some("USRC12345679".to_string()),
                     title: "Track Two".to_string(),
                     duration: "PT4M20S".to_string(),
-                    artist: "Test Artist feat. Guest".to_string(),
+                    artist: Some("Test Artist feat. Guest".to_string()),
                     ..Default::default()
                 },
             ],
@@ -125,7 +125,7 @@ fn test_preflight_validation() {
 
     // Invalid ISRC
     let mut request = create_test_request();
-    request.releases[0].tracks[0].isrc = "INVALID".to_string();
+    request.releases[0].tracks[0].isrc = Some("INVALID".to_string());
 
     let options = BuildOptions {
         preflight_level: ddex_builder::preflight::PreflightLevel::Strict,
@@ -229,13 +229,13 @@ fn create_test_request_base() -> BuildRequest {
         version: "4.3".to_string(),
         profile: Some("AudioAlbum".to_string()),
         releases: vec![ReleaseRequest {
-            release_id: "REL001".to_string(),
+            release_id: Some("REL001".to_string()),
             release_reference: Some("R1".to_string()),
             title: vec![LocalizedStringRequest {
                 text: "Test Release".to_string(),
                 language_code: Some("en".to_string()),
             }],
-            artist: "Test Artist".to_string(),
+            artist: Some("Test Artist".to_string()),
             label: Some("Test Label".to_string()),
             release_date: Some("2024-01-01".to_string()),
             upc: Some("123456789014".to_string()),
@@ -243,19 +243,19 @@ fn create_test_request_base() -> BuildRequest {
                 TrackRequest {
                     track_id: "TRK001".to_string(),
                     resource_reference: Some("A1".to_string()),
-                    isrc: "USRC12345678".to_string(),
+                    isrc: Some("USRC12345678".to_string()),
                     title: "Test Track".to_string(),
                     duration: "PT3M30S".to_string(),
-                    artist: "Test Artist".to_string(),
+                    artist: Some("Test Artist".to_string()),
                     ..Default::default()
                 },
                 TrackRequest {
                     track_id: "TRK002".to_string(),
                     resource_reference: Some("A2".to_string()),
-                    isrc: "USRC12345679".to_string(),
+                    isrc: Some("USRC12345679".to_string()),
                     title: "Another Track".to_string(),
                     duration: "PT4M00S".to_string(),
-                    artist: "Test Artist".to_string(),
+                    artist: Some("Test Artist".to_string()),
                     ..Default::default()
                 },
             ],

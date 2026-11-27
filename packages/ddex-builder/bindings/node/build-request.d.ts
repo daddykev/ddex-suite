@@ -77,11 +77,13 @@ export interface TrackRelease {
 export interface Track {
   track_id: string
   resource_reference?: string | null
-  isrc: string
+  /** Left out (or null): no ISRC; the track then needs `proprietary_ids` */
+  isrc?: string | null
   title: string
   /** ISO 8601 duration, e.g. `PT3M45S` */
   duration: string
-  artist: string
+  /** ERN 4.x: required; ERN 3.8.x: left out (or null) writes no display artist */
+  artist?: string | null
   /** ERN 4.x: `SoundRecording` (default) or `Video` */
   resource_kind?: 'SoundRecording' | 'Video'
   /** ERN 4.x (required): the resource's DDEX `Type`, e.g. `MusicalWorkSoundRecording` */
@@ -97,12 +99,12 @@ export interface Track {
 }
 
 export interface Release {
-  /** Written as `ReleaseId/GRid` unless `release_ids` is set (ERN 4.x) */
-  release_id: string
+  /** Written as `ReleaseId/GRid` unless `release_ids` is set (ERN 4.x); left out (or null): no GRid */
+  release_id?: string | null
   release_reference?: string | null
   title: LocalizedString[]
-  /** Main artist (ERN 4.x: `DisplayArtistName` and a `MainArtist` `DisplayArtist`) */
-  artist: string
+  /** Main artist (ERN 4.x: required, `DisplayArtistName` and a `MainArtist` `DisplayArtist`; ERN 3.8.x: optional) */
+  artist?: string | null
   /** ERN 4.x (required): label name, referenced by `ReleaseLabelReference` */
   label?: string | null
   release_date?: string | null
@@ -124,8 +126,8 @@ export interface Release {
 export interface Deal {
   deal_reference?: string | null
   deal_terms: {
-    /** ERN 4.x: omitted when empty */
-    commercial_model_type: string
+    /** Left out (or null): no `CommercialModelType` */
+    commercial_model_type?: string | null
     territory_code: string[]
     /** YYYY-MM-DD (ERN 4.x: required) */
     start_date?: string | null

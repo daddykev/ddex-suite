@@ -63,7 +63,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Display album information for user confirmation
     println!("\n📀 Album Information:");
     println!("   📀 Album: '{}'", album_request.releases[0].title[0].text);
-    println!("   🎤 Artist: {}", album_request.releases[0].artist);
+    println!(
+        "   🎤 Artist: {}",
+        album_request.releases[0]
+            .artist
+            .as_deref()
+            .unwrap_or_default()
+    );
     println!(
         "   🏷️  Label: {}",
         album_request.releases[0].label.as_ref().unwrap()
@@ -236,13 +242,13 @@ fn create_spotify_album_request() -> BuildRequest {
 
 fn create_album_release() -> ReleaseRequest {
     ReleaseRequest {
-        release_id: "ALBUM_INDIE_2024_001".to_string(),
+        release_id: Some("ALBUM_INDIE_2024_001".to_string()),
         release_reference: Some("REL_REF_001".to_string()),
         title: vec![LocalizedStringRequest {
             text: "Digital Horizons".to_string(),
             language_code: Some("en".to_string()),
         }],
-        artist: "The Wavelength Collective".to_string(),
+        artist: Some("The Wavelength Collective".to_string()),
         label: Some("Indie Digital Records".to_string()),
         release_date: Some("2024-03-15".to_string()),
         upc: Some("602577123456".to_string()),
@@ -266,73 +272,73 @@ fn create_album_tracks() -> Vec<TrackRequest> {
         TrackRequest {
             track_id: "TRACK_001".to_string(),
             resource_reference: Some("R1".to_string()),
-            isrc: "USWV12400001".to_string(),
+            isrc: Some("USWV12400001".to_string()),
             title: "Neon Dreams".to_string(),
             duration: "PT4M23S".to_string(),
-            artist: "The Wavelength Collective".to_string(),
+            artist: Some("The Wavelength Collective".to_string()),
             ..Default::default()
         },
         TrackRequest {
             track_id: "TRACK_002".to_string(),
             resource_reference: Some("R2".to_string()),
-            isrc: "USWV12400002".to_string(),
+            isrc: Some("USWV12400002".to_string()),
             title: "Synthetic Sunrise".to_string(),
             duration: "PT3M57S".to_string(),
-            artist: "The Wavelength Collective".to_string(),
+            artist: Some("The Wavelength Collective".to_string()),
             ..Default::default()
         },
         TrackRequest {
             track_id: "TRACK_003".to_string(),
             resource_reference: Some("R3".to_string()),
-            isrc: "USWV12400003".to_string(),
+            isrc: Some("USWV12400003".to_string()),
             title: "Digital Pulse".to_string(),
             duration: "PT5M12S".to_string(),
-            artist: "The Wavelength Collective".to_string(),
+            artist: Some("The Wavelength Collective".to_string()),
             ..Default::default()
         },
         TrackRequest {
             track_id: "TRACK_004".to_string(),
             resource_reference: Some("R4".to_string()),
-            isrc: "USWV12400004".to_string(),
+            isrc: Some("USWV12400004".to_string()),
             title: "Cyber Meditation".to_string(),
             duration: "PT6M45S".to_string(),
-            artist: "The Wavelength Collective".to_string(),
+            artist: Some("The Wavelength Collective".to_string()),
             ..Default::default()
         },
         TrackRequest {
             track_id: "TRACK_005".to_string(),
             resource_reference: Some("R5".to_string()),
-            isrc: "USWV12400005".to_string(),
+            isrc: Some("USWV12400005".to_string()),
             title: "Binary Sunset".to_string(),
             duration: "PT4M31S".to_string(),
-            artist: "The Wavelength Collective".to_string(),
+            artist: Some("The Wavelength Collective".to_string()),
             ..Default::default()
         },
         TrackRequest {
             track_id: "TRACK_006".to_string(),
             resource_reference: Some("R6".to_string()),
-            isrc: "USWV12400006".to_string(),
+            isrc: Some("USWV12400006".to_string()),
             title: "Algorithmic Love".to_string(),
             duration: "PT3M44S".to_string(),
-            artist: "The Wavelength Collective feat. Echo Siren".to_string(),
+            artist: Some("The Wavelength Collective feat. Echo Siren".to_string()),
             ..Default::default()
         },
         TrackRequest {
             track_id: "TRACK_007".to_string(),
             resource_reference: Some("R7".to_string()),
-            isrc: "USWV12400007".to_string(),
+            isrc: Some("USWV12400007".to_string()),
             title: "Data Stream Dreams".to_string(),
             duration: "PT7M18S".to_string(),
-            artist: "The Wavelength Collective".to_string(),
+            artist: Some("The Wavelength Collective".to_string()),
             ..Default::default()
         },
         TrackRequest {
             track_id: "TRACK_008".to_string(),
             resource_reference: Some("R8".to_string()),
-            isrc: "USWV12400008".to_string(),
+            isrc: Some("USWV12400008".to_string()),
             title: "Virtual Reality".to_string(),
             duration: "PT4M56S".to_string(),
-            artist: "The Wavelength Collective".to_string(),
+            artist: Some("The Wavelength Collective".to_string()),
             ..Default::default()
         },
     ]
@@ -342,7 +348,7 @@ fn create_spotify_streaming_deal() -> DealRequest {
     DealRequest {
         deal_reference: Some("SPOTIFY_STREAM_DEAL_001".to_string()),
         deal_terms: DealTerms {
-            commercial_model_type: "SubscriptionModel".to_string(),
+            commercial_model_type: Some("SubscriptionModel".to_string()),
             territory_code: vec!["Worldwide".to_string()],
             start_date: Some("2024-03-15".to_string()),
             ..Default::default()

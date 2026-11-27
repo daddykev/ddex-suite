@@ -78,9 +78,9 @@ proptest! {
         let mut request = minimal_single(version);
         let release = &mut request.releases[0];
         release.title[0].text = title.clone();
-        release.artist = artist.clone();
+        release.artist = Some(artist.clone());
         release.tracks[0].title = title.clone();
-        release.tracks[0].artist = artist.clone();
+        release.tracks[0].artist = Some(artist.clone());
 
         match DDEXBuilder::new().build(request, BuildOptions::default()) {
             Err(BuildError::InvalidFormat { field, message }) => {
@@ -124,7 +124,7 @@ fn named_cases() {
     for text in legal {
         let mut request = minimal_single("4.3");
         request.releases[0].title[0].text = text.to_string();
-        request.releases[0].artist = text.to_string();
+        request.releases[0].artist = Some(text.to_string());
         let xml = DDEXBuilder::new()
             .build(request, BuildOptions::default())
             .unwrap_or_else(|e| panic!("{text:?}: {e}"))

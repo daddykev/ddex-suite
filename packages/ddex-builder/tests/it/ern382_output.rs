@@ -29,10 +29,10 @@ fn track(n: u32, title: &str, artist: &str, with_reference: bool) -> TrackReques
     TrackRequest {
         track_id: format!("TRK{n:03}"),
         resource_reference: with_reference.then(|| format!("A{n}")),
-        isrc: format!("USRT124{n:05}"),
+        isrc: Some(format!("USRT124{n:05}")),
         title: title.to_string(),
         duration: "PT3M42S".to_string(),
-        artist: artist.to_string(),
+        artist: Some(artist.to_string()),
         ..Default::default()
     }
 }
@@ -50,10 +50,10 @@ fn request() -> BuildRequest {
         profile: Some("AudioAlbum".to_string()),
         releases: vec![
             ReleaseRequest {
-                release_id: "A1-ABCDE-0000000001-M".to_string(),
+                release_id: Some("A1-ABCDE-0000000001-M".to_string()),
                 release_reference: Some("R1".to_string()),
                 title: vec![text("Album", Some("en")), text("Álbum", Some("es"))],
-                artist: "Artist & Friends".to_string(),
+                artist: Some("Artist & Friends".to_string()),
                 label: Some("Label <Records>".to_string()),
                 release_date: Some("2024-01-01".to_string()),
                 upc: Some("123456789012".to_string()),
@@ -65,9 +65,9 @@ fn request() -> BuildRequest {
                 ..Default::default()
             },
             ReleaseRequest {
-                release_id: "REL2".to_string(),
+                release_id: Some("REL2".to_string()),
                 title: vec![text("<script>alert('x')</script>", None)],
-                artist: "Other".to_string(),
+                artist: Some("Other".to_string()),
                 tracks: vec![track(3, "Three", "Other", false)],
                 ..Default::default()
             },
@@ -75,7 +75,7 @@ fn request() -> BuildRequest {
         deals: vec![DealRequest {
             deal_reference: Some("D1".to_string()),
             deal_terms: DealTerms {
-                commercial_model_type: "SubscriptionModel".to_string(),
+                commercial_model_type: Some("SubscriptionModel".to_string()),
                 territory_code: vec!["Worldwide".to_string()],
                 start_date: Some("2024-01-01".to_string()),
                 use_types: vec!["OnDemandStream".to_string()],

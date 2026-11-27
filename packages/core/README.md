@@ -18,6 +18,8 @@ You normally use this crate through `ddex-parser`, whose `DDEXParser::parse` ret
 - `models::graph`: the structure of the ERN message as written.
 - `ERNVersion`: ERN 3.8.1, 3.8.2, 4.2 and 4.3.
 
+Parsed model structs may gain fields in minor releases.
+
 ## Installation
 
 ```toml

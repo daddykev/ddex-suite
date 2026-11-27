@@ -363,13 +363,13 @@ pub enum ResourceKind {
 /// use ddex_builder::builder::{ReleaseRequest, LocalizedStringRequest, TrackRequest};
 ///
 /// let release = ReleaseRequest {
-///     release_id: "GRid:A1-12345678901234567890123456789012".to_string(),
+///     release_id: Some("GRid:A1-12345678901234567890123456789012".to_string()),
 ///     release_reference: Some("REL_001".to_string()),
 ///     title: vec![LocalizedStringRequest {
 ///         text: "Greatest Hits".to_string(),
 ///         language_code: Some("en".to_string()),
 ///     }],
-///     artist: "The Beatles".to_string(),
+///     artist: Some("The Beatles".to_string()),
 ///     label: Some("Apple Records".to_string()),
 ///     release_date: Some("2024-01-15".to_string()),
 ///     upc: Some("123456789012".to_string()),
@@ -377,10 +377,10 @@ pub enum ResourceKind {
 ///         TrackRequest {
 ///             track_id: "T001".to_string(),
 ///             resource_reference: Some("RES_001".to_string()),
-///             isrc: "GBUM71505078".to_string(),
+///             isrc: Some("GBUM71505078".to_string()),
 ///             title: "Here Comes The Sun".to_string(),
 ///             duration: "PT3M5S".to_string(),
-///             artist: "The Beatles".to_string(),
+///             artist: Some("The Beatles".to_string()),
 ///             ..Default::default()
 ///         }
 ///     ],
@@ -391,15 +391,16 @@ pub enum ResourceKind {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ReleaseRequest {
     /// Release identifier, written as `ReleaseId/GRid` (unless `release_ids` is set for
-    /// an ERN 4.x target)
-    pub release_id: String,
+    /// an ERN 4.x target); `None` writes no GRid
+    pub release_id: Option<String>,
     /// Internal reference for this release within the message
     pub release_reference: Option<String>,
     /// Release titles in multiple languages
     pub title: Vec<LocalizedStringRequest>,
-    /// Main artist name for the release (ERN 4.x: `DisplayArtistName`, and a
-    /// `DisplayArtist` party with role `MainArtist` unless `artist_role` says otherwise)
-    pub artist: String,
+    /// Main artist name for the release (ERN 4.x: required, `DisplayArtistName`, and a
+    /// `DisplayArtist` party with role `MainArtist` unless `artist_role` says otherwise;
+    /// ERN 3.8.x: optional, `None` writes no display artist)
+    pub artist: Option<String>,
     /// Record label name (ERN 4.x: required, written as a `PartyList` party referenced
     /// by `ReleaseLabelReference`)
     pub label: Option<String>,
@@ -451,10 +452,10 @@ pub struct ReleaseRequest {
 /// let track = TrackRequest {
 ///     track_id: "T001".to_string(),
 ///     resource_reference: Some("A12345".to_string()),
-///     isrc: "USUM71504847".to_string(),
+///     isrc: Some("USUM71504847".to_string()),
 ///     title: "Bohemian Rhapsody".to_string(),
 ///     duration: "PT5M55S".to_string(), // 5 minutes 55 seconds
-///     artist: "Queen".to_string(),
+///     artist: Some("Queen".to_string()),
 ///     ..Default::default()
 /// };
 /// ```
@@ -464,14 +465,16 @@ pub struct TrackRequest {
     pub track_id: String,
     /// Reference to the sound recording resource
     pub resource_reference: Option<String>,
-    /// International Standard Recording Code (12-character alphanumeric)
-    pub isrc: String,
+    /// International Standard Recording Code (12-character alphanumeric); `None` writes no
+    /// ISRC (the resource then needs `proprietary_ids`)
+    pub isrc: Option<String>,
     /// Track title
     pub title: String,
     /// Duration in ISO 8601 format (e.g., "PT3M45S" for 3 minutes 45 seconds)
     pub duration: String,
-    /// Track artist name (may differ from release artist for compilations)
-    pub artist: String,
+    /// Track artist name (may differ from release artist for compilations). ERN 4.x:
+    /// required; ERN 3.8.x: optional, `None` writes no display artist
+    pub artist: Option<String>,
 
     /// ERN 4.x: `SoundRecording` (default) or `Video`
     #[serde(default)]
@@ -512,7 +515,7 @@ pub struct TrackRequest {
 /// let deal = DealRequest {
 ///     deal_reference: Some("DEAL_001".to_string()),
 ///     deal_terms: DealTerms {
-///         commercial_model_type: "PayAsYouGoModel".to_string(),
+///         commercial_model_type: Some("PayAsYouGoModel".to_string()),
 ///         territory_code: vec!["Worldwide".to_string()],
 ///         start_date: Some("2024-01-01".to_string()),
 ///         ..Default::default()
@@ -540,7 +543,7 @@ pub struct DealRequest {
 /// use ddex_builder::builder::DealTerms;
 ///
 /// let terms = DealTerms {
-///     commercial_model_type: "SubscriptionModel".to_string(),
+///     commercial_model_type: Some("SubscriptionModel".to_string()),
 ///     territory_code: vec!["US".to_string(), "CA".to_string(), "MX".to_string()],
 ///     start_date: Some("2024-01-01".to_string()),
 ///     ..Default::default()
@@ -548,9 +551,9 @@ pub struct DealRequest {
 /// ```
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct DealTerms {
-    /// Type of commercial model (e.g., "PayAsYouGoModel", "SubscriptionModel", "FreeOfChargeModel");
-    /// ERN 4.x: omitted when empty
-    pub commercial_model_type: String,
+    /// Type of commercial model (e.g., "PayAsYouGoModel", "SubscriptionModel",
+    /// "FreeOfChargeModel"); `None` writes no `CommercialModelType`
+    pub commercial_model_type: Option<String>,
     /// Territory codes where deal applies (ISO 3166-1 alpha-2 codes or "Worldwide")
     pub territory_code: Vec<String>,
     /// Deal start date in YYYY-MM-DD format (ERN 4.x: required, `ValidityPeriod/StartDate`)
@@ -566,7 +569,7 @@ pub struct DealTerms {
 impl DealTerms {
     /// True when no term is set (ERN 3.8.x then writes the `Deal` without `DealTerms`).
     pub(crate) fn is_empty(&self) -> bool {
-        self.commercial_model_type.is_empty()
+        self.commercial_model_type.is_none()
             && self.territory_code.is_empty()
             && self.use_types.is_empty()
             && self.start_date.is_none()
@@ -1057,12 +1060,15 @@ impl DDEXBuilder {
         for release in &mut request.releases {
             if release.release_reference.is_none() {
                 let id = id_gen.generate_release_id(
-                    release.upc.as_deref().unwrap_or(&release.release_id),
+                    release
+                        .upc
+                        .as_deref()
+                        .unwrap_or(release.release_id.as_deref().unwrap_or_default()),
                     "Album",
                     &release
                         .tracks
                         .iter()
-                        .map(|t| t.isrc.clone())
+                        .map(|t| t.isrc.clone().unwrap_or_default())
                         .collect::<Vec<_>>(),
                     &[], // Empty territory set for now
                 )?;
@@ -1077,7 +1083,7 @@ impl DDEXBuilder {
                         self.parse_duration_to_seconds(&track.duration).unwrap_or(0);
 
                     let id = id_gen.generate_resource_id(
-                        &track.isrc,
+                        track.isrc.as_deref().unwrap_or_default(),
                         duration_seconds,
                         None, // No file hash available
                     )?;
@@ -1095,7 +1101,11 @@ impl DDEXBuilder {
                 let territories = deal.deal_terms.territory_code.join(",");
                 deal.deal_reference = Some(format!(
                     "DEAL_{}_{}",
-                    deal.deal_terms.commercial_model_type, territories
+                    deal.deal_terms
+                        .commercial_model_type
+                        .as_deref()
+                        .unwrap_or_default(),
+                    territories
                 ));
             }
         }

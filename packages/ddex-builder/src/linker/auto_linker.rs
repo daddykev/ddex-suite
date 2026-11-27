@@ -72,7 +72,11 @@ impl AutoLinker {
             if release.release_reference.is_none() {
                 let reference = generator.generate(EntityType::Release);
                 release.release_reference = Some(reference.clone());
-                relationships.register(EntityType::Release, release.release_id.clone(), reference);
+                relationships.register(
+                    EntityType::Release,
+                    release.release_id.clone().unwrap_or_default(),
+                    reference,
+                );
                 report.generated_refs += 1;
             }
 

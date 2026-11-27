@@ -54,10 +54,10 @@ fn main() -> Result<(), ddex_builder::BuildError> {
         version: "4.3".to_string(),
         profile: Some("AudioSingle".to_string()),
         releases: vec![ReleaseRequest {
-            release_id: "A1-ABCDE-0000000001-M".to_string(),
+            release_id: Some("A1-ABCDE-0000000001-M".to_string()),
             release_reference: Some("R1".to_string()),
             title: text("Example Single"),
-            artist: "Example Artist".to_string(),
+            artist: Some("Example Artist".to_string()),
             label: Some("Example Records".to_string()),
             release_date: None,
             upc: Some("123456789012".to_string()),
@@ -68,10 +68,10 @@ fn main() -> Result<(), ddex_builder::BuildError> {
             tracks: vec![TrackRequest {
                 track_id: "TRK001".to_string(),
                 resource_reference: Some("A1".to_string()),
-                isrc: "ZZ0000000001".to_string(),
+                isrc: Some("ZZ0000000001".to_string()),
                 title: "Example Track".to_string(),
                 duration: "PT3M0S".to_string(),
-                artist: "Example Artist".to_string(),
+                artist: Some("Example Artist".to_string()),
                 resource_type: Some("MusicalWorkSoundRecording".into()),
                 parental_warning_type: Some("NotExplicit".to_string()),
                 ..Default::default()
@@ -97,6 +97,10 @@ fn main() -> Result<(), ddex_builder::BuildError> {
 Nothing is filled in for you: when the target version's schema requires a value the
 request does not carry, `build` fails with an error naming the field (for example
 `ERN 4.3 requires Release/ReleaseType (releases[0].release_type)`).
+
+Build requests are constructed with `..Default::default()`; new optional fields may be
+added in minor releases. A value the schema makes optional is an `Option`: `None` leaves
+the element out, and an empty string (`Some("")`) fails the build.
 
 ## Supported versions
 
