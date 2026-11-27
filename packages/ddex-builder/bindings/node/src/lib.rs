@@ -65,18 +65,9 @@ pub struct BuilderStats {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FidelityOptions {
     pub canonicalization: Option<String>, // "none" or "db_c14n" (anything else is an error)
-    pub preserve_comments: Option<bool>,
-    pub preserve_processing_instructions: Option<bool>,
-    pub preserve_extensions: Option<bool>,
-    pub preserve_attribute_order: Option<bool>,
-    pub preserve_namespace_prefixes: Option<bool>,
     pub enable_verification: Option<bool>,
     pub collect_statistics: Option<bool>,
     pub enable_deterministic_ordering: Option<bool>,
-    pub memory_optimization: Option<String>, // "speed", "balanced", "memory"
-    pub streaming_mode: Option<bool>,
-    pub chunk_size: Option<u32>,
-    pub enable_checksums: Option<bool>,
 }
 
 #[napi(object)]

@@ -14,7 +14,7 @@ def test_basic_functionality():
     try:
         # Test 1: Import
         print("\n[1/10] Testing import...")
-        from ddex_parser import DDEXParser, ParseOptions, __version__
+        from ddex_parser import DDEXParser, __version__
         print(f"✓ Successfully imported ddex_parser v{__version__}")
         
         # Test 2: Create instance
@@ -36,15 +36,6 @@ def test_basic_functionality():
         print(f"  - Message ID: {result.message_id}")
         print(f"  - Version: {result.version}")
         print(f"  - Releases: {result.release_count}")
-        
-        # Test 4: Parse with options
-        print("\n[4/10] Testing parse options...")
-        options = ParseOptions(
-            include_raw_extensions=True,
-            include_comments=True
-        )
-        result = parser.parse(xml, options)
-        print(f"✓ Parsed with options")
         
         # Test 5: Version detection
         print("\n[5/10] Testing version detection...")

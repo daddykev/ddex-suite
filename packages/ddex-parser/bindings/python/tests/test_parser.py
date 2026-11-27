@@ -2,7 +2,7 @@
 import pytest
 import asyncio
 from pathlib import Path
-from ddex_parser import DDEXParser, ParseOptions, ParseResult, parse
+from ddex_parser import DDEXParser, parse
 
 # Sample DDEX XML for testing
 SAMPLE_XML = """<?xml version="1.0" encoding="UTF-8"?>
@@ -47,15 +47,6 @@ class TestDDEXParser:
         parser = DDEXParser()
         result = parser.parse(SAMPLE_XML.encode('utf-8'))
         assert result.message_id == "MSG001"
-    
-    def test_parse_with_options(self):
-        parser = DDEXParser()
-        options = ParseOptions(
-            include_raw_extensions=True,
-            include_comments=True,
-        )
-        result = parser.parse(SAMPLE_XML, options)
-        assert result is not None
     
     @pytest.mark.xfail(
         strict=True,
@@ -113,40 +104,5 @@ class TestDDEXParser:
         reason="known bug: native ParsedERNMessage.message_id is a method, not the documented str attribute",
     )
     def test_convenience_function(self):
-        result = parse(SAMPLE_XML, validate_references=False)
+        result = parse(SAMPLE_XML)
         assert result.message_id == "MSG001"
-
-
-class TestParseOptions:
-    def test_default_options(self):
-        options = ParseOptions()
-        assert options.include_raw_extensions is False
-        assert options.include_comments is False
-        assert options.validate_references is True
-    
-    def test_to_dict(self):
-        options = ParseOptions(
-            include_raw_extensions=True,
-            timeout=30.0,
-        )
-        d = options.to_dict()
-        assert d["include_raw_extensions"] is True
-        assert "validate_references" in d
-
-
-class TestParseResult:
-    def test_parse_result(self):
-        data = {
-            "message_id": "TEST001",
-            "version": "4.3",
-            "release_count": 2,
-            "releases": [
-                {"title": "Album 1"},
-                {"title": "Album 2"},
-            ]
-        }
-        result = ParseResult(data)
-        assert result.message_id == "TEST001"
-        assert result.version == "4.3"
-        assert result.release_count == 2
-        assert len(result.releases) == 2

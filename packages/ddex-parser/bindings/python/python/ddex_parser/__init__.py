@@ -4,7 +4,7 @@ DDEX Parser - High-performance DDEX XML parser for Python
 """
 
 from __future__ import annotations
-from typing import Optional, Union, Dict, Any, Iterator, IO, TYPE_CHECKING
+from typing import Union, Dict, Any, Iterator, IO, TYPE_CHECKING
 import asyncio
 from pathlib import Path
 
@@ -29,68 +29,10 @@ except ImportError as e:
 
 __all__ = [
     "DDEXParser",
-    "ParseOptions",
     "ParsedERNMessage",
-    "ParseResult",
     "parse",
     "__version__",
 ]
-
-
-class ParseOptions:
-    """Options for parsing DDEX XML.
-
-    Accepted for forward compatibility; none of them currently changes the result
-    (see KNOWN_ISSUES.md):
-
-    - ``include_raw_extensions``, ``include_comments``: passed to the Rust parser, which
-      does not read them.
-    - ``validate_references``: when True (the default) the Rust parser logs unresolved
-      references through ``tracing``, which the Python binding does not surface; the
-      parsed message is the same either way.
-    - ``streaming``: not read by the binding; ``parse`` always uses the complete parser.
-    - ``timeout``: not passed to the Rust parser (``to_dict`` leaves it out).
-    """
-
-    def __init__(
-        self,
-        include_raw_extensions: bool = False,
-        include_comments: bool = False,
-        validate_references: bool = True,
-        streaming: bool = False,
-        timeout: float = 30.0,
-    ):
-        self.include_raw_extensions = include_raw_extensions
-        self.include_comments = include_comments
-        self.validate_references = validate_references
-        self.streaming = streaming
-        self.timeout = timeout
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for Rust."""
-        return {
-            "include_raw_extensions": self.include_raw_extensions,
-            "include_comments": self.include_comments,
-            "validate_references": self.validate_references,
-            "streaming": self.streaming,
-        }
-
-
-class ParseResult:
-    """Unused, kept for compatibility (so existing imports keep working).
-
-    ``DDEXParser.parse`` returns the native ``ParsedERNMessage``, not this class; its
-    ``message_id()``, ``version()`` and ``release_count()`` are methods."""
-    
-    def __init__(self, data: Dict[str, Any]):
-        self._data = data
-        self.message_id = data.get("message_id", "")
-        self.version = data.get("version", "")
-        self.release_count = data.get("release_count", 0)
-        self.releases = data.get("releases", [])
-    
-    def __repr__(self) -> str:
-        return f"ParseResult(message_id='{self.message_id}', version='{self.version}', releases={self.release_count})"
 
 
 class DDEXParser:
@@ -103,22 +45,19 @@ class DDEXParser:
     def __repr__(self) -> str:
         return f"DDEXParser(version='{__version__}')"
     
-    def parse(self, xml: Union[str, bytes], options: Optional[ParseOptions] = None) -> ParsedERNMessage:
+    def parse(self, xml: Union[str, bytes]) -> ParsedERNMessage:
         """Parse DDEX XML synchronously."""
-        opts = options.to_dict() if options else None
-        result = self._parser.parse(xml, opts)
+        result = self._parser.parse(xml)
         return result  # Return PyParsedERNMessage directly
     
-    async def parse_async(self, xml: Union[str, bytes], options: Optional[ParseOptions] = None) -> ParsedERNMessage:
+    async def parse_async(self, xml: Union[str, bytes]) -> ParsedERNMessage:
         """Parse DDEX XML asynchronously."""
-        opts = options.to_dict() if options else None
-        result = await self._parser.parse_async(xml, opts)
+        result = await self._parser.parse_async(xml)
         return result  # Return PyParsedERNMessage directly
     
-    def stream(self, xml: Union[str, bytes], options: Optional[ParseOptions] = None) -> Iterator[Dict[str, Any]]:
+    def stream(self, xml: Union[str, bytes]) -> Iterator[Dict[str, Any]]:
         """Stream parse large DDEX files."""
-        opts = options.to_dict() if options else None
-        stream_iter = self._parser.stream(xml, opts)
+        stream_iter = self._parser.stream(xml)
         
         # Yield from the Rust iterator
         try:
@@ -152,11 +91,9 @@ class DDEXParser:
 
 
 # Convenience function
-def parse(xml: Union[str, bytes], **kwargs) -> ParsedERNMessage:
+def parse(xml: Union[str, bytes]) -> ParsedERNMessage:
     """Convenience function to parse DDEX XML."""
-    parser = DDEXParser()
-    options = ParseOptions(**kwargs) if kwargs else None
-    return parser.parse(xml, options)
+    return DDEXParser().parse(xml)
 
 
 # Import CLI main function

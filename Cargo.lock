@@ -457,7 +457,6 @@ dependencies = [
  "html-escape",
  "indexmap",
  "insta",
- "num_cpus",
  "once_cell",
  "proptest",
  "quick-xml",
@@ -606,9 +605,7 @@ dependencies = [
  "getrandom",
  "serde-wasm-bindgen",
  "wasm-bindgen",
- "wasm-bindgen-futures",
  "wasm-bindgen-test",
- "web-sys",
 ]
 
 [[package]]

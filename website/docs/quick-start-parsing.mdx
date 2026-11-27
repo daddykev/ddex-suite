@@ -268,15 +268,15 @@ the [security model](./security.md).
 
 - **Node.js**: `detectVersion(xml)` returns the version (`"V4_3"`); `sanityCheck(xml)`
   resolves to `{ isValid, version, errors, warnings }`; `getDetailedError(xml)` returns
-  the parse error with its type and context. `parse` and `parseSync` take no options:
-  every `ParseOptions` field throws since 0.5.0.
+  the parse error with its type and context. `parse` and `parseSync` take only the XML:
+  `ParseOptions` (every field threw since 0.5.0) was removed in 0.6.0.
 - **`sanityCheck` / `sanity_check`** detects the ERN version and checks that the XML is
   well-formed (matching tags, attributes, entity references, one root element, no DTD),
   listing each problem in `errors`. The version is `"Unknown"` (Node.js) or `None` (Python)
   when there is no ERN namespace. It is not XSD validation: `parse` can still fail on a
   document that passes.
 - **Python**: `detect_version(xml)` returns `"V4_3"`; `sanity_check(xml)` returns a dict;
-  `ParseOptions` is accepted, but none of its fields currently changes the result;
+  `parse` takes no options (`ParseOptions` was removed in 0.6.0);
   `stream(xml)` parses the whole document and then yields one small dict per release
   (`release_id`, `title`, `artist`, `track_count`), so it does not reduce memory use.
 - **Rust**: `DDEXParser::with_config(config)` takes a `ddex_parser::parser::security::SecurityConfig` to change the limits. The streaming

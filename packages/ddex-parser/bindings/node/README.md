@@ -51,7 +51,6 @@ for (const deal of message.deals) {
 
 ```js
 const fs = require('node:fs');
-const assert = require('node:assert/strict');
 const { DdexParser } = require('ddex-parser');
 
 const parser = new DdexParser();
@@ -60,15 +59,13 @@ const xml = fs.readFileSync('release.xml', 'utf8');
 parser.parse(xml).then((message) => {
   console.log(`${message.releaseCount} release(s), ${message.dealCount} deal(s)`);
 });
-
-// No parse option is supported: passing any ParseOptions field throws.
-assert.throws(() => parser.parseSync(xml, { includeRaw: true }), /removed in 0\.5\.0/);
 ```
 
 ## API
 
 - `new DdexParser()`
-- `parseSync(xml: string): ParsedMessage` and `parse(xml: string): Promise<ParsedMessage>`:
+- `parseSync(xml: string): ParsedMessage` and `parse(xml: string): Promise<ParsedMessage>`
+  take only the XML (`ParseOptions`, whose fields all threw, was removed in 0.6.0). They run
   the complete parser, whatever the input size (up to 100 MB of XML; there is no
   streaming in Node). Absent values are omitted, never invented, and text is kept as
   written.

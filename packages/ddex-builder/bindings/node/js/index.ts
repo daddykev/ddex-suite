@@ -34,8 +34,6 @@ import type { BuildRequest } from '../build-request';
 export interface BuildOptions {
   /** DDEX version to target for XML generation */
   version?: '3.8.2' | '4.2' | '4.3';
-  /** Enable deterministic element and attribute ordering */
-  enableDeterministicOrdering?: boolean;
   /** Canonicalization algorithm to use for XML normalization */
   canonicalization?: 'db-c14n-1.0' | 'exclusive' | 'none';
   /** Validate structure during build process */
