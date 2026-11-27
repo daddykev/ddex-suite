@@ -70,8 +70,8 @@ parser.parse(xml).then((message) => {
   streaming in Node). Absent values are omitted, never invented, and text is kept as
   written.
 - `detectVersion(xml)`, `sanityCheck(xml)` (ERN version detection and an XML
-  well-formedness check, not XSD validation; `version` is `"Unknown"` when there is no ERN
-  namespace), `getDetailedError(xml)`.
+  well-formedness check, not XSD validation; `version` is `null` when no ERN version is
+  recognised), `getDetailedError(xml)`.
 
 `ParsedMessage` has the message header (`messageId`, `messageType`, `messageDate`,
 `senderName`, `senderId`, `recipientName`, `recipientId`, `version`, `profile`,

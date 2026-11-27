@@ -9,7 +9,8 @@ use serde::{Deserialize, Serialize};
 static ISRC_PATTERN: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"^[A-Z]{2}[A-Z0-9]{3}\d{2}\d{5}$").unwrap());
 
-static UPC_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\d{12,14}$").unwrap());
+/// GTIN lengths: EAN-8, UPC-A (12), EAN-13 and GTIN-14.
+static UPC_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(\d{8}|\d{12,14})$").unwrap());
 
 /// Preflight validator for DDEX messages
 pub struct PreflightValidator {
@@ -400,24 +401,24 @@ impl PreflightValidator {
         self.validate_upc_checksum(upc)
     }
 
+    /// The GS1 mod-10 check digit: the digits before the check digit are weighted 3, 1, 3,
+    /// 1, ... from the right, so it is right for 8-, 12-, 13- and 14-digit codes. (Before
+    /// 0.6.0 the weights started from the left, which is wrong for 13-digit codes.)
     fn validate_upc_checksum(&self, upc: &str) -> bool {
         let digits: Vec<u32> = upc.chars().filter_map(|c| c.to_digit(10)).collect();
-
-        if digits.len() < 12 {
+        if digits.len() != upc.len() || !matches!(digits.len(), 8 | 12 | 13 | 14) {
             return false;
         }
-
-        let mut sum = 0;
-        for (i, &digit) in digits.iter().take(digits.len() - 1).enumerate() {
-            if i % 2 == 0 {
-                sum += digit;
-            } else {
-                sum += digit * 3;
-            }
-        }
-
-        let check_digit = (10 - (sum % 10)) % 10;
-        digits[digits.len() - 1] == check_digit
+        let Some((check, body)) = digits.split_last() else {
+            return false;
+        };
+        let sum: u32 = body
+            .iter()
+            .rev()
+            .enumerate()
+            .map(|(i, d)| if i % 2 == 0 { d * 3 } else { *d })
+            .sum();
+        (10 - sum % 10) % 10 == *check
     }
 
     fn validate_duration(&self, duration: &str) -> bool {
@@ -428,5 +429,43 @@ impl PreflightValidator {
     fn validate_territory_code(&self, code: &str) -> bool {
         // Basic ISO 3166-1 alpha-2 validation
         code.len() == 2 && code.chars().all(|c| c.is_ascii_uppercase())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn validator() -> PreflightValidator {
+        PreflightValidator::new(ValidationConfig::default())
+    }
+
+    #[test]
+    fn gs1_check_digits_of_every_length() {
+        // Known-valid codes: EAN-8, UPC-A, EAN-13, GTIN-14
+        for valid in [
+            "96385074",
+            "036000291452",
+            "4006381333931",
+            "10012345678902",
+        ] {
+            assert!(validator().validate_upc(valid), "{valid} is valid");
+        }
+        // The same codes with a wrong check digit
+        for wrong in [
+            "96385075",
+            "036000291453",
+            "4006381333932",
+            "10012345678903",
+        ] {
+            assert!(
+                !validator().validate_upc(wrong),
+                "{wrong} has a wrong check digit"
+            );
+        }
+        // Not a GTIN length, or not digits
+        for bad in ["1234567", "123456789", "03600029145X", "0360002914520000"] {
+            assert!(!validator().validate_upc(bad), "{bad}");
+        }
     }
 }

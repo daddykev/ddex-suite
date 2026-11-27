@@ -502,6 +502,49 @@ Old → new names (0.6.0 PR 5a):
   - Who: scripts that pass `--determinism-iterations` with `--check-repeatable`.
   - Migration: rename the flag.
 
+- **Statistics that are not measured removed, or `None`** (Rust, Node.js, Python):
+  - Who: code that reads these fields.
+  - `WorkingStreamingStats` (`DDEXParser::stream`, the parallel and zero-copy parsers):
+    `max_depth_reached` removed (no parser measured it: the zero-copy parser reported a
+    constant 10, the parallel one 0, the working one its current depth).
+    `current_depth` is `Option<usize>` (measured by the working parser only).
+    `current_memory_bytes` and `max_memory_used_bytes` are `Option<usize>` (measured by
+    the zero-copy parser only; the others reported 0), and `is_memory_bounded()` /
+    `memory_efficiency()` return `Option`.
+  - `parser::stream::ParseProgress`: `resources_parsed` (always 0) and
+    `estimated_total_bytes` (always `None`) removed.
+  - Node / Python builder `BuildStatistics`: `memoryUsedBytes` / `memory_used_bytes`,
+    `extensionCount` / `extension_count` and `canonicalizationTimeMs` /
+    `canonicalization_time_ms` removed (always null). The Python `BuildStatistics(...)`
+    constructor loses those three arguments.
+  - Migration: drop the removed fields; treat `None` as "not measured".
+- **`sanity_check` reports an unrecognised version as `None`** (Rust, Node.js, Python):
+  - Rust: `SanityCheckResult::version` is `Option<ERNVersion>`. A document whose ERN
+    version is not recognised is an `Ok` result with `version: None`, `is_valid: false` and
+    the problem in `errors` (it was an `Err`). The only `Err` is a read failure.
+  - Node.js: `sanityCheck` returns `version: null` (it was `"Unknown"`).
+  - Python: `version` is `None`, as before; a read failure now raises `ValueError`.
+  - `SanityCheckResult.warnings` was removed (Rust, Node.js, Python): nothing added a
+    warning. (Node.js put an input-size line there when the check failed.)
+  - Migration: match on `version: None` instead of an `Err` / `"Unknown"`; drop
+    `warnings`.
+
+### Changed
+
+- ddex-builder preflight, `PreflightLevel::Warn` (the default): preflight errors are no
+  longer discarded. Each one is returned in `BuildResult::warnings` with its code (e.g.
+  `INVALID_UPC`) and message, and the build succeeds as before. `Strict` is unchanged
+  (the build fails), and `None` still checks nothing. `DDEXBuilder::preflight(&request,
+  level)` returns the checks without building.
+- Node / Python builder `validate()` returns the preflight errors (`CODE: message`) as well
+  as the warnings, and is valid only when there are none (it returned only the warnings).
+- The UPC / EAN check digit is the GS1 mod-10 check, weighted 3, 1, 3, ... from the right,
+  for 8-, 12-, 13- and 14-digit codes. It was weighted from the left, which rejected valid
+  EAN-13 codes and accepted some wrong ones, and 8-digit codes were rejected.
+- `StreamingStats::peak_memory_usage` (streaming writer) counts chunks larger than the
+  buffer, which are written directly; that path skipped the peak update and under-reported
+  it.
+
 ### Documentation
 
 - Removed the `FastStreamingParser` figures (about 790–990 MiB/s on generated inputs) from

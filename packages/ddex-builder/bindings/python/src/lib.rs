@@ -275,12 +275,11 @@ impl BuildOptions {
 
 #[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
+/// Counted from the output. (Before 0.6.0 it also had `memory_used_bytes`, `extension_count`
+/// and `canonicalization_time_ms`, which were never measured.)
 pub struct BuildStatistics {
     #[pyo3(get, set)]
     pub build_time_ms: f64,
-    /// Not measured: always None (before 0.5.1, twice the XML size).
-    #[pyo3(get, set)]
-    pub memory_used_bytes: Option<u32>,
     #[pyo3(get, set)]
     pub xml_size_bytes: u32,
     #[pyo3(get, set)]
@@ -289,12 +288,7 @@ pub struct BuildStatistics {
     pub attribute_count: u32,
     #[pyo3(get, set)]
     pub namespace_count: u32,
-    /// Not measured: always None.
-    #[pyo3(get, set)]
-    pub extension_count: Option<u32>,
-    /// Not measured separately (part of the build): always None (before 0.5.1, 2.0).
-    #[pyo3(get, set)]
-    pub canonicalization_time_ms: Option<f64>,
+    /// Time of the round trip, with `enable_verification`; None otherwise.
     #[pyo3(get, set)]
     pub verification_time_ms: Option<f64>,
 }
@@ -304,24 +298,18 @@ impl BuildStatistics {
     #[new]
     pub fn new(
         build_time_ms: f64,
-        memory_used_bytes: Option<u32>,
         xml_size_bytes: u32,
         element_count: u32,
         attribute_count: u32,
         namespace_count: u32,
-        extension_count: Option<u32>,
-        canonicalization_time_ms: Option<f64>,
         verification_time_ms: Option<f64>,
     ) -> Self {
         BuildStatistics {
             build_time_ms,
-            memory_used_bytes,
             xml_size_bytes,
             element_count,
             attribute_count,
             namespace_count,
-            extension_count,
-            canonicalization_time_ms,
             verification_time_ms,
         }
     }
@@ -509,13 +497,10 @@ impl DdexBuilder {
             let (elements, attributes, namespaces) = count_xml(&result.xml);
             Some(BuildStatistics::new(
                 build_time,
-                None,
                 result.xml.len() as u32,
                 elements,
                 attributes,
                 namespaces,
-                None,
-                None,
                 None,
             ))
         } else {
@@ -549,20 +534,35 @@ impl DdexBuilder {
     /// Runs the build's preflight validation on the added releases and resources (before
     /// 0.5.1 it only checked that a release had been added).
     pub fn validate(&mut self) -> PyResult<ValidationResult> {
-        let result = match self
-            .build_request(None, None)
-            .map_err(|e| e.to_string())
-            .and_then(|request| {
-                DDEXBuilder::new()
-                    .build(request, CoreBuildOptions::default())
-                    .map_err(|e| e.to_string())
-            }) {
-            Ok(built) => ValidationResult::new(
-                true,
-                vec![],
-                built.warnings.iter().map(|w| w.message.clone()).collect(),
-            ),
-            Err(e) => ValidationResult::new(false, vec![e], vec![]),
+        // The preflight errors (`CODE: message`) and warnings, as `build` checks them, plus
+        // the build's own error when it fails (before 0.6.0 the preflight errors were not
+        // returned).
+        let result = match self.build_request(None, None) {
+            Err(e) => ValidationResult::new(false, vec![e.to_string()], vec![]),
+            Ok(request) => {
+                let builder = DDEXBuilder::new();
+                let options = CoreBuildOptions::default();
+                let (mut errors, warnings) =
+                    match builder.preflight(&request, options.preflight_level) {
+                        Ok(preflight) => (
+                            preflight
+                                .errors
+                                .iter()
+                                .map(|e| format!("{}: {}", e.code, e.message))
+                                .collect::<Vec<_>>(),
+                            preflight
+                                .warnings
+                                .iter()
+                                .map(|w| w.message.clone())
+                                .collect::<Vec<_>>(),
+                        ),
+                        Err(e) => (vec![e.to_string()], Vec::new()),
+                    };
+                if let Err(e) = builder.build(request, options) {
+                    errors.push(e.to_string());
+                }
+                ValidationResult::new(errors.is_empty(), errors, warnings)
+            }
         };
         self.stats.validation_errors = result.errors.len() as u32;
         self.stats.validation_warnings = result.warnings.len() as u32;

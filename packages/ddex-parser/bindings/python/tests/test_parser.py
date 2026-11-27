@@ -87,7 +87,6 @@ class TestDDEXParser:
         assert "is_valid" in result
         assert "version" in result
         assert "errors" in result
-        assert "warnings" in result
     
     @pytest.mark.skipif(
         not pytest.importorskip("pandas"),

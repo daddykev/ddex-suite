@@ -325,10 +325,11 @@ impl FastZeroCopyParser {
         WorkingStreamingStats {
             bytes_processed: self.bytes_processed,
             elements_yielded: self.elements_found as usize,
-            current_depth: 0,
-            max_depth_reached: 10,
-            current_memory_bytes: self.read_buffer.capacity() + self.leftover.capacity(),
-            max_memory_used_bytes: self.read_buffer.capacity() + self.leftover.capacity(),
+            // Depth is not tracked by this scanner (before 0.6.0: 0, and a constant 10 as
+            // the maximum).
+            current_depth: None,
+            current_memory_bytes: Some(self.read_buffer.capacity() + self.leftover.capacity()),
+            max_memory_used_bytes: Some(self.read_buffer.capacity() + self.leftover.capacity()),
             elapsed_time: elapsed,
             throughput_mb_per_sec: throughput,
         }

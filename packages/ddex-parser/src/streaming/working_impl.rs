@@ -86,8 +86,6 @@ pub struct WorkingStreamingParser<R: BufRead> {
     bytes_processed: u64,
     elements_yielded: usize,
     start_time: Instant,
-    max_memory_used: usize,
-    current_memory: usize,
 }
 
 impl<R: BufRead> WorkingStreamingParser<R> {
@@ -116,8 +114,6 @@ impl<R: BufRead> WorkingStreamingParser<R> {
             bytes_processed: 0,
             elements_yielded: 0,
             start_time: Instant::now(),
-            max_memory_used: 0,
-            current_memory: 0,
         }
     }
 
@@ -385,10 +381,10 @@ impl<R: BufRead> WorkingStreamingParser<R> {
         WorkingStreamingStats {
             bytes_processed: self.bytes_processed,
             elements_yielded: self.elements_yielded,
-            current_depth: self.current_depth,
-            max_depth_reached: self.current_element.len(),
-            current_memory_bytes: self.current_memory,
-            max_memory_used_bytes: self.max_memory_used,
+            current_depth: Some(self.current_depth),
+            // Memory is not measured by this parser.
+            current_memory_bytes: None,
+            max_memory_used_bytes: None,
             elapsed_time: self.start_time.elapsed(),
             throughput_mb_per_sec: if self.start_time.elapsed().as_secs_f64() > 0.0 {
                 (self.bytes_processed as f64 / (1024.0 * 1024.0))
@@ -405,28 +401,30 @@ impl<R: BufRead> WorkingStreamingParser<R> {
 pub struct WorkingStreamingStats {
     pub bytes_processed: u64,
     pub elements_yielded: usize,
-    pub current_depth: usize,
-    pub max_depth_reached: usize,
-    pub current_memory_bytes: usize,
-    pub max_memory_used_bytes: usize,
+    /// The current element depth; `None` when the parser does not track it (the parallel
+    /// and zero-copy parsers). (Before 0.6.0 there was also `max_depth_reached`, which no
+    /// parser measured.)
+    pub current_depth: Option<usize>,
+    /// Buffer memory held, in bytes; `None` when not measured (only the zero-copy parser
+    /// measures it, from its buffer capacities).
+    pub current_memory_bytes: Option<usize>,
+    /// The most buffer memory held so far, in bytes; `None` when not measured.
+    pub max_memory_used_bytes: Option<usize>,
     pub elapsed_time: std::time::Duration,
     pub throughput_mb_per_sec: f64,
 }
 
 impl WorkingStreamingStats {
-    /// Check if memory usage is within O(1) bounds (under 10MB)
-    pub fn is_memory_bounded(&self) -> bool {
-        self.max_memory_used_bytes < 10 * 1024 * 1024
+    /// Whether the memory held stayed under 10MB; `None` when memory is not measured
+    pub fn is_memory_bounded(&self) -> Option<bool> {
+        self.max_memory_used_bytes.map(|m| m < 10 * 1024 * 1024)
     }
 
-    /// Get memory efficiency (MB processed per MB memory used)
-    pub fn memory_efficiency(&self) -> f64 {
-        if self.max_memory_used_bytes > 0 {
-            (self.bytes_processed as f64 / (1024.0 * 1024.0))
-                / (self.max_memory_used_bytes as f64 / (1024.0 * 1024.0))
-        } else {
-            0.0
-        }
+    /// MB processed per MB of memory held; `None` when memory is not measured (or is 0)
+    pub fn memory_efficiency(&self) -> Option<f64> {
+        self.max_memory_used_bytes.filter(|m| *m > 0).map(|m| {
+            (self.bytes_processed as f64 / (1024.0 * 1024.0)) / (m as f64 / (1024.0 * 1024.0))
+        })
     }
 }
 
@@ -548,12 +546,10 @@ mod tests {
         // Process all elements
         let _: Vec<_> = iterator.by_ref().collect();
 
+        // This parser does not measure memory: the figures are None, not 0.
         let stats = iterator.stats();
-        assert!(
-            stats.is_memory_bounded(),
-            "Memory usage should be bounded under 10MB, got {} bytes",
-            stats.max_memory_used_bytes
-        );
+        assert_eq!(stats.max_memory_used_bytes, None);
+        assert_eq!(stats.is_memory_bounded(), None);
     }
 
     #[test]

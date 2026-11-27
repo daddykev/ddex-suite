@@ -83,10 +83,10 @@ class DDEXParser:
         element, no DTD). Not XSD or AVS validation, and ``parse`` can still fail on a
         document that passes.
 
-        Returns ``{"is_valid": bool, "version": str | None, "errors": [str], "warnings":
-        [str]}``. ``version`` is the detected version (``"V4_3"``, the spelling
-        ``detect_version`` uses) or ``None`` when no ERN namespace was found; ``is_valid``
-        is True only when a version was detected and no problem was found."""
+        Returns ``{"is_valid": bool, "version": str | None, "errors": [str]}``. ``version`` is
+        the detected version (``"V4_3"``, the spelling ``detect_version`` uses) or ``None``
+        when no ERN version is recognised; ``is_valid`` is True only when a version was
+        detected and no problem was found."""
         return self._parser.sanity_check(xml)
 
 

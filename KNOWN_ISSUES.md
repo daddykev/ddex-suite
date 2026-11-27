@@ -104,9 +104,8 @@ They now fail, or report the value as not measured, instead:
   `fidelity_score` / `fidelityScore` is always null. (The fake round-trip, verification,
   fidelity-analysis and determinism-guarantee APIs were removed in 0.6.0.)
 - Node / Python builder bindings: `buildWithStatistics` / `build_with_statistics` reject a
-  `canonicalization` other than `db_c14n` or `none`. Memory, extension count and
-  canonicalization time are not measured (null). (The fidelity options that had no effect
-  were removed in 0.6.0.)
+  `canonicalization` other than `db_c14n` or `none`. (The fidelity options that had no
+  effect, and the statistics that were never measured, were removed in 0.6.0.)
 - ddex-core `AttributeValidator::add_custom_validator` does not store the closure: only
   the built-in validators `ddex_territory_code`, `ddex_language_code` and
   `ddex_currency_code` can be registered, and a custom rule naming any other validator

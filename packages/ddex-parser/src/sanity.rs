@@ -15,7 +15,6 @@ const MAX_ERRORS: usize = 20;
 pub(crate) struct SanityReport {
     pub version: Option<ERNVersion>,
     pub errors: Vec<String>,
-    pub warnings: Vec<String>,
 }
 
 pub(crate) fn check(bytes: &[u8]) -> SanityReport {
@@ -25,7 +24,6 @@ pub(crate) fn check(bytes: &[u8]) -> SanityReport {
         return SanityReport {
             version: None,
             errors,
-            warnings: Vec::new(),
         };
     }
 
@@ -39,11 +37,7 @@ pub(crate) fn check(bytes: &[u8]) -> SanityReport {
     errors.extend(well_formedness_errors(bytes));
     errors.truncate(MAX_ERRORS);
 
-    SanityReport {
-        version,
-        errors,
-        warnings: Vec::new(),
-    }
+    SanityReport { version, errors }
 }
 
 /// XML 1.0 well-formedness problems, in document order: syntax errors (including

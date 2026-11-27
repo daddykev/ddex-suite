@@ -167,11 +167,15 @@ export interface ParsedMessage {
   resources: Record<string, JsResource>
   deals: Array<JsDeal>
 }
+/**
+ * (Before 0.6.0 `version` was `"Unknown"` when no ERN version was recognised, and there
+ * was a `warnings` list.)
+ */
 export interface SanityCheckResult {
   isValid: boolean
-  version: string
+  /** The detected version (`"V4_3"`); null when none is recognised. */
+  version?: string
   errors: Array<string>
-  warnings: Array<string>
 }
 export interface DetailedError {
   errorType: string
