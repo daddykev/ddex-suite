@@ -21,7 +21,6 @@ mod golden_files;
 mod honest_results;
 mod linker;
 mod linker_xml_integration;
-mod presets;
 mod round_trip;
 mod security;
 mod security_fixes;

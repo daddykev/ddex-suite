@@ -7,7 +7,6 @@
 //!
 //! ## What You'll Learn
 //!
-//! - **Spotify Preset Usage**: How to configure DDEX Builder for Spotify compliance
 //! - **Album Structure**: Creating multi-track albums with proper metadata
 //! - **Audio Quality**: Setting high-quality audio specifications (FLAC, 44.1kHz)
 //! - **Streaming Deals**: Configuring subscription model licensing
@@ -53,27 +52,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("🎵 DDEX Builder - Spotify Album Example");
     println!("Creating a complete album release optimized for Spotify...\n");
 
-    // Step 1: Initialize builder with Spotify-specific configuration
-    // The Spotify preset automatically configures:
-    // - ERN 4.3 schema version
-    // - Audio quality requirements (≥320kbps)
-    // - Required metadata fields (ISRC, UPC, etc.)
-    // - Territory and licensing defaults
+    // Step 1: Initialize the builder. The request itself carries every value (ERN 4.3,
+    // ISRCs, UPC, territories): there are no presets.
     let builder = DDEXBuilder::new();
-
-    // Apply Spotify preset - this ensures compliance with Spotify's technical requirements
-    // The preset includes validation rules, default values, and format constraints
-    // Note: preset functionality not available in current DDEXBuilder
-    // if let Err(e) = builder.preset("spotify_audio_43") {
-    //     eprintln!("❌ Failed to apply Spotify preset: {}", e);
-    //     eprintln!("💡 Make sure the 'spotify_audio_43' preset is available");
-    //     return Err(e.into());
-    // }
-
-    println!("✅ Applied Spotify Audio 4.3 preset");
-    println!("   • ERN 4.3 schema validation enabled");
-    println!("   • Spotify-specific field requirements active");
-    println!("   • High-quality audio validation enabled");
 
     // Step 2: Create the album release request
     // This represents the complete metadata for our fictional album
@@ -467,7 +448,6 @@ mod tests {
     #[tokio::test]
     async fn test_spotify_album_example() {
         let builder = DDEXBuilder::new();
-        builder.apply_preset("spotify_audio_43", false).unwrap();
 
         let request = create_spotify_album_request();
         let result = builder.build(request, BuildOptions::default()).unwrap();

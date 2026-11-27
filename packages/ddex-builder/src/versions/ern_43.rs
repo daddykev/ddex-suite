@@ -4,7 +4,6 @@
 //! feature set and modern capabilities.
 
 use super::*;
-use crate::presets::DdexVersion;
 
 /// Get ERN 4.3 version specification
 pub fn get_version_spec() -> VersionSpec {

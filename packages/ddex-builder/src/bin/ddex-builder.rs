@@ -2,16 +2,14 @@
 //!
 //! This CLI builds DDEX XML from a JSON / YAML / TOML build request (`build`, which runs
 //! `DDEXBuilder::build` and its preflight validation) and converts between versions
-//! (`convert`). In 0.5.x `diff`, `validate`, `watch` and `server` are not implemented: they
-//! exit with an error (before 0.5.1 they printed made-up results). Presets do not change the
-//! output (KNOWN_ISSUES.md).
+//! (`convert`). `validate`, `watch` and `server` are not implemented: they exit with an
+//! error (before 0.5.1 they printed made-up results).
 
 use clap::{Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::{generate, Shell};
 use console::style;
-use ddex_builder::presets::{DdexVersion, MessageProfile};
+use ddex_builder::schema::MessageProfile;
 use ddex_builder::*;
-use indexmap::IndexMap;
 use serde_json::Value as JsonValue;
 use std::fs;
 use std::io::{self, Read, Write};
@@ -22,7 +20,7 @@ use std::process;
 #[command(
     name = "ddex-builder",
     about = "DDEX Builder CLI - High-performance DDEX XML processing toolkit",
-    long_about = "A comprehensive command-line interface for building, converting, validating, and comparing DDEX XML files with deterministic output and partner preset support.",
+    long_about = "A comprehensive command-line interface for building, converting, validating, and comparing DDEX XML files with DB-C14N/1.0 canonical output.",
     version = env!("CARGO_PKG_VERSION"),
     author = "Kevin Marques Moo"
 )]
@@ -42,10 +40,6 @@ struct Cli {
     /// Control color output
     #[arg(long, global = true, value_enum, default_value_t = ColorChoice::Auto)]
     color: ColorChoice,
-
-    /// Path to configuration file
-    #[arg(long, global = true)]
-    config: Option<PathBuf>,
 }
 
 #[derive(Subcommand)]
@@ -54,16 +48,12 @@ enum Commands {
     Build(BuildCommand),
     /// Convert DDEX XML between versions
     Convert(ConvertCommand),
-    /// Compare two DDEX files semantically
-    Diff(DiffCommand),
     /// Validate DDEX XML files
     Validate(ValidateCommand),
     /// Generate schemas for validation
     Schema(SchemaCommand),
     /// Validate determinism guarantees
     Guarantees(GuaranteesCommand),
-    /// List and apply partner presets
-    Preset(PresetCommand),
     /// Watch files for changes and rebuild
     Watch(WatchCommand),
     /// Run HTTP API server for builder operations
@@ -86,14 +76,6 @@ struct BuildCommand {
     #[arg(long = "ddex-version", value_enum)]
     ddex_version: Option<DdexVersionArg>,
 
-    /// Content profile to use
-    #[arg(short, long)]
-    profile: Option<String>,
-
-    /// Partner preset configuration
-    #[arg(long, value_enum)]
-    preset: Option<PresetChoice>,
-
     /// Validate before building
     #[arg(long)]
     validate: bool,
@@ -101,10 +83,6 @@ struct BuildCommand {
     /// Input data format (auto-detected if not specified)
     #[arg(long, value_enum)]
     format: Option<InputFormat>,
-
-    /// Enable strict validation
-    #[arg(long)]
-    strict: bool,
 
     /// Verify determinism by building multiple times
     #[arg(long)]
@@ -143,31 +121,6 @@ struct ConvertCommand {
 }
 
 #[derive(Args)]
-struct DiffCommand {
-    /// First DDEX XML file
-    file1: PathBuf,
-
-    /// Second DDEX XML file
-    file2: PathBuf,
-
-    /// Output format
-    #[arg(short, long, value_enum, default_value_t = DiffFormat::Human)]
-    format: DiffFormat,
-
-    /// Output file path (default: stdout)
-    #[arg(short, long)]
-    output: Option<PathBuf>,
-
-    /// Include technical details in diff
-    #[arg(long)]
-    detailed: bool,
-
-    /// Ignore whitespace differences
-    #[arg(long)]
-    ignore_whitespace: bool,
-}
-
-#[derive(Args)]
 struct ValidateCommand {
     /// DDEX XML files to validate
     files: Vec<PathBuf>,
@@ -179,10 +132,6 @@ struct ValidateCommand {
     /// Content profile for validation
     #[arg(short, long)]
     profile: Option<String>,
-
-    /// Partner preset for validation
-    #[arg(long, value_enum)]
-    preset: Option<PresetChoice>,
 
     /// Enable strict validation rules
     #[arg(long)]
@@ -203,10 +152,6 @@ struct SchemaCommand {
     #[arg(id = "ddex_version", long = "ddex-version", value_enum)]
     version: DdexVersionArg,
 
-    /// Content profile
-    #[arg(short, long)]
-    profile: Option<String>,
-
     /// Output format
     #[arg(short, long, value_enum, default_value_t = SchemaFormat::Json)]
     format: SchemaFormat,
@@ -214,10 +159,6 @@ struct SchemaCommand {
     /// Output file path or '-' for stdout
     #[arg(short, long)]
     output: Option<PathBuf>,
-
-    /// Include documentation in schema
-    #[arg(long)]
-    with_docs: bool,
 }
 
 #[derive(Args)]
@@ -252,78 +193,6 @@ struct GuaranteesCommand {
 }
 
 #[derive(Args)]
-struct PresetCommand {
-    /// Preset operation
-    #[command(subcommand)]
-    operation: PresetOperation,
-}
-
-#[derive(Subcommand)]
-enum PresetOperation {
-    /// List available presets
-    List(PresetListCommand),
-    /// Show preset details
-    Show(PresetShowCommand),
-    /// Apply preset to input data
-    Apply(PresetApplyCommand),
-}
-
-#[derive(Args)]
-struct PresetListCommand {
-    /// Filter by DDEX version
-    #[arg(id = "ddex_version", long = "ddex-version", value_enum)]
-    version: Option<DdexVersionArg>,
-
-    /// Filter by partner
-    #[arg(long, value_enum)]
-    partner: Option<PresetChoice>,
-
-    /// Output format
-    #[arg(short, long, value_enum, default_value_t = PresetListFormat::Human)]
-    format: PresetListFormat,
-}
-
-#[derive(Args)]
-struct PresetShowCommand {
-    /// Preset identifier
-    preset: String,
-
-    /// Output format
-    #[arg(short, long, value_enum, default_value_t = PresetShowFormat::Human)]
-    format: PresetShowFormat,
-
-    /// Include full configuration details
-    #[arg(long)]
-    detailed: bool,
-}
-
-#[derive(Args)]
-struct PresetApplyCommand {
-    /// Preset identifier
-    preset: String,
-
-    /// Input file (JSON/YAML/TOML) or '-' for stdin
-    #[arg(short, long)]
-    input: Option<PathBuf>,
-
-    /// Output file path or '-' for stdout
-    #[arg(short, long)]
-    output: Option<PathBuf>,
-
-    /// Input data format (auto-detected if not specified)
-    #[arg(long, value_enum)]
-    format: Option<InputFormat>,
-
-    /// Override preset DDEX version
-    #[arg(long, value_enum)]
-    version_override: Option<DdexVersionArg>,
-
-    /// Validate output after applying preset
-    #[arg(long)]
-    validate: bool,
-}
-
-#[derive(Args)]
 struct WatchCommand {
     /// Directory or file to watch
     #[arg(short, long)]
@@ -344,10 +213,6 @@ struct WatchCommand {
     /// DDEX version to use for building
     #[arg(id = "ddex_version", long = "ddex-version", value_enum)]
     version: Option<DdexVersionArg>,
-
-    /// Preset to apply
-    #[arg(long, value_enum)]
-    preset: Option<PresetChoice>,
 
     /// Debounce delay in milliseconds (default: 500ms)
     #[arg(long, default_value_t = 500)]
@@ -441,36 +306,11 @@ enum DdexVersionArg {
     V44,
 }
 
-#[derive(ValueEnum, Clone, Copy, Debug)]
-enum PresetChoice {
-    /// Generic audio album preset (DDEX-compliant baseline)
-    AudioAlbum,
-    /// Generic audio single preset (DDEX-compliant baseline)
-    AudioSingle,
-    /// Generic video single preset (DDEX-compliant baseline)
-    VideoSingle,
-    /// Generic compilation preset (DDEX-compliant baseline)
-    Compilation,
-    /// YouTube album preset (based on public documentation)
-    YoutubeAlbum,
-    /// YouTube video preset (based on public documentation)
-    YoutubeVideo,
-    /// YouTube single preset (based on public documentation)
-    YoutubeSingle,
-}
-
 #[derive(ValueEnum, Clone, Debug)]
 enum InputFormat {
     Json,
     Yaml,
     Toml,
-}
-
-#[derive(ValueEnum, Clone, Debug, PartialEq)]
-enum DiffFormat {
-    Human,
-    Json,
-    Update,
 }
 
 #[derive(ValueEnum, Clone, Debug)]
@@ -489,20 +329,6 @@ enum SchemaFormat {
 
 #[derive(ValueEnum, Clone, Debug)]
 enum GuaranteeFormat {
-    Human,
-    Json,
-    Yaml,
-}
-
-#[derive(ValueEnum, Clone, Debug)]
-enum PresetListFormat {
-    Human,
-    Json,
-    Table,
-}
-
-#[derive(ValueEnum, Clone, Debug)]
-enum PresetShowFormat {
     Human,
     Json,
     Yaml,
@@ -529,23 +355,14 @@ fn main() {
     // Setup color output
     setup_colors(cli.color);
 
-    // Load configuration if specified
-    let config = cli
-        .config
-        .as_ref()
-        .map(|p| load_config(p))
-        .unwrap_or_default();
-
     let result = match cli.command {
-        Commands::Build(cmd) => handle_build_command(cmd, &config),
-        Commands::Convert(cmd) => handle_convert_command(cmd, &config),
-        Commands::Diff(cmd) => handle_diff_command(cmd, &config),
-        Commands::Validate(cmd) => handle_validate_command(cmd, &config),
-        Commands::Schema(cmd) => handle_schema_command(cmd, &config),
-        Commands::Guarantees(cmd) => handle_guarantees_command(cmd, &config),
-        Commands::Preset(cmd) => handle_preset_command(cmd, &config),
-        Commands::Watch(cmd) => handle_watch_command(cmd, &config),
-        Commands::Server(cmd) => handle_server_command(cmd, &config),
+        Commands::Build(cmd) => handle_build_command(cmd),
+        Commands::Convert(cmd) => handle_convert_command(cmd),
+        Commands::Validate(cmd) => handle_validate_command(cmd),
+        Commands::Schema(cmd) => handle_schema_command(cmd),
+        Commands::Guarantees(cmd) => handle_guarantees_command(cmd),
+        Commands::Watch(cmd) => handle_watch_command(cmd),
+        Commands::Server(cmd) => handle_server_command(cmd),
         Commands::Completions(cmd) => handle_completions_command(cmd),
     };
 
@@ -589,31 +406,10 @@ fn setup_colors(color_choice: ColorChoice) {
     }
 }
 
-fn load_config(_path: &Path) -> ConfigFile {
-    // TODO: Implement configuration file loading
-    ConfigFile::default()
-}
-
-#[derive(Default)]
-struct ConfigFile {
-    // Configuration options that can be loaded from file
-}
-
-fn handle_build_command(
-    cmd: BuildCommand,
-    _config: &ConfigFile,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn handle_build_command(cmd: BuildCommand) -> Result<(), Box<dyn std::error::Error>> {
     let input_data = read_input_data(&cmd.input, cmd.format)?;
 
-    // Create builder with optional preset
     let mut builder = Builder::new();
-
-    if let Some(preset) = cmd.preset {
-        let preset_name = preset_to_string(&preset);
-        builder
-            .apply_preset(&preset_name, false)
-            .map_err(|e| format!("Failed to apply preset '{}': {}", preset_name, e))?;
-    }
 
     if let Some(version) = cmd.ddex_version {
         builder.with_version(version.into());
@@ -621,7 +417,7 @@ fn handle_build_command(
 
     // Validate input if requested
     if cmd.validate {
-        validate_input_data(&input_data, &builder, cmd.strict)?;
+        validate_input_data(&input_data, &builder)?;
     }
 
     // Build the XML
@@ -637,12 +433,6 @@ fn handle_build_command(
 
     if !is_quiet() {
         println!("{} DDEX XML built successfully", style("✓").green());
-        if let Some(preset) = cmd.preset {
-            println!(
-                "  Preset: {} (presets do not change the output in 0.5.x)",
-                preset_to_string(&preset)
-            );
-        }
         if let Some(version) = cmd.ddex_version {
             println!("  Version: {:?}", version);
         }
@@ -658,10 +448,7 @@ fn handle_build_command(
     Ok(())
 }
 
-fn handle_convert_command(
-    cmd: ConvertCommand,
-    _config: &ConfigFile,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn handle_convert_command(cmd: ConvertCommand) -> Result<(), Box<dyn std::error::Error>> {
     let input_xml = read_input_string(&cmd.input)?;
 
     let builder = Builder::new();
@@ -706,30 +493,11 @@ fn handle_convert_command(
     Ok(())
 }
 
-fn handle_diff_command(
-    _cmd: DiffCommand,
-    _config: &ConfigFile,
-) -> Result<(), Box<dyn std::error::Error>> {
-    Err("`ddex-builder diff` is not implemented in 0.5.x: the semantic diff is planned (it printed 'Files are identical' for any input)".into())
-}
-
-fn handle_validate_command(
-    _cmd: ValidateCommand,
-    _config: &ConfigFile,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn handle_validate_command(_cmd: ValidateCommand) -> Result<(), Box<dyn std::error::Error>> {
     Err("`ddex-builder validate` is not implemented in 0.5.x: reading DDEX XML needs the parser; use `ddex-parser validate` (it reported every file as valid)".into())
 }
 
-fn handle_schema_command(
-    cmd: SchemaCommand,
-    _config: &ConfigFile,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let _schema_config = schema::SchemaConfig {
-        include_descriptions: cmd.with_docs,
-        ..Default::default()
-    };
-
-    // Use a default profile for now - this could be enhanced to support actual profiles
+fn handle_schema_command(cmd: SchemaCommand) -> Result<(), Box<dyn std::error::Error>> {
     let profile = MessageProfile::AudioAlbum;
     let generator = schema::SchemaGenerator::new(cmd.version.into(), profile);
     let schema_result = generator.generate_complete_schema()?;
@@ -750,10 +518,7 @@ fn handle_schema_command(
     Ok(())
 }
 
-fn handle_guarantees_command(
-    cmd: GuaranteesCommand,
-    _config: &ConfigFile,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn handle_guarantees_command(cmd: GuaranteesCommand) -> Result<(), Box<dyn std::error::Error>> {
     use ddex_builder::builder::BuildRequest;
     use ddex_builder::determinism::{DeterminismConfig, DeterminismVerifier};
     use ddex_builder::guarantees::generate_guarantee_report;
@@ -909,131 +674,11 @@ fn format_guarantee_report_human(
     output
 }
 
-fn handle_preset_command(
-    cmd: PresetCommand,
-    _config: &ConfigFile,
-) -> Result<(), Box<dyn std::error::Error>> {
-    match cmd.operation {
-        PresetOperation::List(list_cmd) => {
-            // TODO: Implement preset listing from ddex_builder::presets
-            let presets = get_available_presets(list_cmd.version, list_cmd.partner)?;
-
-            match list_cmd.format {
-                PresetListFormat::Human => {
-                    println!("Available DDEX Presets:");
-                    println!("{:-<50}", "");
-                    for preset in &presets {
-                        println!(
-                            "{:<20} {:<10} {}",
-                            preset.name, preset.version, preset.description
-                        );
-                    }
-                }
-                PresetListFormat::Json => {
-                    println!("{}", serde_json::to_string_pretty(&presets)?);
-                }
-                PresetListFormat::Table => {
-                    println!(
-                        "{:<20} {:<10} {:<15} {}",
-                        "Name", "Version", "Partner", "Description"
-                    );
-                    println!("{:-<80}", "");
-                    for preset in &presets {
-                        println!(
-                            "{:<20} {:<10} {:<15} {}",
-                            preset.name, preset.version, preset.partner, preset.description
-                        );
-                    }
-                }
-            }
-        }
-        PresetOperation::Show(show_cmd) => {
-            let preset_details = get_preset_details(&show_cmd.preset)?;
-
-            match show_cmd.format {
-                PresetShowFormat::Human => {
-                    println!("Preset: {}", preset_details.name);
-                    println!("Partner: {}", preset_details.partner);
-                    println!("Version: {}", preset_details.version);
-                    println!("Description: {}", preset_details.description);
-                    if show_cmd.detailed {
-                        println!("\nConfiguration:");
-                        println!("{:#?}", preset_details.config);
-                    }
-                }
-                PresetShowFormat::Json => {
-                    if show_cmd.detailed {
-                        println!("{}", serde_json::to_string_pretty(&preset_details)?);
-                    } else {
-                        let summary = PresetSummary {
-                            name: preset_details.name,
-                            partner: preset_details.partner,
-                            version: preset_details.version,
-                            description: preset_details.description,
-                        };
-                        println!("{}", serde_json::to_string_pretty(&summary)?);
-                    }
-                }
-                PresetShowFormat::Yaml => {
-                    if show_cmd.detailed {
-                        println!("{}", serde_yaml::to_string(&preset_details)?);
-                    } else {
-                        let summary = PresetSummary {
-                            name: preset_details.name,
-                            partner: preset_details.partner,
-                            version: preset_details.version,
-                            description: preset_details.description,
-                        };
-                        println!("{}", serde_yaml::to_string(&summary)?);
-                    }
-                }
-            }
-        }
-        PresetOperation::Apply(apply_cmd) => {
-            let input_data = read_input_data(&apply_cmd.input, apply_cmd.format)?;
-
-            let mut builder = Builder::new();
-            builder.apply_preset(&apply_cmd.preset, false)?;
-
-            if let Some(version_override) = apply_cmd.version_override {
-                builder.with_version(version_override.into());
-            }
-
-            let xml_output = build_ddex_xml(&input_data, &builder)?;
-
-            if apply_cmd.validate {
-                // TODO: Validate the output
-                if !is_quiet() {
-                    println!("{} Validation passed", style("✓").green());
-                }
-            }
-
-            write_output(&xml_output, &apply_cmd.output)?;
-
-            if !is_quiet() {
-                println!(
-                    "{} Preset '{}' applied successfully",
-                    style("✓").green(),
-                    apply_cmd.preset
-                );
-            }
-        }
-    }
-
-    Ok(())
-}
-
-fn handle_watch_command(
-    _cmd: WatchCommand,
-    _config: &ConfigFile,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn handle_watch_command(_cmd: WatchCommand) -> Result<(), Box<dyn std::error::Error>> {
     Err("`ddex-builder watch` is not implemented in 0.5.x: no files are watched; run `ddex-builder build` instead".into())
 }
 
-fn handle_server_command(
-    _cmd: ServerCommand,
-    _config: &ConfigFile,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn handle_server_command(_cmd: ServerCommand) -> Result<(), Box<dyn std::error::Error>> {
     Err("`ddex-builder server` is not implemented in 0.5.x: there is no HTTP server (it printed endpoints and waited)".into())
 }
 
@@ -1117,22 +762,9 @@ fn detect_input_format(path: &Path) -> InputFormat {
     }
 }
 
-fn preset_to_string(preset: &PresetChoice) -> String {
-    match preset {
-        PresetChoice::AudioAlbum => "audio_album".to_string(),
-        PresetChoice::AudioSingle => "audio_single".to_string(),
-        PresetChoice::VideoSingle => "video_single".to_string(),
-        PresetChoice::Compilation => "compilation".to_string(),
-        PresetChoice::YoutubeAlbum => "youtube_album".to_string(),
-        PresetChoice::YoutubeVideo => "youtube_video".to_string(),
-        PresetChoice::YoutubeSingle => "youtube_single".to_string(),
-    }
-}
-
 fn validate_input_data(
     data: &JsonValue,
     builder: &Builder,
-    _strict: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Preflight validation runs as part of the build.
     build_ddex_xml(data, builder).map(|_| ())
@@ -1154,104 +786,6 @@ fn build_ddex_xml(
 
 fn is_quiet() -> bool {
     std::env::var("DDEX_QUIET").unwrap_or_default() == "1"
-}
-
-// Helper functions for new commands
-
-fn get_available_presets(
-    version_filter: Option<DdexVersionArg>,
-    partner_filter: Option<PresetChoice>,
-) -> Result<Vec<PresetInfo>, Box<dyn std::error::Error>> {
-    let mut presets = vec![
-        // Generic industry-standard presets
-        PresetInfo {
-            name: "audio_album".to_string(),
-            version: "4.3".to_string(),
-            partner: "Generic".to_string(),
-            description: "DDEX ERN 4.3 audio album baseline preset".to_string(),
-        },
-        PresetInfo {
-            name: "audio_single".to_string(),
-            version: "4.3".to_string(),
-            partner: "Generic".to_string(),
-            description: "DDEX ERN 4.3 audio single baseline preset".to_string(),
-        },
-        PresetInfo {
-            name: "video_single".to_string(),
-            version: "4.3".to_string(),
-            partner: "Generic".to_string(),
-            description: "DDEX ERN 4.3 video single baseline preset".to_string(),
-        },
-        PresetInfo {
-            name: "compilation".to_string(),
-            version: "4.3".to_string(),
-            partner: "Generic".to_string(),
-            description: "DDEX ERN 4.3 compilation album baseline preset".to_string(),
-        },
-        // YouTube presets (based on public documentation)
-        PresetInfo {
-            name: "youtube_album".to_string(),
-            version: "4.3".to_string(),
-            partner: "YouTube".to_string(),
-            description: "YouTube Music album preset based on public Partner documentation"
-                .to_string(),
-        },
-        PresetInfo {
-            name: "youtube_video".to_string(),
-            version: "4.3".to_string(),
-            partner: "YouTube".to_string(),
-            description: "YouTube Music video preset based on public Partner documentation"
-                .to_string(),
-        },
-        PresetInfo {
-            name: "youtube_single".to_string(),
-            version: "4.3".to_string(),
-            partner: "YouTube".to_string(),
-            description: "YouTube Music single preset based on public Partner documentation"
-                .to_string(),
-        },
-    ];
-
-    // Apply filters
-    if let Some(version_filter) = version_filter {
-        let version_str = match version_filter {
-            DdexVersionArg::V382 => "3.8.2",
-            DdexVersionArg::V41 => "4.1",
-            DdexVersionArg::V42 => "4.2",
-            DdexVersionArg::V43 => "4.3",
-            DdexVersionArg::V44 => "4.4",
-        };
-        presets.retain(|p| p.version == version_str);
-    }
-
-    if let Some(partner_filter) = partner_filter {
-        let partner_str = match partner_filter {
-            PresetChoice::AudioAlbum => "Generic",
-            PresetChoice::AudioSingle => "Generic",
-            PresetChoice::VideoSingle => "Generic",
-            PresetChoice::Compilation => "Generic",
-            PresetChoice::YoutubeAlbum => "YouTube",
-            PresetChoice::YoutubeVideo => "YouTube",
-            PresetChoice::YoutubeSingle => "YouTube",
-        };
-        presets.retain(|p| p.partner == partner_str);
-    }
-
-    Ok(presets)
-}
-
-fn get_preset_details(preset_id: &str) -> Result<PresetDetails, Box<dyn std::error::Error>> {
-    // TODO: Load preset details from ddex_builder::presets module
-    match preset_id {
-        "spotify_audio_43" => Ok(PresetDetails {
-            name: "spotify_audio_43".to_string(),
-            partner: "Spotify".to_string(),
-            version: "4.3".to_string(),
-            description: "Spotify audio release preset for ERN 4.3".to_string(),
-            config: PresetConfig::default(), // Placeholder
-        }),
-        _ => Err(format!("Preset '{}' not found", preset_id).into()),
-    }
 }
 
 fn verify_build_determinism(
@@ -1353,38 +887,4 @@ fn find_first_difference(a: &str, b: &str) -> Option<usize> {
                 None
             }
         })
-}
-
-// Data structures for preset commands
-
-#[derive(serde::Serialize, serde::Deserialize)]
-struct PresetInfo {
-    name: String,
-    version: String,
-    partner: String,
-    description: String,
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
-struct PresetDetails {
-    name: String,
-    partner: String,
-    version: String,
-    description: String,
-    config: PresetConfig,
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
-struct PresetSummary {
-    name: String,
-    partner: String,
-    version: String,
-    description: String,
-}
-
-#[derive(Debug, serde::Serialize, serde::Deserialize, Default)]
-struct PresetConfig {
-    // TODO: Define actual preset configuration structure
-    // This would contain partner-specific settings, validation rules, etc.
-    settings: IndexMap<String, String>,
 }

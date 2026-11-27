@@ -295,11 +295,11 @@ let verifier = DeterminismVerifier::new(config)
 let result = verifier.verify(&request, 2)?;
 if !result.is_deterministic {
     // Outputs are retained for detailed comparison
-    let diff_tool = diff::DiffEngine::new();
-    let changes = diff_tool.compare_xml(&result.outputs[0], &result.outputs[1])?;
-    
-    for change in changes.changes {
-        println!("Change: {:?} at {}", change.change_type, change.path);
+    for difference in &result.differences {
+        println!(
+            "Builds {} and {} differ at byte {:?}",
+            difference.iteration1, difference.iteration2, difference.first_difference_byte
+        );
     }
 }
 ```

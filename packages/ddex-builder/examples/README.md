@@ -63,11 +63,6 @@ Each example generates XML files and detailed console output:
 🎵 DDEX Builder - Generic Album Example
 Creating a complete album release for broad distribution...
 
-✅ Applied Generic Audio 4.3 preset
-   • ERN 4.3 schema validation enabled
-   • Standard field requirements active
-   • High-quality audio validation enabled
-
 📀 Album Information:
    📀 Album: 'Digital Horizons'
    🎤 Artist: The Wavelength Collective
@@ -108,14 +103,7 @@ Creating a complete album release for broad distribution...
 All examples demonstrate robust error handling:
 
 ```rust
-// Pattern 1: Graceful preset application
-if let Err(e) = builder.preset("spotify_audio_43") {
-    eprintln!("❌ Failed to apply preset: {}", e);
-    eprintln!("💡 Check that the preset exists and is valid");
-    return Err(e.into());
-}
-
-// Pattern 2: Build with detailed error context
+// Build with detailed error context
 let result = match builder.build_internal(&request) {
     Ok(result) => {
         println!("✅ Build successful: {} KB", result.xml.len() / 1024);
@@ -174,9 +162,8 @@ validate_audio_specifications(&audio_specs)?;
 
 1. **Copy an existing example** as a starting point
 2. **Modify the metadata** for your use case
-3. **Update the preset** for your target platform
-4. **Add custom validation** for your requirements
-5. **Test thoroughly** with real metadata
+3. **Add custom validation** for your requirements
+4. **Test thoroughly** with real metadata
 
 ### Example Template
 
@@ -192,8 +179,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("🎵 Your Custom Example");
     
     // Step 1: Initialize builder
-    let mut builder = Builder::new();
-    builder.preset("your_preset")?;
+    let builder = Builder::new();
     
     // Step 2: Create request
     let request = create_your_request();
@@ -223,12 +209,6 @@ fn validate_your_requirements(xml: &str) -> Result<(), Box<dyn Error>> {
 ## 🐛 Troubleshooting
 
 ### Common Issues
-
-**Preset not found**
-```
-❌ Failed to apply preset: Preset 'custom_preset' not found
-💡 Check available presets with builder.available_presets()
-```
 
 **Missing required fields**
 ```

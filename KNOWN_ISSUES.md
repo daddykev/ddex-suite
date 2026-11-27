@@ -30,7 +30,6 @@ Classification and history: `dev-docs/TEST_TRIAGE.md`.
 | Not deterministic (0.6.0; D4): `IdStrategy::Sequential` makes the `MessageId` `MSG_` plus the current Unix time | `it::determinism_0_6::id_strategy_sequential_is_byte_identical`, `…::sequential_message_id_is_not_time_derived` |
 | `IdStrategy::StableHash` references are `B3:<hex>` / `SHA256:<hex>`, which do not match the ERN reference pattern (`X[\d\-_a-zA-Z]+`), so a build that leaves a resource or release reference to it fails; its deal references (`DEAL_<model>_<territories>`) repeat for deals with the same terms (D6, D7) | `it::determinism_0_6::id_strategy_stable_hash_is_byte_identical` |
 | Not deterministic (0.6.0; D8): an omitted `MessageCreatedDateTime` is filled with the current time (`generator/ern4.rs`, `generator/ern38.rs`, `message_header`) instead of failing with an error that names the field | `it::determinism_0_6::omitted_message_created_date_time_is_an_error` |
-| Not deterministic (0.6.0; D10, D11): update messages (`create_update*`, `serialize_update`) always carry the current time (`MessageCreatedDateTime`, `UpdateCreatedDateTime`), and every operation's entity ID is `unknown_` plus random hex: `extract_entity_id` looks for `Id=` in the diff path, which `DiffPath` never writes | `it::determinism_0_6::update_message_is_byte_identical` |
 | Not deterministic (0.6.0; D12, D13): the streaming writer (`streaming::StreamingBuilder`) fills an omitted `MessageId` with a random UUID and an omitted `MessageCreatedDateTime` with the current time (`write_message_header`) | `it::determinism_0_6::streaming_writer_omitted_header_values_are_byte_identical` |
 | `PathValidator`: allows `settings.json`, empty paths, malformed paths, Unicode homographs and `malware.exe`; rejects valid relative paths, paths within the depth limit and valid paths under concurrency; mishandles a bare `\` | `it::security_fixes::*` (5), `it::security::path_validator_tests::*` (4) |
 | `InputValidator::validate_xml_content` is regex-only: accepts empty input, doesn't enforce `max_xml_depth`, accepts malformed CDATA and `]]>` in text, and ignores `allow_dtd` (with `false` it accepts an empty DTD or a mixed-case `<!Entity … System` declaration; with `true` it still rejects every internal entity declaration) | `it::security::integration_tests::test_security_edge_cases`, `test_memory_safety_under_attack`, `it::security::malicious_payload_tests::test_cdata_section_abuse`, `test_xml_injection_in_ddex_fields`, `it::security::xxe_prevention_tests::test_xxe_edge_cases`, `it::security::parameter_entity_tests::test_parameter_entity_evasions`, `it::security::entity_expansion_tests::test_reasonable_entities_allowed` |
@@ -100,10 +99,7 @@ reason, until the upgrade lands.
   "Not deterministic" rows) are now pinned by `it::determinism_0_6`; the full inventory is
   `dev-docs/DETERMINISM_AUDIT_0.6.0.md`. Giving `message_id`, `message_created_date_time`,
   `release_reference` and each track's `resource_reference` makes `DDEXBuilder::build`
-  output repeatable; update messages always carry the current time. Not pinned by a test:
-  `DiffFormatter::generate_update_message` writes a random `MessageId` when none is given
-  and the changeset's creation time as `MessageCreatedDateTime` (D15, D16); the streaming
-  writer's references are SHA-256 of the caller's IDs cut to 8 hex digits, so a large
+  output repeatable. Not pinned by a test: the streaming writer's references are SHA-256 of the caller's IDs cut to 8 hex digits, so a large
   catalog can fail with a reference collision (D14).
 - Python parser binding: no `ParseOptions` field changes the result. `include_raw_extensions`
   and `include_comments` reach the Rust `ParseOptions`, which nothing reads;
@@ -118,18 +114,11 @@ reason, until the upgrade lands.
 - The ERN 3.8.2 XSD is fetched from the Internet Archive's capture of its official URL
   (DDEX removed the ERN 3.x schemas from service.ddex.net in 2026), pinned by hash.
 - ddex-builder streaming writer (`streaming::StreamingBuilder`, Node `StreamingDdexBuilder`): ERN 4.2/4.3 targets are rejected with "not yet supported by the streaming writer" (it only writes the 3.8-style tree; use `DDEXBuilder::build` for 4.x). Its 3.8 output still declares the `ern/43` namespace whatever version is requested, and is the old 3.8-style tree, not the schema-valid 3.8.2 that `DDEXBuilder::build` writes.
-- ddex-builder WASM binding: `DdexDiffViewer` compares the two documents as single text nodes (it wraps each document in one text node instead of parsing it, like `DDEXBuilder::diff_xml`), so any difference is one change.
 - ddex-parser `FastStreamingParser::new(StreamingConfig)` ignores the config: buffer size, `max_memory` and the `SecurityConfig` limits are not applied on the fast path (`SecurityConfig::relaxed()` / `enable_fast_streaming`).
-- ddex-builder `DDEXBuilder::diff_xml` / `diff_xml_with_config` / `diff_request_with_xml` are stubs: `parse_xml_to_ast` wraps the whole document in one text node, so any difference is reported as a single `/#text` modification. The `DiffEngine` itself works on real ASTs.
-- ddex-builder CLI: `diff`, `validate`, `watch` and `server` are not implemented and exit
-  with an error (before 0.5.1 they printed "Files are identical", passed every file,
-  simulated watching and printed endpoints without a server). `build` runs
-  `DDEXBuilder::build` since 0.5.1. Presets do not affect the output. (The no-op `batch`
-  subcommand was removed in 0.5.0.)
-- Presets (`Builder::apply_preset`, Node / Python `applyPreset` / `apply_preset`) do not
-  change the build output; the binding preset methods list and describe the builder's
-  presets (before 0.5.1 they returned a hard-coded list of partner presets the builder does
-  not have).
+- ddex-builder CLI: `validate`, `watch` and `server` are not implemented and exit
+  with an error (before 0.5.1 they passed every file, simulated watching and printed
+  endpoints without a server). `build` runs `DDEXBuilder::build` since 0.5.1. (The no-op
+  `batch` subcommand was removed in 0.5.0; `diff` and `preset` were removed in 0.6.0.)
 - ERN prefixed local elements (`<ern:PartyId>`, not schema-valid) are handled inconsistently: some are found, `MessageSender/PartyId` is not.
 
 ## Not implemented in 0.5.x
@@ -156,8 +145,6 @@ They now fail, or report the value as not measured, instead:
     `BuildStatistics` canonicalization / validation time, peak memory and input size are not
     measured (0 in Rust, null in Node / Python, as are memory, extension count and
     canonicalization time in the bindings).
-- ddex-builder `UpdateGenerator::apply_update` / `DDEXBuilder::apply_update` return an error
-  (the operations were no-ops and the result an almost empty document).
 - ddex-builder determinism: `guarantees::validate_no_hashmap_usage` and
   `validate_deterministic_sorting` return an error; the `DeterministicCollections` and
   `StableSorting` guarantees report `passed: false` (not verified; ddex-builder still uses

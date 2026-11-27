@@ -30,9 +30,36 @@
 //! ```
 
 use crate::error::BuildError;
-use crate::presets::DdexVersion;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
+
+/// A DDEX ERN version (moved here from `presets` in 0.6.0; also exported at the crate root).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum DdexVersion {
+    /// ERN 3.8.2
+    #[serde(rename = "ERN/3.8.2")]
+    Ern382,
+    /// ERN 4.2
+    #[serde(rename = "ERN/4.2")]
+    Ern42,
+    /// ERN 4.3
+    #[serde(rename = "ERN/4.3")]
+    Ern43,
+    /// ERN 4.1
+    #[serde(rename = "ERN/4.1")]
+    Ern41,
+}
+
+impl std::fmt::Display for DdexVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DdexVersion::Ern382 => write!(f, "ERN/3.8.2"),
+            DdexVersion::Ern42 => write!(f, "ERN/4.2"),
+            DdexVersion::Ern43 => write!(f, "ERN/4.3"),
+            DdexVersion::Ern41 => write!(f, "ERN/4.1"),
+        }
+    }
+}
 
 mod converter;
 mod ern_382;

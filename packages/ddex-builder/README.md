@@ -11,9 +11,8 @@ Byte-for-byte determinism is not complete yet: with the default options, a messa
 release and resource references and `MessageCreatedDateTime` that the request leaves out
 are generated (random UUIDs, the current time), and the stable-hash ID strategy puts
 today's date into the `MessageId` (the sequential strategy uses the current Unix time), so
-two builds of the same request can differ. Update messages always carry the current time,
-and the streaming writer generates a random `MessageId` and the current time when they are
-missing. Full determinism is planned for 0.6.0; see
+two builds of the same request can differ. The streaming writer generates a random
+`MessageId` and the current time when they are missing. Full determinism is planned for 0.6.0; see
 [KNOWN_ISSUES.md](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md).
 
 > **0.5.0 has breaking changes.** ERN 3.8.2 output is now schema-valid, the WASM binding
@@ -115,9 +114,9 @@ need into a `BuildRequest`.
 
 - Text is XML-escaped on output. `build` checks the fields the target version requires;
   it does not validate the output against the XSD or the AVS business rules at runtime.
-- The preset APIs (`presets`, partner presets) do not change `DDEXBuilder::build` output
-  in 0.5.x. The `ddex-builder` command-line tool's `build` runs `DDEXBuilder::build`; its
-  `diff`, `validate`, `watch` and `server` are not implemented. See the known issues.
+- The `ddex-builder` command-line tool's `build` runs `DDEXBuilder::build`; its
+  `validate`, `watch` and `server` are not implemented. See the known issues. (The preset
+  APIs, update messages and the diff were removed in 0.6.0; see the changelog.)
 
 ## Performance
 

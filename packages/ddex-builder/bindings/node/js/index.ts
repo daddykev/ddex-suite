@@ -15,8 +15,6 @@ import {
   type Resource,
   type ValidationResult,
   type BuilderStats,
-  type PresetInfo,
-  type ValidationRule,
   type FidelityOptions,
   type BuildStatistics,
   type VerificationResult,
@@ -36,8 +34,6 @@ import type { BuildRequest } from '../build-request';
 export interface BuildOptions {
   /** DDEX version to target for XML generation */
   version?: '3.8.2' | '4.2' | '4.3';
-  /** Industry preset to apply (e.g., 'audio_album', 'audio_single', 'youtube') */
-  preset?: string;
   /** Enable deterministic element and attribute ordering */
   enableDeterministicOrdering?: boolean;
   /** Enable perfect round-trip fidelity preservation */
@@ -65,24 +61,19 @@ export interface StreamingBuildOptions {
   progressCallbackFrequency?: number;
   /** DDEX version to target for streaming output */
   version?: '3.8.2' | '4.2' | '4.3';
-  /** Industry preset to apply to streaming output */
-  preset?: string;
 }
 
 /**
- * High-performance DDEX XML builder with deterministic output and industry preset support
+ * High-performance DDEX XML builder with DB-C14N/1.0 canonical output
  *
  * The DDEXBuilder provides a comprehensive API for generating DDEX-compliant XML documents
- * with deterministic output, perfect round-trip fidelity, and support for industry presets.
+ * from a build request, canonicalized with DB-C14N/1.0.
  *
  * @example
  * ```typescript
  * import { DDEXBuilder } from 'ddex-builder';
  *
  * const builder = new DDEXBuilder();
- *
- * // Apply industry preset
- * builder.applyPreset('audio_album');
  *
  * // Add releases and resources (ERN 4.x needs label, genre, parentalWarningType, and
  * // per resource ddexType and parentalWarningType; a missing one fails the build)
@@ -181,13 +172,10 @@ export class DDEXBuilder {
    *
    * @example
    * ```typescript
-   * const xml = await builder.build(request, { preset: 'audio_album' });
+   * const xml = await builder.build(request);
    * ```
    */
   async build(data?: BuildRequest | null, options?: BuildOptions): Promise<string> {
-    if (options?.preset) {
-      this.native.applyPreset(options.preset);
-    }
     return this.native.build(data);
   }
 
@@ -292,79 +280,6 @@ export class DDEXBuilder {
    */
   reset(): void {
     return this.native.reset();
-  }
-
-  /**
-   * Get list of available industry presets
-   *
-   * @returns Array of preset names
-   *
-   * @example
-   * ```typescript
-   * const presets = builder.getAvailablePresets();
-   * console.log('Available presets:', presets);
-   * // Output: ['audio_album', 'audio_single', 'video_single', 'youtube']
-   * ```
-   */
-  getAvailablePresets(): string[] {
-    return this.native.getAvailablePresets();
-  }
-
-  /**
-   * Get detailed information about a specific preset
-   *
-   * @param presetName - Name of the preset to query
-   * @returns Preset information including description and required fields
-   * @throws {Error} When preset name is not found
-   *
-   * @example
-   * ```typescript
-   * const info = builder.getPresetInfo('audio_album');
-   * console.log('Description:', info.description);
-   * console.log('Required fields:', info.requiredFields);
-   * console.log('Version:', info.version);
-   * ```
-   */
-  getPresetInfo(presetName: string): PresetInfo {
-    return this.native.getPresetInfo(presetName);
-  }
-
-  /**
-   * Apply an industry preset to configure the builder for specific use cases
-   *
-   * @param presetName - Name of the preset to apply
-   * @throws {Error} When preset name is not found or cannot be applied
-   *
-   * @example
-   * ```typescript
-   * // Apply YouTube preset for video distribution
-   * builder.applyPreset('youtube');
-   *
-   * // Apply audio album preset for traditional music releases
-   * builder.applyPreset('audio_album');
-   * ```
-   */
-  applyPreset(presetName: string): void {
-    return this.native.applyPreset(presetName);
-  }
-
-  /**
-   * Get validation rules associated with a specific preset
-   *
-   * @param presetName - Name of the preset to query
-   * @returns Array of validation rules for the preset
-   * @throws {Error} When preset name is not found
-   *
-   * @example
-   * ```typescript
-   * const rules = builder.getPresetValidationRules('audio_album');
-   * rules.forEach(rule => {
-   *   console.log(`${rule.fieldName}: ${rule.message}`);
-   * });
-   * ```
-   */
-  getPresetValidationRules(presetName: string): ValidationRule[] {
-    return this.native.getPresetValidationRules(presetName);
   }
 }
 
@@ -707,8 +622,6 @@ export type {
   Resource,
   ValidationResult,
   BuilderStats,
-  PresetInfo,
-  ValidationRule,
   FidelityOptions,
   BuildStatistics,
   VerificationResult,

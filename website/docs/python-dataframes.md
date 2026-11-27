@@ -241,6 +241,5 @@ A failed build raises `RuntimeError` with the same message as `build`; a missing
 - `ParseOptions` (`include_raw_extensions`, `include_comments`, `validate_references`,
   `streaming`, `timeout`) is accepted for forward compatibility; none of its fields
   currently changes the result.
-- The builder's preset methods (`apply_preset`, ...) do not change the output in 0.5.x.
 - `ddex_parser.__version__` and `ddex_builder.__version__` report the installed package
   version.

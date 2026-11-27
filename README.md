@@ -47,7 +47,7 @@ Working with DDEX XML shouldn't feel like archaeology. The suite transforms comp
 
 I'm building **DDEX Suite** as a rigorous, end-to-end learning project to deepen my Rust skills while unifying my JavaScript and Python experience into a production-grade toolkit for music metadata. It's built on a **single Rust core** that powers both a security-hardened DDEX XML parser library (`ddex-parser`) and a schema-driven builder library (`ddex-builder`). That core is exposed through **napi-rs** for Node/TypeScript, **PyO3** for Python and **wasm-bindgen** for WebAssembly, with a consistent API across languages and **pandas DataFrame** import and export for Python users. The project is deliberately "industry-shaped": it reads ERN 3.8.1, 3.8.2, 4.2 and 4.3 into a faithful **graph** model (in Rust) and a developer-friendly **flattened** view (in every language), and it writes ERN 3.8.2, 4.2 and 4.3 that validates against the official DDEX XSDs. Its guiding rule is to **never invent data**: absent values stay empty, and a build that lacks a value the standard requires fails with an error naming the field. Output is canonicalized by a custom specification, **DB-C14N/1.0**; making it fully byte-for-byte reproducible, with **stable, content-addressable IDs** as the default, is the focus of 0.6.0.
 
-Beyond the core implementation, this is a showcase of **software craftsmanship and platform thinking**. Correctness is checked rather than assumed. CI covers Rust, Node.js and Python 3.10–3.14, and every prebuilt binary for Linux, macOS and Windows is install-tested before release. The builder runs **preflight validation** on every build, and the parser ships a CLI for working with messages from the command line. Paired with my validator work (**DDEX Workbench**, which handles XSD validation and business rules), DDEX Suite covers both ends of a **Parse → Build** pipeline. Next come a built-in bridge from parsed messages to build requests for true **Parse → Modify → Build**, a semantic diff, partner presets that shape the output, and further supply-chain hardening. Already in place: `cargo-deny` runs in CI, and from 0.5.1 release artifacts are built in GitHub Actions with signed build-provenance attestations and SBOMs, verifiable with `gh attestation verify <file> --repo daddykev/ddex-suite`, provided the published files are the ones release-build produced. The goal is to show how interoperable components can be designed to be correct, safe and easy to adopt in real-world systems.
+Beyond the core implementation, this is a showcase of **software craftsmanship and platform thinking**. Correctness is checked rather than assumed. CI covers Rust, Node.js and Python 3.10–3.14, and every prebuilt binary for Linux, macOS and Windows is install-tested before release. The builder runs **preflight validation** on every build, and the parser ships a CLI for working with messages from the command line. Paired with my validator work (**DDEX Workbench**, which handles XSD validation and business rules), DDEX Suite covers both ends of a **Parse → Build** pipeline. Next come a built-in bridge from parsed messages to build requests for true **Parse → Modify → Build**, a semantic diff, and further supply-chain hardening. Already in place: `cargo-deny` runs in CI, and from 0.5.1 release artifacts are built in GitHub Actions with signed build-provenance attestations and SBOMs, verifiable with `gh attestation verify <file> --repo daddykev/ddex-suite`, provided the published files are the ones release-build produced. The goal is to show how interoperable components can be designed to be correct, safe and easy to adopt in real-world systems.
 
 ## 🚧 Development Status
 
@@ -75,7 +75,7 @@ All packages are released together at the same version.
 ✅ **Packages for every common platform** - abi3 wheels for Python 3.10+ and npm binaries for macOS, Linux and Windows  
 ✅ **Measured performance** - Criterion bench results in [PERFORMANCE.md](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md)
 
-🔄 **Next: v0.6.0** - Builder determinism, presets that change the output, a conformance suite  
+🔄 **Next: v0.6.0** - Builder determinism, a conformance suite  
 🎯 **Goal: v1.0.0** - Official stable release
 
 For detailed development progress and technical implementation details, see [blueprint.md](https://github.com/daddykev/ddex-suite/blob/main/blueprint.md).
@@ -220,8 +220,8 @@ conversion from a parsed message to a build request yet.
   references and `MessageCreatedDateTime` that the request leaves out are generated
   (random UUIDs, the current time), and the stable-hash ID strategy puts today's date
   into the `MessageId` (the Rust-only sequential strategy uses the current Unix time).
-  Update messages always carry the current time, and the streaming writer generates a
-  random `MessageId` and the current time when they are missing. Two builds of the same
+  The streaming writer generates a random `MessageId` and the current time when they are
+  missing. Two builds of the same
   request can therefore differ. Full determinism is planned for 0.6.0; the complete list is
   in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 - **Round trips on the official samples**: each of the 19 official DDEX ERN 4.2 and 4.3
@@ -243,7 +243,6 @@ conversion from a parsed message to a build request yet.
 - **Streaming**: `parse` reads the whole document. The Rust streaming APIs are
   experimental and opt-in, and read a subset of the fields. The parallel streaming
   iterator does not currently scale with the thread count (planned for 0.6.0).
-- **Presets**: the builder's preset APIs do not change the output in 0.5.x.
 
 Open bugs are listed in
 [KNOWN_ISSUES.md](https://github.com/daddykev/ddex-suite/blob/main/KNOWN_ISSUES.md).

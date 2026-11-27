@@ -4,7 +4,6 @@
 //! while maintaining compatibility with legacy systems.
 
 use super::*;
-use crate::presets::DdexVersion;
 
 /// Get ERN 4.2 version specification
 pub fn get_version_spec() -> VersionSpec {

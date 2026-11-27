@@ -51,8 +51,6 @@ plus `ddex-core` on crates.io. All of them are released together at the same ver
 - **Not byte-for-byte deterministic yet.** A message ID, references and
   `MessageCreatedDateTime` that the request leaves out are generated, so two builds of the
   same request can differ. Full determinism is planned for 0.6.0.
-- **Presets do not change the output.** The builder's preset APIs exist but have no effect
-  on `build` in 0.5.x.
 - **No streaming in Node.js or Python.** `parse` reads the whole document. The Rust
   streaming APIs are experimental and read a subset of the fields.
 

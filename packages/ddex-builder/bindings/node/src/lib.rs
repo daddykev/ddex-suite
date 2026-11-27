@@ -63,26 +63,6 @@ pub struct BuilderStats {
 
 #[napi(object)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PresetInfo {
-    pub name: String,
-    pub description: String,
-    pub version: String,
-    pub profile: String,
-    pub required_fields: Vec<String>,
-    pub disclaimer: String,
-}
-
-#[napi(object)]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ValidationRule {
-    pub field_name: String,
-    pub rule_type: String,
-    pub message: String,
-    pub parameters: Option<HashMap<String, String>>,
-}
-
-#[napi(object)]
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FidelityOptions {
     pub enable_perfect_fidelity: Option<bool>,
     pub canonicalization: Option<String>, // "none", "c14n", "c14n11", "db_c14n", "custom"
@@ -209,13 +189,6 @@ fn count_xml(xml: &str) -> (u32, u32, u32) {
         }
     }
     (elements, attributes, namespaces)
-}
-
-/// The builder's presets (`ddex_builder::presets::all_presets`).
-fn core_preset(name: &str) -> Result<ddex_builder::presets::PartnerPreset> {
-    ddex_builder::presets::all_presets()
-        .shift_remove(name)
-        .ok_or_else(|| Error::new(Status::InvalidArg, format!("Unknown preset: {name}")))
 }
 
 #[napi]
@@ -429,57 +402,6 @@ impl DdexBuilder {
             validation_warnings: 0,
         };
         Ok(())
-    }
-
-    /// The builder's presets (`ddex_builder::presets::all_presets`).
-    #[napi]
-    pub fn get_available_presets(&self) -> Result<Vec<String>> {
-        Ok(ddex_builder::presets::all_presets().into_keys().collect())
-    }
-
-    #[napi]
-    pub fn get_preset_info(&self, preset_name: String) -> Result<PresetInfo> {
-        let preset = core_preset(&preset_name)?;
-        Ok(PresetInfo {
-            name: preset_name,
-            description: preset.description,
-            version: preset.version,
-            profile: format!("{:?}", preset.config.profile),
-            required_fields: preset.required_fields,
-            disclaimer: preset.disclaimer,
-        })
-    }
-
-    /// Checks that the preset exists. Presets do not change the output in 0.5.x
-    /// (KNOWN_ISSUES.md), so nothing else happens.
-    #[napi]
-    pub fn apply_preset(&mut self, preset_name: String) -> Result<()> {
-        core_preset(&preset_name).map(|_| ())
-    }
-
-    /// The preset's validation rules (`ddex_builder::presets`).
-    #[napi]
-    pub fn get_preset_validation_rules(&self, preset_name: String) -> Result<Vec<ValidationRule>> {
-        let preset = core_preset(&preset_name)?;
-        Ok(preset
-            .validation_rules
-            .iter()
-            .map(|(field, rule)| {
-                let detail = format!("{rule:?}");
-                let rule_type = detail
-                    .split(|c: char| !c.is_alphanumeric())
-                    .next()
-                    .unwrap_or_default()
-                    .to_string();
-                ValidationRule {
-                    field_name: field.clone(),
-                    message: format!("{field}: {detail}"),
-                    parameters: (rule_type != detail)
-                        .then(|| HashMap::from([("rule".to_string(), detail.clone())])),
-                    rule_type,
-                }
-            })
-            .collect())
     }
 
     /// The core build request: `data` as given (missing `releases`/`deals` mean none), with

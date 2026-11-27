@@ -4,7 +4,6 @@
 //! This module handles the specific requirements and constraints of ERN 3.8.2.
 
 use super::*;
-use crate::presets::DdexVersion;
 
 /// Get ERN 3.8.2 version specification
 pub fn get_version_spec() -> VersionSpec {

@@ -2,15 +2,13 @@
 //!
 //! This module provides comprehensive JSON Schema generation from DDEX structures
 //! for validation, documentation, and cross-language type definitions. It supports
-//! version-specific variations, profile-based constraints, partner preset rules, and
-//! can generate TypeScript and Python type definitions.
+//! version-specific variations and profile-based constraints, and can generate TypeScript and Python type definitions.
 //!
 //! ## Key Features
 //!
 //! - **JSON Schema Draft 2020-12** and Draft-07 support for broad compatibility
 //! - **DDEX Version Aware**: Generates schemas for ERN 3.8.2, 4.2, and 4.3
 //! - **Message Profile Support**: Audio, Video, and Mixed content profiles
-//! - **Partner Preset Integration**: Incorporates partner-specific validation rules
 //! - **Multi-Language Export**: TypeScript `.d.ts` and Python `TypedDict` generation
 //! - **Advanced Validation**: Pattern matching, conditional schemas, enum constraints
 //!
@@ -27,7 +25,7 @@
 //!    ┌─────────────┐      ┌─────────────────┐    ┌─────────────────┐
 //!    │ • BuildReq  │      │ • Version Rules │    │ • Validation    │
 //!    │ • Releases  │      │ • Profile Cnstr │    │ • Documentation │
-//!    │ • Tracks    │      │ • Partner Rules │    │ • Type Export   │
+//!    │ • Tracks    │      │ • Examples      │    │ • Type Export   │
 //!    │ • Metadata  │      │ • Type Mapping  │    │ • References    │
 //!    └─────────────┘      └─────────────────┘    └─────────────────┘
 //! ```
@@ -50,7 +48,8 @@
 //!
 //! ```rust
 //! use ddex_builder::schema::{SchemaGenerator, SchemaConfig};
-//! use ddex_builder::presets::{DdexVersion, MessageProfile};
+//! use ddex_builder::schema::MessageProfile;
+//! use ddex_builder::DdexVersion;
 //!
 //! let generator = SchemaGenerator::new(
 //!     DdexVersion::Ern43,
@@ -67,7 +66,7 @@
 //!
 //! ```rust
 //! use ddex_builder::schema::*;
-//! use ddex_builder::presets::*;
+//! use ddex_builder::DdexVersion;
 //!
 //! let config = SchemaConfig {
 //!     draft_version: SchemaDraft::Draft202012,
@@ -78,12 +77,8 @@
 //!     ..Default::default()
 //! };
 //!
-//! let preset = generic::audio_album();
-//! let generator = SchemaGenerator::with_preset(
-//!     DdexVersion::Ern43,
-//!     MessageProfile::AudioAlbum,
-//!     preset
-//! ).with_config(config);
+//! let generator = SchemaGenerator::new(DdexVersion::Ern43, MessageProfile::AudioAlbum)
+//!     .with_config(config);
 //!
 //! let result = generator.generate_complete_schema()?;
 //! # let _ = result;
@@ -94,7 +89,8 @@
 //!
 //! ```rust
 //! # use ddex_builder::schema::SchemaGenerator;
-//! # use ddex_builder::presets::{DdexVersion, MessageProfile};
+//! # use ddex_builder::schema::MessageProfile;
+//! # use ddex_builder::DdexVersion;
 //! # let generator = SchemaGenerator::new(DdexVersion::Ern43, MessageProfile::AudioAlbum);
 //! # let result = generator.generate_build_request_schema()?;
 //! # let out_dir = std::env::temp_dir();
@@ -143,7 +139,7 @@
 
 // All necessary imports are via super::* in submodules
 use crate::error::BuildError;
-use crate::presets::{DdexVersion, MessageProfile, PartnerPreset};
+use crate::versions::DdexVersion;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value as JsonValue};
@@ -158,6 +154,21 @@ pub use validation::{
     ValidationResult as SchemaValidationResult,
 };
 
+/// Message profile type (moved here from `presets` in 0.6.0)
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum MessageProfile {
+    /// Audio album release
+    AudioAlbum,
+    /// Audio single release
+    AudioSingle,
+    /// Video album release
+    VideoAlbum,
+    /// Video single release
+    VideoSingle,
+    /// Mixed content release
+    Mixed,
+}
+
 /// Main JSON Schema generator for DDEX models
 #[derive(Debug, Clone)]
 pub struct SchemaGenerator {
@@ -165,9 +176,6 @@ pub struct SchemaGenerator {
     version: DdexVersion,
     /// Message profile for constraints
     profile: MessageProfile,
-    /// Partner preset for additional validation rules
-    #[allow(dead_code)]
-    preset: Option<PartnerPreset>,
     /// Schema configuration
     config: SchemaConfig,
 }
@@ -340,21 +348,6 @@ impl SchemaGenerator {
         Self {
             version,
             profile,
-            preset: None,
-            config: SchemaConfig::default(),
-        }
-    }
-
-    /// Create schema generator with preset
-    pub fn with_preset(
-        version: DdexVersion,
-        profile: MessageProfile,
-        preset: PartnerPreset,
-    ) -> Self {
-        Self {
-            version,
-            profile,
-            preset: Some(preset),
             config: SchemaConfig::default(),
         }
     }
@@ -795,7 +788,6 @@ mod tests {
         let generator = SchemaGenerator::new(DdexVersion::Ern43, MessageProfile::AudioAlbum);
         assert_eq!(generator.version, DdexVersion::Ern43);
         assert_eq!(generator.profile, MessageProfile::AudioAlbum);
-        assert!(generator.preset.is_none());
     }
 
     #[test]

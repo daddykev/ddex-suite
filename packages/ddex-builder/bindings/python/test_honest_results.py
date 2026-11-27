@@ -1,5 +1,5 @@
 """Results the Python builder used to make up (round-trip success and score, fidelity
-statistics and verification, presets, validate) are now computed, or None where nothing is
+statistics and verification, validate) are now computed, or None where nothing is
 measured. Round trips use the official sample examples/Samples43/1 Audio.xml.
 
 Run (with both extensions built, e.g. `maturin develop` here and in
@@ -68,19 +68,6 @@ def test_build_with_fidelity_statistics_and_verification_are_computed():
 
     with pytest.raises(NotImplementedError, match="not implemented in 0.5.x"):
         DdexBuilder().build_with_fidelity(FidelityOptions(canonicalization="c14n"), REQUEST)
-
-
-def test_presets_are_the_builders():
-    builder = DdexBuilder()
-    names = builder.get_available_presets()
-    assert "audio_album" in names
-    assert not any(name.startswith(("spotify", "apple")) for name in names), names
-    info = builder.get_preset_info("audio_album")
-    assert info.name == "audio_album" and info.required_fields
-    builder.apply_preset("audio_album")
-    with pytest.raises(ValueError):
-        builder.apply_preset("spotify_album")
-    assert isinstance(builder.get_preset_validation_rules("audio_album"), list)
 
 
 def test_validate_runs_preflight_validation():

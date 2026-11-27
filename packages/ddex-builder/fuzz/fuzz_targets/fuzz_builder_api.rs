@@ -9,18 +9,11 @@ use arbitrary::Arbitrary;
 #[derive(Arbitrary, Debug)]
 struct FuzzInput {
     xml_content: String,
-    preset_name: String,
-    use_preset: bool,
 }
 
 fuzz_target!(|input: FuzzInput| {
     // Test Builder API with fuzzed inputs
-    let mut builder = Builder::new();
-    
-    // Test preset application with fuzzed name
-    if input.use_preset && !input.preset_name.is_empty() {
-        let _ = builder.apply_preset(&input.preset_name, false);
-    }
+    let builder = Builder::new();
     
     // Test input validation
     let config = SecurityConfig::default();
@@ -32,7 +25,6 @@ fuzz_target!(|input: FuzzInput| {
         let request = BuildRequest {
             source_xml: input.xml_content,
             output_format: ddex_builder::builder::OutputFormat::Xml,
-            preset: None,
             validate_schema: false,
             ..Default::default()
         };

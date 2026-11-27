@@ -7,6 +7,11 @@ the 0.6.0 target are in `packages/ddex-builder/tests/it/determinism_0_6.rs`. Eac
 its row below. The ones that fail today are `#[ignore = "known bug: …"]` and listed in
 `KNOWN_ISSUES.md`.
 
+**Since 0.6.0 PR 3a** the update-message generator, the diff module and the presets are
+removed (`dev-docs/REMOVALS_0.6.0.md`). Their rows (D9, D10, D11, D15, D16) and allows are
+marked "removed in 3a"; their code and the ignored test `update_message_is_byte_identical`
+are gone. The line numbers are left as they were.
+
 Method: I read `builder.rs`, the ERN 3.8 and ERN 4 generators, the canonicalizer, the ID
 generator, the update-message, streaming and diff code, and the three binding crates. I
 grepped the in-scope crates for clocks (`Utc::now`, `Local::now`, `SystemTime::now`,
@@ -57,14 +62,14 @@ determinism test supplies them, which is why those tests pass.
 | D6 | `ddex-builder/src/builder.rs:976-997`, `id_generator.rs` `hash_blake3` / `hash_sha256` | `generate_stable_hash_ids` | generated release/resource references are `B3:<hex>` / `SHA256:<hex>`. The `:` breaks the ERN reference pattern `X[\d\-_a-zA-Z]+`, so the build fails (`generator/shared.rs:273` `is_reference`). Deterministic, but unusable | only with `StableHash` and an omitted reference | `StableHashGenerator` output format | Emit `R`/`A` plus hex for references (keep the prefixed form for `MessageId` if wanted) | behaviour only |
 | D7 | `ddex-builder/src/builder.rs:1003-1012` | `generate_stable_hash_ids` | `DealReference` = `DEAL_<model>_<territories>`. Two deals with the same model and territories get the same reference (e.g. `multi_track_album`'s deals 1 and 3). Deterministic, but colliding | only with `StableHash` and `deal_reference: None` | `DealRequest.deal_reference` | Hash every term and the release references, or number them like the other strategies (`D1`, …) | behaviour only |
 | D8 | `ddex-builder/src/generator/ern4.rs:490`, `generator/ern38.rs:509` | `message_header` | `MessageCreatedDateTime` = `Utc::now().to_rfc3339()` | **yes** (`message_created_date_time: None`) | `MessageHeaderRequest.message_created_date_time` | Error naming the field (`message_created_date_time`) | yes (requests that build today fail) |
-| D9 | `ddex-builder/src/builder.rs:1311` | `serialize_update_header` | `MessageCreatedDateTime` of a serialized update = now | only for a hand-built `UpdateReleaseMessage` whose header has no time (`create_update` always sets one, from D10) | `DDEXBuilder::serialize_update` | Error, or require the field | yes (error) |
-| D10 | `ddex-builder/src/messages/update_release.rs:867` (also the test helper at `:1134`) | `UpdateGenerator::create_update_metadata` | `UpdateMetadata.update_created_timestamp` = `Utc::now()`. It is copied into the update header's `MessageCreatedDateTime` (`create_update_header`) and written as `UpdateCreatedDateTime` | **yes** (every `create_update*` call; no way to pass a time) | `DDEXBuilder::create_update*`, `UpdateGenerator::create_update`, `UpdateConfig`, `UpdateMetadata` (pub `DateTime<Utc>` fields) | Take the timestamp from the caller (`UpdateConfig` field or a parameter) | yes (new required input, or a new field in a non-`#[non_exhaustive]` struct) |
-| D11 | `ddex-builder/src/messages/update_release.rs:765` | `UpdateGenerator::extract_entity_id` | `UpdateOperation.entity_id` = `unknown_<8 hex of uuid v4>`. Written as `EntityId`, and used as the key of `resource_updates` / `release_updates` / `deal_updates` | **yes**, for every operation: it only reads `Id=` from `DiffPath::to_string()`, and `DiffPath`'s `Display` never writes `Id=` (`diff/types.rs:195`). In addition, `parse_xml_to_ast` (`:684`) wraps the whole document in one text node, so the diff is a single `/NewReleaseMessage/#text` change | `create_update*`, `UpdateOperation.entity_id` | Derive the ID from the path deterministically (or report the entity as unidentified without randomness). A real XML→AST parse is needed for useful updates anyway | behaviour only (the IDs are meaningless today) |
+| D9 (**removed in 3a**) | `ddex-builder/src/builder.rs:1311` | `serialize_update_header` | `MessageCreatedDateTime` of a serialized update = now | only for a hand-built `UpdateReleaseMessage` whose header has no time (`create_update` always sets one, from D10) | `DDEXBuilder::serialize_update` | Error, or require the field | yes (error) |
+| D10 (**removed in 3a**) | `ddex-builder/src/messages/update_release.rs:867` (also the test helper at `:1134`) | `UpdateGenerator::create_update_metadata` | `UpdateMetadata.update_created_timestamp` = `Utc::now()`. It is copied into the update header's `MessageCreatedDateTime` (`create_update_header`) and written as `UpdateCreatedDateTime` | **yes** (every `create_update*` call; no way to pass a time) | `DDEXBuilder::create_update*`, `UpdateGenerator::create_update`, `UpdateConfig`, `UpdateMetadata` (pub `DateTime<Utc>` fields) | Take the timestamp from the caller (`UpdateConfig` field or a parameter) | yes (new required input, or a new field in a non-`#[non_exhaustive]` struct) |
+| D11 (**removed in 3a**) | `ddex-builder/src/messages/update_release.rs:765` | `UpdateGenerator::extract_entity_id` | `UpdateOperation.entity_id` = `unknown_<8 hex of uuid v4>`. Written as `EntityId`, and used as the key of `resource_updates` / `release_updates` / `deal_updates` | **yes**, for every operation: it only reads `Id=` from `DiffPath::to_string()`, and `DiffPath`'s `Display` never writes `Id=` (`diff/types.rs:195`). In addition, `parse_xml_to_ast` (`:684`) wraps the whole document in one text node, so the diff is a single `/NewReleaseMessage/#text` change | `create_update*`, `UpdateOperation.entity_id` | Derive the ID from the path deterministically (or report the entity as unidentified without randomness). A real XML→AST parse is needed for useful updates anyway | behaviour only (the IDs are meaningless today) |
 | D12 | `ddex-builder/src/streaming/mod.rs:451` | `StreamingBuilder::write_message_header` | `MessageId` = uuid v4 | **yes** (`header.message_id: None`) | `StreamingBuilder::start_message`, Node `StreamingDdexBuilder.startMessage` | Error naming the field | yes (error) |
 | D13 | `ddex-builder/src/streaming/mod.rs:482` | `write_message_header` | `MessageCreatedDateTime` = now | **yes** (`header.message_created_date_time: None`) | same as D12 | Error naming the field | yes (error) |
 | D14 | `ddex-builder/src/streaming/reference_manager.rs:189-196`, `:232-238`, `:271-277` | `StreamingReferenceManager::generate_*_reference` | References are SHA-256 of the caller's ID, truncated to 8 hex digits (32 bits). Deterministic, but a collision fails the stream with `InvalidReference`. The birthday bound puts that above 50% at about 77k items. The default `max_cache_size` is 100 000, and the docs pitch the writer for large catalogs | yes (`ReferenceConfig::default().deterministic = true`) | `ReferenceConfig`, `StreamingBuilder::write_resource` / `write_release` | Use more hash digits, or number the references | yes (references change) |
-| D15 | `ddex-builder/src/diff/formatter.rs:405` | `DiffFormatter::generate_update_message` | `MessageId` = uuid v4 when `message_id: None` | only for that function | `DiffFormatter::generate_update_message` | Require the ID, or derive it | yes if it becomes required |
-| D16 | `ddex-builder/src/diff/types.rs:50` | `ChangeSet::new` | `ChangeSet.timestamp` = now. It is written as `MessageCreatedDateTime` by D15's function (`formatter.rs:415`) and serialized with the changeset | yes, for every diff | `ChangeSet.timestamp` (pub `DateTime<Utc>`), `DiffEngine::diff` | Make the timestamp optional / caller-supplied | yes (field type) |
+| D15 (**removed in 3a**) | `ddex-builder/src/diff/formatter.rs:405` | `DiffFormatter::generate_update_message` | `MessageId` = uuid v4 when `message_id: None` | only for that function | `DiffFormatter::generate_update_message` | Require the ID, or derive it | yes if it becomes required |
+| D16 (**removed in 3a**) | `ddex-builder/src/diff/types.rs:50` | `ChangeSet::new` | `ChangeSet.timestamp` = now. It is written as `MessageCreatedDateTime` by D15's function (`formatter.rs:415`) and serialized with the changeset | yes, for every diff | `ChangeSet.timestamp` (pub `DateTime<Utc>`), `DiffEngine::diff` | Make the timestamp optional / caller-supplied | yes (field type) |
 | D17 | `ddex-builder/src/schema/mod.rs:378`, `:401`, `:467`, `:490`, `:513` | `SchemaGenerator::generate_*`, TypeScript/Python code generators | `generated_at` metadata, and a timestamp line in the generated `.ts` / `.py` source | yes, for schema generation (CLI `schema`); not build output | `JsonSchema` / `SchemaGenerator` results (`generated_at: DateTime<Utc>`) | Omit the timestamp from generated source, or make it optional | yes (field type) if changed |
 | D18 | `ddex-builder/src/guarantees.rs:202`, `:541` | `DeterminismGuaranteeValidator`, `generate_guarantee_report` | report timestamps (not build output) | report only | `GuaranteeReport.timestamp` and the validation result's `timestamp` | None needed (a report time is legitimate) | no |
 | D19 | `ddex-builder/src/versions/mod.rs:230` | `ConversionResult` | `converted_at: DateTime<Utc>`. It is never assigned in the crate (the struct is not constructed), so nothing reaches output | no | pub field | Remove or make optional with D16 | yes if removed |
@@ -180,15 +185,15 @@ Findings and Hash containers tables above are as of 0.5.1; this table has the cu
 | `packages/ddex-builder/src/builder.rs:851` | `disallowed_methods` | D1, D2 | known bug D1, D2: removed in 0.6.0 determinism PR | `fn generate_uuid_ids(` |
 | `packages/ddex-builder/src/builder.rs:903` | `disallowed_methods` | D4 | known bug D4: removed in 0.6.0 determinism PR | `fn generate_sequential_ids(` |
 | `packages/ddex-builder/src/builder.rs:943` | `disallowed_methods` | D5 | known bug D5: removed in 0.6.0 determinism PR | `fn generate_stable_hash_ids(` |
-| `packages/ddex-builder/src/builder.rs:1282` | `disallowed_methods` | D9 | known bug D9: removed in 0.6.0 determinism PR | `fn serialize_update_header(` |
+| `packages/ddex-builder/src/builder.rs:1282` (**removed in 3a**) | `disallowed_methods` | D9 | known bug D9: removed in 0.6.0 determinism PR | `fn serialize_update_header(` |
 | `packages/ddex-builder/src/caching.rs:759` | `disallowed_types` | D23 | D23: in-process cache key; never written to output | `pub fn fast_hash<T: Hash + std::fmt::Debug>(` |
 | `packages/ddex-builder/src/canonical/rules.rs:9` | `disallowed_types` | H1 | H1: membership checks only, never iterated; the declarations are an IndexMap | `use std::collections::HashSet;` |
 | `packages/ddex-builder/src/canonical/rules.rs:26` | `disallowed_types` | H1 | H1: membership checks only, never iterated; the declarations are an IndexMap | `reserved_prefixes: HashSet<String>,` |
 | `packages/ddex-builder/src/canonical/rules.rs:35` | `disallowed_types` | H1 | H1: membership checks only, never iterated; the declarations are an IndexMap | `pub fn new() -> Self {` |
 | `packages/ddex-builder/src/canonical/rules.rs:158` | `disallowed_types` | H1 | H1: membership checks only, never iterated; the declarations are an IndexMap | `pub fn deduplicate_prefixes(` |
 | `packages/ddex-builder/src/canonical/rules.rs:203` | `disallowed_types` | H1 | H1: membership checks only, never iterated; the declarations are an IndexMap | `fn generate_unique_prefix(&self, base_prefix: &str, used_pre` |
-| `packages/ddex-builder/src/diff/formatter.rs:389` | `disallowed_methods` | D15 | known bug D15: removed in 0.6.0 determinism PR | `pub fn generate_update_message(` |
-| `packages/ddex-builder/src/diff/types.rs:45` | `disallowed_methods` | D16 | known bug D16: removed in 0.6.0 determinism PR | `pub fn new() -> Self {` |
+| `packages/ddex-builder/src/diff/formatter.rs:389` (**removed in 3a**) | `disallowed_methods` | D15 | known bug D15: removed in 0.6.0 determinism PR | `pub fn generate_update_message(` |
+| `packages/ddex-builder/src/diff/types.rs:45` (**removed in 3a**) | `disallowed_methods` | D16 | known bug D16: removed in 0.6.0 determinism PR | `pub fn new() -> Self {` |
 | `packages/ddex-builder/src/fidelity.rs:9` | `disallowed_types` | H5 | H5: fidelity config/statistics; not build output | `use std::collections::HashMap;` |
 | `packages/ddex-builder/src/fidelity.rs:17` | `disallowed_types` | H5 | H5: fidelity config/statistics; not build output | `type UnorderedMap<K, V> = HashMap<K, V>;` |
 | `packages/ddex-builder/src/fidelity.rs:232` | `disallowed_types` | H5 | H5: fidelity config/statistics; not build output | `fn default() -> Self {` |
@@ -200,9 +205,9 @@ Findings and Hash containers tables above are as of 0.5.1; this table has the cu
 | `packages/ddex-builder/src/lib.rs:66` | `disallowed_types` | H4 | H4: custom canonicalization is not implemented (returns an error), so this map is never read | `use std::collections::HashMap;` |
 | `packages/ddex-builder/src/lib.rs:74` | `disallowed_types` | H4 | H4: custom canonicalization is not implemented (returns an error), so this map is never read | `type UnorderedMap<K, V> = HashMap<K, V>;` |
 | `packages/ddex-builder/src/lib.rs:165` | `disallowed_types` | H4 | H4: custom canonicalization is not implemented (returns an error), so this map is never read | `fn default() -> Self {` |
-| `packages/ddex-builder/src/messages/update_release.rs:754` | `disallowed_methods` | D11 | known bug D11: removed in 0.6.0 determinism PR | `fn extract_entity_id(&self, path: &crate::diff::types::DiffP` |
-| `packages/ddex-builder/src/messages/update_release.rs:861` | `disallowed_methods` | D10 | known bug D10: removed in 0.6.0 determinism PR | `fn create_update_metadata(` |
-| `packages/ddex-builder/src/messages/update_release.rs:1096` | `disallowed_methods` | D10 | D10: unit-test fixture timestamp; not build output | `fn test_operation_validation() {` |
+| `packages/ddex-builder/src/messages/update_release.rs:754` (**removed in 3a**) | `disallowed_methods` | D11 | known bug D11: removed in 0.6.0 determinism PR | `fn extract_entity_id(&self, path: &crate::diff::types::DiffP` |
+| `packages/ddex-builder/src/messages/update_release.rs:861` (**removed in 3a**) | `disallowed_methods` | D10 | known bug D10: removed in 0.6.0 determinism PR | `fn create_update_metadata(` |
+| `packages/ddex-builder/src/messages/update_release.rs:1096` (**removed in 3a**) | `disallowed_methods` | D10 | D10: unit-test fixture timestamp; not build output | `fn test_operation_validation() {` |
 | `packages/ddex-builder/src/namespace_minimizer.rs:11` | `disallowed_types` | H8 | H8: NamespaceMinimizer is not on the build path | `use std::collections::HashMap;` |
 | `packages/ddex-builder/src/namespace_minimizer.rs:37` | `disallowed_types` | H8 | H8: NamespaceMinimizer is not on the build path | `pub namespace_elements: HashMap<String, IndexSet<String>>,` |
 | `packages/ddex-builder/src/namespace_minimizer.rs:105` | `disallowed_types` | H8 | H8: NamespaceMinimizer is not on the build path | `fn analyze_namespace_usage(&self, ast: &AST) -> Result<Names` |
@@ -280,7 +285,7 @@ Eq, Serialize, Deserialize)]`, not `#[non_exhaustive]`):
   missing or non-DPID ID. `generate_stable_hash_ids` reads `party_name.first()` with
   `unwrap_or_default()`.
 - `MessageHeaderRequest.message_control_type: Option<String>`: written only when `Some`.
-- Update messages: `DDEXBuilder::create_update(original_xml, updated_xml,
+- Update messages (**removed in 3a**): `DDEXBuilder::create_update(original_xml, updated_xml,
   original_message_id: &str)`. The header is built by `UpdateGenerator::create_update_header`
   (`update_release.rs:876`): `message_id = Some("UPD-<original_message_id>-<seq:04>")`
   (`update_sequence` is always 1), sender "DDEX Builder Update Engine", recipient "Update
@@ -303,8 +308,8 @@ tool-checked):
     common}` and `models::streaming_types.rs:386`.
   - ddex-parser: re-exposes those models. `bench_report::BenchReport.timestamp` exists only
     with the `bench` feature.
-  - ddex-builder: `messages::UpdateMetadata` (`update_release.rs:484`, `:487`),
-    `diff::types::ChangeSet.timestamp` (`:40`), `guarantees` (`:154`, `:554`),
+  - ddex-builder: `messages::UpdateMetadata` (`update_release.rs:484`, `:487`) and
+    `diff::types::ChangeSet.timestamp` (`:40`) (both removed in 3a), `guarantees` (`:154`, `:554`),
     `versions::ConversionResult.converted_at` (`mod.rs:230`), `versions` `pub fn
     get_version_release_date(..) -> chrono::NaiveDate` (`mod.rs:847`),
     `schema::*.generated_at` (`mod.rs:302`).
@@ -370,7 +375,7 @@ exist.
 
 - The streaming writer declares `xmlns="http://ddex.net/xml/ern/43"` for every version it
   accepts (only 3.8.x). This is already in KNOWN_ISSUES.
-- `serialize_update` and `DiffFormatter::generate_update_message` also hard-code the
-  `ern/43` namespace.
+- `serialize_update` and `DiffFormatter::generate_update_message` also hard-coded the
+  `ern/43` namespace (removed in 3a).
 - StableHash release IDs always hash `"Album"` as the release type
   (`builder.rs:974`), whatever `release_type` says.

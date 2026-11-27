@@ -48,20 +48,6 @@ export interface BuilderStats {
   validationErrors: number
   validationWarnings: number
 }
-export interface PresetInfo {
-  name: string
-  description: string
-  version: string
-  profile: string
-  requiredFields: Array<string>
-  disclaimer: string
-}
-export interface ValidationRule {
-  fieldName: string
-  ruleType: string
-  message: string
-  parameters?: Record<string, string>
-}
 export interface FidelityOptions {
   enablePerfectFidelity?: boolean
   canonicalization?: string
@@ -165,10 +151,6 @@ export declare class DdexBuilder {
   validate(): Promise<ValidationResult>
   getStats(): BuilderStats
   reset(): void
-  getAvailablePresets(): Array<string>
-  getPresetInfo(presetName: string): PresetInfo
-  applyPreset(presetName: string): void
-  getPresetValidationRules(presetName: string): Array<ValidationRule>
 }
 export declare class StreamingDdexBuilder {
   constructor(config?: StreamingConfig | undefined | null)

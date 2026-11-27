@@ -236,90 +236,6 @@ impl BuilderStats {
 
 #[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
-pub struct PresetInfo {
-    #[pyo3(get, set)]
-    pub name: String,
-    #[pyo3(get, set)]
-    pub description: String,
-    #[pyo3(get, set)]
-    pub version: String,
-    #[pyo3(get, set)]
-    pub profile: String,
-    #[pyo3(get, set)]
-    pub required_fields: Vec<String>,
-    #[pyo3(get, set)]
-    pub disclaimer: String,
-}
-
-#[pymethods]
-impl PresetInfo {
-    #[new]
-    pub fn new(
-        name: String,
-        description: String,
-        version: String,
-        profile: String,
-        required_fields: Vec<String>,
-        disclaimer: String,
-    ) -> Self {
-        PresetInfo {
-            name,
-            description,
-            version,
-            profile,
-            required_fields,
-            disclaimer,
-        }
-    }
-
-    fn __repr__(&self) -> String {
-        format!(
-            "PresetInfo(name='{}', profile='{}')",
-            self.name, self.profile
-        )
-    }
-}
-
-#[pyclass(from_py_object)]
-#[derive(Debug, Clone)]
-pub struct ValidationRulePy {
-    #[pyo3(get, set)]
-    pub field_name: String,
-    #[pyo3(get, set)]
-    pub rule_type: String,
-    #[pyo3(get, set)]
-    pub message: String,
-    #[pyo3(get, set)]
-    pub parameters: Option<HashMap<String, String>>,
-}
-
-#[pymethods]
-impl ValidationRulePy {
-    #[new]
-    pub fn new(
-        field_name: String,
-        rule_type: String,
-        message: String,
-        parameters: Option<HashMap<String, String>>,
-    ) -> Self {
-        ValidationRulePy {
-            field_name,
-            rule_type,
-            message,
-            parameters,
-        }
-    }
-
-    fn __repr__(&self) -> String {
-        format!(
-            "ValidationRule(field='{}', type='{}')",
-            self.field_name, self.rule_type
-        )
-    }
-}
-
-#[pyclass(from_py_object)]
-#[derive(Debug, Clone)]
 pub struct FidelityOptions {
     #[pyo3(get, set)]
     pub enable_perfect_fidelity: bool,
@@ -704,57 +620,6 @@ impl DdexBuilder {
         self.releases.clear();
         self.resources.clear();
         self.stats = BuilderStats::new(0, 0, 0.0, 0.0, 0, 0);
-    }
-
-    /// The builder's presets (`ddex_builder::presets::all_presets`).
-    pub fn get_available_presets(&self) -> Vec<String> {
-        ddex_builder::presets::all_presets().into_keys().collect()
-    }
-
-    pub fn get_preset_info(&self, preset_name: String) -> PyResult<PresetInfo> {
-        let preset = core_preset(&preset_name)?;
-        Ok(PresetInfo::new(
-            preset_name,
-            preset.description,
-            preset.version,
-            format!("{:?}", preset.config.profile),
-            preset.required_fields,
-            preset.disclaimer,
-        ))
-    }
-
-    /// Checks that the preset exists. Presets do not change the output in 0.5.x
-    /// (KNOWN_ISSUES.md), so nothing else happens.
-    pub fn apply_preset(&mut self, preset_name: String) -> PyResult<()> {
-        core_preset(&preset_name).map(|_| ())
-    }
-
-    /// The preset's validation rules (`ddex_builder::presets`).
-    pub fn get_preset_validation_rules(
-        &self,
-        preset_name: String,
-    ) -> PyResult<Vec<ValidationRulePy>> {
-        let preset = core_preset(&preset_name)?;
-        Ok(preset
-            .validation_rules
-            .iter()
-            .map(|(field, rule)| {
-                let detail = format!("{rule:?}");
-                let rule_type = detail
-                    .split(|c: char| !c.is_alphanumeric())
-                    .next()
-                    .unwrap_or_default()
-                    .to_string();
-                let parameters = (rule_type != detail)
-                    .then(|| HashMap::from([("rule".to_string(), detail.clone())]));
-                ValidationRulePy::new(
-                    field.clone(),
-                    rule_type,
-                    format!("{field}: {detail}"),
-                    parameters,
-                )
-            })
-            .collect())
     }
 
     /// Build DDEX XML from pandas DataFrame
@@ -1361,23 +1226,12 @@ fn count_xml(xml: &str) -> (u32, u32, u32) {
     (elements, attributes, namespaces)
 }
 
-/// The builder's preset named `name`.
-fn core_preset(name: &str) -> PyResult<ddex_builder::presets::PartnerPreset> {
-    ddex_builder::presets::all_presets()
-        .shift_remove(name)
-        .ok_or_else(|| {
-            PyErr::new::<pyo3::exceptions::PyValueError, _>(format!("Unknown preset: {name}"))
-        })
-}
-
 #[pymodule(gil_used = true)]
 fn _internal(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Release>()?;
     m.add_class::<Resource>()?;
     m.add_class::<ValidationResult>()?;
     m.add_class::<BuilderStats>()?;
-    m.add_class::<PresetInfo>()?;
-    m.add_class::<ValidationRulePy>()?;
     m.add_class::<FidelityOptions>()?;
     m.add_class::<BuildStatistics>()?;
     m.add_class::<VerificationResult>()?;

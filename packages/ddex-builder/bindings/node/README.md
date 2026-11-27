@@ -128,9 +128,9 @@ new DdexBuilder()
 
 ## Scope
 
-- Use `build(request)`. The preset methods (`applyPreset`, `getAvailablePresets`, ...)
-  list the builder's presets, which do not change its output in 0.5.x, and
-  `StreamingDdexBuilder` only writes the old 3.8-style tree; see the known issues.
+- Use `build(request)`. `StreamingDdexBuilder` only writes the old 3.8-style tree; see
+  the known issues. The preset methods were removed in 0.6.0 (they did not change the
+  output): set the fields directly in the build request.
 - `testRoundTripFidelity(xml)` parses, builds and parses again, and lists in `issues` the
   differences on the fields a build request carries (round trips are not lossless:
   contributors, P/C lines, images and other data are not rebuilt). `fidelityScore` is

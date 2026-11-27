@@ -15,7 +15,7 @@ rustup default nightly
 
 - `fuzz_xml_parsing` - Tests XML parsing with malicious inputs, XXE prevention
 - `fuzz_json_parsing` - Tests JSON parsing with deep nesting and malicious content
-- `fuzz_builder_api` - Tests Builder API with arbitrary inputs and presets
+- `fuzz_builder_api` - Tests Builder API with arbitrary inputs
 - `fuzz_version_conversion` - Tests DDEX version conversion with fuzzed parameters
 
 ## Running

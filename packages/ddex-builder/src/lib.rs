@@ -8,7 +8,6 @@ pub mod builder;
 pub mod caching;
 pub mod canonical;
 pub mod determinism;
-pub mod diff;
 pub mod error;
 pub mod fidelity;
 pub mod generator;
@@ -16,12 +15,10 @@ pub mod guarantees;
 pub mod id_generator;
 pub mod linker;
 pub mod memory_optimization;
-pub mod messages;
 pub mod namespace_minimizer;
 pub mod optimized_strings;
 pub mod parallel_processing;
 pub mod preflight;
-pub mod presets;
 pub mod round_trip;
 pub mod schema;
 pub mod security;
@@ -34,22 +31,15 @@ pub(crate) mod xml_escape;
 pub use builder::{BuildOptions, BuildRequest, BuildResult, DDEXBuilder};
 pub use canonical::DB_C14N;
 pub use determinism::DeterminismConfig;
-pub use diff::formatter::DiffFormatter;
-pub use diff::types::{ChangeSet, ChangeType, DiffPath, ImpactLevel, SemanticChange};
-pub use diff::{DiffConfig, DiffEngine, VersionCompatibility};
 pub use error::{BuildError, BuildWarning};
 pub use guarantees::{DeterminismGuarantee, DeterminismGuaranteeValidator, GuaranteeReport};
 pub use id_generator::{HashAlgorithm, StableHashConfig, StableHashGenerator};
 pub use linker::{EntityType, LinkerConfig, LinkingError, ReferenceLinker};
-pub use messages::{
-    UpdateAction, UpdateConfig, UpdateGenerator, UpdateReleaseMessage, ValidationStatus,
-};
 pub use preflight::{PreflightLevel, PreflightValidator, ValidationConfig, ValidationResult};
-pub use presets::DdexVersion;
-pub use presets::PartnerPreset;
 pub use schema::{JsonSchema, SchemaCommand, SchemaConfig, SchemaDraft, SchemaGenerator};
 pub use versions::{
-    ConversionOptions, ConverterResult as ConversionResult, VersionConverter, VersionManager,
+    ConversionOptions, ConverterResult as ConversionResult, DdexVersion, VersionConverter,
+    VersionManager,
 };
 
 // Security module exports
@@ -61,7 +51,6 @@ pub use fidelity::{FidelityConfig, FidelityStatistics, PreservationLevel};
 pub use round_trip::{FidelityAnalysis, RoundTripTester};
 pub use verification::{BuildVerifier, VerificationStatistics};
 
-use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 #[allow(
     clippy::disallowed_types,
@@ -301,18 +290,15 @@ impl Default for BuildStatistics {
     }
 }
 
-/// Builder configuration: determinism settings, partner presets, target version and
-/// fidelity options.
+/// Builder configuration: determinism settings, target version and fidelity options.
 ///
-/// To generate XML, use [`DDEXBuilder::build`]. In 0.5.0 the presets and the target
-/// version set here do not affect `DDEXBuilder::build` output (KNOWN_ISSUES.md).
+/// To generate XML, use [`DDEXBuilder::build`]. The target version set here does not
+/// affect `DDEXBuilder::build` output (KNOWN_ISSUES.md).
 ///
 /// ## Features
 ///
 /// - **Canonical Output**: DB-C14N/1.0 ordering and formatting; byte-for-byte
 ///   determinism is not complete yet (see the [`determinism`] module; planned for 0.6.0)
-/// - **Partner Presets**: Pre-configured settings for music platforms (they do not
-///   change the output yet)
 /// - **Version Management**: Support for ERN 3.8.2, 4.2, and 4.3 with conversion
 /// - **Security**: Built-in validation, rate limiting, and XXE protection
 /// - **Streaming**: an experimental streaming writer (`streaming::StreamingBuilder`),
@@ -326,33 +312,7 @@ impl Default for BuildStatistics {
 /// use ddex_builder::Builder;
 ///
 /// let builder = Builder::new();
-/// let available_presets = builder.available_presets();
-/// println!("Available presets: {:?}", available_presets);
-/// ```
-///
-/// ### With Partner Preset
-///
-/// ```rust
-/// use ddex_builder::Builder;
-///
-/// let mut builder = Builder::new();
-/// builder.preset("audio_album")?;
-///
-/// // Builder is now configured for audio album releases
-/// assert!(builder.is_preset_locked() == false); // Unlocked for further customization
-/// # Ok::<(), ddex_builder::BuildError>(())
-/// ```
-///
-/// ### Locked Preset Configuration
-///
-/// ```rust
-/// use ddex_builder::Builder;
-///
-/// let mut builder = Builder::new();
-/// builder.apply_preset("audio_album", true)?; // Lock the preset
-///
-/// assert!(builder.is_preset_locked());
-/// # Ok::<(), ddex_builder::BuildError>(())
+/// println!("Supported versions: {:?}", builder.supported_versions());
 /// ```
 ///
 /// ### Version Conversion
@@ -396,8 +356,6 @@ impl Default for BuildStatistics {
 #[derive(Debug, Clone)]
 pub struct Builder {
     config: DeterminismConfig,
-    presets: IndexMap<String, PartnerPreset>,
-    locked_preset: Option<String>,
     version_manager: versions::VersionManager,
     target_version: Option<DdexVersion>,
     fidelity_options: FidelityOptions,
@@ -415,9 +373,7 @@ impl Builder {
     ///
     /// The builder is initialized with:
     /// - Default determinism configuration (canonical ordering and formatting)
-    /// - All available partner presets loaded
-    /// - No preset locked (can be changed)
-    /// - Latest supported DDEX version as target
+    /// - No target version
     ///
     /// # Examples
     ///
@@ -425,19 +381,11 @@ impl Builder {
     /// use ddex_builder::Builder;
     ///
     /// let builder = Builder::new();
-    /// assert!(!builder.is_preset_locked());
-    /// assert!(builder.available_presets().len() > 0);
+    /// assert!(builder.target_version().is_none());
     /// ```
-    ///
-    /// # Performance
-    ///
-    /// Creating a new builder is fast (~1μs) as presets are loaded from
-    /// embedded configuration data.
     pub fn new() -> Self {
         Self {
             config: DeterminismConfig::default(),
-            presets: Self::load_default_presets(),
-            locked_preset: None,
             version_manager: versions::VersionManager::new(),
             target_version: None,
             fidelity_options: FidelityOptions::default(),
@@ -449,8 +397,6 @@ impl Builder {
     pub fn with_config(config: DeterminismConfig) -> Self {
         Self {
             config,
-            presets: Self::load_default_presets(),
-            locked_preset: None,
             version_manager: versions::VersionManager::new(),
             target_version: None,
             fidelity_options: FidelityOptions::default(),
@@ -471,8 +417,6 @@ impl Builder {
 
         Self {
             config: DeterminismConfig::default(),
-            presets: Self::load_default_presets(),
-            locked_preset: None,
             version_manager: versions::VersionManager::new(),
             target_version: None,
             fidelity_options,
@@ -484,8 +428,6 @@ impl Builder {
     pub fn with_fidelity_options(fidelity_options: FidelityOptions) -> Self {
         Self {
             config: DeterminismConfig::default(),
-            presets: Self::load_default_presets(),
-            locked_preset: None,
             version_manager: versions::VersionManager::new(),
             target_version: None,
             fidelity_options,
@@ -513,98 +455,11 @@ impl Builder {
 
         Self {
             config: DeterminismConfig::default(),
-            presets: Self::load_default_presets(),
-            locked_preset: None,
             version_manager: versions::VersionManager::new(),
             target_version: None,
             fidelity_options,
             verification_config,
         }
-    }
-
-    /// Applies a partner preset configuration to the builder.
-    ///
-    /// Presets contain pre-configured settings for specific music platforms and
-    /// distribution partners (determinism settings, validation rules, format preferences).
-    /// In 0.5.0 they do not change `DDEXBuilder::build` output (KNOWN_ISSUES.md).
-    ///
-    /// # Arguments
-    ///
-    /// * `preset_name` - Name of the preset to apply (see [`available_presets`])
-    /// * `lock` - Whether to lock the preset to prevent further modifications
-    ///
-    /// # Returns
-    ///
-    /// * `Ok(())` - Preset applied successfully
-    /// * `Err(BuildError::InvalidFormat)` - Unknown preset name
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use ddex_builder::Builder;
-    ///
-    /// let mut builder = Builder::new();
-    ///
-    /// // Apply the generic audio album preset without locking
-    /// builder.apply_preset("audio_album", false)?;
-    /// assert!(!builder.is_preset_locked());
-    ///
-    /// // Apply and lock the YouTube video preset
-    /// builder.apply_preset("youtube_video", true)?;
-    /// assert!(builder.is_preset_locked());
-    /// # Ok::<(), ddex_builder::BuildError>(())
-    /// ```
-    ///
-    /// # Available Presets
-    ///
-    /// Built-in presets: `audio_album`, `audio_single`, `video_single`, `compilation`,
-    /// `youtube_album`, `youtube_video`, `youtube_single`.
-    /// - `universal_basic` - Universal Music basic preset
-    /// - `sony_enhanced` - Sony Music enhanced features
-    ///
-    /// Use [`available_presets`] to get the complete list.
-    ///
-    /// [`available_presets`]: Self::available_presets
-    pub fn apply_preset(&mut self, preset_name: &str, lock: bool) -> Result<(), error::BuildError> {
-        let preset = self
-            .presets
-            .get(preset_name)
-            .ok_or_else(|| error::BuildError::InvalidFormat {
-                field: "preset".to_string(),
-                message: format!("Unknown preset: {}", preset_name),
-            })?
-            .clone();
-
-        // Apply the preset's determinism config
-        self.config = preset.determinism;
-
-        // Lock the preset if requested
-        if lock {
-            self.locked_preset = Some(preset_name.to_string());
-        }
-
-        Ok(())
-    }
-
-    /// Apply a preset configuration (alias for apply_preset for convenience)
-    pub fn preset(&mut self, preset_name: &str) -> Result<&mut Self, error::BuildError> {
-        self.apply_preset(preset_name, false)?;
-        Ok(self)
-    }
-
-    /// Get available preset names
-    pub fn available_presets(&self) -> Vec<String> {
-        self.presets.keys().cloned().collect()
-    }
-
-    /// Get preset details
-    pub fn get_preset(&self, preset_name: &str) -> Option<&PartnerPreset> {
-        self.presets.get(preset_name)
-    }
-
-    /// Check if a preset is locked
-    pub fn is_preset_locked(&self) -> bool {
-        self.locked_preset.is_some()
     }
 
     /// Get the current configuration
@@ -745,10 +600,6 @@ impl Builder {
     /// Get supported DDEX versions
     pub fn supported_versions(&self) -> Vec<DdexVersion> {
         versions::utils::supported_versions()
-    }
-
-    fn load_default_presets() -> IndexMap<String, PartnerPreset> {
-        presets::all_presets()
     }
 
     /// Build DDEX XML (DB-C14N/1.0 canonical output, as `DDEXBuilder::build`) with optional
@@ -1112,23 +963,7 @@ mod tests {
     #[test]
     fn test_builder_creation() {
         let builder = Builder::new();
-        assert!(!builder.is_preset_locked());
-    }
-
-    #[test]
-    fn test_preset_application() {
-        let mut builder = Builder::new();
-        assert!(builder.apply_preset("audio_album", false).is_ok());
-        assert!(!builder.is_preset_locked());
-
-        assert!(builder.apply_preset("audio_album", true).is_ok());
-        assert!(builder.is_preset_locked());
-    }
-
-    #[test]
-    fn test_unknown_preset() {
-        let mut builder = Builder::new();
-        assert!(builder.apply_preset("unknown_preset", false).is_err());
+        assert!(builder.target_version().is_none());
     }
 
     #[test]
