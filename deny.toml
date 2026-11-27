@@ -7,7 +7,7 @@
 
 [graph]
 # Check every feature (the CI action also passes --all-features), so optional
-# dependencies such as dhat, ts-rs and numpy are included.
+# dependencies such as ts-rs and numpy are included.
 all-features = true
 
 [output]

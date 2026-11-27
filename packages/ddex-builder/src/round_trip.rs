@@ -79,11 +79,10 @@ where
             BuildOptions::default(),
         )?
         .xml;
-    let canonical =
-        crate::canonical::DB_C14N::new(crate::determinism::DeterminismConfig::default())
-            .canonicalize(&rebuilt_xml)
-            .map(|c| c == rebuilt_xml)
-            .unwrap_or(false);
+    let canonical = crate::canonical::DB_C14N::new()
+        .canonicalize(&rebuilt_xml)
+        .map(|c| c == rebuilt_xml)
+        .unwrap_or(false);
 
     Ok(RoundTripVerification {
         success: differences.is_empty(),
@@ -119,7 +118,7 @@ impl RoundTripTester {
     {
         let start_time = Instant::now();
         let verification = verify_round_trip(original_xml, parse)?;
-        let c14n = crate::canonical::DB_C14N::new(crate::determinism::DeterminismConfig::default());
+        let c14n = crate::canonical::DB_C14N::new();
         let byte_identical = match (
             c14n.canonicalize(original_xml),
             c14n.canonicalize(&verification.rebuilt_xml),

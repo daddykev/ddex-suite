@@ -740,9 +740,7 @@ impl DDEXBuilder {
                 level: options.preflight_level,
                 profile: request.profile.clone(),
                 validate_identifiers: true,
-                validate_checksums: true,
                 check_required_fields: true,
-                validate_dates: true,
                 validate_references: true,
             });
 
@@ -787,7 +785,7 @@ impl DDEXBuilder {
         // 6. Apply canonicalization if requested
         let (final_xml, canonical_hash) =
             if config.canon_mode == super::determinism::CanonMode::DbC14n {
-                let canonicalizer = super::canonical::DB_C14N::new(config.clone());
+                let canonicalizer = super::canonical::DB_C14N::new();
                 let canonical = canonicalizer.canonicalize(&xml)?;
                 let hash = Some(canonicalizer.canonical_hash(&canonical)?);
                 (canonical, hash)
@@ -1064,38 +1062,6 @@ impl DDEXBuilder {
         }
 
         Some(seconds)
-    }
-
-    /// Legacy preflight check method (kept for compatibility)
-    #[allow(dead_code)]
-    fn preflight(
-        &self,
-        request: &BuildRequest,
-        level: super::preflight::PreflightLevel,
-    ) -> Result<Vec<BuildWarning>, super::error::BuildError> {
-        let mut warnings = Vec::new();
-
-        if level == super::preflight::PreflightLevel::None {
-            return Ok(warnings);
-        }
-
-        // Basic checks (enhanced validation is done in main build method)
-        if request.releases.is_empty() {
-            warnings.push(BuildWarning {
-                code: "NO_RELEASES".to_string(),
-                message: "No releases in request".to_string(),
-                location: Some("/releases".to_string()),
-            });
-        }
-
-        if level == super::preflight::PreflightLevel::Strict && !warnings.is_empty() {
-            return Err(super::error::BuildError::InvalidFormat {
-                field: "request".to_string(),
-                message: format!("{} validation warnings in strict mode", warnings.len()),
-            });
-        }
-
-        Ok(warnings)
     }
 }
 

@@ -103,9 +103,7 @@ pub fn restrictive_security_config() -> SecurityConfig {
         max_json_size: 10_000,  // 10KB limit
         max_string_size: 1_000, // 1KB strings
         max_xml_depth: 10,      // Very shallow
-        max_attributes_per_element: 10,
         max_child_elements: 100,
-        allow_external_entities: false,
         allow_dtd: false,
         rate_limiting_enabled: true,
         max_requests_per_minute: 10, // Very restrictive
@@ -120,11 +118,9 @@ pub fn permissive_security_config() -> SecurityConfig {
         max_json_size: 10_000_000, // 10MB
         max_string_size: 100_000,  // 100KB strings
         max_xml_depth: 1000,       // Deep nesting allowed
-        max_attributes_per_element: 1000,
         max_child_elements: 100_000,
-        allow_external_entities: false, // Still keep this secure
-        allow_dtd: false,               // And this
-        rate_limiting_enabled: false,   // No rate limiting
+        allow_dtd: false,             // And this
+        rate_limiting_enabled: false, // No rate limiting
         max_requests_per_minute: 1000,
         ..SecurityConfig::default()
     }

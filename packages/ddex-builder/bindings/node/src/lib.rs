@@ -506,8 +506,6 @@ impl DdexBuilder {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StreamingConfig {
     pub max_buffer_size: u32,
-    pub deterministic: bool,
-    pub validate_during_stream: bool,
     pub progress_callback_frequency: u32,
 }
 
@@ -526,9 +524,7 @@ pub struct StreamingProgress {
 pub struct StreamingStats {
     pub releases_written: u32,
     pub resources_written: u32,
-    pub deals_written: u32,
     pub bytes_written: u32,
-    pub warnings: Vec<String>,
     pub peak_memory_usage: u32,
 }
 
@@ -555,8 +551,6 @@ impl StreamingDdexBuilder {
     pub fn new(config: Option<StreamingConfig>) -> Result<Self> {
         let config = config.unwrap_or(StreamingConfig {
             max_buffer_size: 10 * 1024 * 1024, // 10MB
-            deterministic: true,
-            validate_during_stream: true,
             progress_callback_frequency: 100,
         });
 
@@ -595,9 +589,6 @@ impl StreamingDdexBuilder {
         // Convert config to Rust types
         let rust_config = ddex_builder::streaming::StreamingConfig {
             max_buffer_size: self.config.max_buffer_size as usize,
-            deterministic: self.config.deterministic,
-            determinism_config: ddex_builder::determinism::DeterminismConfig::default(),
-            validate_during_stream: self.config.validate_during_stream,
             progress_callback_frequency: self.config.progress_callback_frequency as usize,
         };
 
@@ -764,9 +755,7 @@ impl StreamingDdexBuilder {
         Ok(StreamingStats {
             releases_written: stats.releases_written as u32,
             resources_written: stats.resources_written as u32,
-            deals_written: stats.deals_written as u32,
             bytes_written: stats.bytes_written as u32,
-            warnings: stats.warnings.iter().map(|w| w.message.clone()).collect(),
             peak_memory_usage: stats.peak_memory_usage as u32,
         })
     }

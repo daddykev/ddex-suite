@@ -51,10 +51,6 @@ export interface BuildOptions {
 export interface StreamingBuildOptions {
   /** Maximum buffer size in bytes before flushing to output */
   maxBufferSize?: number;
-  /** Enable deterministic ordering for streaming output */
-  deterministic?: boolean;
-  /** Validate XML structure during streaming */
-  validateDuringStream?: boolean;
   /** Frequency of progress callbacks (number of elements) */
   progressCallbackFrequency?: number;
   /** DDEX version to target for streaming output */
@@ -289,8 +285,7 @@ export class DDEXBuilder {
  *
  * const builder = new StreamingDDEXBuilder({
  *   maxBufferSize: 1024 * 1024, // 1MB buffer
- *   deterministic: true,
- *   validateDuringStream: true
+ *   progressCallbackFrequency: 100
  * });
  *
  * // Set up progress tracking
@@ -488,7 +483,7 @@ export class StreamingDDEXBuilder {
   /**
    * Complete the DDEX message and get final processing statistics
    *
-   * @returns Final statistics including counts, memory usage, and any warnings
+   * @returns Final statistics: counts, bytes written and peak buffer size
    * @throws {Error} When message cannot be completed due to validation errors
    *
    * @example
@@ -498,10 +493,6 @@ export class StreamingDDEXBuilder {
    * console.log(`Processed ${stats.resourcesWritten} resources`);
    * console.log(`Final size: ${stats.bytesWritten} bytes`);
    * console.log(`Peak memory: ${stats.peakMemoryUsage} bytes`);
-   *
-   * if (stats.warnings.length > 0) {
-   *   console.log('Warnings:', stats.warnings);
-   * }
    * ```
    */
   finishMessage(): StreamingStats {

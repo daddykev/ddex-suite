@@ -193,7 +193,6 @@ The security test suite provides comprehensive coverage of XML security vulnerab
 ### 🔄 Areas for Improvement
 - **Platform-specific Path Validation**: Better handling of Windows vs Unix paths
 - **Error Message Standardization**: Consistent security error messages
-- **Entity Classification**: More precise detection of malicious vs valid entities
 - **Content Sanitization**: Proper sanitization vs rejection strategies
 - **Performance Optimization**: Minimize security overhead
 

@@ -108,21 +108,18 @@ Other groups:
 |---|---:|
 | `canonicalization` `canonicalize_small` | 84.3 µs |
 | `canonicalization` `canonical_hash` | 0.19 µs |
-| `performance` `parallel_processor` 1 / 12 / 50 tracks | 0.18 µs / 10.9 µs / 26.3 µs |
 
-`ParallelProcessor::process_build_parallel` validates the request and does not write XML,
-so its numbers are not comparable with `build`.
+(The `performance` `parallel_processor` group and the `security` bench's entity-classification
+and error-sanitization groups were removed with that code in 0.6.0.)
 
 ### Security helpers (bench `security`)
 
 | Operation | Baseline | With the helper |
 |---|---:|---:|
 | 4 paths: `Path::new(..).components()` vs `PathValidator::validate` | 77 ns | 17 µs |
-| 3 entities: string lengths vs `EntityClassifier::validate_entity_chain` | 1.2 ns | 279 ns |
-| 3 I/O errors: `format!` vs `ErrorSanitizer::sanitize_io_error` | 228 ns | 3.2 µs |
 
-The helpers add far more than 5 % over these trivial baselines (path validation is about
-4 µs per path), which is negligible next to a build.
+Path validation adds far more than 5 % over this trivial baseline (about 4 µs per path),
+which is negligible next to a build.
 
 ## Sanity limits (`--features perf-tests`, release)
 

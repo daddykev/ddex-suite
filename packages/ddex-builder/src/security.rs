@@ -7,25 +7,10 @@
 //! - Size limits and rate limiting
 //! - Safe XML parsing configuration
 
-pub mod entity_classifier;
-pub mod error_sanitizer;
 pub mod path_validator;
-
-// Re-export entity classifier types for public use
-pub use self::entity_classifier::{
-    create_entity, create_external_entity, create_parameter_entity, AttackType, ClassifierConfig,
-    Entity, EntityClass, EntityClassifier, EntityMetrics, ValidationResult,
-};
 
 // Re-export path validator types
 pub use self::path_validator::{PathValidationConfig, PathValidator, ValidatedPath};
-
-// Re-export error sanitizer types
-pub use self::error_sanitizer::{
-    sanitize_build_error, sanitize_error, sanitize_io_error, sanitize_parse_error,
-    sanitize_security_error, ErrorContext, ErrorLevel, ErrorMode, ErrorSanitizer, RedactionRule,
-    SanitizedError, SanitizerConfig, SanitizerStatistics, SecureError,
-};
 
 use crate::error::BuildError;
 use once_cell::sync::Lazy;
@@ -35,7 +20,6 @@ use regex::Regex;
 use std::io::BufRead;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
-use tracing::{debug, warn};
 use url::Url;
 
 /// Maximum allowed size for XML input (100MB)
@@ -49,9 +33,6 @@ const MAX_STRING_SIZE: usize = 1024 * 1024;
 
 /// Maximum nesting depth for XML elements
 const MAX_XML_DEPTH: usize = 100;
-
-/// Maximum number of XML attributes per element
-const MAX_ATTRIBUTES_PER_ELEMENT: usize = 100;
 
 /// Maximum number of child elements
 const MAX_CHILD_ELEMENTS: usize = 10000;
@@ -86,11 +67,6 @@ fn contains_only_safe_entities(input: &str) -> bool {
 static EXTERNAL_REF_REGEX: Lazy<Regex> =
     Lazy::new(|| Regex::new(r#"(SYSTEM|PUBLIC)\s+['"][^'"]*['"]"#).unwrap());
 
-/// Potentially dangerous file path patterns
-#[allow(dead_code)]
-static DANGEROUS_PATH_REGEX: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"\.\./|\\\.\\\|/etc/|/proc/|/sys/|/dev/|/tmp/|C:\\|\\\\").unwrap());
-
 /// SQL injection patterns
 static SQL_INJECTION_REGEX: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"(?i)(union|select|insert|update|delete|drop|exec|script|javascript|vbscript|onload|onerror)").unwrap()
@@ -111,24 +87,14 @@ pub struct SecurityConfig {
     pub max_string_size: usize,
     /// Maximum XML nesting depth
     pub max_xml_depth: usize,
-    /// Maximum attributes per element
-    pub max_attributes_per_element: usize,
     /// Maximum child elements
     pub max_child_elements: usize,
-    /// Whether to allow external entities
-    pub allow_external_entities: bool,
     /// Whether to allow DTD processing
     pub allow_dtd: bool,
     /// Rate limiting enabled
     pub rate_limiting_enabled: bool,
     /// Maximum requests per minute
     pub max_requests_per_minute: u32,
-    /// Enable advanced entity classification
-    pub enable_entity_classification: bool,
-    /// Maximum allowed entity expansion ratio
-    pub max_entity_expansion_ratio: f64,
-    /// Maximum entity recursion depth
-    pub max_entity_depth: usize,
 }
 
 impl Default for SecurityConfig {
@@ -138,15 +104,10 @@ impl Default for SecurityConfig {
             max_json_size: MAX_JSON_SIZE,
             max_string_size: MAX_STRING_SIZE,
             max_xml_depth: MAX_XML_DEPTH,
-            max_attributes_per_element: MAX_ATTRIBUTES_PER_ELEMENT,
             max_child_elements: MAX_CHILD_ELEMENTS,
-            allow_external_entities: false, // CRITICAL: Never allow external entities
-            allow_dtd: false,               // CRITICAL: Never allow DTD processing
+            allow_dtd: false, // CRITICAL: Never allow DTD processing
             rate_limiting_enabled: true,
             max_requests_per_minute: MAX_REQUESTS_PER_MINUTE,
-            enable_entity_classification: true, // Enable advanced entity analysis
-            max_entity_expansion_ratio: 10.0,   // Max 10x expansion
-            max_entity_depth: 3,                // Max 3 levels deep
         }
     }
 }
@@ -267,26 +228,12 @@ impl<R: BufRead> SecureXmlReader<R> {
 /// Input validator for various data types
 pub struct InputValidator {
     config: SecurityConfig,
-    entity_classifier: Option<EntityClassifier>,
 }
 
 impl InputValidator {
     /// Create a new input validator
     pub fn new(config: SecurityConfig) -> Self {
-        let entity_classifier = if config.enable_entity_classification {
-            let mut classifier_config = entity_classifier::ClassifierConfig::default();
-            classifier_config.max_expansion_ratio = config.max_entity_expansion_ratio;
-            classifier_config.max_depth = config.max_entity_depth;
-            classifier_config.allow_external_entities = config.allow_external_entities;
-            Some(EntityClassifier::with_config(classifier_config))
-        } else {
-            None
-        };
-
-        Self {
-            config,
-            entity_classifier,
-        }
+        Self { config }
     }
 
     /// Validate and sanitize a string input
@@ -474,59 +421,6 @@ impl InputValidator {
         Ok(())
     }
 
-    /// Validate entities using advanced classification system
-    pub fn validate_entities(&mut self, entities: &[Entity]) -> Result<(), BuildError> {
-        if let Some(ref mut classifier) = self.entity_classifier {
-            let result = classifier.validate_entity_chain(entities);
-
-            if !result.is_safe {
-                let error_msg = if !result.errors.is_empty() {
-                    result.errors.join("; ")
-                } else {
-                    format!("Entity validation failed: {:?}", result.classification)
-                };
-
-                return Err(BuildError::Security(error_msg));
-            }
-
-            // Log warnings if any
-            if !result.warnings.is_empty() {
-                warn!("Entity validation warnings: {}", result.warnings.join("; "));
-            }
-
-            // Log metrics for monitoring
-            debug!(
-                "Entity validation metrics: {} entities, {:.2}x expansion, {}ms processing",
-                result.metrics.entity_count,
-                result.metrics.expansion_ratio,
-                result.metrics.processing_time_ms
-            );
-        }
-
-        Ok(())
-    }
-
-    /// Classify a single entity
-    pub fn classify_entity(&mut self, name: &str, value: &str) -> EntityClass {
-        if let Some(ref mut classifier) = self.entity_classifier {
-            classifier.classify_entity(name, value)
-        } else {
-            // Fall back to basic classification
-            if contains_only_safe_entities(&format!("&{};", name)) {
-                EntityClass::SafeBuiltin
-            } else {
-                EntityClass::CustomLocal
-            }
-        }
-    }
-
-    /// Get entity classification metrics
-    pub fn get_entity_metrics(&self) -> Option<Vec<EntityMetrics>> {
-        self.entity_classifier
-            .as_ref()
-            .map(|classifier| classifier.get_metrics_history().iter().cloned().collect())
-    }
-
     /// Validate JSON content for security
     pub fn validate_json_content(&self, json: &str) -> Result<(), BuildError> {
         // Check size
@@ -622,14 +516,14 @@ impl RateLimiter {
 /// Output safety and sanitization
 #[derive(Debug)]
 pub struct OutputSanitizer {
-    #[allow(dead_code)]
-    config: SecurityConfig,
+    _private: (),
 }
 
 impl OutputSanitizer {
-    /// Create new output sanitizer
-    pub fn new(config: SecurityConfig) -> Self {
-        Self { config }
+    /// Create new output sanitizer. The configuration is not used (it never was; the
+    /// argument is kept so callers do not change).
+    pub fn new(_config: SecurityConfig) -> Self {
+        Self { _private: () }
     }
 
     /// Sanitize XML output for safety

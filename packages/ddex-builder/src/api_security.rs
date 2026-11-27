@@ -68,40 +68,6 @@ impl ApiSecurityManager {
         self.ffi_validator.validate_input(data, expected_type)
     }
 
-    /// Get security headers for WASM builds
-    pub fn get_wasm_security_headers(&self) -> IndexMap<String, String> {
-        let mut headers = IndexMap::new();
-
-        // Content Security Policy
-        headers.insert(
-            "Content-Security-Policy".to_string(),
-            "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'".to_string(),
-        );
-
-        // Prevent MIME type sniffing
-        headers.insert("X-Content-Type-Options".to_string(), "nosniff".to_string());
-
-        // Frame options
-        headers.insert("X-Frame-Options".to_string(), "DENY".to_string());
-
-        // XSS Protection
-        headers.insert("X-XSS-Protection".to_string(), "1; mode=block".to_string());
-
-        // Referrer policy
-        headers.insert(
-            "Referrer-Policy".to_string(),
-            "strict-origin-when-cross-origin".to_string(),
-        );
-
-        // Permissions policy
-        headers.insert(
-            "Permissions-Policy".to_string(),
-            "camera=(), microphone=(), location=(), interest-cohort=()".to_string(),
-        );
-
-        headers
-    }
-
     /// Create secure error response (without internal details)
     #[allow(
         clippy::disallowed_methods,
@@ -133,11 +99,9 @@ pub struct BatchOperationMonitor {
 }
 
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 struct OperationRecord {
     operation: String,
     timestamp: Instant,
-    resource_usage: usize,
 }
 
 impl BatchOperationMonitor {
@@ -168,7 +132,6 @@ impl BatchOperationMonitor {
         records.push(OperationRecord {
             operation: operation.to_string(),
             timestamp: now,
-            resource_usage: 1, // Could be made more sophisticated
         });
 
         Ok(())
@@ -194,30 +157,6 @@ impl BatchOperationMonitor {
             time_window_seconds: 60,
         })
     }
-}
-
-/// Rate limit information
-#[derive(Debug)]
-pub struct RateLimitInfo {
-    /// Total operations in time window
-    pub total_operations: usize,
-    /// Unique operations counted
-    pub unique_operations: usize,
-    /// Time window in seconds
-    pub time_window_seconds: u64,
-}
-
-/// Content type for security validation
-#[derive(Debug, Clone, Copy)]
-pub enum ContentType {
-    /// XML content
-    Xml,
-    /// JSON content
-    Json,
-    /// Binary content
-    Binary,
-    /// UTF-8 string content
-    Utf8String,
 }
 
 /// Statistics for batch operations
@@ -338,36 +277,6 @@ impl FfiValidator {
     }
 }
 
-/// API security configuration specifically for different API boundaries
-#[derive(Debug, Clone)]
-pub struct ApiSecurityConfig {
-    /// Enable API security features
-    pub enabled: bool,
-    /// Maximum concurrent requests per client
-    pub max_concurrent_requests: u32,
-    /// Request timeout in seconds
-    pub request_timeout_seconds: u64,
-    /// Enable detailed error messages (disable in production)
-    pub detailed_errors: bool,
-    /// Enable CORS headers for WASM
-    pub enable_cors: bool,
-    /// Allowed origins for CORS
-    pub allowed_origins: Vec<String>,
-}
-
-impl Default for ApiSecurityConfig {
-    fn default() -> Self {
-        Self {
-            enabled: true,
-            max_concurrent_requests: 10,
-            request_timeout_seconds: 30,
-            detailed_errors: false, // Secure default
-            enable_cors: false,
-            allowed_origins: vec!["https://localhost".to_string()],
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -448,24 +357,6 @@ mod tests {
         assert!(validator
             .validate_input(invalid_json, FfiDataType::Json)
             .is_err());
-    }
-
-    #[test]
-    fn test_wasm_security_headers() {
-        let config = SecurityConfig::default();
-        let manager = ApiSecurityManager::new(config);
-
-        let headers = manager.get_wasm_security_headers();
-
-        // Check that essential security headers are present
-        assert!(headers.contains_key("Content-Security-Policy"));
-        assert!(headers.contains_key("X-Content-Type-Options"));
-        assert!(headers.contains_key("X-Frame-Options"));
-        assert!(headers.contains_key("X-XSS-Protection"));
-
-        // Check header values
-        assert_eq!(headers.get("X-Content-Type-Options").unwrap(), "nosniff");
-        assert_eq!(headers.get("X-Frame-Options").unwrap(), "DENY");
     }
 
     #[test]

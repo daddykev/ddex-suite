@@ -1,20 +1,17 @@
 //! Tests for DB-C14N/1.0 canonicalization
 
 use super::*;
-use crate::determinism::DeterminismConfig;
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     fn create_test_canonicalizer() -> DB_C14N {
-        let config = DeterminismConfig::default();
-        DB_C14N::new(config)
+        DB_C14N::new()
     }
 
     fn create_test_canonicalizer_with_version(version: &str) -> DB_C14N {
-        let config = DeterminismConfig::default();
-        DB_C14N::with_version(config, version.to_string())
+        DB_C14N::with_version(version.to_string())
     }
 
     #[test]

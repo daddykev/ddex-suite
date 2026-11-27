@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use ddex_builder::{DeterminismConfig, DB_C14N};
+use ddex_builder::DB_C14N;
 
 fn benchmark_canonicalization(c: &mut Criterion) {
     let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -10,7 +10,7 @@ fn benchmark_canonicalization(c: &mut Criterion) {
 </ern:NewReleaseMessage>"#;
 
     c.bench_function("canonicalize_small", |b| {
-        let canonicalizer = DB_C14N::new(DeterminismConfig::default());
+        let canonicalizer = DB_C14N::new();
 
         b.iter(|| {
             let result = canonicalizer.canonicalize(black_box(xml));
@@ -19,7 +19,7 @@ fn benchmark_canonicalization(c: &mut Criterion) {
     });
 
     c.bench_function("canonical_hash", |b| {
-        let canonicalizer = DB_C14N::new(DeterminismConfig::default());
+        let canonicalizer = DB_C14N::new();
 
         b.iter(|| {
             let result = canonicalizer.canonical_hash(black_box(xml));

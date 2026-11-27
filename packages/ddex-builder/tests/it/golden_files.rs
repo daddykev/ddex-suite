@@ -181,9 +181,7 @@ fn test_profile_validation() {
     let config = ValidationConfig {
         level: ddex_builder::preflight::PreflightLevel::Strict,
         validate_identifiers: true,
-        validate_checksums: true,
         check_required_fields: true,
-        validate_dates: true,
         validate_references: true,
         profile: Some("AudioAlbum".to_string()),
     };

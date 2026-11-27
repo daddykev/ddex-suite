@@ -4,7 +4,6 @@
 //! `examples/Samples43/1 Audio.xml`.
 
 use crate::ern4_support::{minimal_single, parse};
-use ddex_builder::determinism::DeterminismConfig;
 use ddex_builder::round_trip::{verify_round_trip, RoundTripTester};
 use ddex_builder::versions::{ConverterResult, VersionConverter};
 use ddex_builder::{Builder, CanonicalizationAlgorithm, DdexVersion, FidelityOptions, DB_C14N};
@@ -89,9 +88,7 @@ fn round_trip_testers_run_a_real_round_trip() {
 #[test]
 fn canonicalize_runs_db_c14n_or_nothing() {
     let xml = sample();
-    let expected = DB_C14N::new(DeterminismConfig::default())
-        .canonicalize(&xml)
-        .unwrap();
+    let expected = DB_C14N::new().canonicalize(&xml).unwrap();
     assert_ne!(expected, xml, "DB-C14N changes the official sample");
 
     let with = |canonicalization| {
@@ -183,19 +180,7 @@ fn version_detection_needs_evidence() {
     assert!(builder.detect_version("<html><body/></html>").is_err());
 }
 
-// ----------------------------------------------------- caches / updates / misc
-
-#[test]
-fn cache_statistics_count_hits_and_misses() {
-    use ddex_builder::caching::CacheManager;
-    let before = CacheManager::stats();
-    let id = format!("honest-results-{}", std::process::id());
-    CacheManager::fast_hash("default", "test", &id, &"value");
-    CacheManager::fast_hash("default", "test", &id, &"value");
-    let after = CacheManager::stats();
-    assert!(after.hash_misses > before.hash_misses);
-    assert!(after.hash_hits > before.hash_hits);
-}
+// ------------------------------------------------------------------ schema
 
 #[test]
 fn schema_if_then_else_follows_the_condition() {
@@ -234,27 +219,6 @@ fn schema_if_then_else_follows_the_condition() {
             .validate(&serde_json::json!({"kind": "a", "x": 1}))
             .valid
     );
-}
-
-#[test]
-fn compact_ast_keeps_children() {
-    use ddex_builder::ast::{Element, Node, AST};
-    use ddex_builder::memory_optimization::CompactAST;
-    let child = |name: &str| Node::Element(Element::new(name).with_text("t"));
-    let mut root = Element::new("Root");
-    root.children = vec![child("A"), child("B")];
-    let ast = AST {
-        root,
-        namespaces: indexmap::IndexMap::new(),
-        schema_location: None,
-    };
-    let compact = CompactAST::from_ast(&ast);
-    let flat = CompactAST::from_ast(&AST {
-        root: Element::new("Root"),
-        namespaces: indexmap::IndexMap::new(),
-        schema_location: None,
-    });
-    assert!(compact.memory_footprint() > flat.memory_footprint());
 }
 
 // ------------------------------------------------------------------ CLI

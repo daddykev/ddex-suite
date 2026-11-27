@@ -106,8 +106,6 @@ export interface FidelityInfo {
 }
 export interface StreamingConfig {
   maxBufferSize: number
-  deterministic: boolean
-  validateDuringStream: boolean
   progressCallbackFrequency: number
 }
 export interface StreamingProgress {
@@ -120,9 +118,7 @@ export interface StreamingProgress {
 export interface StreamingStats {
   releasesWritten: number
   resourcesWritten: number
-  dealsWritten: number
   bytesWritten: number
-  warnings: Array<string>
   peakMemoryUsage: number
 }
 export interface MessageHeader {

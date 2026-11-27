@@ -18,6 +18,12 @@ twelve `DeterminismConfig` fields no build read are removed. Rows D18 and H4–H
 allows are marked "removed in 3b". D27's `DeterminismConfig::unicode_normalization` field is
 gone too (the NFC normalization it described stays in the canonicalizer and ID generator).
 
+**Since 0.6.0 PR 3c** the dead internals (`caching`, `memory_optimization`,
+`optimized_strings`, `parallel_processing`, `namespace_minimizer`,
+`generator::optimized_xml_writer`, the uncompiled `attribute_normalizer.rs`), the entity
+classifier and the error sanitizer are removed. Rows D21, D22, D23, D26, H2 and H8, part of
+H3, and their 16 allows are marked "removed in 3c".
+
 Method: I read `builder.rs`, the ERN 3.8 and ERN 4 generators, the canonicalizer, the ID
 generator, the update-message, streaming and diff code, and the three binding crates. I
 grepped the in-scope crates for clocks (`Utc::now`, `Local::now`, `SystemTime::now`,
@@ -80,12 +86,12 @@ determinism test supplies them, which is why those tests pass.
 | D18 (**removed in 3b**) | `ddex-builder/src/guarantees.rs:202`, `:541` | `DeterminismGuaranteeValidator`, `generate_guarantee_report` | report timestamps (not build output) | report only | `GuaranteeReport.timestamp` and the validation result's `timestamp` | None needed (a report time is legitimate) | no |
 | D19 | `ddex-builder/src/versions/mod.rs:230` | `ConversionResult` | `converted_at: DateTime<Utc>`. It is never assigned in the crate (the struct is not constructed), so nothing reaches output | no | pub field | Remove or make optional with D16 | yes if removed |
 | D20 | `ddex-builder/src/security.rs:726`, `:785`, `:842`; `api_security.rs:115` | secure logging, `SecureTempFile`, request IDs | log timestamps, temp-file names, request IDs (not build output) | not on the build path | `SecureTempFile`, `SecurityConfig` | None needed | no |
-| D21 | `ddex-builder/src/security/error_sanitizer.rs:88`, `:358` | `SanitizedErrorTrait::error_id`, `ErrorSanitizer::sanitize` | random correlation IDs in sanitized error text | only if the caller uses `ErrorSanitizer` (`generate_correlation_ids`). `build`, the CLI and the bindings do not | `security::ErrorSanitizer`, `sanitize_*` | None for 0.6.0. Document that error text then carries a random ID | no |
-| D22 | `ddex-builder/src/namespace_minimizer.rs:261-266` | `NamespaceMinimizer` prefix fallback | prefix `ns<DefaultHasher(uri) % 1000>`. Stable today (SipHash with fixed keys), but std does not guarantee `DefaultHasher` output across Rust releases | not on the build path (`NamespaceMinimizer` is pub but unused by `build`) | `namespace_minimizer::NamespaceMinimizer` | Use `sha2`/`blake3` (already dependencies) | no (only if someone relies on the prefix) |
-| D23 | `ddex-builder/src/caching.rs:784` | hash cache fallback | `DefaultHasher` cache key (internal only) | no | `caching` module | None needed (in-process key) | no |
+| D21 (**removed in 3c**) | `ddex-builder/src/security/error_sanitizer.rs:88`, `:358` | `SanitizedErrorTrait::error_id`, `ErrorSanitizer::sanitize` | random correlation IDs in sanitized error text | only if the caller uses `ErrorSanitizer` (`generate_correlation_ids`). `build`, the CLI and the bindings do not | `security::ErrorSanitizer`, `sanitize_*` | None for 0.6.0. Document that error text then carries a random ID | no |
+| D22 (**removed in 3c**) | `ddex-builder/src/namespace_minimizer.rs:261-266` | `NamespaceMinimizer` prefix fallback | prefix `ns<DefaultHasher(uri) % 1000>`. Stable today (SipHash with fixed keys), but std does not guarantee `DefaultHasher` output across Rust releases | not on the build path (`NamespaceMinimizer` is pub but unused by `build`) | `namespace_minimizer::NamespaceMinimizer` | Use `sha2`/`blake3` (already dependencies) | no (only if someone relies on the prefix) |
+| D23 (**removed in 3c**) | `ddex-builder/src/caching.rs:784` | hash cache fallback | `DefaultHasher` cache key (internal only) | no | `caching` module | None needed (in-process key) | no |
 | D24 | `ddex-builder/src/builder.rs:727` (`web_time::Instant`), `lib.rs:755`, bindings' `Instant` | `build`, `build_with_fidelity`, binding stats | `BuildResult.statistics.generation_time_ms`, binding `getStats` times (not XML) | yes, but not in XML | `BuildStatistics` | None needed. Tests must compare `.xml`, not the whole `BuildResult` | no |
 | D25 | `ddex-builder/src/canonical/mod.rs:319-327`, `:423` | `DB_C14N::canonicalize` | attribute order (`BTreeMap`, byte order) and child order (`sort_by`, stable) | yes | — | None (order-stable). `canonical_hash` is SHA-256 of the canonical bytes | no |
-| D26 | `ddex-builder/src/parallel_processing.rs` (`par_iter().collect()`), `generator/optimized_xml_writer.rs:294` | `ParallelProcessor`, `vectorized::write_elements_parallel` | result order (rayon's indexed `collect` keeps input order) | not on the build path | `parallel_processing`, `generator::optimized_xml_writer` | None needed | no |
+| D26 (**removed in 3c**) | `ddex-builder/src/parallel_processing.rs` (`par_iter().collect()`), `generator/optimized_xml_writer.rs:294` | `ParallelProcessor`, `vectorized::write_elements_parallel` | result order (rayon's indexed `collect` keeps input order) | not on the build path | `parallel_processing`, `generator::optimized_xml_writer` | None needed | no |
 | D27 | `ddex-builder/src/canonical/mod.rs` (`unicode_normalization: NFC`), `id_generator.rs` `normalize_value` | NFC and case folding | canonical text and stable-hash inputs depend on the Unicode tables of `unicode-normalization` / std | yes (canonical output) | `DeterminismConfig::unicode_normalization` | None for 0.6.0. Note that a dependency or toolchain upgrade can change output for unassigned/new code points | no |
 
 Searched for and **not found** in the in-scope crates' library code: `Local::now`,
@@ -151,13 +157,13 @@ Uses in ddex-builder (library code) and whether each one is safe for output:
 | # | where | use | safe? |
 |---|---|---|---|
 | H1 | `canonical/rules.rs:22`, `:169`, `:187` | `HashSet` of reserved / used namespace prefixes | safe: membership only, never iterated (the declarations are an `IndexMap`) |
-| H2 | `attribute_normalizer.rs:52` | `HashMap` of special handlers | safe: the file is not compiled (`lib.rs` has no `mod attribute_normalizer`), so clippy never sees it and it needs no allow |
-| H3 | `security/entity_classifier.rs:220`, `security/error_sanitizer.rs:181-182`, `security/path_validator.rs:56`, `:99`, `:547` | caches, code maps, extension allow-lists, visited set | safe: lookup / membership only. But `PathValidatorConfig.allowed_extensions` is a pub `HashSet` (its `Debug` / serde order varies) |
+| H2 (**removed in 3c**) | `attribute_normalizer.rs:52` | `HashMap` of special handlers | safe: the file is not compiled (`lib.rs` has no `mod attribute_normalizer`), so clippy never sees it and it needs no allow |
+| H3 (entity classifier and error sanitizer parts **removed in 3c**; `path_validator` remains) | `security/entity_classifier.rs:220`, `security/error_sanitizer.rs:181-182`, `security/path_validator.rs:56`, `:99`, `:547` | caches, code maps, extension allow-lists, visited set | safe: lookup / membership only. But `PathValidatorConfig.allowed_extensions` is a pub `HashSet` (its `Debug` / serde order varies) |
 | H4 (**removed in 3b**) | `lib.rs:149` | `CustomCanonicalizationRules.element_ordering: HashMap` (pub field) | not reached: custom canonicalization returns "not implemented". If it is ever implemented, iteration order matters, so make it an `IndexMap` (breaking: pub field type) |
 | H5 (**removed in 3b**) | `fidelity.rs:216`, `:289`, `:358-366` | pub `HashMap` fields in `FidelityConfig` / `FidelityStatistics` | not XML. Their serde/`Debug` order varies. IndexMap is breaking (pub field types) |
 | H6 (**removed in 3b**) | `verification.rs:524` | `VerificationStatistics.extensions_verified` (pub) | as H5 |
 | H7 (**removed in 3b**) | `round_trip.rs:213`, `:226`, `:254`, `:269` | pub `HashMap` fields in `FidelityAnalysis` statistics | as H5 (and `analyze_fidelity` returns an error in 0.5.x) |
-| H8 | `namespace_minimizer.rs:33`, `:99` | `NamespaceAnalysis.namespace_elements: HashMap` (pub), iterated by the minimizer | not on the build path. If the minimizer is used, its prefix choices may depend on iteration order. Make it an `IndexMap` (breaking: pub field) |
+| H8 (**removed in 3c**) | `namespace_minimizer.rs:33`, `:99` | `NamespaceAnalysis.namespace_elements: HashMap` (pub), iterated by the minimizer | not on the build path. If the minimizer is used, its prefix choices may depend on iteration order. Make it an `IndexMap` (breaking: pub field) |
 
 ddex-core, outside the lint: `models/extensions.rs:119` `Extensions.legacy_data: HashMap`
 (`#[serde(flatten)]`, so serialized key order varies), `models/graph/message.rs:26`
@@ -192,7 +198,7 @@ Findings and Hash containers tables above are as of 0.5.1; this table has the cu
 | `packages/ddex-builder/src/builder.rs:903` | `disallowed_methods` | D4 | known bug D4: removed in 0.6.0 determinism PR | `fn generate_sequential_ids(` |
 | `packages/ddex-builder/src/builder.rs:943` | `disallowed_methods` | D5 | known bug D5: removed in 0.6.0 determinism PR | `fn generate_stable_hash_ids(` |
 | `packages/ddex-builder/src/builder.rs:1282` (**removed in 3a**) | `disallowed_methods` | D9 | known bug D9: removed in 0.6.0 determinism PR | `fn serialize_update_header(` |
-| `packages/ddex-builder/src/caching.rs:759` | `disallowed_types` | D23 | D23: in-process cache key; never written to output | `pub fn fast_hash<T: Hash + std::fmt::Debug>(` |
+| `packages/ddex-builder/src/caching.rs:759` (**removed in 3c**) | `disallowed_types` | D23 | D23: in-process cache key; never written to output | `pub fn fast_hash<T: Hash + std::fmt::Debug>(` |
 | `packages/ddex-builder/src/canonical/rules.rs:9` | `disallowed_types` | H1 | H1: membership checks only, never iterated; the declarations are an IndexMap | `use std::collections::HashSet;` |
 | `packages/ddex-builder/src/canonical/rules.rs:26` | `disallowed_types` | H1 | H1: membership checks only, never iterated; the declarations are an IndexMap | `reserved_prefixes: HashSet<String>,` |
 | `packages/ddex-builder/src/canonical/rules.rs:35` | `disallowed_types` | H1 | H1: membership checks only, never iterated; the declarations are an IndexMap | `pub fn new() -> Self {` |
@@ -214,12 +220,12 @@ Findings and Hash containers tables above are as of 0.5.1; this table has the cu
 | `packages/ddex-builder/src/messages/update_release.rs:754` (**removed in 3a**) | `disallowed_methods` | D11 | known bug D11: removed in 0.6.0 determinism PR | `fn extract_entity_id(&self, path: &crate::diff::types::DiffP` |
 | `packages/ddex-builder/src/messages/update_release.rs:861` (**removed in 3a**) | `disallowed_methods` | D10 | known bug D10: removed in 0.6.0 determinism PR | `fn create_update_metadata(` |
 | `packages/ddex-builder/src/messages/update_release.rs:1096` (**removed in 3a**) | `disallowed_methods` | D10 | D10: unit-test fixture timestamp; not build output | `fn test_operation_validation() {` |
-| `packages/ddex-builder/src/namespace_minimizer.rs:11` | `disallowed_types` | H8 | H8: NamespaceMinimizer is not on the build path | `use std::collections::HashMap;` |
-| `packages/ddex-builder/src/namespace_minimizer.rs:37` | `disallowed_types` | H8 | H8: NamespaceMinimizer is not on the build path | `pub namespace_elements: HashMap<String, IndexSet<String>>,` |
-| `packages/ddex-builder/src/namespace_minimizer.rs:105` | `disallowed_types` | H8 | H8: NamespaceMinimizer is not on the build path | `fn analyze_namespace_usage(&self, ast: &AST) -> Result<Names` |
-| `packages/ddex-builder/src/namespace_minimizer.rs:144` | `disallowed_types` | H8 | H8: NamespaceMinimizer is not on the build path | `fn analyze_element_usage(` |
-| `packages/ddex-builder/src/namespace_minimizer.rs:265` | `disallowed_types` | D22 | D22: NamespaceMinimizer is not on the build path | `fn generate_prefix_for_uri(&self, uri: &str) -> String {` |
-| `packages/ddex-builder/src/namespace_minimizer.rs:478` | `disallowed_types` | H8 | H8: NamespaceMinimizer is not on the build path | `fn test_minimal_declarations() {` |
+| `packages/ddex-builder/src/namespace_minimizer.rs:11` (**removed in 3c**) | `disallowed_types` | H8 | H8: NamespaceMinimizer is not on the build path | `use std::collections::HashMap;` |
+| `packages/ddex-builder/src/namespace_minimizer.rs:37` (**removed in 3c**) | `disallowed_types` | H8 | H8: NamespaceMinimizer is not on the build path | `pub namespace_elements: HashMap<String, IndexSet<String>>,` |
+| `packages/ddex-builder/src/namespace_minimizer.rs:105` (**removed in 3c**) | `disallowed_types` | H8 | H8: NamespaceMinimizer is not on the build path | `fn analyze_namespace_usage(&self, ast: &AST) -> Result<Names` |
+| `packages/ddex-builder/src/namespace_minimizer.rs:144` (**removed in 3c**) | `disallowed_types` | H8 | H8: NamespaceMinimizer is not on the build path | `fn analyze_element_usage(` |
+| `packages/ddex-builder/src/namespace_minimizer.rs:265` (**removed in 3c**) | `disallowed_types` | D22 | D22: NamespaceMinimizer is not on the build path | `fn generate_prefix_for_uri(&self, uri: &str) -> String {` |
+| `packages/ddex-builder/src/namespace_minimizer.rs:478` (**removed in 3c**) | `disallowed_types` | H8 | H8: NamespaceMinimizer is not on the build path | `fn test_minimal_declarations() {` |
 | `packages/ddex-builder/src/round_trip.rs:24` (**removed in 3b**) | `disallowed_types` | H7 | H7: round-trip statistics; not build output | `type UnorderedMap<K, V> = std::collections::HashMap<K, V>;` |
 | `packages/ddex-builder/src/schema/mod.rs:369` | `disallowed_methods` | D17 | D17: schema metadata timestamp; not DDEX build output | `pub fn generate_build_request_schema(&self) -> Result<Schema` |
 | `packages/ddex-builder/src/schema/mod.rs:396` | `disallowed_methods` | D17 | D17: schema metadata timestamp; not DDEX build output | `pub fn generate_flat_release_schema(&self) -> Result<SchemaG` |
@@ -229,15 +235,15 @@ Findings and Hash containers tables above are as of 0.5.1; this table has the cu
 | `packages/ddex-builder/src/security.rs:720` | `disallowed_methods` | D20 | D20: log line timestamp; not build output | `pub fn create_secure_log_message(` |
 | `packages/ddex-builder/src/security.rs:783` | `disallowed_methods` | D20 | D20: random temp-file name; not build output | `pub fn new() -> Result<Self, BuildError> {` |
 | `packages/ddex-builder/src/security.rs:849` | `disallowed_methods` | D20 | D20: random secure ID for callers; not build output | `pub fn generate_secure_id() -> String {` |
-| `packages/ddex-builder/src/security/entity_classifier.rs:220` | `disallowed_types` | H3 | H3: lookup-only entity cache; never iterated into output | `entity_cache: HashMap<String, EntityClass>,` |
-| `packages/ddex-builder/src/security/entity_classifier.rs:235` | `disallowed_types` | H3 | H3: lookup-only entity cache; never iterated into output | `pub fn with_config(config: ClassifierConfig) -> Self {` |
-| `packages/ddex-builder/src/security/error_sanitizer.rs:10` | `disallowed_types` | H3 | H3: lookup-only error-code map and correlation store; never iterated into output | `use std::collections::HashMap;` |
-| `packages/ddex-builder/src/security/error_sanitizer.rs:91` | `disallowed_methods` | D21 | D21: opt-in error correlation ID; build() does not use ErrorSanitizer | `fn error_id(&self) -> String {` |
-| `packages/ddex-builder/src/security/error_sanitizer.rs:189` | `disallowed_types` | H3 | H3: lookup-only error-code map and correlation store; never iterated into output | `error_code_map: HashMap<ErrorContext, &'static str>,` |
-| `packages/ddex-builder/src/security/error_sanitizer.rs:194` | `disallowed_types` | H3 | H3: lookup-only error-code map and correlation store; never iterated into output | `correlation_store: HashMap<String, String>,` |
-| `packages/ddex-builder/src/security/error_sanitizer.rs:352` | `disallowed_types` | H3 | H3: lookup-only error-code map and correlation store; never iterated into output | `pub fn with_config(config: SanitizerConfig) -> Self {` |
-| `packages/ddex-builder/src/security/error_sanitizer.rs:373` | `disallowed_methods` | D21 | D21: opt-in error correlation ID; build() does not use ErrorSanitizer | `pub fn sanitize<E>(&mut self, error: E, context: ErrorContex` |
-| `packages/ddex-builder/src/security/error_sanitizer.rs:516` | `disallowed_types` | H3 | H3: lookup-only error-code map and correlation store; never iterated into output | `fn create_error_code_map() -> HashMap<ErrorContext, &'static` |
+| `packages/ddex-builder/src/security/entity_classifier.rs:220` (**removed in 3c**) | `disallowed_types` | H3 | H3: lookup-only entity cache; never iterated into output | `entity_cache: HashMap<String, EntityClass>,` |
+| `packages/ddex-builder/src/security/entity_classifier.rs:235` (**removed in 3c**) | `disallowed_types` | H3 | H3: lookup-only entity cache; never iterated into output | `pub fn with_config(config: ClassifierConfig) -> Self {` |
+| `packages/ddex-builder/src/security/error_sanitizer.rs:10` (**removed in 3c**) | `disallowed_types` | H3 | H3: lookup-only error-code map and correlation store; never iterated into output | `use std::collections::HashMap;` |
+| `packages/ddex-builder/src/security/error_sanitizer.rs:91` (**removed in 3c**) | `disallowed_methods` | D21 | D21: opt-in error correlation ID; build() does not use ErrorSanitizer | `fn error_id(&self) -> String {` |
+| `packages/ddex-builder/src/security/error_sanitizer.rs:189` (**removed in 3c**) | `disallowed_types` | H3 | H3: lookup-only error-code map and correlation store; never iterated into output | `error_code_map: HashMap<ErrorContext, &'static str>,` |
+| `packages/ddex-builder/src/security/error_sanitizer.rs:194` (**removed in 3c**) | `disallowed_types` | H3 | H3: lookup-only error-code map and correlation store; never iterated into output | `correlation_store: HashMap<String, String>,` |
+| `packages/ddex-builder/src/security/error_sanitizer.rs:352` (**removed in 3c**) | `disallowed_types` | H3 | H3: lookup-only error-code map and correlation store; never iterated into output | `pub fn with_config(config: SanitizerConfig) -> Self {` |
+| `packages/ddex-builder/src/security/error_sanitizer.rs:373` (**removed in 3c**) | `disallowed_methods` | D21 | D21: opt-in error correlation ID; build() does not use ErrorSanitizer | `pub fn sanitize<E>(&mut self, error: E, context: ErrorContex` |
+| `packages/ddex-builder/src/security/error_sanitizer.rs:516` (**removed in 3c**) | `disallowed_types` | H3 | H3: lookup-only error-code map and correlation store; never iterated into output | `fn create_error_code_map() -> HashMap<ErrorContext, &'static` |
 | `packages/ddex-builder/src/security/path_validator.rs:21` | `disallowed_types` | H3 | H3: membership-only sets for path validation; not on the build path | `use std::collections::HashSet;` |
 | `packages/ddex-builder/src/security/path_validator.rs:60` | `disallowed_types` | H3 | H3: membership-only sets for path validation; not on the build path | `static WINDOWS_RESERVED_NAMES: Lazy<HashSet<&str>> = Lazy::n` |
 | `packages/ddex-builder/src/security/path_validator.rs:107` | `disallowed_types` | H3 | H3: membership-only sets for path validation; not on the build path | `pub allowed_extensions: HashSet<String>,` |

@@ -59,37 +59,14 @@ impl Default for ReferenceStyle {
 pub struct LinkerConfig {
     /// Reference generation style
     pub reference_style: ReferenceStyle,
-
-    /// Enable auto-linking
-    pub auto_link: bool,
-
-    /// Validate references on build
-    pub validate_on_build: bool,
-
-    /// Strict mode (fail on warnings)
-    pub strict: bool,
 }
 
 impl Default for LinkerConfig {
     fn default() -> Self {
         Self {
             reference_style: ReferenceStyle::default(),
-            auto_link: true,
-            validate_on_build: true,
-            strict: false,
         }
     }
-}
-
-/// Link between release and resource
-#[derive(Debug, Clone)]
-pub struct ResourceLink {
-    /// Reference to the release
-    pub release_reference: String,
-    /// Reference to the resource
-    pub resource_reference: String,
-    /// Sequence number in the release
-    pub sequence_number: u32,
 }
 
 /// Release-Resource reference mapping
@@ -103,23 +80,6 @@ pub struct ReleaseResourceReference {
     pub sequence_number: u32,
 }
 
-/// Statistics for linking operation
-#[derive(Debug, Default)]
-pub struct LinkingStats {
-    /// Number of references generated
-    pub generated_refs: usize,
-    /// Number of resources linked
-    pub linked_resources: usize,
-    /// Number of deals linked
-    pub linked_deals: usize,
-    /// Number of parties linked
-    pub linked_parties: usize,
-    /// Whether validation passed
-    pub validation_passed: bool,
-    /// List of warnings generated
-    pub warnings: Vec<String>,
-}
-
 /// Report from auto-linking process
 #[derive(Debug, Clone, Default)]
 pub struct LinkingReport {
@@ -131,9 +91,8 @@ pub struct LinkingReport {
     pub linked_deals: usize,
     /// Number of parties successfully linked
     pub linked_parties: usize,
-    /// Whether all validations passed
-    pub validation_passed: bool,
-    /// List of warnings generated during linking
+    /// List of warnings generated during linking, including reference validation
+    /// problems
     pub warnings: Vec<String>,
 }
 
@@ -143,9 +102,6 @@ pub enum LinkingError {
     /// Reference to unknown resource
     #[error("Unknown resource: {0}")]
     UnknownResource(String),
-    /// Reference to unknown release
-    #[error("Unknown release: {0}")]
-    UnknownRelease(String),
     /// Reference without a target
     #[error("Orphaned reference: {0}")]
     OrphanedReference(String),
@@ -157,16 +113,4 @@ pub enum LinkingError {
         /// Target that doesn't exist
         to: String,
     },
-    /// Duplicate reference ID
-    #[error("Duplicate reference: {0}")]
-    DuplicateReference(String),
-    /// Circular reference detected
-    #[error("Circular reference detected: {0}")]
-    CircularReference(String),
-    /// Invalid entity type for operation
-    #[error("Invalid entity type: {0}")]
-    InvalidEntityType(String),
-    /// Validation failed
-    #[error("Validation failed: {0}")]
-    ValidationFailed(String),
 }

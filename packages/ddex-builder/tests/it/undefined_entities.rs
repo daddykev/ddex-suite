@@ -3,7 +3,6 @@
 //! it with its line and column, instead of dropping or copying it. Input: the official
 //! sample `Samples43/1 Audio.xml` with `&foo;` injected into a text node or an attribute.
 
-use ddex_builder::determinism::DeterminismConfig;
 use ddex_builder::versions::{ConverterResult, VersionConverter};
 use ddex_builder::{DdexVersion, DB_C14N};
 
@@ -43,7 +42,7 @@ fn injected() -> [(String, &'static str); 2] {
 
 #[test]
 fn canonicalization_fails_on_an_undefined_entity() {
-    let c14n = DB_C14N::new(DeterminismConfig::default());
+    let c14n = DB_C14N::new();
     for (xml, expected) in injected() {
         let error = c14n.canonicalize(&xml).unwrap_err().to_string();
         assert!(error.contains(expected), "{error}");
@@ -57,9 +56,7 @@ fn canonicalization_still_decodes_predefined_entities_and_character_references()
         "<TitleText>A &amp; B caf&#233; caf&#xE9;</TitleText>",
         1,
     );
-    let out = DB_C14N::new(DeterminismConfig::default())
-        .canonicalize(&xml)
-        .unwrap();
+    let out = DB_C14N::new().canonicalize(&xml).unwrap();
     assert!(
         out.contains("<TitleText>A &amp; B café café</TitleText>"),
         "{out}"

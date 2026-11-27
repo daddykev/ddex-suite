@@ -25,7 +25,6 @@
 //!
 //! - **ASTGenerator**: Main orchestrator that converts requests to AST
 //! - **xml_writer**: High-level XML writer with formatting
-//! - **optimized_xml_writer**: Alternative writer with string interning (not used by `DDEXBuilder::build`)
 //!
 //! ## Generation Process
 //!
@@ -104,7 +103,6 @@
 
 mod ern38;
 mod ern4;
-pub mod optimized_xml_writer;
 mod shared;
 pub mod xml_writer;
 

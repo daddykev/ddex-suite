@@ -27,10 +27,6 @@ pub struct ReferenceLinker {
 
     /// Auto-linker for automatic relationship creation
     auto_linker: AutoLinker,
-
-    /// Configuration for the linker
-    #[allow(dead_code)]
-    config: LinkerConfig,
 }
 
 impl ReferenceLinker {
@@ -45,7 +41,6 @@ impl ReferenceLinker {
             generator: ReferenceGenerator::new(config.reference_style.clone()),
             relationships: RelationshipManager::new(),
             auto_linker: AutoLinker::new(),
-            config: config,
         }
     }
 

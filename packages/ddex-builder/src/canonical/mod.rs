@@ -47,10 +47,8 @@
 //!
 //! ```rust
 //! use ddex_builder::canonical::DB_C14N;
-//! use ddex_builder::determinism::DeterminismConfig;
 //!
-//! let config = DeterminismConfig::default();
-//! let canonicalizer = DB_C14N::new(config);
+//! let canonicalizer = DB_C14N::new();
 //!
 //! let input_xml = r#"<Release xmlns:ern="http://ddex.net/xml/ern/43">
 //!     <ReleaseId><GRid>A12345</GRid></ReleaseId>
@@ -70,7 +68,7 @@
 //!
 //! 1. **XML Declaration**: Always `<?xml version="1.0" encoding="UTF-8"?>`
 //! 2. **Namespace Prefixes**: Use locked prefix table for DDEX namespaces
-//! 3. **Element Order**: Apply schema-defined canonical element ordering
+//! 3. **Element Order**: Kept as written (the generators write elements in XSD order)
 //! 4. **Attribute Order**: Sort attributes alphabetically by qualified name
 //! 5. **Text Normalization**: Trim whitespace, normalize line endings
 //! 6. **Indentation**: Use 2-space indentation with no trailing whitespace
@@ -100,26 +98,28 @@ pub mod rules;
 /// DB-C14N/1.0 canonicalizer
 #[allow(non_camel_case_types)] // Allow non-standard naming for DB-C14N
 pub struct DB_C14N {
-    #[allow(dead_code)]
-    config: super::determinism::DeterminismConfig,
     version: String,
 }
 
+impl Default for DB_C14N {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DB_C14N {
-    /// Create a new canonicalizer
-    pub fn new(config: super::determinism::DeterminismConfig) -> Self {
+    /// Create a new canonicalizer. (Before 0.6.0 it took a `DeterminismConfig`, which it
+    /// never read.)
+    pub fn new() -> Self {
         Self {
-            config: config,
             version: "4.3".to_string(), // Default to latest
         }
     }
 
-    /// Create a new canonicalizer with specific ERN version
-    pub fn with_version(config: super::determinism::DeterminismConfig, version: String) -> Self {
-        Self {
-            config: config,
-            version,
-        }
+    /// Create a new canonicalizer with a specific ERN version, used when the XML has no ERN
+    /// namespace
+    pub fn with_version(version: String) -> Self {
+        Self { version }
     }
 
     /// Detect ERN version from XML content
@@ -323,8 +323,8 @@ impl DB_C14N {
         // 2. Apply namespace prefix locking
         self.apply_namespace_prefix_locking(&mut element.attributes, version)?;
 
-        // 3. Sort child elements according to schema-defined order
-        self.sort_child_elements(&mut element.children, &element.name, version)?;
+        // 3. Child elements keep their order: the generators write them in XSD sequence
+        // order, which is the canonical order.
 
         // 4. Recursively canonicalize child elements
         for child in &mut element.children {
@@ -390,50 +390,6 @@ impl DB_C14N {
         }
 
         *attributes = updated_attrs;
-        Ok(())
-    }
-
-    fn sort_child_elements(
-        &self,
-        children: &mut Vec<XmlNode>,
-        parent_name: &str,
-        version: &str,
-    ) -> Result<(), super::error::BuildError> {
-        // ERN 3.8.x and 4.x: the generators write elements in XSD sequence order, which is
-        // the canonical order. The reorder tables in `rules` predate that and do not follow
-        // the XSD sequences (e.g. 3.8.2 MessageHeader, Release), so they are not applied to
-        // these versions.
-        if matches!(
-            version,
-            "3.8.1" | "381" | "3.8.2" | "382" | "4.2" | "42" | "4.3" | "43"
-        ) {
-            return Ok(());
-        }
-
-        let manager = rules::CanonicalNamespaceManager::new();
-
-        if let Some(order) = manager.get_canonical_element_order(parent_name, version) {
-            // Create a map for quick lookup of element order
-            let order_map: IndexMap<String, usize> = order
-                .iter()
-                .enumerate()
-                .map(|(i, name)| (name.clone(), i))
-                .collect();
-
-            children.sort_by(|a, b| match (a, b) {
-                (XmlNode::Element(elem_a), XmlNode::Element(elem_b)) => {
-                    let order_a = order_map.get(&elem_a.name).unwrap_or(&usize::MAX);
-                    let order_b = order_map.get(&elem_b.name).unwrap_or(&usize::MAX);
-                    order_a
-                        .cmp(order_b)
-                        .then_with(|| elem_a.name.cmp(&elem_b.name))
-                }
-                (XmlNode::Element(_), _) => std::cmp::Ordering::Less,
-                (_, XmlNode::Element(_)) => std::cmp::Ordering::Greater,
-                _ => std::cmp::Ordering::Equal,
-            });
-        }
-
         Ok(())
     }
 
@@ -581,16 +537,14 @@ enum XmlNode {
 #[cfg(test)]
 mod tests;
 
-/// Test helper functions
+/// Test helper: a default canonicalizer (used by `tests.rs`'s `integration_tests`)
 #[cfg(test)]
 pub fn create_test_canonicalizer() -> DB_C14N {
-    let config = super::determinism::DeterminismConfig::default();
-    DB_C14N::new(config)
+    DB_C14N::new()
 }
 
-/// Create a test canonicalizer with specific DDEX version for testing
+/// Test helper: a canonicalizer with a specific DDEX version
 #[cfg(test)]
 pub fn create_test_canonicalizer_with_version(version: &str) -> DB_C14N {
-    let config = super::determinism::DeterminismConfig::default();
-    DB_C14N::with_version(config, version.to_string())
+    DB_C14N::with_version(version.to_string())
 }

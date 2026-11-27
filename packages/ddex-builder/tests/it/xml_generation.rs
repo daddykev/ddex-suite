@@ -79,7 +79,6 @@ fn test_linker_with_xml_generation() {
     println!("Linking Report:");
     println!("  Generated refs: {}", link_report.generated_refs);
     println!("  Linked resources: {}", link_report.linked_resources);
-    println!("  Validation passed: {}", link_report.validation_passed);
 
     // Debug: Print what references were generated
     println!("\nGenerated References:");

@@ -7,8 +7,6 @@ async function testStreamingBuilder() {
     // Create a streaming builder with custom config
     const config = {
         max_buffer_size: 5 * 1024 * 1024, // 5MB buffer
-        deterministic: true,
-        validate_during_stream: true,
         progress_callback_frequency: 50
     };
     
@@ -90,8 +88,7 @@ async function testStreamingBuilder() {
             releases_written: stats.releases_written,
             resources_written: stats.resources_written,
             bytes_written: stats.bytes_written,
-            peak_memory_usage: Math.round(stats.peak_memory_usage / 1024) + 'KB',
-            warnings_count: stats.warnings.length
+            peak_memory_usage: Math.round(stats.peak_memory_usage / 1024) + 'KB'
         });
         
         // Get the generated XML
