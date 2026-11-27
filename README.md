@@ -52,8 +52,7 @@ Beyond the core implementation, this is a showcase of **software craftsmanship a
 
 ## 🚧 Development Status
 
-**Latest Release**: Suite v0.5.1 🎉  
-**Next Release**: Suite v0.6.0  
+**Latest Release**: Suite v0.6.0 🎉  
 **Goal**: Suite v1.0.0
 
 ### 📦 Available Packages
@@ -62,9 +61,9 @@ All packages are released together at the same version.
 
 | Package | npm | PyPI | crates.io | Version |
 |---------|-----|------|-----------|---------|
-| **ddex-core** | - | - | ✅ [Published](https://crates.io/crates/ddex-core) | v0.5.1 |
-| **ddex-parser** | ✅ [Published](https://www.npmjs.com/package/ddex-parser) | ✅ [Published](https://pypi.org/project/ddex-parser/) | ✅ [Published](https://crates.io/crates/ddex-parser) | v0.5.1 |
-| **ddex-builder** | ✅ [Published](https://www.npmjs.com/package/ddex-builder) | ✅ [Published](https://pypi.org/project/ddex-builder/) | ✅ [Published](https://crates.io/crates/ddex-builder) | v0.5.1 |
+| **ddex-core** | - | - | ✅ [Published](https://crates.io/crates/ddex-core) | v0.6.0 |
+| **ddex-parser** | ✅ [Published](https://www.npmjs.com/package/ddex-parser) | ✅ [Published](https://pypi.org/project/ddex-parser/) | ✅ [Published](https://crates.io/crates/ddex-parser) | v0.6.0 |
+| **ddex-builder** | ✅ [Published](https://www.npmjs.com/package/ddex-builder) | ✅ [Published](https://pypi.org/project/ddex-builder/) | ✅ [Published](https://crates.io/crates/ddex-builder) | v0.6.0 |
 
 ### Progress Overview
 
@@ -74,11 +73,10 @@ All packages are released together at the same version.
 ✅ **Schema-valid builder output** - ERN 4.3, 4.2 and 3.8.2, validated against the official XSDs in CI; the WASM builder runs the core builder  
 ✅ **Bindings that fail loudly** - Python raises `ImportError` without its native extension; options that had no effect were removed  
 ✅ **Packages for every common platform** - abi3 wheels for Python 3.11+ and npm binaries for macOS, Linux and Windows  
-✅ **Measured performance** - Criterion bench results in [PERFORMANCE.md](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md)
+✅ **Measured performance** - Criterion bench results in [PERFORMANCE.md](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md)  
+✅ **Parse → Modify → Build** - `BuildRequest::from_parsed`, `requestFromXml`, `request_from_xml` (0.6.0)  
+✅ **Only real results** - APIs that returned invented or placeholder results were removed (0.6.0; see the [migration guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md))  
 
-✅ **Parse → Modify → Build** - `BuildRequest::from_parsed`, `requestFromXml`, `request_from_xml` (0.6.0, unreleased)  
-✅ **Only real results** - APIs that returned invented or placeholder results were removed (0.6.0, unreleased; see the [migration guide](https://github.com/daddykev/ddex-suite/blob/main/website/docs/migration-0.6.md))  
-🔄 **Next: v0.6.0** - release of the changes above  
 🎯 **Goal: v1.0.0** - Official stable release
 
 For detailed development progress and technical implementation details, see [blueprint.md](https://github.com/daddykev/ddex-suite/blob/main/blueprint.md).
@@ -300,15 +298,16 @@ Report vulnerabilities as described in
 
 ## 📊 Performance
 
-Criterion benches on a GitHub-hosted runner (Intel Xeon, 4 vCPUs), release profile, 0.5.1
+Criterion benches on a GitHub-hosted runner (Intel Xeon Platinum 8573C, 4 vCPUs), release
+profile, 0.6.0
 ([details and commands](https://github.com/daddykev/ddex-suite/blob/main/dev-docs/PERFORMANCE.md)):
 
 | Operation | Measured |
 |---|---:|
-| Parse an official ERN 4.3 sample (10–330 KB) | 0.27–7.4 ms (about 33–47 MiB/s) |
-| Parse `1 Audio.xml` (75 KB, a typical album) | 1.7 ms |
-| Parse a ~10 MB ERN 4.3 catalog | 211 ms (47.3 MiB/s) |
-| Build ERN 4.3, 1 / 12 / 100 tracks | 1.7 / 8.3 / 58 ms |
+| Parse an official ERN 4.3 sample (10–330 KB) | 0.41–11 ms (about 22–31 MiB/s) |
+| Parse `1 Audio.xml` (75 KB, a typical album) | 2.5 ms |
+| Parse a ~10 MB ERN 4.3 catalog | 323 ms (31.0 MiB/s) |
+| Build ERN 4.3, 1 / 12 / 100 tracks | 0.73 / 3.4 / 24 ms |
 
 ## 🗂️ Repository layout
 
@@ -344,9 +343,9 @@ DDEX Suite is designed to complement [DDEX Workbench](https://ddex-workbench.org
 ---
 
 **Repository**: https://github.com/daddykev/ddex-suite  
-**Status**: v0.5.1 released; v0.6.0 in development  
-**Parser**: v0.5.1 on [npm](https://www.npmjs.com/package/ddex-parser), [PyPI](https://pypi.org/project/ddex-parser/) and [crates.io](https://crates.io/crates/ddex-parser)  
-**Builder**: v0.5.1 on [npm](https://www.npmjs.com/package/ddex-builder), [PyPI](https://pypi.org/project/ddex-builder/) and [crates.io](https://crates.io/crates/ddex-builder)  
-**Core**: v0.5.1 on [crates.io](https://crates.io/crates/ddex-core)  
+**Status**: v0.6.0 released  
+**Parser**: v0.6.0 on [npm](https://www.npmjs.com/package/ddex-parser), [PyPI](https://pypi.org/project/ddex-parser/) and [crates.io](https://crates.io/crates/ddex-parser)  
+**Builder**: v0.6.0 on [npm](https://www.npmjs.com/package/ddex-builder), [PyPI](https://pypi.org/project/ddex-builder/) and [crates.io](https://crates.io/crates/ddex-builder)  
+**Core**: v0.6.0 on [crates.io](https://crates.io/crates/ddex-core)  
 **Suite Goal**: v1.0.0  
 **Last Updated**: November 27, 2026

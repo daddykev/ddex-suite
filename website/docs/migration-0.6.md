@@ -1,13 +1,12 @@
 ---
 sidebar_position: 11
 title: Migrating to 0.6.0
-description: The breaking changes in 0.6.0 (in development on main) and what to change when you upgrade from 0.5.x, for Rust, Node.js, Python, WASM and the CLI.
+description: The breaking changes in 0.6.0 and what to change when you upgrade from 0.5.x, for Rust, Node.js, Python, WASM and the CLI.
 ---
 
 # Migrating to 0.6.0
 
-0.6.0 is in development on main and not released yet. It removes the APIs that returned
-no real results (invented values, placeholder documents, constant scores) or whose options
+0.6.0 removes the APIs that returned no real results (invented values, placeholder documents, constant scores) or whose options
 had no effect, folds the builder into one type with one options type, and makes the
 builder's inputs explicit. Each section below is for one audience; the complete list, with
 who is affected by each change, is the Breaking section of the

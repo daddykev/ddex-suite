@@ -1,7 +1,7 @@
 ---
 sidebar_position: 1
 title: Introduction
-description: What DDEX Suite does, what it does not do, and its status at 0.5.1.
+description: What DDEX Suite does, what it does not do, and its status at 0.6.0.
 ---
 
 # Introduction
@@ -55,12 +55,12 @@ plus `ddex-core` on crates.io. All of them are released together at the same ver
 
 ## Status
 
-The current release is **0.5.1**, a pre-1.0 patch release (security fixes and fixes of
-results that were not computed; see the
+The current release is **0.6.0**, a pre-1.0 release that removes the APIs that returned no
+real results, folds the builder into one type and makes its inputs explicit (see the
 [changelog](https://github.com/daddykev/ddex-suite/blob/main/CHANGELOG.md)). APIs can still
-change between minor versions: 0.5.0 had breaking changes (see
-[Migrating to 0.5.0](./migration.md)), and so does 0.6.0, which is in development on main
-(see [Migrating to 0.6.0](./migration-0.6.md)).
+change between minor versions: 0.6.0 has breaking changes (see
+[Migrating to 0.6.0](./migration-0.6.md)), and so did 0.5.0 (see
+[Migrating to 0.5.0](./migration.md)).
 Open bugs are listed in [Known issues](./known-issues.md).
 
 DDEX Suite is designed to complement [DDEX Workbench](https://ddex-workbench.org): the suite

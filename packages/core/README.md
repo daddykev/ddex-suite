@@ -24,7 +24,7 @@ Parsed model structs may gain fields in minor releases.
 
 ```toml
 [dependencies]
-ddex-core = "0.5.1"
+ddex-core = "0.6.0"
 ```
 
 ## Example

@@ -5,7 +5,7 @@ All notable changes to the DDEX Suite project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — 0.6.0
+## [0.6.0] — 2026-11-27
 
 0.6.0 removes the builder APIs that returned no real results, or whose settings had no
 effect. Real features can come back later as additions. The inventory is
@@ -623,22 +623,6 @@ Old → new names (0.6.0 PR 5a):
 - ddex-parser: a document with more than 100 references (`&amp;`, character references)
   no longer fails the default parse (see `max_entity_expansions` above).
 
-### Documentation
-
-- Removed the `FastStreamingParser` figures (about 790–990 MiB/s on generated inputs) from
-  `dev-docs/PERFORMANCE.md`, and the `fast_streaming_benchmark` bench they came from. They
-  measured a byte-pattern scan with wrong counts, not a parse.
-- Removed the unsourced "Performance Characteristics" table from
-  `packages/ddex-parser/ENTRY_POINTS.md` (DOM parse ~65 MiB/s, a "stub" stream parse ~294
-  MiB/s). The measured figures are in `dev-docs/PERFORMANCE.md`.
-- The parser README, the root README and the website no longer claim text, attribute or
-  input-size limits for Rust and Python: those settings were never read.
-- Deleted stale status reports and API dumps that described APIs or packages that do not
-  exist: `packages/ddex-parser/ENTRY_POINTS.md`, `IMPLEMENTATION_STATUS.md`,
-  `bindings/node/NATIVE_BINDINGS_REPORT.md`,
-  `packages/ddex-builder/bindings/api-consistency-report.md` and
-  `docs/python_builder_api.txt`.
-
 ### Dependencies
 
 - ddex-builder no longer depends on:
@@ -658,6 +642,22 @@ Old → new names (0.6.0 PR 5a):
   worker count), and drops it from its dev-dependencies too.
 - The WASM parser binding no longer depends on `wasm-bindgen-futures` and `web-sys`, which
   only `parse_stream` used.
+
+### Documentation
+
+- Removed the `FastStreamingParser` figures (about 790–990 MiB/s on generated inputs) from
+  `dev-docs/PERFORMANCE.md`, and the `fast_streaming_benchmark` bench they came from. They
+  measured a byte-pattern scan with wrong counts, not a parse.
+- Removed the unsourced "Performance Characteristics" table from
+  `packages/ddex-parser/ENTRY_POINTS.md` (DOM parse ~65 MiB/s, a "stub" stream parse ~294
+  MiB/s). The measured figures are in `dev-docs/PERFORMANCE.md`.
+- The parser README, the root README and the website no longer claim text, attribute or
+  input-size limits for Rust and Python: those settings were never read.
+- Deleted stale status reports and API dumps that described APIs or packages that do not
+  exist: `packages/ddex-parser/ENTRY_POINTS.md`, `IMPLEMENTATION_STATUS.md`,
+  `bindings/node/NATIVE_BINDINGS_REPORT.md`,
+  `packages/ddex-builder/bindings/api-consistency-report.md` and
+  `docs/python_builder_api.txt`.
 
 ## [0.5.1] - 2026-11-26
 

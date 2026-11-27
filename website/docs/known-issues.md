@@ -1,7 +1,7 @@
 ---
 sidebar_position: 12
 title: Known issues
-description: The open issues that matter most on main (0.6.0, unreleased), what 0.6.0 delivers, and the parked items.
+description: The open issues that matter most in 0.6.0, what 0.6.0 delivers, and the parked items.
 ---
 
 # Known issues
@@ -51,8 +51,7 @@ summarizes the ones you are most likely to meet. Report new ones on
 
 ## What 0.6.0 delivers
 
-0.6.0 is not released yet; this is what main has. The breaking changes and what to change
-are in [Migrating to 0.6.0](./migration-0.6.md).
+The breaking changes and what to change are in [Migrating to 0.6.0](./migration-0.6.md).
 
 - **Only real results.** APIs that returned invented, placeholder or constant results, and
   options that nothing read, were removed: update messages, the semantic diff, presets,
