@@ -108,9 +108,39 @@ the element out, and an empty string (`Some("")`) fails the build.
 | ERN 3.8.2 | Validated against the official XSD in CI; video resources are not supported yet |
 | ERN 3.8.1 | The 3.8.2 document in the 3.8.1 namespace; not checked against an official XSD (none is available) |
 
-Output is read back by [`ddex-parser`](https://crates.io/crates/ddex-parser). There is
-no built-in conversion from a parsed message to a build request yet: map the fields you
-need into a `BuildRequest`.
+Output is read back by [`ddex-parser`](https://crates.io/crates/ddex-parser).
+
+## Parse, modify, build
+
+`BuildRequest::from_parsed` maps a parsed message to a build request for the same ERN
+version. It invents nothing: absent values stay `None`. `unmapped` lists the dotted path of
+every non-empty parsed value the request cannot hold (P and C lines, contributors, images,
+...; the full list is in the rustdoc).
+
+```rust
+use ddex_builder::{BuildOptions, BuildRequest, DDEXBuilder};
+use ddex_parser::DDEXParser;
+use std::io::Cursor;
+
+let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../examples/Samples43/1 Audio.xml");
+let xml = std::fs::read_to_string(path)?;
+
+// Parse, map to a build request, modify, build
+let parsed = DDEXParser::new().parse(Cursor::new(xml.as_bytes()))?;
+let mut bridge = BuildRequest::from_parsed(&parsed);
+bridge.request.releases[0].title[0].text = "Yume no Lullaby (Remastered)".to_string();
+let built = DDEXBuilder::new().build(bridge.request, BuildOptions::default())?;
+
+// Read it back
+let rebuilt = DDEXParser::new().parse(Cursor::new(built.xml.as_bytes()))?;
+assert_eq!(
+    rebuilt.flat.releases[0].default_title.as_deref(),
+    Some("Yume no Lullaby (Remastered)")
+);
+// What the request could not carry, e.g. the sample's MessageThreadId
+assert!(bridge.unmapped.contains(&"header.message_thread_id".to_string()));
+# Ok::<(), Box<dyn std::error::Error>>(())
+```
 
 ## Scope
 

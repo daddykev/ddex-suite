@@ -59,6 +59,6 @@ summarizes the ones you are most likely to meet. Report new ones on
 - A parallel streaming iterator that scales with the thread count.
 - The builder's determinism lint (no `HashMap` / `HashSet` in output paths) enforced in CI.
 
-Later, on the way to **1.0.0**: a built-in bridge from parsed messages to build requests (true
-Parse → Modify → Build), a semantic diff, and TypeScript API reference pages. (From 0.5.1,
+Later, on the way to **1.0.0**: the parse-to-build bridge in the Node.js and Python bindings
+(Rust has `BuildRequest::from_parsed` from 0.6.0), a semantic diff, and TypeScript API reference pages. (From 0.5.1,
 release artifacts are built in GitHub Actions with signed build-provenance attestations and SBOMs, verifiable with `gh attestation verify <file> --repo daddykev/ddex-suite`, provided the published files are the ones release-build produced.)

@@ -32,7 +32,7 @@ use std::process::Command;
 
 /// Sources whose build must fail: (source name, fragment of the expected error, reason).
 /// `youtube/` entries are file-name prefixes; the others are exact source names.
-const EXPECTED_FAILURES: &[(&str, &str, &str)] = &[
+pub(crate) const EXPECTED_FAILURES: &[(&str, &str, &str)] = &[
     (
         "youtube/721620118165_",
         "requires an identifier in Release/ReleaseId (track release)",
@@ -72,11 +72,18 @@ const EXPECTED_FAILURES: &[(&str, &str, &str)] = &[
     ),
 ];
 
-fn repo_root() -> PathBuf {
+pub(crate) fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-fn youtube_samples() -> Vec<PathBuf> {
+/// The samples, fetched once per test process (two tests use them, and parallel runs of the
+/// fetch script would collide).
+pub(crate) fn youtube_samples() -> Vec<PathBuf> {
+    static SAMPLES: std::sync::OnceLock<Vec<PathBuf>> = std::sync::OnceLock::new();
+    SAMPLES.get_or_init(fetch_youtube_samples).clone()
+}
+
+fn fetch_youtube_samples() -> Vec<PathBuf> {
     let dir = repo_root().join("samples/youtube-ern382");
     if !dir.is_dir() || std::fs::read_dir(&dir).map_or(0, |d| d.count()) < 20 {
         let script = repo_root().join("scripts/fetch_ern382_samples.sh");
@@ -94,7 +101,7 @@ fn youtube_samples() -> Vec<PathBuf> {
     sorted_xml(&dir)
 }
 
-fn sorted_xml(dir: &Path) -> Vec<PathBuf> {
+pub(crate) fn sorted_xml(dir: &Path) -> Vec<PathBuf> {
     let mut files: Vec<PathBuf> = std::fs::read_dir(dir)
         .expect("samples directory")
         .map(|e| e.unwrap().path())
@@ -104,7 +111,7 @@ fn sorted_xml(dir: &Path) -> Vec<PathBuf> {
     files
 }
 
-fn repo_fixtures() -> Vec<PathBuf> {
+pub(crate) fn repo_fixtures() -> Vec<PathBuf> {
     let dir = repo_root().join("packages/ddex-parser/tests/fixtures");
     sorted_xml(&dir)
         .into_iter()

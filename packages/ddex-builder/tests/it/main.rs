@@ -4,6 +4,7 @@
 //! `cargo test -p ddex-builder --release --features perf-tests`.
 
 mod basic;
+mod bridge_round_trip;
 mod canonical_debug;
 mod cross_platform_determinism;
 mod determinism;
