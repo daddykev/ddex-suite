@@ -558,6 +558,14 @@ Old → new names (0.6.0 PR 5a):
 
 ### Added
 
+- `BuildRequest::from_parsed(&ParsedERNMessage) -> FromParsed` (ddex-builder, Rust): maps a
+  parsed message to a build request for the same ERN version (header, releases, tracks,
+  track releases, resource groups, deals, references, identifiers), inventing nothing.
+  `FromParsed::unmapped` lists the dotted path of every non-empty parsed value the request
+  cannot hold; the rustdoc lists what is never carried. `round_trip::request_from_parsed`
+  now uses it. `tests/it/bridge_round_trip.rs` round-trips the ERN 4.x and 3.8.x samples
+  through it. (Rust only; the Node.js and Python bindings do not have it yet.)
+
 - `DDEXBuilder::preflight(&request, level)` (ddex-builder): the preflight checks `build` runs
   at that level, returned as a `preflight::ValidationResult` (errors and warnings) without
   building. The Node and Python `validate()` use it.

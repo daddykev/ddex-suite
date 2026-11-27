@@ -45,8 +45,8 @@ plus `ddex-core` on crates.io. All of them are released together at the same ver
 - **No runtime XSD or AVS validation.** Neither package checks a message against the DDEX
   schema or the allowed-value sets and business rules at runtime. Use
   [DDEX Workbench](https://ddex-workbench.org) for that.
-- **No parse-to-build bridge.** There is no built-in conversion from a parsed message to a
-  build request yet; you map the fields you need (the
+- **Parse-to-build bridge in Rust only.** `BuildRequest::from_parsed` maps a parsed message
+  to a build request in Rust; in Node.js and Python you map the fields you need (the
   [building quick start](./quick-start-building.mdx#parse-modify-build) shows how).
 - **No streaming in Node.js or Python.** `parse` reads the whole document. The Rust
   streaming APIs are experimental and read a subset of the fields.

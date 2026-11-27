@@ -375,8 +375,10 @@ Which fields each version requires is listed in the
 
 ## Parse, modify, build {#parse-modify-build}
 
-There is no built-in conversion from a parsed message to a build request yet. Map the fields
-you need: parse `release.xml`, change the title and build ERN 4.3 again. The flat model does
+In Rust, `BuildRequest::from_parsed` maps a parsed message to a build request (see the
+[ddex-builder README](https://github.com/daddykev/ddex-suite/tree/main/packages/ddex-builder#parse-modify-build)).
+Node.js and Python have no such conversion yet, and the examples below map the fields they
+need by hand: parse `release.xml`, change the title and build ERN 4.3 again. The flat model does
 not carry everything ERN 4.3 requires (for example the resource's DDEX `Type`), so the
 examples set those values themselves.
 
