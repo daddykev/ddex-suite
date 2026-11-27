@@ -12,6 +12,7 @@ Classification and history: `dev-docs/TEST_TRIAGE.md`.
 
 | Bug | Test(s) |
 |---|---|
+| `ParseMode::Stream` fails on any message with a release: it builds releases without a `ReleaseType`, and flattening requires one ("Required DDEX field missing: Release/ReleaseType") | `it::reader_paths::every_reader_accepts_the_official_sample` (pins the current error) |
 | `StreamingParser::stream_releases` skips the message root element (only `stream_deals` descends into it), so it yields nothing for a full document | `it::utf8_handling::streaming_parser_handles_utf8` |
 | quick-xml's own end-tag/attribute checks fire first and come back as a generic `XmlError`, pre-empting the typed `MismatchedTags` / `UnexpectedClosingTag` / `InvalidAttribute` variants from `parser::xml_validator` | `it::malformed_xml::test_mismatched_opening_closing_tags`, `test_unexpected_closing_tag`, `test_duplicate_attributes`, `test_complex_malformed_structure` |
 | `]]>` in character data is accepted (not well-formed XML) and the surrounding text is mangled | `it::malformed_xml::test_cdata_terminator_in_text_is_rejected` |
