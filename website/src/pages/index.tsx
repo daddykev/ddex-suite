@@ -233,7 +233,7 @@ function Features() {
   return (
     <section className={styles.featureComparison}>
       <div className="container">
-        <h2>What you get in 0.5.1</h2>
+        <h2>What you get in 0.6.0</h2>
         <div className="row">
           {features.map((feature) => (
             <div key={feature.title} className={clsx('col col--4', styles.featureTileCol)}>
@@ -248,7 +248,7 @@ function Features() {
           ))}
         </div>
         <p className={styles.sectionSubtitle}>
-          Pre-1.0: see the <Link to="/docs/known-issues">known issues and roadmap</Link>. Validate
+          Pre-1.0: see the <Link to="/docs/known-issues">known issues</Link>. Validate
           messages against the XSDs and business rules with{' '}
           <Link href="https://ddex-workbench.org">DDEX Workbench</Link>.
         </p>

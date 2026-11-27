@@ -1,6 +1,6 @@
 {
   "name": "ddex-builder-wasm",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "WASM bindings for DDEX Builder (the core Rust builder compiled to WebAssembly)",
   "main": "pkg/ddex_builder_wasm.js",
   "types": "pkg/ddex_builder_wasm.d.ts",

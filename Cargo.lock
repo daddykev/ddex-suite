@@ -412,7 +412,7 @@ dependencies = [
 
 [[package]]
 name = "ddex-builder"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "clap",
@@ -448,7 +448,7 @@ dependencies = [
 
 [[package]]
 name = "ddex-builder-node"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "ddex-builder",
  "ddex-core",
@@ -463,7 +463,7 @@ dependencies = [
 
 [[package]]
 name = "ddex-builder-python"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "ddex-builder",
@@ -477,7 +477,7 @@ dependencies = [
 
 [[package]]
 name = "ddex-builder-wasm"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "console_error_panic_hook",
@@ -491,7 +491,7 @@ dependencies = [
 
 [[package]]
 name = "ddex-core"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "html-escape",
@@ -507,7 +507,7 @@ dependencies = [
 
 [[package]]
 name = "ddex-parser"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "base64",
@@ -536,7 +536,7 @@ dependencies = [
 
 [[package]]
 name = "ddex-parser-node"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "ddex-core",
  "ddex-parser",
@@ -551,7 +551,7 @@ dependencies = [
 
 [[package]]
 name = "ddex-parser-python"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "ddex-core",
  "ddex-parser",
@@ -565,7 +565,7 @@ dependencies = [
 
 [[package]]
 name = "ddex-parser-wasm"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "console_error_panic_hook",
  "ddex-core",

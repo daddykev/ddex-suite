@@ -25,7 +25,7 @@ out are numbered in request order (`R1`, `A1`, `D1`, ...).
 
 ```toml
 [dependencies]
-ddex-builder = "0.5.1"
+ddex-builder = "0.6.0"
 ```
 
 ## Example

@@ -21,7 +21,7 @@ features = []
 
 [dependencies]
 # Core dependency
-ddex-core = { version = "0.5.1", path = "../core" }
+ddex-core = { version = "0.6.0", path = "../core" }
 
 # Use workspace dependencies
 quick-xml = { workspace = true }
